@@ -4,11 +4,13 @@ The real legacy main.H supplies DPRAM layout; hardware register includes are
 removed in temporary copies only. The test uses complete CRC16 wire frames.
 """
 from pathlib import Path
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import tempfile
+from host_modules import prepare_headers
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "Source/04_App"
@@ -25,9 +27,16 @@ def main():
     sources = [APP / "01_FuncCode/SstParams.c",
                APP / "03_PcDebug/MaintenanceProtocol.C",
                APP / "04_Control/SstCommand.c"]
+    sources += [path for path in (APP / "01_FuncCode/SstParameterTable.c",
+                APP / "01_FuncCode/SstParameterStore.c", APP / "03_PcDebug/PcDebugDispData.c") if path.exists()]
     code = "\n".join(re.sub(r'^\s*#include\s*"[^"\n]+"\s*$', "", read(p),
                             flags=re.M) for p in sources)
-    legacy = read(APP / "00_Config/main.H")
+    # Independently retained Git snapshot supplies fake scalar storage only;
+    # target implementation uses the new domain headers and real current APIs.
+    # Never replaces the production header or historical comment baseline.
+    snapshot = subprocess.run(["git", "show", "baseline-pre-framework-2026-10-12:Source/04_App/00_Config/main.H"],
+                              cwd=ROOT, check=True, stdout=subprocess.PIPE).stdout
+    legacy = snapshot.decode("utf-8-sig")
     # Keep actual types and structures. Define its data externs as test storage.
     declarations = re.findall(r'^extern\s+([^;\n]+);', legacy, flags=re.M)
     definitions = "\n".join(x + ";" for x in declarations if "(" not in x)
@@ -42,10 +51,7 @@ def main():
     template = read(Path(__file__).with_suffix(".c"))
     with tempfile.TemporaryDirectory(prefix="sst_maintenance_") as directory:
         work = Path(directory)
-        for folder in ("00_Config", "01_FuncCode", "03_PcDebug", "04_Control", "08_Fault"):
-            for p in (APP / folder).glob("*"):
-                if p.suffix.lower() in (".h", ".hpp"):
-                    shutil.copy2(p, work / p.name)
+        prepare_headers(ROOT, work)
         (work / "main.h").write_text(legacy, encoding="utf-8")
         unit = work / "maintenance.c"
         unit.write_text(template.replace("/* LEGACY_GLOBALS */", definitions)
@@ -66,7 +72,8 @@ def main():
                        str(unit), "-lm", "-o", str(binary)]
             result = subprocess.run(command, capture_output=True, text=True)
             report = dict(variant=name, compile_status=result.returncode,
-                          compile_output=result.stdout + result.stderr)
+                          compile_output=result.stdout + result.stderr,
+                          layout_snapshot_sha256=hashlib.sha256(snapshot).hexdigest())
             reports.append(report)
             if result.returncode:
                 (evidence / "maintenance_result.json").write_text(

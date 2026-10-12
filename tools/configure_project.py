@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 tree = ET.parse(ROOT / '.project')
-tree.getroot().find('name').text = 'SST_AnyEyes'
+tree.getroot().find('name').text = 'AnyEyesVersion'
 tree.write(ROOT / '.project', encoding='utf-8', xml_declaration=True)
 
 tree = ET.parse(ROOT / '.cproject')
@@ -40,4 +40,4 @@ for node in tree.getroot():
 tree.write(ROOT / '.ccsproject', encoding='utf-8', xml_declaration=True)
 p = ROOT / '.ccsproject'
 p.write_text(p.read_text(encoding='utf-8').replace('<projectOptions>', '<?ccsproject version="1.0"?>\n<projectOptions>', 1), encoding='utf-8')
-print('CCS metadata: SST_AnyEyes / C6748 / C6000 8.3.12')
+print('CCS metadata: AnyEyesVersion / C6748 / C6000 8.3.12')

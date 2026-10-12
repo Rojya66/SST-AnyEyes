@@ -4,6 +4,8 @@
 
 工程目录为 `D:/Code/SST/AnyEyesVersion`，CCS工程名为 `AnyEyesVersion`，固件文件名保持 `SST_AnyEyes.out`，目标为TMS320C6748。使用CCS 12.5与TI C6000 8.3.12，原 `C6748.cmd` 的FPGA/DPRAM链接映射保持不变。
 
+框架整理后从 `Source/03_System/01_OS/Main.c` 阅读入口，从 `SystemInit.c` 阅读初始化顺序，从 `TaskSlice.c` 阅读后台顺序。原 `main_485test.c` 不再参与构建，历史 UART/按键路径归档在 `archive/legacy/`；活动 `Source/` 下的文件由脚本递归枚举，CCS 工程配置也需随实际模块目录同步。重构后的当次构建状态见 `docs/FRAMEWORK_REFACTOR_RESULT.md`，不能沿用旧日志认定新源码已经编译通过。
+
 在CCS选择 Project → Import CCS Projects，搜索本工程目录并导入。选择Debug或Release后 Build Project，产物为 `Debug/SST_AnyEyes.out` 或 `Release/SST_AnyEyes.out`。下载前核对目标配置、模块位图、FPGA版本及所用宏。首次上电默认停机，保持原20秒等待。
 
 ### 导入报错：Invalid project description
@@ -97,9 +99,24 @@ AnyEyes FC急停始终清运行命令。VOFA本身是单向JustFloat观测格式
 | AnyEyes接入说明与可导入表 | `docs/ANYEYES_MAPPING.md`、`docs/ANYEYES_PARAMETERS.csv` |
 | 故障来源、编码、等级与历史 | `docs/FAULT_CODES.md` |
 | 分层迁移及功能边界 | `docs/MIGRATION_GUIDE.md` |
+| 框架整理前后对应及调用关系 | `docs/FRAMEWORK_REFACTOR_RESULT.md`、`docs/REFACTOR_OBJECT_MOVES.json` |
+| 框架整理实施前方案 | `docs/FRAMEWORK_REFACTOR_PLAN.md`（保留为历史方案） |
+| 旧非活动路径 | `archive/legacy/`，在 `Source/` 外，不进入构建 |
 | 构建记录与软件验证 | `docs/VALIDATION.md`、`build/` |
 | 固件校验清单 | `build/delivery_manifest.json`（源码输入与15个固件产物SHA256） |
 | 板级验收 | `docs/BOARD_ACCEPTANCE.md` |
 | 构建和回归脚本 | `tools/`、`tests/` |
 
 当前工程提供源代码和可构建固件，不附带AnyEyes客户端工程配置文件；客户端根据对应表配置原地址即可。实板时序、EEPROM掉电行为、RS485电气及客户端连接需按验收文档记录。
+
+## 从 GitHub 取得与区分版本
+
+专用私有仓库为 [Rojya66/SST-AnyEyes](https://github.com/Rojya66/SST-AnyEyes)，需要账户具有该私有仓库访问权限。若克隆目录直接位于 CCS 工作区根目录，使用 `AnyEyesVersion` 作为目录名，以匹配 `.project` 工程名：
+
+```powershell
+git clone --branch framework-refactored-2026-10-12 https://github.com/Rojya66/SST-AnyEyes.git AnyEyesVersion
+```
+
+该命令取得固定发布标签并处于detached HEAD；继续开发时使用 `--branch refactor/f28377s-framework`。重构前版本为 `main` 及标签 `baseline-pre-framework-2026-10-12`，提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。重构后分支为 `refactor/f28377s-framework`，标签为 `framework-refactored-2026-10-12`。基线标签不移动、不覆盖；切换版本前保持工作区干净。
+
+`build/`、`Debug/`、`Release/` 不纳入源码 Git 提交；它们由当前版本的构建和回归命令重新生成。框架源等价审计从固定 Git 标签读取基线，克隆后保留该标签；无需把旧固件的中间文件当作基线源码。

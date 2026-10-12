@@ -11,6 +11,7 @@ volatile CHB_DAB_STATUS g_chb_dab_status;
 static unsigned short storage_busy;
 static unsigned int remote_calls;
 unsigned short SstParams_IsStorageBusy(void) { return storage_busy; }
+unsigned short SstParameterStore_IsBusy(void) { return storage_busy; }
 unsigned short SstParams_IsStopped(void) {
     return (unsigned short)((g_chb_dab_status.state == CHB_STATE_STOPPED ||
                            g_chb_dab_status.state == CHB_STATE_FAULT) &&

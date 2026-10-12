@@ -13,6 +13,7 @@
 #include "SstDebug.h"
 #include "SstParams.h"
 #include "SstBoard.h"
+#include "vofa.h"
 #define SOC_UART_2_REGS 0U
 #define SOC_GPIO_0_REGS 0U
 #define UART_LSR 0U
@@ -23,30 +24,30 @@
 #define UART_OVER_SAMP_RATE_16 4U
 #define UART_RX_TRIG_LEVEL_1 1U
 #define VALIDFLAG 1U
-static unsigned hwLsr=UART_LSR_TEMT;
+unsigned hwLsr=UART_LSR_TEMT;
 #define HWREG(x) hwLsr
 static std::deque<uint8_t> hwRx;
 static std::vector<uint8_t> hwTx;
 static unsigned direction,txBudget=65535,rxReads,eepromWrites;
 static uint8_t eeprom[512];
-static void UARTIntDisable(unsigned,unsigned) {}
-static void UARTConfigSetExpClk(unsigned,unsigned,unsigned,unsigned,unsigned) {}
-static void UARTFIFOEnable(unsigned) {}
-static void UARTFIFOLevelSet(unsigned,unsigned) {}
-static void UARTEnable(unsigned) {}
-static void GPIOPinWrite(unsigned,unsigned,unsigned value) {direction=value;}
-static unsigned UARTCharsAvail(unsigned) {return !hwRx.empty();}
-static unsigned UARTCharGetNonBlocking(unsigned) {uint8_t b=hwRx.front();hwRx.pop_front();++rxReads;return b;}
-static unsigned UARTSpaceAvail(unsigned) {return txBudget!=0;}
-static void UARTCharPutNonBlocking(unsigned,unsigned b) {assert(direction);--txBudget;hwTx.push_back((uint8_t)b);}
-static uint8_t r_eeprom_byte_read(uint8_t page,uint8_t offset) {return eeprom[page*64+offset];}
-static uint8_t r_eeprom_byte_write(uint8_t page,uint8_t offset,uint8_t value)
+void UARTIntDisable(unsigned,unsigned) {}
+void UARTConfigSetExpClk(unsigned,unsigned,unsigned,unsigned,unsigned) {}
+void UARTFIFOEnable(unsigned) {}
+void UARTFIFOLevelSet(unsigned,unsigned) {}
+void UARTEnable(unsigned) {}
+void GPIOPinWrite(unsigned,unsigned,unsigned value) {direction=value;}
+unsigned UARTCharsAvail(unsigned) {return !hwRx.empty();}
+unsigned UARTCharGetNonBlocking(unsigned) {uint8_t b=hwRx.front();hwRx.pop_front();++rxReads;return b;}
+unsigned UARTSpaceAvail(unsigned) {return txBudget!=0;}
+void UARTCharPutNonBlocking(unsigned,unsigned b) {assert(direction);--txBudget;hwTx.push_back((uint8_t)b);}
+uint8_t r_eeprom_byte_read(uint8_t page,uint8_t offset) {return eeprom[page*64+offset];}
+uint8_t r_eeprom_byte_write(uint8_t page,uint8_t offset,uint8_t value)
 {assert(page>=6&&page<=7);eeprom[page*64+offset]=value;++eepromWrites;return 1;}
 volatile CHB_DAB_STATUS g_chb_dab_status;
 volatile unsigned short g_chb_dab_protection_enable=1;
 float HA_Port_Volt_A=1.25F,HA_Port_Volt_B=2,HA_Port_Volt_C=3;
 float HA_Port_Current_A=-4,HA_Port_Current_B=5,HA_Port_Current_C=6;
-struct { float PORT_V_A; } PORT_RealTime_DATA = { 1.25F };
+HOST_PORT_REALTIME PORT_RealTime_DATA = { 1.25F };
 unsigned short Port_State=7;
 uint32_t SstBoard_GetTick1ms(void) {return (uint32_t)g_chb_dab_status.tick_10ms*10;}
 unsigned short SstFault_GetCode(unsigned short i) {return i==0?29103:0;}
@@ -59,6 +60,8 @@ unsigned short SstFault_GetLevel(void) {return 1;}
 unsigned short SstFault_GetLegacyHistoryWord(unsigned short i) {return i==0?3:i==2?29103:0;}
 unsigned short SstFault_GetHistory(unsigned short i,SST_FAULT_RECORD *r)
 {if(i)return 0;memset(r,0,sizeof(*r));r->code=29103;r->sequence=1;return 1;}
+void ChbDabControl_ApplyRemoteCommand(unsigned short start, unsigned short stop)
+{if(stop&1U) {g_chb_dab_command.run_enable=0;g_chb_dab_command.dab_enable=0;} else if(start&1U) g_chb_dab_command.run_enable=1;}
 /* DEFAULTS */
 /* IMPLEMENTATION */
 static uint8_t RefCrc(const std::vector<uint8_t>&v)
@@ -83,6 +86,35 @@ static void Reset(void)
  g_chb_dab_status.state=CHB_STATE_STOPPED;g_chb_dab_status.ac_pwm_enabled=0;g_chb_dab_status.dab_pwm_enabled=0;
  g_chb_dab_status.tick_10ms=0;SstDebug_Init();
 }
+static void SerialFields(void)
+{
+ const uint16_t allowed=SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_OK:SST_PARAM_DENIED;
+ const uint16_t range=SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_RANGE:SST_PARAM_DENIED;
+ g_chb_dab_command.fault_reset=0;
+ assert(SstParams_Write(0,0,1)==allowed);
+ assert(g_chb_dab_command.run_enable==(SST_ALLOW_SERIAL_COMMANDS?1:0));
+ assert(g_chb_dab_command.dab_enable==0);
+ assert(SstParams_Write(0,1,1)==allowed);
+ assert(g_chb_dab_command.run_enable==(SST_ALLOW_SERIAL_COMMANDS?1:0));
+ assert(g_chb_dab_command.dab_enable==(SST_ALLOW_SERIAL_COMMANDS?1:0));
+ assert(SstParams_Write(0,0,0)==allowed);
+ assert(g_chb_dab_command.run_enable==0);
+ assert(g_chb_dab_command.dab_enable==(SST_ALLOW_SERIAL_COMMANDS?1:0));
+ assert(SstParams_Write(0,3,1)==(SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_BUSY:SST_PARAM_DENIED));
+ assert(g_chb_dab_command.fault_reset==0);
+ for(unsigned index=0;index<4;++index) if(index!=2)
+  assert(SstParams_Write(0,(uint16_t)index,2)==range);
+ assert(SstParams_Write(0,1,0)==allowed);
+ assert(!g_chb_dab_command.run_enable&&!g_chb_dab_command.dab_enable);
+ assert(SstParams_Write(0,3,1)==allowed);
+ assert(g_chb_dab_command.fault_reset==(SST_ALLOW_SERIAL_COMMANDS?1:0));
+ assert(SstParams_Write(0,3,0)==allowed);
+ assert(g_chb_dab_command.fault_reset==0);
+ g_chb_dab_status.state=CHB_STATE_RUNNING;
+ assert(SstParams_Write(0,3,1)==(SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_BUSY:SST_PARAM_DENIED));
+ assert(g_chb_dab_command.fault_reset==0);
+ g_chb_dab_status.state=CHB_STATE_STOPPED;
+}
 static void Params(void)
 {
  uint16_t value;
@@ -101,6 +133,7 @@ static void Params(void)
  assert(SstParams_RunCommand(1)==(SST_ALLOW_SERIAL_COMMANDS?0:SST_PARAM_DENIED));
  assert(g_chb_dab_command.run_enable==(SST_ALLOW_SERIAL_COMMANDS?1:0));
  SstParams_EmergencyStop();assert(!g_chb_dab_command.run_enable&&!g_chb_dab_command.dab_enable);
+ SerialFields();
  SstDisplay_Refresh();
  assert(SstDisplay_Read(79)==1&&SstDisplay_Read(80)==1&&SstDisplay_Read(81)==29103);
  assert(SstParams_Read(19,0,&value)==0&&value==3);
@@ -116,6 +149,18 @@ static void Params(void)
  assert(SstParams_Write(29,0,0xA55A)==0);
  assert(SstParams_Write(0,4,1)==SST_PARAM_BUSY);
  assert(SstParams_Write(29,1,0xA55A)==SST_PARAM_BUSY);
+ assert(SstParams_Write(30,0,2)==SST_PARAM_BAD_ADDRESS);
+ /* A pending save takes precedence over range/ownership except stop-zero. */
+ for(unsigned index=0;index<4;++index) if(index!=2)
+  assert(SstParams_Write(0,(uint16_t)index,2)==SST_PARAM_BUSY);
+ assert(SstParams_Write(0,3,0)==SST_PARAM_BUSY);
+ g_chb_dab_command.run_enable=1;g_chb_dab_command.dab_enable=1;
+ assert(SstParams_Write(0,0,0)==(SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_OK:SST_PARAM_DENIED));
+ assert(g_chb_dab_command.run_enable==(SST_ALLOW_SERIAL_COMMANDS?0:1));
+ assert(g_chb_dab_command.dab_enable==1);
+ assert(SstParams_Write(0,1,0)==(SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_OK:SST_PARAM_DENIED));
+ assert(g_chb_dab_command.dab_enable==(SST_ALLOW_SERIAL_COMMANDS?0:1));
+ SstParams_EmergencyStop();
  for(int i=0;i<200;++i) {
   unsigned old=eepromWrites;++g_chb_dab_status.tick_10ms;SstParams_Service();
   assert(eepromWrites-old<=1);

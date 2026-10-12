@@ -4,11 +4,13 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from firmware_inputs import fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 ECLIPSE = Path('E:/Applications/ti/ccs1250/ccs/eclipse/eclipsec.exe')
 LOGDIR = ROOT / 'build/workspace_import_validation'
 LOGDIR.mkdir(parents=True, exist_ok=True)
+before = fingerprint(ROOT)
 workspace = Path(tempfile.mkdtemp(prefix='SST_direct_child_'))
 project = workspace / 'AnyEyesVersion'
 project.mkdir()
@@ -44,6 +46,9 @@ for mode in ('Debug', 'Release'):
                           '-ccs.projects', 'AnyEyesVersion', '-ccs.configuration', mode])
     assert code == 0, log
     assert (project / mode / 'SST_AnyEyes.out').is_file()
-report = dict(workspace=str(workspace), project=str(project), results=results)
+after = fingerprint(ROOT)
+assert before == after, 'Firmware inputs changed during direct-child workspace validation'
+report = dict(workspace=str(workspace), project=str(project), results=results,
+              firmware_input_sha256=before, firmware_unchanged_during_build=True)
 (LOGDIR / 'result.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
 print(json.dumps(report, indent=2))

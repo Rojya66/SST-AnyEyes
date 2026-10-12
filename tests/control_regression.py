@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from git_baseline import materialize
 
 
 def run(source: Path, header: Path, config: Path, compiler: str, template: str) -> str:
@@ -41,6 +42,14 @@ def main() -> None:
     parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--cc", default=shutil.which("gcc"))
     args = parser.parse_args()
+    saved_baseline = None
+    if not (args.baseline / 'ChbDabControl.c').is_file():
+        saved_baseline = tempfile.TemporaryDirectory(prefix='sst_git_control_baseline_')
+        args.baseline = Path(saved_baseline.name)
+        revision = materialize(args.project,args.baseline)
+        print('BASELINE: immutable pre-framework Git commit '+revision+'; external original SST directory unavailable')
+    else:
+        print('BASELINE: external original SST source '+str(args.baseline))
     if not args.cc:
         raise SystemExit("GCC not found; pass --cc with a host GCC executable")
     template = Path(__file__).with_suffix(".c").read_text(encoding="utf-8")

@@ -1,3 +1,11 @@
+/* 文件职责: 模块接口。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+#ifndef HVAC_STRATEGY_H_
+#define HVAC_STRATEGY_H_
+
+#include "SstTypes.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 //###########################################################################
 //
 // FILE:   HVAC_Strategy.h
@@ -297,3 +305,8 @@ extern void SVG_Controller(uchar StatcomIndex,uchar ApfIndex);
 
 //#endif
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif

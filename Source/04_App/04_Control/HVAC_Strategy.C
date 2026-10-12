@@ -1,3 +1,14 @@
+#include "ControlData.h"
+#include <math.h>
+#include "ControlInit.h"
+#include "DpramHostData.h"
+#include "FpgaRegister.h"
+#include "MeasurementData.h"
+#include "PortStatusData.h"
+#include "SstBoardConfig.h"
+#include "SstControlConfig.h"
+#include "SstTypes.h"
+#include "TransformData.h"
 //###########################################################################
 //
 // FILE:   HVAC_Strategy.c
@@ -13,7 +24,6 @@
 //###########################################################################
 
 //###########################################################################
-#include "main.h"
 #include "CommonProgram.h"
 #include "HVAC_Strategy.h"
 #include "hw_types.h" 

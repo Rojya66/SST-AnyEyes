@@ -1,3 +1,17 @@
+#include "FpgaIo.h"
+#include "SstPortStatus.h"
+#include "PwmGate.h"
+#include "ControlData.h"
+#include "DpramConfig.h"
+#include "DpramHostData.h"
+#include "DpramRegister.h"
+#include "FpgaRegister.h"
+#include "MeasurementData.h"
+#include "PortStatusData.h"
+#include "ProtectionData.h"
+#include "SstBoardConfig.h"
+#include "SstControlConfig.h"
+#include "SstTypes.h"
 //###########################################################################
 //
 // FILE:   DPRAM.c
@@ -14,14 +28,10 @@
 // Tsinghua University PERET Release: DSP_C6748 Function Files V1.0
 // Release Date: 2018.09.24
 //###########################################################################
-#include "main.h"
 #include "DPRAM.h"
 #include "X1226_RW.h"
-#include "PluginUnit.h"
 #include "FaultCheck.h"
 #include "hw_types.h"
-#include "Stateflow.h"
-
 /***********************Function declaration*********************************/
 /*==================================================================
  * 函数功能: 按 16 位字复制指定长度的内存数据

@@ -4,6 +4,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from host_modules import protocol_modules, prepare_headers, compile_modules, host_source
 
 
 TEST = r'''
@@ -75,19 +76,19 @@ def main():
                                   control, re.S).group(0)
                          for kind, name in (("CHB_DAB_COMMAND", "g_chb_dab_command"),
                                             ("CHB_DAB_PARAMETERS", "g_chb_dab_params")))
-    implementation = (app / "01_FuncCode/SstParams.c").read_text(encoding="utf-8-sig")
-    implementation = re.sub(r'^\s*#\s*include\s*"(?:main.h|EEProm.H)"\s*$', "",
-                            implementation, flags=re.MULTILINE)
+    table = app / "01_FuncCode/SstParameterTable.c"
+    implementation = host_source(table if table.exists() else app / "01_FuncCode/SstParams.c")
     with tempfile.TemporaryDirectory(prefix="sst_param_precision_") as directory:
         work = Path(directory)
-        for path in (project / "Source").rglob("*"):
-            if path.suffix.lower() in (".h", ".hpp") and path.name.startswith(("Chb", "Sst", "Func", "Comm2")):
-                shutil.copy2(path, work / path.name)
+        prepare_headers(project,work)
         unit = work / "parameter_precision.cpp"
         unit.write_text("\n".join(("#include <math.h>", prefix, defaults, implementation, TEST)), encoding="utf-8")
         binary = work / "parameter_precision.exe"
+        objects=compile_modules(compiler,protocol_modules(project),work,["SST_SIMULATOR_MODE=0"],
+                                exclude=("SstParameterTable.c",))
         subprocess.run([compiler, "-std=c++11", "-O2", "-DSST_SIMULATOR_MODE=0",
-                        str(unit), "-o", str(binary)], check=True)
+                        "-include",str(work/"host_protocol_io.h"),str(unit),
+                        *[str(obj) for obj in objects], "-o", str(binary)], check=True)
         result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
         print(result.stdout, end="")
         if result.returncode:

@@ -10,6 +10,8 @@
 #include "SstFault.h"
 #include "SstParams.h"
 #include "SstCommand.h"
+#include "SstParameterTable.h"
+#include "SstParameterStore.h"
 #include "MaintenanceProtocol.H"
 #include "SstDebug.h"
 #define VALIDFLAG 1U

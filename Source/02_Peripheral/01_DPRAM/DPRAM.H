@@ -1,3 +1,11 @@
+/* 文件职责: 模块接口。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+#ifndef DPRAM_H_
+#define DPRAM_H_
+
+#include "SstTypes.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 //###########################################################################
 //
 // FILE:   DPRAM.h
@@ -96,3 +104,8 @@ extern void RemoteSig_Dispose(void);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif

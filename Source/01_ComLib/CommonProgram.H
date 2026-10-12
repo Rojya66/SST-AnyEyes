@@ -1,3 +1,10 @@
+/* 文件职责: 模块接口。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+#ifndef COMMONPROGRAM_H_
+#define COMMONPROGRAM_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //###########################################################################
 //
@@ -73,3 +80,8 @@ extern float ConstantPID_Controller(float ErrorIn);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif

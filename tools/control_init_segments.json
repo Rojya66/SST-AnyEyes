@@ -1,0 +1,94 @@
+{
+  "baseline": "baseline-pre-framework-2026-10-12",
+  "original_file": "Source/03_System/01_OS/main_485test.c",
+  "coordinator": "Source/04_App/04_Control/ControlInit.c",
+  "initial": [
+    {
+      "name": "RuntimeStateInit_ResetObservationAndModes",
+      "file": "Source/04_App/04_Control/RuntimeStateInit.c",
+      "purpose": "复位录波序号、采样历史、运行观察和调试模式"
+    },
+    {
+      "name": "RuntimeStateInit_ResetTimeFlags",
+      "file": "Source/04_App/04_Control/RuntimeStateInit.c",
+      "purpose": "复位原软时标、远程服务标志和计数器"
+    },
+    {
+      "name": "ProtectionDefaults_ResetIndicators",
+      "file": "Source/04_App/08_Fault/ProtectionDefaults.c",
+      "purpose": "复位欠压分段确认和斜坡保护标志"
+    },
+    {
+      "name": "RuntimeStateInit_ResetLegacySerial",
+      "file": "Source/04_App/04_Control/RuntimeStateInit.c",
+      "purpose": "复位保留维护通信的长度、地址和清除阶段"
+    },
+    {
+      "name": "FpgaInit_SetSafeOutputs",
+      "file": "Source/02_Peripheral/00_FPGA/FpgaInit.c",
+      "purpose": "先封锁PWM并写入原上电安全控制字"
+    },
+    {
+      "name": "PortStatusInit_DefaultState",
+      "file": "Source/04_App/04_Control/PortStatusInit.c",
+      "purpose": "建立原端口主模式、停机状态、故障初值及页0恢复"
+    },
+    {
+      "name": "DpramDefaults_InitRegulation",
+      "file": "Source/04_App/10_Host/DpramDefaults.c",
+      "purpose": "建立原DPRAM遥调缓存的默认保护使能和给定"
+    },
+    {
+      "name": "FpgaInit_ConfigureModuleLayout",
+      "file": "Source/02_Peripheral/00_FPGA/FpgaInit.c",
+      "purpose": "写插件ID、有效模块位图、模块数量及调制参考比例"
+    },
+    {
+      "name": "ControlDefaults_InitLimits",
+      "file": "Source/04_App/04_Control/ControlDefaults.c",
+      "purpose": "设置电压量程、欠压/过压门限和控制限幅"
+    },
+    {
+      "name": "ControlDefaults_InitCoefficients",
+      "file": "Source/04_App/04_Control/ControlDefaults.c",
+      "purpose": "初始化PLL/电压/电流/谐波系数并保留页1至3恢复顺序"
+    },
+    {
+      "name": "FpgaInit_InitTimingDuty",
+      "file": "Source/02_Peripheral/00_FPGA/FpgaInit.c",
+      "purpose": "写原TAD采样计数和DAB启动占空比/起始计数"
+    },
+    {
+      "name": "FpgaInit_InitOutputControls",
+      "file": "Source/02_Peripheral/00_FPGA/FpgaInit.c",
+      "purpose": "回写模块控制字、GPIO输出和DSP总封锁控制"
+    },
+    {
+      "name": "MeasurementInit_ResetFilters",
+      "file": "Source/04_App/02_Measurement/MeasurementInit.c",
+      "purpose": "复位RMS、P/Q和低通滤波历史样本"
+    },
+    {
+      "name": "ControlDefaults_InitPllState",
+      "file": "Source/04_App/04_Control/ControlDefaults.c",
+      "purpose": "初始化PLL相位、变换正余弦和PLL滤波缓存"
+    },
+    {
+      "name": "MeasurementInit_ResetAverages",
+      "file": "Source/04_App/02_Measurement/MeasurementInit.c",
+      "purpose": "复位谐波平均滤波、三相累加以及谐波相位观察"
+    },
+    {
+      "name": "FpgaInit_InitRecorderFanStatus",
+      "file": "Source/02_Peripheral/00_FPGA/FpgaInit.c",
+      "purpose": "清除FPGA谐波相位表并设置原风扇和端口在线状态"
+    }
+  ],
+  "reset": [
+    {
+      "name": "ControlDefaults_ResetRegulators",
+      "file": "Source/04_App/04_Control/ControlDefaults.c"
+    }
+  ],
+  "notes": "连续原语句段搬迁；局部变量各块首次读前均赋值，迭代不跨块传递。"
+}

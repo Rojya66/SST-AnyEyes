@@ -1,3 +1,12 @@
+/* 文件职责: 模块接口。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+#ifndef ADC_SAMPLE_H_
+#define ADC_SAMPLE_H_
+
+#include "SstControlConfig.h"
+#include "SstTypes.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 //###########################################################################
 //
 // FILE:   ADC_Sample.h
@@ -103,14 +112,7 @@ extern float Module_AD_Sample(uchar CJ_index,uchar MK_index,uchar CS_index,uchar
  * 执行说明: 原实时采样路径；采样比例、寄存器偏移及滤波顺序保持原工程。
  *================================================================*/
 extern void Port_AD_Sample(uchar latch);
-/*==================================================================
- * 函数功能: 换算当前端口锁存/滤波采样，更新有效值、功率及公共遥测
- * 输入参数: 无
- * 输出参数: HA/HD/LD/LA 物理量及 PORT_RealTime_DATA 测量缓存。
- * 返回值: 无
- * 执行说明: 原实时采样路径；采样比例、寄存器偏移及滤波顺序保持原工程。
- *================================================================*/
-extern void Port_RealTimeParameter(void);
+
 /*==================================================================
  * 函数功能: 读取模块直流采样汇总并更新各相总电压量
  * 输入参数: 无
@@ -131,3 +133,8 @@ extern void Module_TotalUdc_Sample(void);
 extern void HVAC_RealTimeParameter(void);
 #endif
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif

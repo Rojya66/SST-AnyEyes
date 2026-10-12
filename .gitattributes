@@ -1,0 +1,2 @@
+# Preserve validated source bytes regardless of the user's global autocrlf setting.
+* -text whitespace=cr-at-eol

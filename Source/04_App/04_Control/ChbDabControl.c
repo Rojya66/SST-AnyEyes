@@ -1,9 +1,16 @@
+#include "FpgaIo.h"
+#include "SstPortStatus.h"
+#include "PwmGate.h"
+#include "ControlData.h"
+#include "FpgaRegister.h"
+#include "MeasurementData.h"
+#include "PortStatusData.h"
+#include "ProtectionData.h"
+#include "SstBoardConfig.h"
+#include "SstControlConfig.h"
 #include <math.h>
 
-#include "main.h"
-#include "PluginUnit.h"
 #include "FaultCheck.h"
-#include "Stateflow.h"
 #include "ChbDabControl.h"
 
 /* CHB_PI：π 浮点常量。 */

@@ -1,0 +1,383 @@
+{
+  "baseline_commit": "ddaeb56f21a81a70cdb76085728f91b67dc3c7a0",
+  "changes": [
+    {
+      "key": "function:SstCommand_ApplyDpram",
+      "new_keys": [
+        "function:SstCommand_ApplyDpram",
+        "function:SstCommand_IsStopped"
+      ],
+      "baseline_sha256s": [
+        "d17166e06a141ac057c880fbd5c5016338c1bfa6293635db35f0dd1ad3557514"
+      ],
+      "current_sha256s": [
+        "0e6c4bc01a57f13b320b54a0af83e73745cd4e4568e2281d64f2455f97b2de50",
+        "60e2d2970671c1f8a3dea14508be720f2ef4a3b55cdb561967a0e713ae5c57c5"
+      ],
+      "reason": "命令层直接查询存储事务和本层停机条件，保留STOP/OFF优先及所有分支。",
+      "validation": "tests/dpram_commands.py; tests/maintenance_regression.py"
+    },
+    {
+      "key": "function:SstDebug_GetTick10ms",
+      "new_keys": [
+        "function:SstDebug_GetTick10ms"
+      ],
+      "baseline_sha256s": [
+        "e058b6fac9fd0f6ef1516bb3402c384aadab1c603969ea60de710daa6ebc170b"
+      ],
+      "current_sha256s": [
+        "e7b841ca5e7788a1bdaa16c693e339ac76a63e7982ca030f2f39b010fb5f436f"
+      ],
+      "reason": "调试时基直接读取同一个控制状态节拍，去除参数门面依赖。",
+      "validation": "tests/protocol_regression.py; tests/framework_structure.py"
+    },
+    {
+      "key": "function:SstDebug_GetTxDropped",
+      "new_keys": [
+        "function:SstDebug_GetTxDropped",
+        "function:SstSerial_GetTxDropped"
+      ],
+      "baseline_sha256s": [
+        "8380c2799fab928e712efbd9287471f4ff346cc1db52c06c1194b3777b835551"
+      ],
+      "current_sha256s": [
+        "0f6cd0eaa6fd770183e3817951c02182846a7be281cff1aa5446ab1893689b11",
+        "6f1c8b53fc87155010df894f64b48917812e989ee50e244e5c7a18db1ad30db7"
+      ],
+      "reason": "txDropped数据归串口模块，调试接口保留转发。",
+      "validation": "tests/protocol_regression.py"
+    },
+    {
+      "key": "function:SstDebug_Init",
+      "new_keys": [
+        "function:SstDebug_Init",
+        "function:SstSerial_Init"
+      ],
+      "baseline_sha256s": [
+        "cee0bf751eccdd37849c1150933fcdbadb6dc32a84a23ee4fcd5eea78bbb5b51"
+      ],
+      "current_sha256s": [
+        "798e8481288cc3f15caa8d09bca9aea60f4f340b4fdd4a70df5b9e4cdca47ffa",
+        "948dbed202f0cd19a6323c4362353015625ec02069bd74849d2a9fa74dc2f69c"
+      ],
+      "reason": "队列复位及UART寄存器配置迁入SstSerial_Init，协议复位留在调试层；初始化完成前不开放控制中断。",
+      "validation": "tests/protocol_regression.py; tests/framework_structure.py"
+    },
+    {
+      "key": "function:SstDebug_Service",
+      "new_keys": [
+        "function:SstDebug_Service",
+        "function:SstDebug_ReceiveService",
+        "function:SstDebug_ProtocolService",
+        "function:SstSerial_ReceiveService",
+        "function:TaskSlice_Service"
+      ],
+      "baseline_sha256s": [
+        "4bba0fd95a32aa97744592d8f85fb68187607e040e8b10cdb05157d213ed4ec2"
+      ],
+      "current_sha256s": [
+        "50c39a7123f458eeedc4a5ddcfde4d5d49c8caddb6b7647abc3a15164b60e718",
+        "67bcf87d3a8a52496081acfcddcfee5505b79a759a51477c9a9bd824d4b6925e",
+        "921f51d7b78518aff0b05997a2b49ab4c2817fb4942760b9faee9297280fa630",
+        "ce56948c10f243992cdf9ce2edd63544a6b9cfcb894564f27967882c182f3db8",
+        "f3c3fb8f65b078495cb6b73ed2db1890bcde40907a06f5b83090d9893026a512"
+      ],
+      "reason": "原服务按TX、RX64、协议、存储、TX拆开；tick仍在首TX前捕获；TaskSlice显式列出各步骤。",
+      "validation": "tests/protocol_regression.py; tests/framework_structure.py; tests/maintenance_regression.py"
+    },
+    {
+      "key": "function:SstDisplay_Refresh",
+      "new_keys": [
+        "function:SstDisplay_Refresh",
+        "function:SstParameterTable_ReadCommand",
+        "function:SstParameterTable_ReadParameter",
+        "function:SstParameterStore_GetResult",
+        "function:SstParameterStore_IsPending"
+      ],
+      "baseline_sha256s": [
+        "96e2ccd6ac66b456a89da2e623978e997aa9711bd838628ee7fc263af4903a29"
+      ],
+      "current_sha256s": [
+        "01657d1e473bf292fc7fffa7408c3f439ef7537dc178ad97e985017d4ca3ea26",
+        "5542d832e2a7d5518513806fb0b2ad4d0cce3a5487a467a604470161803652a4",
+        "636ef86f61252bed77914b8323b168a062cb1e2e021c34855b5a628a65e406a4",
+        "b13a2944c9c3f4e358aca4abb142b6d9b7eb9c2730af8aae43ba3922bf667275",
+        "d761d704beacef8533eb1b5e2ee79da6c68cc35072eee64d2411c7a23f35029d"
+      ],
+      "reason": "固定显示表保持所有索引和比例；私有参数/存储对象改由所属模块读取。",
+      "validation": "tests/protocol_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParameters_LoadPersistent",
+      "new_keys": [
+        "function:SstParameters_LoadPersistent",
+        "function:SstParameterStore_LoadPersistent"
+      ],
+      "baseline_sha256s": [
+        "3d54ba94b018ae5c09851eb9e67317e6398525ee67c5570c7e3fc66a636a55b6"
+      ],
+      "current_sha256s": [
+        "0acf5f0411bde0d18caa80068e84cb688ca82455ece1596295138deb7e5f3d79",
+        "cd22e41f404e7df69d10e74d7d7c38e48ef4efc3f88d8de4e871c5a354f4af5e"
+      ],
+      "reason": "旧启动持久化接口保留，加载事务归存储模块。",
+      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParams_EmergencyStop",
+      "new_keys": [
+        "function:SstParams_EmergencyStop",
+        "function:SstCommand_EmergencyStop"
+      ],
+      "baseline_sha256s": [
+        "d7b944e9556f00d4925eb70eea0ea28734d72a35abc8edb3ea5eeec4cfd95569"
+      ],
+      "current_sha256s": [
+        "6fd51f21e20c5e4608890e59bd21bf0d27c4f0dda18d2960496d80a6cf0e7798",
+        "d3dba402a0fa7458a990205b2b30ba6ee7706a2e84c0b548623a107114e88684"
+      ],
+      "reason": "无条件清run/dab命令动作归唯一命令层，旧接口转发。",
+      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "function:SstParams_GetStorageResult",
+      "new_keys": [
+        "function:SstParams_GetStorageResult",
+        "function:SstParameterStore_GetResult"
+      ],
+      "baseline_sha256s": [
+        "86a62a8ee00c390162d4f3e4cc3ad052cf1208caefde82b851467a7bebde610e"
+      ],
+      "current_sha256s": [
+        "b13a2944c9c3f4e358aca4abb142b6d9b7eb9c2730af8aae43ba3922bf667275",
+        "cddb845775649320a8399934fe5ea5cb600cdc04a617de0a3af784ded9cd5cb7"
+      ],
+      "reason": "存储结果变量归存储模块，旧接口转发。",
+      "validation": "tests/protocol_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParams_IsStopped",
+      "new_keys": [
+        "function:SstParams_IsStopped",
+        "function:SstCommand_IsStopped"
+      ],
+      "baseline_sha256s": [
+        "fdb0edf5cae5031fcfbf1986bb3a076cab40b79cde7d97a1fea58a1f7d7d2d94"
+      ],
+      "current_sha256s": [
+        "60e2d2970671c1f8a3dea14508be720f2ef4a3b55cdb561967a0e713ae5c57c5",
+        "fb04a46ed5cd629319c4e3a67040f6968ab8c4bb892a07da3f9cd99703224345"
+      ],
+      "reason": "保留原全部停机判据，定义归命令层消除互相调用。",
+      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "function:SstParams_IsStorageBusy",
+      "new_keys": [
+        "function:SstParams_IsStorageBusy",
+        "function:SstParameterStore_IsBusy"
+      ],
+      "baseline_sha256s": [
+        "6f3ca177668722a31ab0938e27f737e0b896989085818890725df0ef7eefa43f"
+      ],
+      "current_sha256s": [
+        "121eb4a2d6a6ae31ee31c29fa33af1c80339da7ff29ea6998fd4c57a00eefe88",
+        "c6761ed8201441177454279cb1ed719bc3de3fe16684edbfe5a25807c191fd95"
+      ],
+      "reason": "共享维护/参数存储忙判据归唯一存储模块。",
+      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParams_Read",
+      "new_keys": [
+        "function:SstParams_Read",
+        "function:SstParameterTable_ReadCommand",
+        "function:SstParameterTable_ReadParameter",
+        "function:SstParameterStore_GetResult",
+        "function:SstParameterStore_IsPending"
+      ],
+      "baseline_sha256s": [
+        "84af40e0830e99c198d338a6f54ded5f440f7dc7220c1a0e5fedc1570117e1e6"
+      ],
+      "current_sha256s": [
+        "01657d1e473bf292fc7fffa7408c3f439ef7537dc178ad97e985017d4ca3ea26",
+        "192862dd555915844caa988603d2846fd9d5825d14b10a4ecc1559af62da20e2",
+        "5542d832e2a7d5518513806fb0b2ad4d0cce3a5487a467a604470161803652a4",
+        "636ef86f61252bed77914b8323b168a062cb1e2e021c34855b5a628a65e406a4",
+        "b13a2944c9c3f4e358aca4abb142b6d9b7eb9c2730af8aae43ba3922bf667275"
+      ],
+      "reason": "所有逻辑组及地址保持；门面由表和存储只读接口替代跨模块私有变量访问。",
+      "validation": "tests/protocol_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParams_RunCommand",
+      "new_keys": [
+        "function:SstParams_RunCommand",
+        "function:SstCommand_RunSerial"
+      ],
+      "baseline_sha256s": [
+        "2f29a6488260c52568cb876a8f8060582742b9f4bc651929334529abc42f06ff"
+      ],
+      "current_sha256s": [
+        "046b7c104f877c5805aa88e6d02766720d46be9952a3657a6ae4a68a0111930e",
+        "c4f8bba7f7aa3e43941c3849cf961a3c268df30b9c323fbc79d64c507d16f80c"
+      ],
+      "reason": "串口命令权限、停机及存储互锁归唯一命令层，保留结果码/停机优先。",
+      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "function:SstParams_Service",
+      "new_keys": [
+        "function:SstParams_Service",
+        "function:SstParameterStore_Service"
+      ],
+      "baseline_sha256s": [
+        "9ba101e598829dd89e74d638169013647b4cfca7688eaaa4f358cbfee5b1bd22"
+      ],
+      "current_sha256s": [
+        "0187104aa5c64a8d1875b6cea980d4772a1b36476ece308738ea061b13d99b26",
+        "403c19fbd22f4e59f33b95c980b75d43a0a9d0be3892b1359d47679264f67bdf"
+      ],
+      "reason": "原逐拍单字节事务完整搬到存储模块；原服务接口转发。",
+      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+    },
+    {
+      "key": "function:SstParams_Write",
+      "new_keys": [
+        "function:SstParams_Write",
+        "function:SstParameterTable_WriteCommand",
+        "function:SstParameterTable_WriteParameter",
+        "function:SstParameterStore_Request",
+        "function:SstCommand_WriteSerialField"
+      ],
+      "baseline_sha256s": [
+        "433ed824e55118354ea2bf87db01bd2c454d2b2d40dcd83aa61aa510962f33cb"
+      ],
+      "current_sha256s": [
+        "356ad67b1c3d0ed3bccd5b7205db1b638581992dbca6857cafbbccc3b147f8da",
+        "45b13c311b557f979563a3cb78622f817c023471d3ceef2739339cecc995885a",
+        "4b996cc7d854235746a8e79e5d3f080788353f890e24f30d757c4fc172ff6473",
+        "8f8db3b798233458fd787451378f4152aca6d4e7578ada42678f0869f5c1fde8",
+        "f390a87d40be79a4b4b79e0a67a90e2b79472d5cb65bf84ddc4f79658dd35cf8"
+      ],
+      "reason": "固定地址与校验顺序保留；写表/存储请求归所属模块，运行、DAB及复位单字段权限/范围/停机判断归SstCommand。存储忙优先于命令范围和权限，停止零值例外，单字段写入不联动其他命令。",
+      "validation": "tests/protocol_regression.py (four configurations; independent command fields, denied ownership, reset stopped-only and BUSY/RANGE precedence); tests/parameter_precision.py; tests/maintenance_regression.py"
+    },
+    {
+      "key": "function:SstSerial_RouteByte",
+      "new_keys": [
+        "function:SstDebug_RouteByte"
+      ],
+      "baseline_sha256s": [
+        "c9e16b69d9adde45bd67b3e3ecb42219cc78fa2ed946645ebf7958445ddec8e4"
+      ],
+      "current_sha256s": [
+        "8979d782bb6e3074d68ab80112906ac6e1616a7b9ef0e2321366f608447ae8d4"
+      ],
+      "reason": "逐字节协议分流仍在PcDebug，函数改名表明职责；原状态机正文保留。",
+      "validation": "tests/protocol_regression.py; tests/maintenance_regression.py"
+    },
+    {
+      "key": "function:SstSerial_TxService",
+      "new_keys": [
+        "function:SstSerial_TxService"
+      ],
+      "baseline_sha256s": [
+        "7cad037aec596e53ba7b0c60e0a4b8f2a765a6dd662da5c2da35e2d7b981c8b6"
+      ],
+      "current_sha256s": [
+        "156010e51a73659e5954b091596f824139d8992d37e2adf0ab0de3a534bb4d17"
+      ],
+      "reason": "函数正文保持，仅移到独立串口模块并去掉static供TaskSlice调用；TX16预算保持。",
+      "validation": "tests/protocol_regression.py"
+    },
+    {
+      "key": "function:StoreLoad",
+      "new_keys": [
+        "function:StoreLoad",
+        "function:SstParameterTable_SnapshotValidate",
+        "function:SstParameterTable_SnapshotApply"
+      ],
+      "baseline_sha256s": [
+        "ba800c35ec85f0ad273301fb0954bedc3791f80a16334dddb9512e3279fd7fd2"
+      ],
+      "current_sha256s": [
+        "12b95ea5e8d571a4450fa3e742c82306cdc23e7d66631577861a5c9d6d7127b8",
+        "c6aaca00b980800d9354b763027232f5227e4e80a2e918d1fd5452fe089a6664",
+        "fbc53f6c53067f0f7a52052e80911a99436e33ffe9534a9e16211c19b040c8bc"
+      ],
+      "reason": "先整体解码并校验42字镜像再内部提交；保留硬件周期只核验不恢复及不加载启停字段。",
+      "validation": "tests/parameter_precision.py; tests/protocol_regression.py; tests/maintenance_regression.py"
+    },
+    {
+      "key": "function:StoreRequest",
+      "new_keys": [
+        "function:SstParameterStore_Request",
+        "function:SstParameterTable_SnapshotRead"
+      ],
+      "baseline_sha256s": [
+        "e9545669859b80b530ec0117200c6854fc98d949f05854862618f231adb2d7ed"
+      ],
+      "current_sha256s": [
+        "020a8812fe4dbb935b51bed3c983c20f9eea0efa9cfa01834fef857de86b6e45",
+        "4b996cc7d854235746a8e79e5d3f080788353f890e24f30d757c4fc172ff6473"
+      ],
+      "reason": "存储请求改公开模块接口；唯一参数表提供37参数+5命令快照读取，页6/7格式/CRC提交时机保持。",
+      "validation": "tests/parameter_precision.py; tests/maintenance_regression.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "prototype:StoreRequest",
+      "new_keys": [
+        "prototype:SstParameterStore_Request"
+      ],
+      "baseline_sha256s": [
+        "6cd05d4bb0378973d2bf0f0abe4123af2b69acaea3bec9e422fc4a97463570f0"
+      ],
+      "current_sha256s": [
+        "52d610b562e22f39d67713388e5a14fa46beb85dfe32aa5fbb4d89ca0c94c610"
+      ],
+      "reason": "私有前向声明替换为公开存储头接口。",
+      "validation": "tests/framework_structure.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "function:main",
+      "new_keys": [
+        "function:main",
+        "function:CpuTask_InitBootFlags",
+        "function:SystemInit_Hardware",
+        "function:SystemInit_WaitPowerOnDelay",
+        "function:SystemInit_Runtime",
+        "function:TaskSlice_Service"
+      ],
+      "baseline_sha256s": [
+        "5f6dad51dfba44f0eea095fa5768662be9d7f27ed40bef0728e606edc6f893b2"
+      ],
+      "current_sha256s": [
+        "2d504beba0c9d01e95f10f649afff4bd2c1fb43a319d2a46fbb453c3cc384d17",
+        "5e737881eb29c08cced4ea53f3594f3fe62d59d89b77d9c05fa5ec7379604d1b",
+        "660e57f35fa725cf7082e4bd13f3ccb42e204021de1638e1303db01f9eb5c897",
+        "921f51d7b78518aff0b05997a2b49ab4c2817fb4942760b9faee9297280fa630",
+        "99411fce5598c4ac8fc02c168fed551b29cb6e9b6d71f74d026b89a4bea34874",
+        "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b"
+      ],
+      "reason": "入口只协调启动；原标志赋值和硬件/20s/运行/后台顺序搬入所属模块，原pulse分支保留。",
+      "validation": "tests/framework_structure.py; tests/realtime_audit.py"
+    },
+    {
+      "key": "function:MaintApplyChbCommand",
+      "new_keys": [
+        "function:MaintApplyChbCommand",
+        "function:SstCommand_ApplyMaintenance"
+      ],
+      "baseline_sha256s": [
+        "ae0fb1197da00e50107055327d40ac66a3e1c33c63ae045dc7ffff02328c7d30"
+      ],
+      "current_sha256s": [
+        "6321e0cd215dd2b41a99c5d7ea5a4bc4360db3e1699bf34e2522fadffb81cbab",
+        "b7c2d97b75b2ace4ee63ea7e1016981ba0b918d8e4cf67809672225dc5362ac7"
+      ],
+      "reason": "Maintenance decoder retains the same five compatibility fields and serial-owner conditional; the original policy is moved to SstCommand with the same storage lock, STOP/ON/OFF ordering and stopped-only reset. Busy/stopped helpers now query their owning modules directly.",
+      "validation": "tests/maintenance_regression.py (four configurations; framed command ownership, STOP/OFF priority, independent gates, reset ownership and shared persistence locks); tests/refactor_equivalence.py"
+    }
+  ]
+}

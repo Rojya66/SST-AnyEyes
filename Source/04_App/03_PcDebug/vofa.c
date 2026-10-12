@@ -1,4 +1,4 @@
-/* VOFA JustFloat compatibility encoder. UART ownership belongs to SstDebug. */
+/* VOFA JustFloat兼容编码；UART寄存器、RS485方向和队列由SstSerial维护。 */
 #include <stdint.h>
 #include <string.h>
 #include "vofa.h"

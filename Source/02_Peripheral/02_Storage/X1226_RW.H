@@ -1,3 +1,10 @@
+/* 文件职责: 模块接口。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+#ifndef X1226_RW_H_
+#define X1226_RW_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Tsinghua University PERET File
 // Checkin Date: 2018.09.18
@@ -80,3 +87,8 @@ extern void DSP_2_EEPROM_Page3(void);
 
 
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif

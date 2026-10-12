@@ -1,6 +1,8 @@
 # 调试通信
 
-只允许runtime主循环调用 `SstDebug_Service`，它统一拥有UART2。PSC/GPIO/引脚复用由原board初始化先完成；`SstDebug_Init`配置UART2时钟/115200 8N1并关闭该UART RX/TX中断，不关闭全局中断。快速TAD和FAULT ISR不发送串口、不读参数协议、不写EEPROM。AnyEyes 1ms时基调用 `SstBoard_GetTick1ms`，读取已有Timer2计数器，不新增中断或改变TAD时序。
+通信由运行期主循环中的 `TaskSlice_Service` 显式调度。`SstSerial` 唯一拥有 UART2 寄存器、RS485 方向和整帧发送队列；`SstDebug` 负责所选协议协调和字节分流。PSC、GPIO 和引脚复用由板级初始化先完成，随后 `SstDebug_Init` 调用 `SstSerial_Init` 配置 UART2 的 115200 8N1 及 FIFO，关闭该 UART 的 RX/TX 中断，不关闭全局中断。快速 TAD 和 FAULT ISR 不发送串口、不解析参数协议、不写 EEPROM。
+
+AnyEyes 的 1 ms 时基沿用 `SstBoard_GetTick1ms` 接口，组合实现位于 `CpuTask.c`，读取已有 Timer2 计数和控制核心的 10 ms 软件节拍，不新增中断或改变 TAD 时序。`SstDebug_Service` 保留兼容入口，活动调度不调用该包装，避免重复执行通信和存储服务。
 
 ## 构建选择
 
@@ -20,17 +22,34 @@
 
 ## 调度与帧仲裁
 
-每次service最多读64字节；发FIFO每次最多16字节（调用起止各一次，最多32字节/service），不会等待FIFO或TEMT。8个整帧TX槽，每槽最多260字节。入队先完整复制；物理串口严格按整帧FIFO发送，GPIO104在整帧发完且TEMT置位后转接收，不在VOFA/维护/AnyEyes里各自控制方向。队列满返回背压并计数，遥测为回复留至少一个槽；接收也在回复槽不足时停止当次读取。
+`TaskSlice_Service` 的通信段顺序为：
+
+```text
+捕获本轮10ms节拍 now
+  → SstSerial_TxService
+  → SstDebug_ReceiveService
+  → SstDebug_ProtocolService(now)
+  → SstParameterStore_Service
+  → SstSerial_TxService
+```
+
+维护协议处理在所选 AnyEyes/VOFA 服务之前，参数保存仍位于第二次发送之前。VOFA 使用首次发送前捕获的 `now`，不因分层重新取时而改变周期边界。该通信段之后才调用后台 `Port_RealTimeParameter`，保留本轮上报观察到的原测量顺序。
+
+每轮最多读取 64 字节；每次发送服务向 FIFO 推进最多 16 字节，一轮调用两次，因此最多推进 32 字节，仍受 FIFO 可用空间和发送完成条件限制，不忙等 FIFO 或 TEMT。8 个整帧 TX 槽，每槽最多 260 字节。入队先完整复制；物理串口严格按整帧顺序发送，GPIO104 在整帧发完且 TEMT 置位后转接收，不在 VOFA、维护、AnyEyes 中分别控制方向。队列满返回背压并计数，遥测为回复留至少一个槽；接收也在回复槽不足时停止本批读取。
 
 AnyEyes帧以6B起始，长度字段包含指令+负载，CRC8覆盖头到负载（poly07/init00/xoroutFF）。维护帧以A5 5A起始，版本01、flags、sequence、command、16位小端length、payload、CRC16/IBM。RX分流以**完整已识别帧**为边界，负载中的6B/A5/5A不会触发另一协议；100ms半帧超时，越界长度丢弃。维护帧先完整收齐才提交原解析器，避免半维护帧污染后续帧。AnyEyes/VOFA与维护回复进入同一TX队列。
 
-`SST_ENABLE_MAINTENANCE=1`保留旧对象/旧参数语义及A5 5A协议；其旧参数并不自动等于新的CHB参数表。控制/参数写需停机和对应控制源授权。旧维护显式SAVE仍用4/5页，后台每10ms写1字节、提交magic后回读，再发送原完成回复；不屏蔽中断。6/7页为SST参数独立版本图像，不覆盖旧维护参数。旧地址式UART/透明EMIF桥没有作为第三协议接入；必须使用AnyEyes或维护帧控制，避免多个UART消费者。
+`SST_ENABLE_MAINTENANCE=1` 保留旧对象/旧参数语义及 A5 5A 协议；其旧参数并不自动等于新的 CHB 参数表。参数写和故障复位检查停机条件，启停及脉冲命令按对应控制源权限和原互锁处理。旧维护显式 SAVE 仍用页4/5，后台每 10 ms 写1字节、提交 magic 后回读，再发送原完成回复；不屏蔽中断。页6/7为 SST 参数独立版本图像，不覆盖旧维护参数。旧地址式 UART/透明 EMIF 桥没有作为第三协议接入；使用 AnyEyes 或维护帧控制，避免多个 UART 消费者。
 
-维护START/STOP、HF/LF_ON/OFF与FAULT_CLEAR只进入现有CHB控制命令，关闭旧RemoteControl_Dispose直接门极操作；旧MODE/manual SWITCH命令返回不允许，AC开闭环模式用AnyEyes 0/2。维护CONTROL对象写仍接收旧字段，但只消费启停/脉冲/清故障字段。保存期间所有来源共享SstParams_IsStorageBusy互锁，启动/修改拒绝或过滤，stop/off仍可执行。旧PARAMETER/REGULATE/PLUGIN写仅停机且无保存任务时接受。
+维护 START/STOP、HF/LF_ON/OFF、FAULT_CLEAR 和 CONTROL 对象中的启停/脉冲/清故障字段通过 `SstCommand` 的原策略进入 CHB 控制命令，不调用旧 `RemoteControl_Dispose` 的直接门极操作。旧 MODE/manual SWITCH 命令返回不允许，AC 开闭环模式用 AnyEyes 组0索引2。固定参数表的 CHB 运行、DAB 使能和复位写入也转交窄命令接口，两个使能字段仍独立写入，未改为联动操作。
+
+所有来源通过 `SstParameterStore_IsBusy` 共享 SST 参数保存与可选维护保存的忙状态；`SstParams_IsStorageBusy` 保留兼容查询。启动和修改拒绝或过滤，停止/关脉冲保留原优先规则。旧 PARAMETER/REGULATE/PLUGIN 写仅停机且无保存任务时接受。EEPROM 加载在格式、CRC 和 42 字范围整体校验成功后内部提交，不逐项调用公开参数写接口，不恢复启停/复位命令，硬件采样周期仅核验。
 
 启用两种回复格式意味着PC端须能识别两者；单协议VOFA/AnyEyes客户端不能保证识别另一种回复，只有发送相应维护请求才会出现维护响应。总线为RS485半双工，主机应请求-响应并遵守发送间隔，不能在从机连续发送期间无条件灌入；实板应验证收发方向、电气回显和RX溢出计数。
 
 ## 验证边界
 
-`tests/protocol_regression.py`编译真实协议、参数、VOFA、TX/RX调度代码，替换硬件寄存器/EEPROM，验证CRC、握手与响应字节、权限、参数缩放、坏帧恢复、范围、保存CRC和非阻塞整帧TX。编译器/链接检查只说明软件可构建；实际AnyEyes客户端工程、RS485线缆、C6748板卡、50Hz波形清晰度、EEPROM掉电读回仍须台架联调。参数/波形具体表见 [ANYEYES_MAPPING.md](ANYEYES_MAPPING.md) 和 [ANYEYES_PARAMETERS.csv](ANYEYES_PARAMETERS.csv)。
+`tests/protocol_regression.py` 分别编译真实协议、参数表、存储、命令、VOFA、串口和调试模块再链接，仅替换硬件寄存器和 EEPROM 边界，验证 CRC、握手与响应字节、权限、参数缩放、坏帧恢复、范围、保存 CRC、RX64/TX16、背压及非阻塞整帧发送。维护、命令及参数精度另有回归；启动/调度/ISR 轨迹验证默认、DPRAM、EEPROM+维护 3 种配置各 17 个场景。最终软件证据见 [software_validation.json](evidence/software_validation.json) 和 `build/delivery_manifest.json`。
+
+编译、链接及假硬件回归不能代替实板通信和时序联调。实际 AnyEyes 客户端、RS485 线缆、C6748 板卡、50 Hz 波形清晰度、EEPROM 掉电读回须按台架步骤核验。参数/波形具体表见 [ANYEYES_MAPPING.md](ANYEYES_MAPPING.md) 和 [ANYEYES_PARAMETERS.csv](ANYEYES_PARAMETERS.csv)。
 

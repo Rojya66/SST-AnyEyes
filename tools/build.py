@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import time
+from firmware_inputs import fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = {'usbphyGS60.c', 'pruss.c', 'mailbox.c', 'hsi2c.c', 'cppi41dma.c',
@@ -38,6 +39,7 @@ def main():
     files = [p for p in sorted(source.rglob('*')) if p.suffix.lower() in ('.c', '.cpp', '.asm')
              and p.name not in EXCLUDED]
     start = time.time()
+    input_sha256 = fingerprint(ROOT)
     def compile_one(path):
         object_dir = output / path.relative_to(source).parent
         object_dir.mkdir(parents=True, exist_ok=True)
@@ -72,6 +74,8 @@ def main():
                   compiler=str(compiler), source_count=len(files), compile_failures=failures,
                   link_status=link_status, elapsed_s=round(time.time() - start, 2),
                   warnings=full_log.count('warning #'),
+                  firmware_input_sha256=input_sha256,
+                  firmware_unchanged_during_build=input_sha256 == fingerprint(ROOT),
                   executable=str(executable) if not failures and link_status == 0 else None)
     (output / 'build_result.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     print(json.dumps(report, indent=2))

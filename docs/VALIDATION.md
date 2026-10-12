@@ -1,6 +1,54 @@
-# SST migration validation
+# SST 框架重构验证报告
 
-## 最终交付验证（2026-10-10）
+## 本次交付验证（2026-10-12）
+
+本节对应最终框架重构源码。固定参照为Git标签 `baseline-pre-framework-2026-10-12`、提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。模块对应、数据所有权、初始化步骤和调用关系见 [FRAMEWORK_REFACTOR_RESULT.md](FRAMEWORK_REFACTOR_RESULT.md)。可随Git提交携带的结果、源码指纹、报告及固件哈希见 [software_validation.json](evidence/software_validation.json)；完整本机日志与产物在 `build/`、`Debug/`、`Release/`。
+
+| 验证项 | 最终结果 | 本机证据 |
+|---|---|---|
+| TI Debug / Release | 每配置85源文件全部编译及链接通过 | `build/Debug/default/`、`build/Release/default/` |
+| 11种宏组合 | 11/11通过 | `build/matrix_result.json` |
+| CCS真实导入、Clean Build | 导入和两个配置通过；clean与build分别执行，均退出0 | `build/ccs_validation/result.json` |
+| 工作区根目录下直接导入 | 复现旧名称冲突；AnyEyesVersion名称导入及两个配置构建通过 | `build/workspace_import_validation/result.json` |
+| 主机验证套件 | 11/11通过 | `build/host_validation/result.json`及各检查日志 |
+| 控制对照 / 实时静态审计 | 8场景、每版17,325快照一致 / 34项断言通过 | `control_regression.log`、`realtime_audit.log` |
+| 协议、维护及DPRAM命令 | 各4配置通过；单字段写入、命令权限、STOP/OFF和保存互锁保持 | `protocol_regression.log`、`maintenance_regression.log`、`dpram_commands.log` |
+| 故障报告 / 参数精度 | 编码、等级、首故障、历史及复位通过 / 37参数与5持久化命令字段通过 | `fault_reporting.log`、`parameter_precision.log` |
+| 源码执行内容及归属 | 2,419原实体、2,324当前实体核验通过；22项精确审阅变更 | `build/refactor_equivalence.json` |
+| 初始化分段 | 原3,120/175执行token及预处理指令顺序严格相同 | `build/control_init_equivalence.json` |
+| 模块边界及公开头 | 11项结构断言、136个TI C/C++独立编译单元通过 | `build/framework_structure/result.json` |
+| 自定义中文注释 | 124个自定义源文件/头文件覆盖通过 | `build/comment_inventory/verification.json` |
+| 真实启动/后台/ISR轨迹 | 3种配置各17个场景通过，硬件和业务调用边界使用替身 | `build/firmware_trace/result.json` |
+| ISR目标编译对照 | 4/4指令流、直接调用、栈帧、ELF函数尺寸一致 | `build/isr_binary_audit/result.json` |
+| 硬件map及初始化表 | 15份map通过，FPGA/FT3/DPRAM原地址和布局保持；DPRAM零加载字节 | `build/dpram_map_validation.json` |
+| 最终交付清单 | 所有源码/报告指纹一致，记录15份固件SHA256 | `build/delivery_manifest.json` |
+
+上表主机日志完整路径为 `build/host_validation/<检查名>.log`。默认配置保留17条原告警，未启用维护的VOFA配置有18条；没有隐式函数声明 `warning #225`。两个目标配置保持原关闭优化策略。主程序RAM起点 `0x11801000`、长度 `0x3F000` 不变，最终用量/剩余量见摘要 `memory_usage`。普通RAM符号及函数地址随文件拆分重新链接，仿真器使用符号名。
+
+源审计按函数、对象、类型、宏、条件上下文及硬件section比较执行token。原主文件516条对象归属11个数据域，类型、初值、条件保持；129个非活动历史实体在Source外归档。22项接口/组织调整逐项记录精确旧新哈希和回归证据，ISR、TAD常量、硬件section不能由一般合同豁免。没有相邻原SST目录的新克隆通过 `tests/git_baseline.py` 从固定标签提取控制/实时参照。
+
+ISR审计使用相同TI Debug选项，只规范化编译器局部标签及排除调试指令，保留操作数和调用符号。FPGA/FAULT/Timer2/DPRAM的函数尺寸分别为572/132/1,104/104字节，各自局部栈帧均8字节，与基线一致。已链接代码哈希可因目标地址重定位而不同，不声称整个固件二进制相同。
+
+重现最终验证（Python需 `tree-sitter`、`tree-sitter-c`、`tree-sitter-cpp`，另需TI/CCS和GCC）：
+
+```powershell
+python tools/build.py --configuration Debug
+python tools/build.py --configuration Release
+python tools/run_checks.py
+python tools/build_matrix.py
+python tools/ccs_validate.py
+python tools/verify_workspace_import.py
+python tests/isr_binary_audit.py
+python tests/dpram_map_audit.py --delivery --report build/dpram_map_validation.json
+python tools/delivery_manifest.py
+python tools/export_validation_summary.py
+```
+
+交付清单拒绝过期结果：各构建、测试报告、源码和固件哈希必须对应当前文件。较大的本机日志及固件不进入Git，提交携带轻量摘要。详细审计方法见 [REFACTOR_VALIDATION_TOOLS.md](REFACTOR_VALIDATION_TOOLS.md)。
+
+软件保持不代替物理100 μs测量。FPGA外部中断、原ISR快链及FPGA状态回写保留，通信/存储/历史报告在后台；原TI入口不主动开启中断嵌套。缓存、重新链接位置、EMIFA等待仍可能影响执行时间。本次未连接板卡；完整边沿到返回预算、漏边沿、PWM/保护、RS485、AnyEyes客户端及EEPROM掉电保存按 [BOARD_ACCEPTANCE.md](BOARD_ACCEPTANCE.md) 实测。下面2026-10-10记录仅为历史首版迁移证据，不对应重构后的文件数、RAM用量或当前固件。
+
+## 历史首版迁移验证（2026-10-10）
 
 工程使用TI C6000 8.3.12编译全部52个源文件，并以实际CCS 12.5导入构建验证。下列记录对应最终源码；编译输出、映射表和结果JSON随工程保存。
 

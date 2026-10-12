@@ -1,4 +1,11 @@
-#include "main.h"
+#include "ControlData.h"
+#include "DpramConfig.h"
+#include "DpramHostData.h"
+#include "FpgaRegister.h"
+#include "LegacySerialData.h"
+#include "PortStatusData.h"
+#include "ProtectionData.h"
+#include "SstControlConfig.h"
 #include "MaintenanceProtocol.H"
 #include "DPRAM.H"
 #include "EEProm.H"
@@ -10,6 +17,7 @@
 #include "gpio.h"
 #include "SstDebug.h"
 #include "SstParams.h"
+#include "SstCommand.h"
 
 /* MAINT_FRAME_SIZE：维护完整帧最大字节数，含 8 字节头及 2 字节 CRC。 */
 #define MAINT_FRAME_SIZE        (MAINT_MAX_PAYLOAD + 10)
@@ -116,15 +124,8 @@ static void MaintApplyChbCommand(void)
     stop = PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.COM_STOP_PORT16;
     on = PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16;
     off = PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16;
-    if(SstParams_IsStorageBusy()) { start = 0; on = 0; }
-    if(stop & 1U) { start = 0; on = 0; }
-    ChbDabControl_ApplyRemoteCommand(start, stop);
-    if(off & 1U) g_chb_dab_command.dab_enable = 0;
-    else if(on & 1U) g_chb_dab_command.dab_enable = 1;
-    if(off & 2U) g_chb_dab_command.run_enable = 0;
-    else if(on & 2U) g_chb_dab_command.run_enable = 1;
-    if((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_FAULT_CLEAR.COM_FAULT_CLEAR16 & 1U) && SstParams_IsStopped() && !SstParams_IsStorageBusy())
-        g_chb_dab_command.fault_reset = 1;
+    SstCommand_ApplyMaintenance(start, stop, on, off,
+        PORT_Control_DATA_Buf.DPRAM_RemControl.COM_FAULT_CLEAR.COM_FAULT_CLEAR16);
 #endif
 }
 typedef union _MAINT_FLOAT_WORDS {

@@ -1,3 +1,4 @@
+#include "SstTypes.h"
 // TI File $Revision: /main/1 $
 // Checkin $Date: August 18, 2006   13:46:25 $
 //###########################################################################
@@ -14,9 +15,7 @@
 
 #include "EEProm.h"
 #include "gpio.h"
-//#include "soc_C6748.h"
-#include "main.h"
-
+#include "soc_C6748.h"
 /****************************************************************************/
 /*                                                                          */
 /*              宏定义                                                                                                                                                          */

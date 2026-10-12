@@ -29,6 +29,24 @@ def inspect(path):
     required = set(expected) - {"DPRAM_Block4_PluginUnit17"}
     if not required.issubset(sections):
         errors.append("Missing retained DPRAM sections: " + str(sorted(required - sections.keys())))
+    hardware_expected = {
+        "FPGA_InterfaceFile": (0x60000000, 0x1E00),
+        "FT3_PTCT_Register": (0x60001E00, 0x40),
+        "FT3_FaultRecorder_Register": (0x60001E40, 0x40),
+        "FT3_EER2_Register": (0x60001E80, 0x40),
+        "FT3_Backup_Register": (0x60001EC0, 0x40),
+    }
+    hardware_sections = {}
+    hardware_pattern = r'^\.(FPGA_InterfaceFile|FT3_\w+)\s*\r?\n\*?\s+\d+\s+([0-9a-fA-F]{8})\s+([0-9a-fA-F]{8})\s+UNINITIALIZED'
+    for name, origin, size in re.findall(hardware_pattern, text, re.MULTILINE):
+        location = (int(origin, 16), int(size, 16))
+        hardware_sections[name] = location
+        if hardware_expected.get(name) != location:
+            errors.append(f"Unexpected FPGA/FT3 layout for {name}: {location}")
+    # Unused FT3 plugins are removed by the linker in the selected HVAC build.
+    for name in ("FPGA_InterfaceFile", "FT3_FaultRecorder_Register"):
+        if name not in hardware_sections:
+            errors.append("Missing retained FPGA/FT3 section: " + name)
     # TI map segment table: load-address, run-address, memory-size, file-size.
     for address, file_size in re.findall(
             r'^\s*(66[0-9a-fA-F]{6})\s+66[0-9a-fA-F]{6}\s+[0-9a-fA-F]{8}\s+([0-9a-fA-F]{8})\s+rw-',
@@ -36,7 +54,8 @@ def inspect(path):
         if int(file_size, 16):
             errors.append(f"DPRAM segment {address} has loadable file bytes")
     return {"path": str(path.resolve()), "sha256": hashlib.sha256(data).hexdigest(),
-            "retained_sections": len(sections), "errors": errors, "passed": not errors}
+            "retained_sections": len(sections), "fpga_ft3_sections": hardware_sections,
+            "errors": errors, "passed": not errors}
 
 
 def main():

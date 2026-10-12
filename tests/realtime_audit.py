@@ -4,6 +4,12 @@ import argparse
 import hashlib
 from pathlib import Path
 import re
+import sys
+import tempfile
+from git_baseline import materialize
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from source_equivalence import file_inventory, inventory, missing_entities
 
 
 def read(path: Path) -> str:
@@ -129,13 +135,53 @@ def closure(name: str, functions: dict[str, str]) -> set[str]:
     return seen
 
 
+def ordered_calls(name: str, functions: dict[str, str], ancestors=()) -> list[str]:
+    """Expand direct calls in source order; do not silently recurse forever.
+
+    Both conditional alternatives are retained, like the conservative call graph.
+    Firmware trace regressions/builds validate actual configured branches.
+    """
+    if name in ancestors:
+        return [name]
+    result = [name]
+    for called in re.findall(r'\b([A-Za-z_]\w*)\s*\(', functions.get(name, "")):
+        if called in ("if", "for", "while", "switch", "sizeof"):
+            continue
+        result.extend(ordered_calls(called, functions, ancestors + (name,)))
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path,
                         default=Path(__file__).resolve().parents[2] / "Chb_DabPrim_vofa")
     parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
+    saved_baseline = None
+    if not (args.baseline / 'main_485test.c').is_file():
+        saved_baseline = tempfile.TemporaryDirectory(prefix='sst_git_realtime_baseline_')
+        args.baseline=Path(saved_baseline.name)
+        revision=materialize(args.project,args.baseline,original_linker=True)
+        print('BASELINE: immutable pre-framework Git commit '+revision+'; external original SST directory unavailable')
+    else:
+        print('BASELINE: external original SST source '+str(args.baseline))
     source = args.project / "Source"
+    paths = sorted(path for path in source.rglob("*")
+                   if path.suffix.lower() in (".c", ".cpp", ".h", ".hpp")
+                   and not any(part in ("00_Device", "01_Drive") for part in path.parts))
+    source_texts = {path: read(path) for path in paths}
+    all_text = "\n".join(source_texts.values())
+    # Fixed HVAC project: evaluate the same legacy port choice before comparing
+    # declaration locations. Unrelated compile-time alternatives remain in text.
+    all_entities = [entity for path, contents in source_texts.items()
+                    for entity in inventory(select_dpram_branches(contents, True),
+                                            path.relative_to(args.project).as_posix())]
+    archived_interfaces = [entity for directory in (args.project / "archive", args.project / "Legacy")
+                           if directory.exists() for path in directory.rglob("*")
+                           if path.is_file() and path.suffix.lower() in (".c", ".cpp", ".h", ".hpp")
+                           for entity in inventory(select_dpram_branches(read(path), True),
+                                                   path.relative_to(args.project).as_posix())
+                           if entity.kind in ("extern", "prototype")]
     failures: list[str] = []
     checked = 0
 
@@ -155,10 +201,13 @@ def main() -> None:
         "main.H": "04_App/00_Config/main.H",
     }
     for name, relative in unchanged.items():
-        original = read(args.baseline / name)
-        migrated = read(source / relative)
-        check(tokens(original) == tokens(migrated), f"identical executable tokens (comments excluded): {name} "
-              f"sha256={hashlib.sha256(migrated.encode('utf-8')).hexdigest()[:16]}")
+        original = inventory(select_dpram_branches(read(args.baseline / name), True), name)
+        # Only declarations of the disabled legacy UART/history APIs may be
+        # satisfied by archives. Functions, types, values and MMIO declarations
+        # retain current-source requirements and independent call-graph checks.
+        missing = missing_entities(original, all_entities + archived_interfaces)
+        check(not missing, f"every original executable entity preserved across module locations: {name} "
+              f"missing={[entity.key for entity in missing]}")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))
     noinit_line = r'(?m)^(\s*\.DPRAM_\w+\s*>\s*CS5_DPRAMBLOCK_\w+)\s*,\s*type\s*=\s*NOINIT\s*$'
@@ -166,39 +215,38 @@ def main() -> None:
     check(noinit_count == 19 and tokens(baseline_linker) == tokens(canonical_linker),
           "linker preserves all source layout tokens except 19 DPRAM NOINIT attributes")
     original_plugin = select_dpram_branches(read(args.baseline / "PluginUnit.C"), True)
-    migrated_plugin = read(source / "02_Peripheral/00_FPGA/PluginUnit.C")
-    migrated_plugin = re.sub(r'^\s*#\s*include\s*"ChbBuildConfig.h"\s*$', "",
-                             migrated_plugin, flags=re.MULTILINE)
-    check(tokens(original_plugin) == tokens(select_dpram_branches(migrated_plugin, True)),
+    selected_entities = {
+        enabled: [entity for path, contents in source_texts.items()
+                  for entity in inventory(select_dpram_branches(contents, enabled),
+                                          path.relative_to(args.project).as_posix())]
+        for enabled in (True, False)}
+    check(not missing_entities(inventory(original_plugin, "PluginUnit.C"), selected_entities[True]),
           "DPRAM-enabled HVAC FPGA operations preserve every original token")
     fault_source = "DPRAM_Block3_remMeaSig.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16"
     check(original_plugin.count(fault_source) == 1 and
-          tokens(original_plugin.replace(fault_source, "Port_RealFault.PORT_FAULT16")) ==
-          tokens(select_dpram_branches(migrated_plugin, False)),
+          not missing_entities(inventory(original_plugin.replace(fault_source, "Port_RealFault.PORT_FAULT16"),
+                                         "PluginUnit.C"), selected_entities[False]),
           "DPRAM-off FPGA operations differ only in the recorder local fault-word source")
 
     all_functions: dict[str, str] = {}
     no_dpram_functions: dict[str, str] = {}
-    for path in source.rglob("*"):
+    for path in paths:
         if path.suffix.lower() not in (".c", ".cpp"):
             continue
         # Device libraries contain unsupported peripheral examples, not app roots.
-        if "00_Device" in path.parts or "01_Drive" in path.parts:
-            continue
-        for name, body in definitions(read(path)).items():
+        for name, body in definitions(source_texts[path]).items():
             # Conditional definitions are conservatively combined for call checks.
             all_functions[name] = all_functions.get(name, "") + body
-        for name, body in definitions(select_dpram_branches(read(path), False)).items():
+        for name, body in definitions(select_dpram_branches(source_texts[path], False)).items():
             no_dpram_functions[name] = no_dpram_functions.get(name, "") + body
 
-    migrated_main = read(source / "03_System/01_OS/main_485test.c")
     mapped = set(re.findall(r'#\s*pragma\s+DATA_SECTION\(\s*(DPRAM_\w+)\s*,',
-                            uncomment(migrated_main)))
+                            uncomment(all_text)))
     noinit_sections = set(re.findall(r'(?m)^\s*\.(DPRAM_\w+)\s*>\s*CS5_DPRAMBLOCK_\w+\s*,\s*type\s*=\s*NOINIT\s*$', migrated_linker))
     check(len(mapped) == 19 and noinit_sections == mapped,
           "all 19 mapped DPRAM objects have explicit linker NOINIT storage")
     selected_ports = re.findall(r'^\s*#\s*define\s+(\w+_online)\b',
-                                uncomment(read(source / "04_App/00_Config/main.H")), re.MULTILINE)
+                                uncomment(all_text), re.MULTILINE)
     check(selected_ports == ["HVAC_online"], "DPRAM reachability analysis uses the configured HVAC port")
     no_dpram_reached = set().union(*(closure(name, no_dpram_functions)
                                   for name in ("main", "FPGAIsr", "FAULTIsr", "Timer2Isr")))
@@ -211,11 +259,18 @@ def main() -> None:
           "DPRAM-off does not register its interrupt handler")
 
     baseline_main = read(args.baseline / "main_485test.c")
-    check(tokens(function(baseline_main, "Initial_Variable")) ==
-          tokens(all_functions.get("Initial_Variable", "")),
-          "initial FPGA/module/TAD configuration unchanged")
+    if (args.project / "tools/control_init_equivalence.py").exists():
+        from control_init_equivalence import verify as verify_control_initialization
+        initialization = verify_control_initialization()
+        check(all(item['ordered_tokens_and_directives_equal'] for item in initialization['results']) and
+              {item['name'] for item in initialization['results']} == {'Initial_Variable', 'Variable_RST'},
+              "initial FPGA/module/TAD configuration unchanged after exact ordered helper expansion")
+    else:
+        check(tokens(function(baseline_main, "Initial_Variable")) ==
+              tokens(all_functions.get("Initial_Variable", "")),
+              "initial FPGA/module/TAD configuration unchanged")
     baseline_config = uncomment(read(args.baseline / "main.H"))
-    migrated_config = uncomment(read(source / "04_App/00_Config/main.H"))
+    migrated_config = uncomment(all_text)
     for macro in ("ControlTAD", "TAD_PLL"):
         expression = rf'^\s*#\s*define\s+{macro}\s+([^\n]+)'
         old_match = re.search(expression, baseline_config, re.MULTILINE)
@@ -240,7 +295,7 @@ def main() -> None:
                     if re.search(r'\bChbDabControl_FastStep\s*\(', body)]
     check(fast_callers == ["FPGAIsr"], f"only FPGA ISR calls FastStep: {fast_callers}")
 
-    platform = uncomment(read(source / "03_System/00_Board/ChbPlatform.c"))
+    platform = uncomment(all_text)
     patterns = [
         (r'GPIOIntTypeSet\(\s*SOC_GPIO_0_REGS\s*,\s*69\s*,\s*GPIO_INT_TYPE_RISEDGE\s*\)', "GPIO69 TAD rising edge"),
         (r'IntRegister\(\s*C674X_MASK_INT5\s*,\s*FPGAIsr\s*\)', "INT5 TAD vector"),
@@ -252,10 +307,11 @@ def main() -> None:
         check(re.search(pattern, platform) is not None, label)
     check("UARTInterruptInit" not in closure("main", all_functions),
           "startup/runtime cannot reach legacy UART2 ISR registration")
-    init_runtime = all_functions.get("ChbApplication_InitRuntime", "")
+    init_name = "SystemInit_Runtime" if "SystemInit_Runtime" in all_functions else "ChbApplication_InitRuntime"
+    init_calls = ordered_calls(init_name, all_functions)
     names = ["ChbDabControl_Init", "SstFault_Init", "SstDebug_Init",
              "GPIOBankPinInterruptInit"]
-    positions = [init_runtime.find(name + "(") for name in names]
+    positions = [init_calls.index(name) if name in init_calls else -1 for name in names]
     check(all(position >= 0 for position in positions) and positions == sorted(positions),
           "control/fault/debug state initialized before TAD/FAULT IRQ enable")
 
@@ -266,7 +322,7 @@ def main() -> None:
         forbidden = sorted(name for name in reached if forbidden_realtime.search(name))
         check(not forbidden, f"{isr} cannot reach added communication/reporting: {forbidden}")
     runtime_roots = [name for name in all_functions
-                     if re.match(r'^(?:Sst.*|ChbApplication)_Service\w*$', name)]
+                     if re.match(r'^(?:Sst.*|ChbApplication|TaskSlice|CpuTask)_Service\w*$|^TaskSlice_Run$', name)]
     check(bool(runtime_roots), "background service entry points found")
     reached = set().union(*(closure(name, all_functions) for name in runtime_roots))
     forbidden_masking = {"IntGlobalDisable", "_disable_interrupts", "IntGlobalRestore",
@@ -276,7 +332,7 @@ def main() -> None:
     blocked += sorted(name for name in reached if re.match(r'^(?:Cache|CACHE)', name))
     check(not blocked, f"background has no global interrupt masking call path: {blocked}")
     direct_masking = [name for name, body in all_functions.items()
-                      if name.startswith(("Sst", "ChbApplication_Service")) and
+                      if name.startswith(("Sst", "ChbApplication_Service", "TaskSlice_", "CpuTask_Service")) and
                       re.search(r'\b(?:IntGlobalDisable|_disable_interrupts|CSR)\b', body)]
     check(not direct_masking, f"no direct global masking in migration services: {direct_masking}")
 

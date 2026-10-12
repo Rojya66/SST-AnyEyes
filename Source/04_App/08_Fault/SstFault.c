@@ -1,5 +1,6 @@
+#include "ControlData.h"
+#include "ProtectionData.h"
 #include "SstFault.h"
-#include "main.h"
 #include "ChbDabControl.h"
 
 /* All state is owned by the main loop. No allocation, MMIO or interrupt mask. */

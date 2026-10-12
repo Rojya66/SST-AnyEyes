@@ -1,26 +1,8 @@
 #ifndef SST_PARAMS_H
 #define SST_PARAMS_H
 #include <stdint.h>
-/* SST_PARAM_GROUPS：参数服务固定参数组数，参考协议为 30。 */
-#define SST_PARAM_GROUPS 30U
-/* SST_PARAM_PER_GROUP：参数服务每组固定参数字数，参考协议为 34。 */
-#define SST_PARAM_PER_GROUP 34U
-/* SST_DISPLAY_COUNT：参考波形/面板显示表容量，200 个 16 位字。 */
-#define SST_DISPLAY_COUNT 200U
-/* SST_PARAM_OK：参数服务成功结果码。 */
-#define SST_PARAM_OK 0U
-/* SST_PARAM_BAD_ADDRESS：参数服务地址非法结果码。 */
-#define SST_PARAM_BAD_ADDRESS 1U
-/* SST_PARAM_READ_ONLY：参数服务只读地址拒绝结果码。 */
-#define SST_PARAM_READ_ONLY 2U
-/* SST_PARAM_RANGE：参数服务数值越界结果码。 */
-#define SST_PARAM_RANGE 3U
-/* SST_PARAM_BUSY：参数服务忙或不满足停机条件结果码。 */
-#define SST_PARAM_BUSY 4U
-/* SST_PARAM_DENIED：参数服务编译权限拒绝结果码。 */
-#define SST_PARAM_DENIED 5U
-/* SST_PARAM_STORAGE：参数服务存储校验/读写失败结果码。 */
-#define SST_PARAM_STORAGE 6U
+#include "SstParamTypes.h"
+#include "PcDebugDispData.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,30 +82,6 @@ void SstParameters_LoadPersistent(void);
  * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
  *================================================================*/
 uint16_t SstParams_GetStorageResult(void);
-/*==================================================================
- * 函数功能: 刷新固定 200 字显示表中的状态、波形、参数及故障报告位置
- * 输入参数: 无
- * 输出参数: 读接口写入输出指针；写/存储接口更新受控参数、命令或存储状态。
- * 返回值: 无
- * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
- *================================================================*/
-void SstDisplay_Refresh(void);
-/*==================================================================
- * 函数功能: 读取固定显示表的一个 16 位字
- * 输入参数: index：所选表/对象的索引；范围按函数对应表容量检查
- * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
- * 返回值: 表内值；越界返回 0
- * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
- *================================================================*/
-uint16_t SstDisplay_Read(uint16_t index);
-/*==================================================================
- * 函数功能: 按固定索引读取 VOFA 的原始浮点遥测量
- * 输入参数: index：所选表/对象的索引；范围按函数对应表容量检查
- * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
- * 返回值: 对应物理量；未知索引返回 0
- * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
- *================================================================*/
-float SstTelemetry_ReadFloat(uint16_t index);
 /*==================================================================
  * 函数功能: 读取控制状态中的 10 ms 节拍
  * 输入参数: 无

@@ -12,28 +12,35 @@
 |---|---|---|
 | `00_Device` | include、system_config | 器件定义、DSP 中断分发与汇编向量 |
 | `01_Drive` | drivers | TI 原平台驱动 |
-| `01_ComLib` | CommonProgram | 源工程公共算法与工具 |
-| `02_Peripheral/00_FPGA` | PluginUnit | 插件、PWM/参考值、DAC、FPGA 数据交换 |
-| `02_Peripheral/01_DPRAM` | DPRAM | 既有地址布局的遥控遥测 |
+| `01_ComLib` | CommonProgram、SstTypes、SstWireTypes、ControlAlgorithmTypes、TransformData | 公共算法、基础类型、共享线上字段、坐标变换兼容状态 |
+| `02_Peripheral/00_FPGA` | FpgaRegister、Ft3RecorderData、FpgaIo、FpgaModulation、Ft3Recorder、DacOutput | 固定寄存器布局、映射对象与按职责分开的外围访问 |
+| `02_Peripheral/01_DPRAM` | DpramRegister、DpramConfig、DPRAM | 既有地址布局、映射对象与块读写 |
 | `02_Peripheral/02_Storage` | EEProm、X1226_RW | 原 EEPROM/RTC 硬件接口 |
-| `03_System/00_Board` | ChbPlatform、Hardware、EMIFAPinmuxSetup | 平台初始化、引脚与中断映射 |
-| `03_System/01_OS` | main_485test、ChbApplication | 入口、原实时链路、后台任务组织 |
-| `04_App/00_Config` | main.H、ChbBuildConfig | 兼容共享数据声明和独立构建选项 |
-| `04_App/01_FuncCode` | 新参数适配 | 保留功能码组/组内地址，接入 SST 参数 |
-| `04_App/02_Measurement` | ADC_Sample | 标定、采样与数据处理 |
-| `04_App/03_PcDebug` | PcDebug 适配、VOFA、MaintenanceProtocol | AnyEyes/VOFA、后台传输、兼容协议 |
-| `04_App/04_Control` | ChbDabControl、HVAC_Strategy、Stateflow | 原 CHB/DAB 算法与状态机 |
-| `04_App/08_Fault` | FaultCheck、SstFault | 原快速保护、后台故障编码/历史/观测 |
+| `02_Peripheral/03_Serial` | SstSerial | UART2/RS485、整帧队列、有界收发 |
+| `03_System/00_Board` | SstBoard、Hardware、EMIFAPinmuxSetup | PSC、引脚、EMIFA、GPIO及Timer2硬件配置 |
+| `03_System/01_OS` | Main、SystemInit、TaskSlice、CpuTask、SoftTimeData | 程序入口、启动顺序、后台顺序、心跳、毫秒时基与软件节拍 |
+| `03_System/02_ISR` | Redef_Interrupt | 中断注册/映射及Timer2、FPGA、FAULT、DPRAM的原中断正文 |
+| `04_App/00_Config` | ChbBuildConfig、SstControlConfig；main.H 仅兼容 | 构建选择与控制常量；活动模块不依赖万能头 |
+| `04_App/01_FuncCode` | SstParams、SstParameterTable、SstParameterStore、SstParamTypes | 固定地址权限、参数表与 EEPROM 事务分别维护 |
+| `04_App/02_Measurement` | ADC_Sample、MeasurementData、MeasurementInit、MeasurementService | 标定、快速采样、滤波/RMS数据、初始化与后台整理 |
+| `04_App/03_PcDebug` | Comm2PcDebug、SstDebug、PcDebugDispData、VOFA、MaintenanceProtocol、LegacySerialData | 协议解析、协议选择、显示/波形映射、兼容符号 |
+| `04_App/04_Control` | ChbDabControl、HVAC_Strategy、ControlData、ControlInit、PortStatusData、SstPortStatus、PwmGate | CHB/DAB 核心、控制历史、初始化、端口联锁及 PWM 动作 |
+| `04_App/08_Fault` | FaultCheck、ModuleVoltageCheck、ProtectionData/Types/Config、SstFault | 快速保护、模块电压巡检、保护数据与后台报告 |
+| `04_App/10_Host` | SstDpramHost、DpramHostData | DPRAM 遥控/遥调语义及遥测轮询 |
 
-首版保持控制核心、共享 FPGA/插件结构和原控制数值语义，重新组织目录并增加明确模块接口。`main.H` 与原主文件中仍有兼容全局变量，以维持源算法、录波及硬件位域布局；它们并非全量重写后的纯对象模型。
+重构前首版仍把数据和中断放在原主文件；本轮按 [FRAMEWORK_REFACTOR_PLAN.md](FRAMEWORK_REFACTOR_PLAN.md) 将这些职责归回所属模块。原 `main_485test.c` 从活动源码移除，必要数据保留原符号、类型、初值和硬件布局；不用另建一个全局变量集合文件替代它。`main.H` 仅供历史兼容，活动模块使用明确的类型、数据及函数接口。原控制算法不改为新的对象模型，也不批量修改 `volatile/static` 语义。
+
+初始化实现进一步拆为 `RuntimeStateInit`、`ProtectionDefaults`、`FpgaInit`、`PortStatusInit`、`DpramDefaults`、`ControlDefaults`、`MeasurementInit`，由 `ControlInit` 按原有序段协调；每段保持原赋值及循环表达式。实际目录、旧文件到新文件对应及当次验证状态见 [FRAMEWORK_REFACTOR_RESULT.md](FRAMEWORK_REFACTOR_RESULT.md)。本文不把首版测试结果当作重构版本已经验证的证据。
 
 ## 初始化和执行顺序
 
-`main` → PSC/引脚/EMIFA/Timer2 初始化 → 20 秒上电等待 → 原变量初始化与复位 → 可选旧维护参数加载 → CHB/DAB 初始化 → 故障、通信初始化 → 可选SST参数加载 → GPIO TAD/FAULT 中断开放 → 无限后台循环。
+`Main.main` → `CpuTask_InitBootFlags` → `SystemInit_Hardware` → `SystemInit_WaitPowerOnDelay` → `SystemInit_Runtime` → 无限调用 `TaskSlice_Service`。
+
+硬件阶段保持 PSC/引脚/EMIFA/Timer2 和指示灯初值；上电等待保持 20 秒。运行阶段按原顺序完成变量初始化与复位、可选旧维护参数加载、故障锁存清除、CHB/DAB/故障/通信初始化、可选 SST 参数加载，最后开放 GPIO TAD/FAULT 中断。初始化拆分按原语句顺序划成有明确所属域的段，同一域多次出现时保留多个有序段，不按变量名重新排序。
 
 运行对象与安全输出在 TAD/FAULT 注册前初始化。Timer2 在上电等待期间保持原 10 ms 节拍。通信不在等待期间执行启停。旧维护参数加载仅在两个相关宏同时开启时执行，它不等同于SST控制参数；新的SST参数图像在核心初始化后加载，避免被默认值初始化覆盖。
 
-后台循环执行：看门狗/LED、CHB/DAB 慢状态机、故障汇总、可选 DPRAM、调试通信和原实时参数整理。通信接收、CRC、参数访问、波形编码、故障上报和持久化均在后台。
+`TaskSlice_Service` 显式列出：看门狗/LED → CHB/DAB 慢状态机 → 故障汇总 → 可选 DPRAM 遥控/遥测 → 捕获本轮原 10 ms 节拍 → 串口发送服务 → 有界接收及协议分流 → 调试协议服务 → 参数持久化服务 → 串口发送服务 → 原实时参数整理。通信收发、CRC、参数访问、波形编码、故障上报和持久化均在后台；存储任务不再隐藏在通信综合服务内。
 
 ## 保留的控制行为
 
@@ -53,7 +60,7 @@
 
 ## 10 kHz 约束
 
-`FPGAIsr` 保持原采样 → 计算 → 控制 → 保护 → 状态/录波 → DAC 链路。中断函数仅删除原 VOFA 降采样计数和通知标志；通信依赖后台时基。INT5 映射 GPIO Bank4，GPIO69 上升沿触发保持一致。DPRAM关闭时，既有FT3录波中的故障字改从本拍本地`Port_RealFault`读取，避免原代码仍读取已关闭的CS5；此项是编译期选择，仍为一次16位赋值，不增加ISR处理步骤。DPRAM启用时该录波来源保持原代码。
+`FPGAIsr` 归 `Redef_Interrupt.c`，保持原采样 → 计算 → 控制 → 保护 → 状态/录波 → DAC 链路。迁移首版已删除原 VOFA 降采样计数和通知标志，通信依赖后台时基；本轮框架整理以首版 Git 基线为比较对象，完整保留中断正文。INT5 映射 GPIO Bank4，GPIO69 上升沿触发保持一致。DPRAM关闭时，既有FT3录波中的故障字从本拍本地`Port_RealFault`读取，避免已关闭的CS5访问；DPRAM启用时来源保持原代码。
 
 新通信不注册 UART RX/TX 中断，主循环限预算轮询 UART2；不会新增低优先级 UART ISR 阻挡 TAD。新故障编码、历史与报文处理不加入 TAD。新后台运行路径不全局禁止 DSP 中断。
 

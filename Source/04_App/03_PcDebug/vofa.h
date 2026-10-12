@@ -21,7 +21,7 @@ extern "C" {
 
 /**
  * \brief   初始化VOFA通信模块
- *          兼容空入口；UART2 由 SstDebug_Init 统一配置
+ *          兼容空入口；SstDebug_Init调用SstSerial_Init完成UART2配置
  */
 /*==================================================================
  * 函数功能: 保留旧 VOFA 初始化入口；串口与发送时基由 SstDebug_Init 统一初始化，本函数为空

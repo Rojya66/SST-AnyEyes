@@ -1,6 +1,6 @@
 # 自定义源码注释说明
 
-本轮按 `F28377S_Plat` 的横线函数说明块补齐 `Source` 中的自定义代码注释。范围覆盖 46 个 C/C++ 源文件及头文件，包括原 SST 控制、采样、保护、插件、DPRAM、存储代码以及迁移新增模块。TI 设备文件 `Source/00_Device/`、TI 驱动库 `Source/01_Drive/` 不属于本次注释范围。
+按 `F28377S_Plat` 的横线函数说明块维护 `Source` 中的全部自定义代码注释。框架拆分后的范围包括入口、启动、后台调度、中断、板级适配、各域数据与初始化、原 SST 控制、采样、保护、FPGA、DPRAM、通信和存储模块。TI 设备文件 `Source/00_Device/`、TI 驱动库 `Source/01_Drive/` 不属于本次自定义注释范围。最终文件和声明计数见 [随版本验证摘要](evidence/software_validation.json) 及 `build/comment_inventory/verification.json`。
 
 ## 注释格式
 
@@ -14,11 +14,13 @@
 
 ## 覆盖结果与行为不变核对
 
-语法扫描覆盖 351 处函数定义、360 处函数声明、584 个具名函数参数、1,693 处变量声明、862 个结构体/联合体成员和 43 个枚举项。这些是源码声明次数，含重复 extern、头文件声明和未选择的条件编译端口分支，不是当前固件中独立链接符号数。
+最终语法扫描无缺失项。统计包括函数定义、函数声明、具名参数、变量声明、结构体/联合体成员、宏和枚举。数字表示源码出现次数，含 extern、头文件声明和未选择的条件编译端口分支，不是固件中独立链接符号数；框架拆分增加了窄接口和所属头文件，不能继续使用迁移前 46 文件的旧统计。
 
-`build/comment_baseline/Source/` 保存补注释前的 46 个文件。每个文件均比较去注释后的代码标记序列以及预处理指令，46/46 一致。原算法、地址、变量类型、初值、布局和宏表达式没有变化；只加入注释并为过长的声明注释调整空白。文件编码使用 UTF-8，中文编辑器需按 UTF-8 打开。
+补注释前的历史文件级比较仅描述此前补注释阶段。当前框架已搬动函数、对象和头文件，旧路径 token 不一致不等于行为改变；本轮执行等价性由 `tests/refactor_equivalence.py` 相对 Git 标签 `baseline-pre-framework-2026-10-12` 按实体比较。函数、对象、类型、宏、条件和硬件段分别核对；经审阅的接口变化记录精确旧新哈希和对应回归，ISR 不允许使用例外合同。文件编码使用 UTF-8，中文编辑器需按 UTF-8 打开。
 
-原实时审计中针对六个控制/采样/保护文件的“字节相同”检查改为“去注释后代码标记相同”。其余 ISR 顺序、10 kHz 调用链、GPIO 向量及 DPRAM 检查保留。该检查允许文档注释变化，仍拒绝任何运算符、标识符、常量或可执行语句变化。
+注释说明同时接受职责复核，不能仅依靠“有中文”判断正确。例如 `Port_StateUpdate_Write` 明确其 FPGA `HVAC_STATUS`、故障位、LED 和 GPIO 副作用；`Port_RealTimeParameter` 明确其主循环测量整理上下文；`Variable_RST` 明确启动及 PWM 开锁路径；模块数量说明与当前 A 相 1 个、B/C 相各 13 个的有效位图一致。中断注册归 `Redef_Interrupt`，组合毫秒时基实现归 `CpuTask`，UART 配置和有界收发归 `SstSerial`。
+
+初始化通过展开所属域函数比较原执行语句及预处理指令：`Initial_Variable` 为 3,120 个执行 token，`Variable_RST` 为 175 个执行 token，次序严格保持。实时审计继续核验 ISR 顺序、10 kHz 调用链、GPIO 向量及 DPRAM 宏门控。该检查允许注释和空白变化，拒绝未审阅的运算符、标识符、常量或可执行语句变化。
 
 覆盖及等价报告：`build/comment_inventory/verification.json`。日常编译不依赖注释工具。需要重跑完整语法覆盖检查时：
 
@@ -27,6 +29,6 @@ python -m pip install tree-sitter tree-sitter-c tree-sitter-cpp
 python tests/comment_coverage.py
 ```
 
-`tools/comment_inventory.py`、`tools/comment_semantics.py`、`tools/annotate_source.py` 是本轮注释生成和审阅辅助工具。生成器始终读取保存的源码基线，不用于后续代码开发的自动覆盖；不要在已经修改功能代码后重新运行它。
+后续直接维护所属源文件和公开头的接口契约，再运行覆盖与等价审计。`tools/comment_inventory.py` 和 `tools/comment_semantics.py` 提供语法清单及具名说明检查，日常构建不依赖历史注释缓存，也不通过生成器覆盖当前功能代码。
 
-注释补全后重新验证 TI Debug/Release、实际 CCS 导入构建、11 种宏组合和现有 7 项主机回归。具体结果及产物哈希见 [构建与验证报告](VALIDATION.md) 和 `build/delivery_manifest.json`。注释等价及编译不能代替板上 100 µs 时序实测，实测步骤见 [板级验收](BOARD_ACCEPTANCE.md)。
+本次完成 TI Debug/Release、实际 CCS 导入及 Clean Build、11 种宏组合、主机回归、独立 C/C++ 头编译、3×17 启动/调度/ISR 轨迹及四个 ISR 指令/栈/尺寸对照。最终计数和产物哈希见 [software_validation.json](evidence/software_validation.json)、[框架交付说明](FRAMEWORK_REFACTOR_RESULT.md) 和 `build/delivery_manifest.json`。注释等价及编译不能代替板上 100 µs 时序实测，实测步骤见 [板级验收](BOARD_ACCEPTANCE.md)。

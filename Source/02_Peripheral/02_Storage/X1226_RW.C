@@ -1,3 +1,8 @@
+#include "ControlData.h"
+#include "DpramHostData.h"
+#include "PortStatusData.h"
+#include "SstControlConfig.h"
+#include "SstTypes.h"
 // Tsinghua University PERET File
 // Checkin Date: 2018.09.18
 //###########################################################################
@@ -13,7 +18,6 @@
 //###########################################################################
 
 #include "EEProm.h"
-#include "main.h"
 #include "X1226_RW.H"
 /****************************************************************************/
 /*                                                                          */
