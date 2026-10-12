@@ -85,23 +85,23 @@ uchar Udc_Checked_Num; /* Udc_Checked_Num：已检查模块数量。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OC_flag; /* counter_OC_flag：原一级过流连续超限样本计数。 */
+ushort counter_OC_flag; /* counter_OC_flag：一级过流计时使能标志，1时Timer2每10 ms递增对应time计数。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OC_time; /* counter_OC_time：原一级过流保护确认计时计数。 */
+ushort counter_OC_time; /* counter_OC_time：一级过流确认计时，单位为Timer2的10 ms节拍。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OC_flag1; /* counter_OC_flag1：原二级过流连续超限样本计数。 */
+ushort counter_OC_flag1; /* counter_OC_flag1：二级过流计时使能标志，1时Timer2每10 ms递增对应time计数。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OC_time1; /* counter_OC_time1：原二级过流保护确认计时计数。 */
+ushort counter_OC_time1; /* counter_OC_time1：二级过流确认计时，单位为Timer2的10 ms节拍。 */
 #endif
 
 #ifdef HVAC_online
-ushort OC_OV_LV_PortLatch_TAD; /* OC_OV_LV_PortLatch_TAD：原软件过流/过压/欠压的 TAD 故障锁存值。 */
+ushort OC_OV_LV_PortLatch_TAD; /* OC_OV_LV_PortLatch_TAD：原软件过流/过压已处置锁存，TAD链据此避免重复处置。 */
 #endif
 
 #ifdef HVAC_online
@@ -109,27 +109,27 @@ ushort HVAC_OC_Fault; /* HVAC_OC_Fault：原 HVAC 软件过流故障确认标志
 #endif
 
 #ifdef HVAC_online
-ushort OC_level_SET = OC_level_SET_DEFAULT; /* OC_level_SET：原一级过流阈值，沿用采样计数/系数约定。 */
+ushort OC_level_SET = OC_level_SET_DEFAULT; /* OC_level_SET：原HVAC一级过流阈值，比较三相电流有效值，单位A。 */
 #endif
 
 #ifdef HVAC_online
-ushort OC_time_SET = OC_time_SET_DEFAULT; /* OC_time_SET：原一级过流确认计数阈值，单位 TAD。 */
+ushort OC_time_SET = OC_time_SET_DEFAULT; /* OC_time_SET：一级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time>OC_time_SET。 */
 #endif
 
 #ifdef HVAC_online
-ushort OC_level_SET_L2 = OC_level_SET_L2_DEFAULT; /* OC_level_SET_L2：原二级过流阈值，沿用采样计数/系数约定。 */
+ushort OC_level_SET_L2 = OC_level_SET_L2_DEFAULT; /* OC_level_SET_L2：原HVAC二级过流阈值，比较三相电流有效值，单位A。 */
 #endif
 
 #ifdef HVAC_online
-ushort OC_time_SET_L2 = OC_time_SET_L2_DEFAULT; /* OC_time_SET_L2：原二级过流确认计数阈值，单位 TAD。 */
+ushort OC_time_SET_L2 = OC_time_SET_L2_DEFAULT; /* OC_time_SET_L2：二级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time1>OC_time_SET_L2。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OV_flag; /* counter_OV_flag：原一级过压连续超限样本计数。 */
+ushort counter_OV_flag; /* counter_OV_flag：过压计时使能标志，1时Timer2每10 ms递增对应time计数。 */
 #endif
 
 #ifdef HVAC_online
-ushort counter_OV_time; /* counter_OV_time：原一级过压保护确认计时计数。 */
+ushort counter_OV_time; /* counter_OV_time：过压确认计时，单位为Timer2的10 ms节拍。 */
 #endif
 
 #ifdef HVAC_online
@@ -137,11 +137,11 @@ ushort HVAC_OV_Fault; /* HVAC_OV_Fault：原 HVAC 软件过压故障确认标志
 #endif
 
 #ifdef HVAC_online
-ushort OV_level_SET = OV_level_SET_DEFAULT; /* OV_level_SET：原直流过压阈值，沿用采样计数/系数约定。 */
+ushort OV_level_SET = OV_level_SET_DEFAULT; /* OV_level_SET：原HVAC过压阈值，比较三相模块均压合成滤波值，单位V。 */
 #endif
 
 #ifdef HVAC_online
-ushort OV_time_SET = OV_time_SET_DEFAULT; /* OV_time_SET：原过压确认计数阈值，单位 TAD。 */
+ushort OV_time_SET = OV_time_SET_DEFAULT; /* OV_time_SET：过压确认Timer2计数阈值，每计数10 ms；使用counter_OV_time>OV_time_SET。 */
 #endif
 
 #ifdef HVAC_online

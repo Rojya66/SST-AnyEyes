@@ -34,7 +34,7 @@
 /*
  * 故障处理文件的阅读提示：
  *
- * 1. OC_OV_LV_faultcheck() 只负责“采样并置故障标志”，不直接做封波；
+ * 1. OC_OV_LV_faultcheck() 读取已有测量量并确认故障，不直接做封波；
  *    对应的 OC_OV_LV_FaultDispose() 再负责停机、封波和写入故障位。
  * 2. FaultCheckAndDispose_StepOne() 读取主 FPGA 的 FB、端口保护和 UNIT FO，
  *    把硬件故障翻译成 FaultTypeFLAG/FaultDisposeFLAG。
@@ -43,9 +43,9 @@
  * 4. PWMPluse_Enable()/PWMPluse_Disable() 是最终的 PWM 闸门；参数 1 表示
  *    CHB 50 Hz 桥，参数 2 表示 DAB 桥，参数 3/封波类型 3 表示整端口。
  *
- * 当前 Chb_DabPrim_Readable 工程定义了 HVAC_online，因此调试时优先阅读
- * HVAC_online 分支。LVDC_online/HVDC_online 是原工程保留的其他端口实现，
- * 只有切换编译宏后才会参与链接。
+ * 当前AnyEyesVersion定义HVAC_online，因此调试时优先阅读HVAC分支。
+ * LVDC_online/HVDC_online保留原历史端口代码；更换端口还需核验数据、
+ * 计时和硬件配置，不能仅切换宏就认为已支持其他端口。
  */
 /************************Variable definition********************************/
 
@@ -79,7 +79,7 @@ void FaultLatch_Clear(uchar runindex,uchar RstFlagFault);
 
 
 /*==================================================================
- * 函数功能: 按原阈值和计数策略检查端口交流过流、直流过压及欠压条件
+ * 函数功能: 按原阈值和计时策略检查端口过流与直流过压，保留历史函数名
  * 输入参数: 无
  * 输出参数: 原故障类型/锁存/处置全局量及 FPGA PWM 控制寄存器。
  * 返回值: 无
@@ -99,7 +99,7 @@ void OC_OV_LV_FaultDispose(void);
 
 #ifdef HVAC_online
 /*==================================================================
- * 函数功能: 按原阈值和计数策略检查端口交流过流、直流过压及欠压条件
+ * 函数功能: 按原阈值和计时策略检查HVAC交流有效值过流及直流过压
  * 输入参数: 无
  * 输出参数: 原故障类型/锁存/处置全局量及 FPGA PWM 控制寄存器。
  * 返回值: 无
@@ -108,23 +108,26 @@ void OC_OV_LV_FaultDispose(void);
 void OC_OV_LV_faultcheck(void)
 {
 	float temp_set1, temp_set2, temp_set3, temp_set4; /* temp_set1：原一级过流阈值的本轮计算缓存。 */
-	/* temp_set2：原一级过流确认时间的本轮计算缓存。 */
-	/* temp_set3：原二级过流阈值的本轮计算缓存。 */
-	/* temp_set4：原二级过流确认时间的本轮计算缓存。 */
-	float grid_current_A, grid_current_B, grid_current_C; /* grid_current_A：A 相软件过流保护读取的电流绝对值。 */
-	/* grid_current_B：B 相软件过流保护读取的电流绝对值。 */
-	/* grid_current_C：C 相软件过流保护读取的电流绝对值。 */
+	/* temp_set2：一级过流计时复位门槛，取一级过流阈值的95%。 */
+	/* temp_set3：本HVAC分支保留的未使用局部变量。 */
+	/* temp_set4：本HVAC分支保留的未使用局部变量。 */
+	float grid_current_A, grid_current_B, grid_current_C; /* grid_current_A：A相200点电流有效值，单位A。 */
+	/* grid_current_B：B相200点电流有效值，单位A。 */
+	/* grid_current_C：C相200点电流有效值，单位A。 */
 	float temp_set5, temp_set6; /* temp_set5：原过压阈值的本轮计算缓存。 */
-	/* temp_set6：原过压确认时间的本轮计算缓存。 */
-	float DC_vol; /* DC_vol：软件电压保护读取的直流采样/电压值。 */
+	/* temp_set6：过压计时复位门槛，取过压阈值的95%。 */
+	float DC_vol; /* DC_vol：三相模块均压合成后的滤波值SVG_Udc_Ave，单位V。 */
 
 	/*
-	 * 软件 OC/OV 保护采用“越限 + 延时确认 + 回差复位”：
-	 * - 一级过流超过 OC_level_SET，连续 OC_time_SET 后置 HVAC_OC_Fault；
-	 * - 二级过流超过 OC_level_SET_L2，连续 OC_time_SET_L2 后置同一故障；
-	 * - 直流过压超过 OV_level_SET，连续 OV_time_SET 后置 HVAC_OV_Fault；
-	 * - 过流恢复到 95% 门槛以下才清计数，避免阈值附近抖动。
-	 * 本函数由周期任务调用，counter_* 由定时中断递增。
+	 * 原HVAC软件保护在TAD路径检查，电流读取后台更新的200点有效值。
+	 * counter_*_flag是计时使能标志；使能期间Timer2每10 ms递增计数。
+	 * - 一级过流：任一相有效值>OC_level_SET，且计数>OC_time_SET时置故障；
+	 *   三相均低于95%门槛才清计数，回差带内保留标志并继续累计。
+	 * - 二级过流：任一相有效值>OC_level_SET_L2，且计数>OC_time_SET_L2时置故障；
+	 *   三相均不超过门槛即清计数，本分支没有95%回差。
+	 * - 过压：DC_vol>OV_level_SET，且计数>OV_time_SET时置故障；
+	 *   低于95%门槛才清计数，回差带内继续累计。
+	 * 默认计数100/5需101/6次Timer2递增；实际延时还取决于节拍相位和检测时刻。
 	 */
 	temp_set1 = OC_level_SET;
 	temp_set2 = 0.95*temp_set1;
@@ -262,7 +265,7 @@ void OC_OV_LV_FaultDispose(void)
 
 #ifdef LVDC_online
 /*==================================================================
- * 函数功能: 按原阈值和计数策略检查端口交流过流、直流过压及欠压条件
+ * 函数功能: 按原阈值和计时策略检查旧LVDC端口双向过流及直流过压
  * 输入参数: 无
  * 输出参数: 原故障类型/锁存/处置全局量及 FPGA PWM 控制寄存器。
  * 返回值: 无
@@ -272,14 +275,14 @@ void OC_OV_LV_faultcheck(void)
 {
 	ushort i; /* i：本次数组、参数或模块遍历的索引。 */
 	float temp_set1, temp_set2, temp_set3, temp_set4; /* temp_set1：原一级过流阈值的本轮计算缓存。 */
-	/* temp_set2：原一级过流确认时间的本轮计算缓存。 */
-	/* temp_set3：原二级过流阈值的本轮计算缓存。 */
-	/* temp_set4：原二级过流确认时间的本轮计算缓存。 */
-	float grid_current; /* grid_current：软件过流保护读取的电流绝对值。 */
+	/* temp_set2：一级正向过流计时复位门槛，取正向阈值的95%。 */
+	/* temp_set3：一级反向过流门槛，取一级正向阈值的负值。 */
+	/* temp_set4：一级反向过流计时复位门槛，取负门槛的95%。 */
+	float grid_current; /* grid_current：旧LVDC端口带符号电流Port_Current。 */
 	float temp_set5, temp_set6, temp_set7, temp_set8; /* temp_set5：原过压阈值的本轮计算缓存。 */
-	/* temp_set6：原过压确认时间的本轮计算缓存。 */
-	/* temp_set7：原欠压阈值的本轮计算缓存。 */
-	/* temp_set8：原欠压确认时间的本轮计算缓存。 */
+	/* temp_set6：过压计时复位门槛，取过压阈值的95%。 */
+	/* temp_set7：二级正向过流门槛，取OC_level_SET_L2。 */
+	/* temp_set8：二级反向过流门槛，取OC_level_SET_L2的负值。 */
 	float DC_vol; /* DC_vol：软件电压保护读取的直流采样/电压值。 */
 
 	temp_set1 = OC_level_SET;
@@ -343,7 +346,7 @@ void OC_OV_LV_faultcheck(void)
 		counter_OC_time1 = 0;
 	}
 
-	/* 只有 SVG 已启动或端口处于运行态时才检查运行中过流/过压。 */
+	/* 此运行条件只限制下面的过压检查；前面的双向过流检查不在该条件内。 */
 	if((ControlFLAG.Bbits.SVG_Start)||(Port_RunStatus==PortStatusNum_Run))
 	{
 	if(DC_vol > temp_set5)

@@ -113,8 +113,8 @@ typedef struct
     float current_phase_compensation_rad; /* current_phase_compensation_rad：电流坐标变换相位补偿，单位 rad。 */
     float output_phase_compensation_rad; /* output_phase_compensation_rad：输出电压坐标逆变换相位补偿，单位 rad。 */
 
-    float ac_overcurrent_trip_a; /* ac_overcurrent_trip_a：新增软件交流过流阈值，单位 A。 */
-    float dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：新增软件单模块直流过压阈值，单位 V。 */
+    float ac_overcurrent_trip_a; /* ac_overcurrent_trip_a：快速过流阈值，比较每TAD标定相电流绝对值最大值，单位A。 */
+    float dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：快速过压阈值，比较三相各自模块平均直流电压的最大值，单位V。 */
     unsigned short protection_confirm_samples; /* protection_confirm_samples：新增软件保护所需的连续超限 TAD 样本数。 */
 
     unsigned short dab_start_duty_count; /* dab_start_duty_count：DAB 使能时初始占空比计数，默认 350。 */

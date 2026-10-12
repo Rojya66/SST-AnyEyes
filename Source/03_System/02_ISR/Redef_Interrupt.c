@@ -217,7 +217,7 @@ void Timer2Isr(void)
     }
 #endif
 
-//Timer for OC_OV_LV protection,edited by shiqi
+// 原HVAC软件保护计时：以下计数在Timer2中断内按10 ms递增，非TAD样本计数。
 
 #ifdef HVAC_online
     if (counter_OC_flag==1)
@@ -263,7 +263,7 @@ void FPGAIsr(void)
             Port_StateUpdate_Read();               // 读取接触器、故障和端口状态
 
             Port_AD_Sample(0);                     // 采样交流电压、电流及直流电压
-            HVAC_RealTimeParameter();              // 更新RMS、P、Q等慢变量
+            HVAC_RealTimeParameter();              // 累积200点RMS窗口并更新功率；有效值由后台开方发布
             SVG_Udc_Average();                     // 计算三相单元直流平均值
             ChbDabControl_FastStep();              // PLL、开/闭环调制、DAB占空比爬坡
             /*

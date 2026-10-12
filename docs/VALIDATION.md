@@ -1,5 +1,7 @@
 # SST 框架重构验证报告
 
+后续保护注释修正：计时单位、回差和测量口径说明已更新，检查记录见 [protection_comment_correction.json](evidence/protection_comment_correction.json)。执行token和预处理指令相对 `framework-refactored-2026-10-12` 保持一致；本次未重新编译。下列完整构建证据及其字节哈希仍对应该固定标签。
+
 ## 本次交付验证（2026-10-12）
 
 本节对应最终框架重构源码。固定参照为Git标签 `baseline-pre-framework-2026-10-12`、提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。模块对应、数据所有权、初始化步骤和调用关系见 [FRAMEWORK_REFACTOR_RESULT.md](FRAMEWORK_REFACTOR_RESULT.md)。可随Git提交携带的结果、源码指纹、报告及固件哈希见 [software_validation.json](evidence/software_validation.json)；完整本机日志与产物在 `build/`、`Debug/`、`Release/`。

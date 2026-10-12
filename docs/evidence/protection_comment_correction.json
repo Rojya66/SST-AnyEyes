@@ -1,0 +1,98 @@
+{
+  "created_utc": "2026-10-12T10:10:21.763718+00:00",
+  "reference": "framework-refactored-2026-10-12",
+  "reference_commit": "e1e189281c684bf347cd16de14402a0c5f33b461",
+  "baseline_firmware_input_sha256": "fcd51ddf13c517b1d279d2f3d4d3dcd8f18e159460191308b0ed391fb0f4341e",
+  "current_firmware_input_sha256": "bba139e115c10a39b75286e13e9b8c6ab8309ac8601dd8d106034d25f49ce366",
+  "firmware_input_files_checked": 306,
+  "comment_changed_files": [
+    {
+      "file": "Source/03_System/02_ISR/Redef_Interrupt.c",
+      "baseline_sha256": "edd0f087282bfdcbe4995e91099e078c3a8698f307633c23fc3b25908f112249",
+      "current_sha256": "41dbb7e222d382cdcb5249bfe78a0d63485e741686dd16288d117fa6a882e811",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/04_Control/ChbDabControl.c",
+      "baseline_sha256": "bc915c1bcc645fb3366a6ea815d1d5050101f8193e29c0691cee75d779d7b69e",
+      "current_sha256": "950d3bbe6714fb4e4ce1e7dab9aa1396209a033d64b26933330cedf91d313105",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/04_Control/ChbDabControl.h",
+      "baseline_sha256": "82bf2a16696c4b2fa255aa1489bcd584973adac9884b82eef4fdf7c128d5997b",
+      "current_sha256": "69146c319c91fd2441db142d0fa2f3cd32f9888cd59e7146b1ad8b202d3417fe",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/08_Fault/FaultCheck.C",
+      "baseline_sha256": "4a708633a11fa170cd744a69149f34a4bc6339bcf2a4a18087c9923142b34e24",
+      "current_sha256": "c4ad60bed69acb88095d2944375ccf107ca9d4db8867c62cb7411482f81937cc",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/08_Fault/FaultCheck.H",
+      "baseline_sha256": "3f869b4f0a4da1d3afc4ffcf6c8098dd6623166352fb0b1160643f8dea5abfac",
+      "current_sha256": "a9282cc9834671f076609f80b083151b79e8d1952cdda4adaca512e75f1890a4",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/08_Fault/ProtectionConfig.h",
+      "baseline_sha256": "18132016f4ff208762c66ebb4cac1bd0893aadf3702eecb5717e41e146596ff8",
+      "current_sha256": "771f8775aff9461435c3bc627a2ae07026d328e60495891785c30a58c53740be",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/08_Fault/ProtectionData.c",
+      "baseline_sha256": "9c705bf1d49e9af1f9740cf2b9b69b964e4d4a5420f3374cab07c7b981c59cdf",
+      "current_sha256": "0a795401609741c0c416d61a53196e91fe6512fea4ee9d59a793c9497a8a82cd",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    },
+    {
+      "file": "Source/04_App/08_Fault/ProtectionData.h",
+      "baseline_sha256": "43dd296f2f5e93c0e0186289f5db3b9aeae865e2bfa3692a4165c0e983f5a842",
+      "current_sha256": "fcbab31cd9970e007defdd53f6e6b62f2a1daf5d9ee8a6bc476e78e74ff60059",
+      "executable_tokens_equal": true,
+      "preprocessor_directives_equal": true
+    }
+  ],
+  "executable_and_preprocessor_changes": false,
+  "comment_coverage": {
+    "custom_source_files": 124,
+    "symbol_counts": {
+      "prototype": 326,
+      "parameter": 570,
+      "function": 370,
+      "variable": 1605,
+      "field": 862,
+      "enum": 43
+    },
+    "failures": [],
+    "report_sha256": "d395bb559e406f8d962219234ea81abfee2731d0c3dc2315bad9a9c9bf6cf668"
+  },
+  "source_equivalence": {
+    "original_entities": 2419,
+    "current_entities": 2324,
+    "entity_groups": {
+      "moved_or_redeclared": 1398,
+      "preserved_in_noncompiled_archive": 129,
+      "unchanged": 676,
+      "exact_ordered_initialization_expansion": 2,
+      "reviewed_interface_or_organization_change": 22
+    },
+    "failures": [],
+    "report_sha256": "e5d18c0aad842693a908ca57396b5aec56cc3b5bd734f619bbfe5bcffdcafb8c"
+  },
+  "target_build_performed_for_comment_correction": false,
+  "full_regression_performed_for_comment_correction": false,
+  "prior_target_validation": "docs/evidence/software_validation.json at framework-refactored-2026-10-12",
+  "method": "Compare every firmware input with immutable compiled Git tag; changed files must have identical comment-stripped C/C++ lexical tokens and preprocessor directive streams; check fresh full comment coverage and refactor entity equivalence",
+  "limitations": "Source equality verifies this patch changes documentation only; it is not a fresh target-build result or physical timing measurement."
+}

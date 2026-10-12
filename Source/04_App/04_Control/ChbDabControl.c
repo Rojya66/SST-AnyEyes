@@ -104,9 +104,9 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params =
     0.1085F,       /* SoftwarePhaseComValue */
     0.16F,         /* PhaseComValue */
 
-    120.0F,        /* ac_overcurrent_trip_a */
-    780.0F,        /* dc_overvoltage_trip_v per module */
-    5U,            /* protection_confirm_samples */
+    120.0F,        /* ac_overcurrent_trip_a：每TAD相电流绝对值门槛，单位A。 */
+    780.0F,        /* dc_overvoltage_trip_v：三相各自模块均压的最大值门槛，单位V。 */
+    5U,            /* protection_confirm_samples：连续超限TAD样本数。 */
 
     350U,          /* DAB initial duty (7% of 5000) */
     2500U,         /* DAB target duty (50% of 5000) */
@@ -1521,8 +1521,8 @@ static void Chb_CheckSoftwareProtection(void)
 
     /*
      * 这是新增的软件快速保护，不替代 FPGA FO/FB 硬件保护：
-     * - 过流：三相电流任一相超过门槛并连续确认；
-     * - 过压：三相单元平均 Udc 的最大值超过门槛并连续确认；
+     * - 过流：每TAD标定相电流绝对值最大值达到门槛并连续确认，非200点RMS；
+     * - 过压：三相各自模块平均Udc的最大值达到门槛并连续确认；
      * - 确认次数用于滤除单个 TAD 的采样毛刺。
      */
     if(g_chb_dab_protection_enable == 0U)
