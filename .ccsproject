@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?ccsproject version="1.0"?>
+<projectOptions>
+	<ccsVariant value="0:Eclipse-based"/>
+	<ccsVersion value="12.5.0"/>
+	<deviceVariant value="TMS320C67XX.TMS320C6748"/>
+	<deviceFamily value="C6000"/>
+	<deviceEndianness value="little"/>
+	<codegenToolVersion value="8.3.12"/>
+	<isElfFormat value="true"/>
+	<connection value="common/targetdb/connections/TIXDS2XXUSB_Connection.xml"/>
+	<linkerCommandFile value="C6748.cmd"/>
+	<rts value="libc.a"/>
+	<createSlaveProjects value=""/>
+	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate"/>
+	<filesToOpen value="README.md;Source/04_App/00_Config/ChbBuildConfig.h"/>
+	<isTargetManual value="false"/>
+	<sourceLookupPath value=""/>
+	<origin value="D:/Code/SST/AnyEyesVersion"/>
+</projectOptions>

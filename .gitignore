@@ -1,0 +1,6 @@
+Debug/
+Release/
+build/
+__pycache__/
+*.pyc
+.metadata/

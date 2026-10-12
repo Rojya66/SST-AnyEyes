@@ -1,0 +1,2060 @@
+{
+  "review_date": "2026-10-12",
+  "scope": "Current custom Source files; vendor 00_Device and 01_Drive excluded. Function inventory is lexical and may include conditional branches.",
+  "files": [
+    {
+      "path": "Source/01_ComLib/CommonProgram.C",
+      "lines": 282,
+      "sha256": "cf847c2acd83bd9b499bca5bf7b95a0f36ad9c9ef6d02994c9e1571071a76e43",
+      "functions": [
+        {
+          "name": "Clarke_Transformation",
+          "line": 94,
+          "declaration": "void Clarke_Transformation(float VIa, float VIb, float VIc)"
+        },
+        {
+          "name": "Clarke_InverseTransformation",
+          "line": 126,
+          "declaration": "void Clarke_InverseTransformation(float VIalpha, float VIbeta)"
+        },
+        {
+          "name": "Park_Transformation",
+          "line": 164,
+          "declaration": "void Park_Transformation(float VIalpha, float VIbeta, float Cos_ph, float Sin_ph)"
+        },
+        {
+          "name": "Park_InverseTransformation",
+          "line": 202,
+          "declaration": "void Park_InverseTransformation(float VId, float VIq, float Cos_ph, float Sin_ph)"
+        },
+        {
+          "name": "ConstantPID_Controller",
+          "line": 237,
+          "declaration": "float ConstantPID_Controller(float ErrorIn)"
+        },
+        {
+          "name": "H_Filter_Memcopy",
+          "line": 274,
+          "declaration": "void H_Filter_Memcopy(float *SourceAddr, float *DestAddr)"
+        }
+      ]
+    },
+    {
+      "path": "Source/01_ComLib/CommonProgram.H",
+      "lines": 75,
+      "sha256": "88253510fc2fc022be5f9894c7447beebbd35d0e4b6037cd572b974c3a432b0a",
+      "functions": []
+    },
+    {
+      "path": "Source/02_Peripheral/00_FPGA/PluginUnit.C",
+      "lines": 2745,
+      "sha256": "a2483ba6ab1ec5d0b561505e8d969af6e3e88ed39d892d9c8ed7f49f97623442",
+      "functions": [
+        {
+          "name": "Modualation_Test",
+          "line": 361,
+          "declaration": "void Modualation_Test(void)"
+        },
+        {
+          "name": "Write_ControlParameter_50Hz",
+          "line": 393,
+          "declaration": "void Write_ControlParameter_50Hz(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB",
+          "line": 688,
+          "declaration": "void Write_ControlParameter_DAB(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB_Startup",
+          "line": 742,
+          "declaration": "void Write_ControlParameter_DAB_Startup(void)"
+        },
+        {
+          "name": "PortController_Communication",
+          "line": 825,
+          "declaration": "void PortController_Communication(uchar RW_fpga)"
+        },
+        {
+          "name": "Module_Control_Write",
+          "line": 873,
+          "declaration": "void Module_Control_Write(void)"
+        },
+        {
+          "name": "TX_EN_Control_Write",
+          "line": 896,
+          "declaration": "void TX_EN_Control_Write(void)"
+        },
+        {
+          "name": "Write_ControlParameter_50Hz",
+          "line": 922,
+          "declaration": "void Write_ControlParameter_50Hz(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB",
+          "line": 937,
+          "declaration": "void Write_ControlParameter_DAB(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB_Startup",
+          "line": 1006,
+          "declaration": "void Write_ControlParameter_DAB_Startup(void)"
+        },
+        {
+          "name": "PortController_Communication",
+          "line": 1042,
+          "declaration": "void PortController_Communication(uchar RW_fpga)"
+        },
+        {
+          "name": "Module_Control_Write",
+          "line": 1090,
+          "declaration": "void Module_Control_Write(void)"
+        },
+        {
+          "name": "TX_EN_Control_Write",
+          "line": 1108,
+          "declaration": "void TX_EN_Control_Write(void)"
+        },
+        {
+          "name": "Write_ControlParameter_50Hz",
+          "line": 1129,
+          "declaration": "void Write_ControlParameter_50Hz(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB",
+          "line": 1144,
+          "declaration": "void Write_ControlParameter_DAB(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB_Startup",
+          "line": 1168,
+          "declaration": "void Write_ControlParameter_DAB_Startup(void)"
+        },
+        {
+          "name": "PortController_Communication",
+          "line": 1205,
+          "declaration": "void PortController_Communication(uchar RW_fpga)"
+        },
+        {
+          "name": "Module_Control_Write",
+          "line": 1253,
+          "declaration": "void Module_Control_Write(void)"
+        },
+        {
+          "name": "TX_EN_Control_Write",
+          "line": 1271,
+          "declaration": "void TX_EN_Control_Write(void)"
+        },
+        {
+          "name": "Write_ControlParameter_50Hz",
+          "line": 1293,
+          "declaration": "void Write_ControlParameter_50Hz(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB",
+          "line": 1328,
+          "declaration": "void Write_ControlParameter_DAB(void)"
+        },
+        {
+          "name": "Write_ControlParameter_DAB_Startup",
+          "line": 1355,
+          "declaration": "void Write_ControlParameter_DAB_Startup(void)"
+        },
+        {
+          "name": "PortController_Communication",
+          "line": 1391,
+          "declaration": "void PortController_Communication(uchar RW_fpga)"
+        },
+        {
+          "name": "Module_Control_Write",
+          "line": 1439,
+          "declaration": "void Module_Control_Write(void)"
+        },
+        {
+          "name": "TX_EN_Control_Write",
+          "line": 1462,
+          "declaration": "void TX_EN_Control_Write(void)"
+        },
+        {
+          "name": "Module_PWMEN",
+          "line": 1483,
+          "declaration": "void Module_PWMEN(uchar IndexM)"
+        },
+        {
+          "name": "Module_50Hz_PWMEN",
+          "line": 1525,
+          "declaration": "void Module_50Hz_PWMEN(uchar EN50Hz)"
+        },
+        {
+          "name": "Module_ENdab_PWMEN",
+          "line": 1555,
+          "declaration": "void Module_ENdab_PWMEN(uchar ENdab)"
+        },
+        {
+          "name": "MOSFET_50Hz_FrequencyDoubling",
+          "line": 1586,
+          "declaration": "void MOSFET_50Hz_FrequencyDoubling(uchar DoublingValue50Hz,uchar DoublingValueDAB)"
+        },
+        {
+          "name": "MOSFET_DriverReset",
+          "line": 1606,
+          "declaration": "void MOSFET_DriverReset(uchar Rst50Hz,uchar RstDab)"
+        },
+        {
+          "name": "Module_HW_RST",
+          "line": 1631,
+          "declaration": "void Module_HW_RST(uchar runindex)"
+        },
+        {
+          "name": "Module_FAN_OFF",
+          "line": 1649,
+          "declaration": "void Module_FAN_OFF(uchar FANdisable)"
+        },
+        {
+          "name": "Module_Shutdown_valid",
+          "line": 1675,
+          "declaration": "void Module_Shutdown_valid(uchar valid50Hz,uchar validDab)"
+        },
+        {
+          "name": "Module_TestMode",
+          "line": 1710,
+          "declaration": "void Module_TestMode(uchar TestMode)"
+        },
+        {
+          "name": "Port_IO_Out",
+          "line": 1736,
+          "declaration": "void Port_IO_Out(void)"
+        },
+        {
+          "name": "Port_ADProtect_EN",
+          "line": 1753,
+          "declaration": "void Port_ADProtect_EN(void)"
+        },
+        {
+          "name": "Port_ModuleShutdown",
+          "line": 1775,
+          "declaration": "void Port_ModuleShutdown(ushort OpticalNum,ushort Shutdown_1,ushort Shutdown_2,ushort Shutdown_3,ushort Shutdown_4,ushort Shutdown_5)"
+        },
+        {
+          "name": "Port_FO_EN_Set",
+          "line": 1826,
+          "declaration": "void Port_FO_EN_Set(ushort OpticalNum,ushort INV_A_FOEN,ushort INV_B_FOEN,ushort INV_C_FOEN,ushort INV_N_FOEN)"
+        },
+        {
+          "name": "INV_CONTROL_DEADZONE_Set",
+          "line": 1861,
+          "declaration": "void INV_CONTROL_DEADZONE_Set(ushort Deadzone_inv)"
+        },
+        {
+          "name": "INV_CONTROL_PERIOD_Set",
+          "line": 1884,
+          "declaration": "void INV_CONTROL_PERIOD_Set(ushort Period_inv)"
+        },
+        {
+          "name": "Port_BKU_Send",
+          "line": 1908,
+          "declaration": "void Port_BKU_Send(uchar LatchValue)"
+        },
+        {
+          "name": "Port_FB_EN_Set",
+          "line": 1937,
+          "declaration": "void Port_FB_EN_Set(void)"
+        },
+        {
+          "name": "Port_DSPControl_FBRST",
+          "line": 1954,
+          "declaration": "void Port_DSPControl_FBRST(uchar RST_FB)"
+        },
+        {
+          "name": "Port_DSPControl_AllShutdown",
+          "line": 1979,
+          "declaration": "void Port_DSPControl_AllShutdown(uchar AllShutdown)"
+        },
+        {
+          "name": "Module_StatusRead",
+          "line": 2008,
+          "declaration": "ushort Module_StatusRead(uchar CJ_index,uchar MK_index,uchar latch)"
+        },
+        {
+          "name": "Module_TotalStatusRead",
+          "line": 2036,
+          "declaration": "ushort Module_TotalStatusRead(uchar CJ_index,uchar latch)"
+        },
+        {
+          "name": "Port_DINRead",
+          "line": 2062,
+          "declaration": "ushort Port_DINRead(uchar latch)"
+        },
+        {
+          "name": "Port_AD_ProtectStatusRead",
+          "line": 2168,
+          "declaration": "ushort Port_AD_ProtectStatusRead(uchar latch)"
+        },
+        {
+          "name": "Port_FOStatusRead",
+          "line": 2196,
+          "declaration": "ushort Port_FOStatusRead(uchar CJ_index,uchar latch)"
+        },
+        {
+          "name": "Port_FBStatusRead",
+          "line": 2223,
+          "declaration": "ushort Port_FBStatusRead(uchar latch)"
+        },
+        {
+          "name": "Port_INVFOStatusRead",
+          "line": 2251,
+          "declaration": "ushort Port_INVFOStatusRead(uchar CJ_index,uchar latch)"
+        },
+        {
+          "name": "FT3_PluginUint_Write",
+          "line": 2280,
+          "declaration": "void FT3_PluginUint_Write(unsigned short FT3_index,unsigned short dataPackNum) //PORT_Index端口号(1,2,3,4分别为HVAC,HVDC,LVDC,LVAC),dataPackNum数据包号"
+        },
+        {
+          "name": "FT3_PluginUint_Read",
+          "line": 2662,
+          "declaration": "void FT3_PluginUint_Read(ushort FT3_index)"
+        },
+        {
+          "name": "DAC_Output",
+          "line": 2712,
+          "declaration": "void DAC_Output(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/02_Peripheral/00_FPGA/PluginUnit.H",
+      "lines": 331,
+      "sha256": "5417c612f16bd2f30becc415dab2ed7d6d4b1477bf0d95e41c57239a814135d9",
+      "functions": []
+    },
+    {
+      "path": "Source/02_Peripheral/01_DPRAM/DPRAM.C",
+      "lines": 3274,
+      "sha256": "da527215204520a451ddcd968a3f69ca1e7989de051cc05e0a828da7a0638c6c",
+      "functions": [
+        {
+          "name": "MemDataCopy",
+          "line": 106,
+          "declaration": "void MemDataCopy(volatile ushort *SourceAddr, ushort length, volatile ushort *DestAddr)"
+        },
+        {
+          "name": "MemDataCopy_1",
+          "line": 124,
+          "declaration": "void MemDataCopy_1(ushort *SourceAddr, ushort length, volatile ushort *DestAddr)"
+        },
+        {
+          "name": "MemDataCopy_2",
+          "line": 142,
+          "declaration": "void MemDataCopy_2(volatile ushort *SourceAddr, ushort length, ushort *DestAddr)"
+        },
+        {
+          "name": "DPRAM_Write",
+          "line": 163,
+          "declaration": "void DPRAM_Write(ushort Flag_R)"
+        },
+        {
+          "name": "DPRAM_Read",
+          "line": 328,
+          "declaration": "void DPRAM_Read(void)"
+        },
+        {
+          "name": "DPRAM_ReadDataDispose",
+          "line": 360,
+          "declaration": "void DPRAM_ReadDataDispose(void)"
+        },
+        {
+          "name": "RemoteControl_Dispose",
+          "line": 390,
+          "declaration": "void RemoteControl_Dispose(void)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose",
+          "line": 929,
+          "declaration": "void RemoteRegulate_Dispose(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose_2",
+          "line": 1366,
+          "declaration": "void RemoteRegulate_Dispose_2(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose",
+          "line": 1816,
+          "declaration": "void RemoteRegulate_Dispose(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose_2",
+          "line": 2078,
+          "declaration": "void RemoteRegulate_Dispose_2(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose",
+          "line": 2333,
+          "declaration": "void RemoteRegulate_Dispose(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose_2",
+          "line": 2540,
+          "declaration": "void RemoteRegulate_Dispose_2(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteRegulate_Dispose",
+          "line": 2726,
+          "declaration": "void RemoteRegulate_Dispose(uchar Inital_Y)"
+        },
+        {
+          "name": "RemoteSig_Dispose",
+          "line": 2893,
+          "declaration": "void RemoteSig_Dispose(void)"
+        },
+        {
+          "name": "RemoteSig_Dispose",
+          "line": 3034,
+          "declaration": "void RemoteSig_Dispose(void)"
+        },
+        {
+          "name": "RemoteSig_Dispose",
+          "line": 3107,
+          "declaration": "void RemoteSig_Dispose(void)"
+        },
+        {
+          "name": "RemoteSig_Dispose",
+          "line": 3180,
+          "declaration": "void RemoteSig_Dispose(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/02_Peripheral/01_DPRAM/DPRAM.H",
+      "lines": 98,
+      "sha256": "1204f95095c8354dfad2601bb77a5552bbfad0862b4a5414b71027e3450a76c4",
+      "functions": []
+    },
+    {
+      "path": "Source/02_Peripheral/02_Storage/EEProm.C",
+      "lines": 1278,
+      "sha256": "884d34a735f3052cb8d9eec2af8f5ec88bae009b0fa9fe80724da5c23cd4985b",
+      "functions": [
+        {
+          "name": "r_eeprom_protect",
+          "line": 241,
+          "declaration": "Uint8 r_eeprom_protect(void)              //保护，写使能"
+        },
+        {
+          "name": "r_eeprom_unprotect",
+          "line": 274,
+          "declaration": "Uint8 r_eeprom_unprotect(void)"
+        },
+        {
+          "name": "r_eeprom_byte_write",
+          "line": 314,
+          "declaration": "Uint8 r_eeprom_byte_write(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 u8Data)"
+        },
+        {
+          "name": "r_eeprom_section_write",
+          "line": 395,
+          "declaration": "Uint8 r_eeprom_section_write(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 length, Uint8 *u8Data)"
+        },
+        {
+          "name": "r_eeprom_byte_read",
+          "line": 481,
+          "declaration": "Uint8   r_eeprom_byte_read(Uint8 u8PageNum, Uint8 pu8Offset)"
+        },
+        {
+          "name": "r_eeprom_section_read",
+          "line": 569,
+          "declaration": "Uint8   r_eeprom_section_read(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 length, Uint8 *u8Data)"
+        },
+        {
+          "name": "r_eeprom_page_read",
+          "line": 655,
+          "declaration": "Uint8   r_eeprom_page_read(Uint8 u8PageNum, Uint8 *pu8RecByte)"
+        },
+        {
+          "name": "r_iic_start",
+          "line": 738,
+          "declaration": "void r_iic_start(void)"
+        },
+        {
+          "name": "r_iic_stop",
+          "line": 772,
+          "declaration": "void r_iic_stop(void)"
+        },
+        {
+          "name": "r_iic_send_byte",
+          "line": 807,
+          "declaration": "void r_iic_send_byte(Uint8 u8Byte)"
+        },
+        {
+          "name": "r_iic_wait_ack",
+          "line": 861,
+          "declaration": "Uint8 r_iic_wait_ack(void)"
+        },
+        {
+          "name": "r_iic_rec_byte",
+          "line": 904,
+          "declaration": "Uint8 r_iic_rec_byte(void)"
+        },
+        {
+          "name": "r_iic_send_ack",
+          "line": 957,
+          "declaration": "void r_iic_send_ack(void)"
+        },
+        {
+          "name": "r_iic_send_nack",
+          "line": 991,
+          "declaration": "void r_iic_send_nack(void)"
+        },
+        {
+          "name": "r_eeprom_control_write",
+          "line": 1024,
+          "declaration": "Uint8 r_eeprom_control_write( Uint8 u8Data)         //写一个字节；"
+        },
+        {
+          "name": "r_time_read",
+          "line": 1090,
+          "declaration": "Uint8 r_time_read( Uint8 *time )"
+        },
+        {
+          "name": "r_time_write",
+          "line": 1169,
+          "declaration": "Uint8 r_time_write( Uint8 *rec_time)"
+        },
+        {
+          "name": "DELAY_US",
+          "line": 1228,
+          "declaration": "void DELAY_US(unsigned int n)"
+        },
+        {
+          "name": "BCD2HEX",
+          "line": 1251,
+          "declaration": "Uint8 BCD2HEX(Uint8 val)"
+        },
+        {
+          "name": "HEX2BCD",
+          "line": 1269,
+          "declaration": "Uint8 HEX2BCD(Uint8 val)"
+        }
+      ]
+    },
+    {
+      "path": "Source/02_Peripheral/02_Storage/EEProm.H",
+      "lines": 219,
+      "sha256": "09ea0759e453965927e1b520039e7c658133e7e579d5457f404c2c1993999ff3",
+      "functions": []
+    },
+    {
+      "path": "Source/02_Peripheral/02_Storage/X1226_RW.C",
+      "lines": 627,
+      "sha256": "e46d3569c38c1b6092a56a0ccaefb2e9f9b978534660ba61228ca668144ba94f",
+      "functions": [
+        {
+          "name": "EEPROM_Page0_2_DSP",
+          "line": 99,
+          "declaration": "void EEPROM_Page0_2_DSP(void)"
+        },
+        {
+          "name": "EEPROM_Page1_2_DSP",
+          "line": 146,
+          "declaration": "void EEPROM_Page1_2_DSP(void)"
+        },
+        {
+          "name": "EEPROM_Page2_2_DSP",
+          "line": 266,
+          "declaration": "void EEPROM_Page2_2_DSP(void)"
+        },
+        {
+          "name": "EEPROM_Page3_2_DSP",
+          "line": 336,
+          "declaration": "void EEPROM_Page3_2_DSP(void)"
+        },
+        {
+          "name": "DSP_2_EEPROM_Page0",
+          "line": 365,
+          "declaration": "void DSP_2_EEPROM_Page0(void)"
+        },
+        {
+          "name": "DSP_2_EEPROM_Page1",
+          "line": 412,
+          "declaration": "void DSP_2_EEPROM_Page1(void)"
+        },
+        {
+          "name": "DSP_2_EEPROM_Page2",
+          "line": 552,
+          "declaration": "void DSP_2_EEPROM_Page2(void)"
+        },
+        {
+          "name": "DSP_2_EEPROM_Page3",
+          "line": 609,
+          "declaration": "void DSP_2_EEPROM_Page3(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/02_Peripheral/02_Storage/X1226_RW.H",
+      "lines": 82,
+      "sha256": "242c3c28416733e9741fb9987d794c55e6c3c69eea4b1a670db6a0213905b613",
+      "functions": []
+    },
+    {
+      "path": "Source/03_System/00_Board/ChbPlatform.c",
+      "lines": 406,
+      "sha256": "82ce999b0c33753b12374ba6fb3ed444f2c9f729db42818333bc7732c4bc36ff",
+      "functions": [
+        {
+          "name": "SstBoard_GetTick1ms",
+          "line": 42,
+          "declaration": "uint32_t SstBoard_GetTick1ms(void)"
+        },
+        {
+          "name": "Delay",
+          "line": 76,
+          "declaration": "void Delay(unsigned int n)"
+        },
+        {
+          "name": "PSCInit",
+          "line": 98,
+          "declaration": "void PSCInit(void)"
+        },
+        {
+          "name": "GPIOBankPinMuxSet",
+          "line": 118,
+          "declaration": "void GPIOBankPinMuxSet(void)"
+        },
+        {
+          "name": "GPIOBankPinInit",
+          "line": 163,
+          "declaration": "void GPIOBankPinInit(void)"
+        },
+        {
+          "name": "EMIFASetup",
+          "line": 205,
+          "declaration": "void EMIFASetup(void)"
+        },
+        {
+          "name": "TimerInit",
+          "line": 251,
+          "declaration": "void TimerInit(void)"
+        },
+        {
+          "name": "TimerInterruptInit",
+          "line": 274,
+          "declaration": "void TimerInterruptInit(void)"
+        },
+        {
+          "name": "UARTInit",
+          "line": 296,
+          "declaration": "void UARTInit(void)"
+        },
+        {
+          "name": "UARTInterruptInit",
+          "line": 321,
+          "declaration": "void UARTInterruptInit(void)"
+        },
+        {
+          "name": "GPIOBankPinInterruptInit",
+          "line": 351,
+          "declaration": "void GPIOBankPinInterruptInit(void)"
+        },
+        {
+          "name": "InterruptInit",
+          "line": 402,
+          "declaration": "void InterruptInit(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/03_System/00_Board/EMIFAPinmuxSetup.c",
+      "lines": 228,
+      "sha256": "ef0b2f01ac484cf0c83e1660c30f0ad016399a81da6f01739e30721331d5098e",
+      "functions": [
+        {
+          "name": "EMIFAPinMuxSetup",
+          "line": 128,
+          "declaration": "void EMIFAPinMuxSetup(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/03_System/00_Board/EMIFAPinmuxSetup.h",
+      "lines": 17,
+      "sha256": "15872bbd2e416d7d96d07a7dfe1ac871e3817f4e5be67c78e77ef3da54048326",
+      "functions": []
+    },
+    {
+      "path": "Source/03_System/00_Board/Hardware.c",
+      "lines": 840,
+      "sha256": "906c05cf6cdcfc831ba866167da051cb6d194ede9511fe8ac91f25ff1d73f1f7",
+      "functions": [
+        {
+          "name": "GPIOBank0Pin2PinMuxSetup",
+          "line": 247,
+          "declaration": "void GPIOBank0Pin2PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank0Pin3PinMuxSetup",
+          "line": 265,
+          "declaration": "void GPIOBank0Pin3PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank0Pin8PinMuxSetup",
+          "line": 284,
+          "declaration": "void GPIOBank0Pin8PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank0Pin9PinMuxSetup",
+          "line": 303,
+          "declaration": "void GPIOBank0Pin9PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank2Pin7PinMuxSetup",
+          "line": 346,
+          "declaration": "void GPIOBank2Pin7PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank2Pin10PinMuxSetup",
+          "line": 364,
+          "declaration": "void GPIOBank2Pin10PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank2Pin11PinMuxSetup",
+          "line": 382,
+          "declaration": "void GPIOBank2Pin11PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank2Pin12PinMuxSetup",
+          "line": 400,
+          "declaration": "void GPIOBank2Pin12PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank2Pin13PinMuxSetup",
+          "line": 418,
+          "declaration": "void GPIOBank2Pin13PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank4Pin2PinMuxSetup",
+          "line": 437,
+          "declaration": "void GPIOBank4Pin2PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank4Pin3PinMuxSetup",
+          "line": 455,
+          "declaration": "void GPIOBank4Pin3PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank4Pin4PinMuxSetup",
+          "line": 473,
+          "declaration": "void GPIOBank4Pin4PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank4Pin5PinMuxSetup",
+          "line": 491,
+          "declaration": "void GPIOBank4Pin5PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank6Pin0PinMuxSetup",
+          "line": 522,
+          "declaration": "void GPIOBank6Pin0PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank6Pin4PinMuxSetup",
+          "line": 553,
+          "declaration": "void GPIOBank6Pin4PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank6Pin6PinMuxSetup",
+          "line": 572,
+          "declaration": "void GPIOBank6Pin6PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank6Pin7PinMuxSetup",
+          "line": 591,
+          "declaration": "void GPIOBank6Pin7PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank6Pin8PinMuxSetup",
+          "line": 609,
+          "declaration": "void GPIOBank6Pin8PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank8Pin10PinMuxSetup",
+          "line": 665,
+          "declaration": "void GPIOBank8Pin10PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank8Pin11PinMuxSetup",
+          "line": 685,
+          "declaration": "void GPIOBank8Pin11PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank8Pin13PinMuxSetup",
+          "line": 703,
+          "declaration": "void GPIOBank8Pin13PinMuxSetup(void)"
+        },
+        {
+          "name": "GPIOBank8Pin15PinMuxSetup",
+          "line": 721,
+          "declaration": "void GPIOBank8Pin15PinMuxSetup(void)"
+        },
+        {
+          "name": "UARTPinMuxSetup",
+          "line": 754,
+          "declaration": "void UARTPinMuxSetup(unsigned int instanceNum, unsigned int modemCtrlChoice)"
+        }
+      ]
+    },
+    {
+      "path": "Source/03_System/00_Board/Hardware.h",
+      "lines": 202,
+      "sha256": "ebe33c657ced4109416ad4c2c409751ab7d1c548f8b42f0aea1b377d28e56200",
+      "functions": []
+    },
+    {
+      "path": "Source/03_System/00_Board/SstBoard.h",
+      "lines": 19,
+      "sha256": "3c544157413fcdeb6ce9e836a28499d6f0c4dd90bb050ffd1182a29bad9c4d86",
+      "functions": []
+    },
+    {
+      "path": "Source/03_System/01_OS/ChbApplication.c",
+      "lines": 287,
+      "sha256": "10fab2bedcf213f5447369bd9247692877e24da9dcfdd713ae16679cef700069",
+      "functions": [
+        {
+          "name": "ChbApplication_InitHardware",
+          "line": 39,
+          "declaration": "void ChbApplication_InitHardware(void)"
+        },
+        {
+          "name": "ChbApplication_WaitPowerOnDelay",
+          "line": 73,
+          "declaration": "void ChbApplication_WaitPowerOnDelay(void)"
+        },
+        {
+          "name": "ChbApplication_InitRuntime",
+          "line": 97,
+          "declaration": "void ChbApplication_InitRuntime(void)"
+        },
+        {
+          "name": "ChbApplication_ServiceHeartbeat",
+          "line": 132,
+          "declaration": "static void ChbApplication_ServiceHeartbeat(void)"
+        },
+        {
+          "name": "ChbApplication_ServiceRemoteControl",
+          "line": 155,
+          "declaration": "static void ChbApplication_ServiceRemoteControl(void)"
+        },
+        {
+          "name": "ChbApplication_ServiceTelemetry",
+          "line": 199,
+          "declaration": "static void ChbApplication_ServiceTelemetry(void)"
+        },
+        {
+          "name": "ChbApplication_ServiceNormal",
+          "line": 264,
+          "declaration": "void ChbApplication_ServiceNormal(void)"
+        },
+        {
+          "name": "ChbApplication_ServiceOpenLoopBridge",
+          "line": 284,
+          "declaration": "void ChbApplication_ServiceOpenLoopBridge(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/03_System/01_OS/ChbApplication.h",
+      "lines": 51,
+      "sha256": "2094a1ff799272c3b4071981792dced8735def48dec6cead27452a569c2a689e",
+      "functions": []
+    },
+    {
+      "path": "Source/03_System/01_OS/main_485test.c",
+      "lines": 4144,
+      "sha256": "2f61393d3904cf3a323141a06ed44e5950838d9ac6e0ecb9d21f014f25ed354b",
+      "functions": [
+        {
+          "name": "Initial_Variable",
+          "line": 897,
+          "declaration": "void Initial_Variable(void)"
+        },
+        {
+          "name": "Variable_RST",
+          "line": 1659,
+          "declaration": "void Variable_RST(void)"
+        },
+        {
+          "name": "Udc_check",
+          "line": 1705,
+          "declaration": "void Udc_check(void)"
+        },
+        {
+          "name": "main",
+          "line": 1908,
+          "declaration": "int main(void)"
+        },
+        {
+          "name": "CRC16",
+          "line": 3320,
+          "declaration": "unsigned short CRC16(unsigned char *ba, int size)"
+        },
+        {
+          "name": "keyscan",
+          "line": 3363,
+          "declaration": "void keyscan(void)"
+        },
+        {
+          "name": "Timer2Isr",
+          "line": 3441,
+          "declaration": "void Timer2Isr(void)"
+        },
+        {
+          "name": "UART2Isr",
+          "line": 3648,
+          "declaration": "void UART2Isr(void)"
+        },
+        {
+          "name": "FPGAIsr",
+          "line": 3783,
+          "declaration": "void FPGAIsr(void)"
+        },
+        {
+          "name": "FAULTIsr",
+          "line": 4097,
+          "declaration": "void FAULTIsr(void)"
+        },
+        {
+          "name": "DPRAMIsr",
+          "line": 4131,
+          "declaration": "void DPRAMIsr(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/00_Config/ChbBuildConfig.h",
+      "lines": 81,
+      "sha256": "b93561657a49515e7b1855a09b0adb909f4182e37cd91058205c98dcd2553c50",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/00_Config/main.H",
+      "lines": 2284,
+      "sha256": "ee82fbea07d2fb40643cd94bd03c48db911a4e2e02e0fc6bde65d2e8564c4630",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/01_FuncCode/FuncCode.hpp",
+      "lines": 42,
+      "sha256": "bec016c179936d5a1ac5eeaf7bb83f53e7f929df023f48fe2f86a735751f5796",
+      "functions": [
+        {
+          "name": "GetOneValueFromRealMem",
+          "line": 23,
+          "declaration": "s16 GetOneValueFromRealMem(u16 group,u16 index,u16 *value)"
+        },
+        {
+          "name": "SetOneValue2BothMem",
+          "line": 36,
+          "declaration": "s16 SetOneValue2BothMem(u16 group,u16 index,u16 value)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/01_FuncCode/SstParams.c",
+      "lines": 519,
+      "sha256": "8d9e051895d604b9a99ea83d8d0326b1d3d19a3ef526408816f6cccb8a3bd088",
+      "functions": [
+        {
+          "name": "ReadEntry",
+          "line": 86,
+          "declaration": "static uint16_t ReadEntry(const SST_PARAMETER *p)"
+        },
+        {
+          "name": "WriteEntry",
+          "line": 106,
+          "declaration": "static uint16_t WriteEntry(const SST_PARAMETER *p,uint16_t value)"
+        },
+        {
+          "name": "SstControl_GetTick10ms",
+          "line": 121,
+          "declaration": "uint32_t SstControl_GetTick10ms(void)"
+        },
+        {
+          "name": "SstParams_IsStorageBusy",
+          "line": 129,
+          "declaration": "uint16_t SstParams_IsStorageBusy(void)"
+        },
+        {
+          "name": "SstParams_IsStopped",
+          "line": 144,
+          "declaration": "uint16_t SstParams_IsStopped(void)"
+        },
+        {
+          "name": "SstParams_RunCommand",
+          "line": 157,
+          "declaration": "uint16_t SstParams_RunCommand(uint16_t enable)"
+        },
+        {
+          "name": "SstParams_EmergencyStop",
+          "line": 176,
+          "declaration": "void SstParams_EmergencyStop(void)"
+        },
+        {
+          "name": "SstParams_Read",
+          "line": 191,
+          "declaration": "uint16_t SstParams_Read(uint16_t group,uint16_t index,uint16_t *value)"
+        },
+        {
+          "name": "SstParams_Write",
+          "line": 233,
+          "declaration": "uint16_t SstParams_Write(uint16_t group,uint16_t index,uint16_t value)"
+        },
+        {
+          "name": "Scale",
+          "line": 281,
+          "declaration": "static uint16_t Scale(float value,float factor,uint16_t signedValue)"
+        },
+        {
+          "name": "SstTelemetry_ReadFloat",
+          "line": 296,
+          "declaration": "float SstTelemetry_ReadFloat(uint16_t index)"
+        },
+        {
+          "name": "SstDisplay_Refresh",
+          "line": 314,
+          "declaration": "void SstDisplay_Refresh(void)"
+        },
+        {
+          "name": "SstDisplay_Read",
+          "line": 369,
+          "declaration": "uint16_t SstDisplay_Read(uint16_t index)"
+        },
+        {
+          "name": "StoreCrc",
+          "line": 381,
+          "declaration": "static uint16_t StoreCrc(const uint8_t *data,uint16_t count)"
+        },
+        {
+          "name": "StorePut",
+          "line": 397,
+          "declaration": "static void StorePut(uint16_t offset,uint16_t value)"
+        },
+        {
+          "name": "StoreGet",
+          "line": 408,
+          "declaration": "static uint16_t StoreGet(uint16_t offset)"
+        },
+        {
+          "name": "StoreLoad",
+          "line": 419,
+          "declaration": "static uint16_t StoreLoad(void)"
+        },
+        {
+          "name": "StoreRequest",
+          "line": 456,
+          "declaration": "static uint16_t StoreRequest(uint16_t load)"
+        },
+        {
+          "name": "SstParams_Service",
+          "line": 478,
+          "declaration": "void SstParams_Service(void)"
+        },
+        {
+          "name": "SstParams_GetStorageResult",
+          "line": 510,
+          "declaration": "uint16_t SstParams_GetStorageResult(void)"
+        },
+        {
+          "name": "SstParameters_LoadPersistent",
+          "line": 518,
+          "declaration": "void SstParameters_LoadPersistent(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/01_FuncCode/SstParams.h",
+      "lines": 139,
+      "sha256": "6b12376e38c59d3ff3602319b53ac06823b83a890c4bbb620def7a3f70ee278d",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/02_Measurement/ADC_Sample.C",
+      "lines": 1941,
+      "sha256": "ab6172fd2d39c7b0915ec5368728f6d4794623d566a4cdcdfabb006728569b78",
+      "functions": [
+        {
+          "name": "Module_AD_Sample",
+          "line": 85,
+          "declaration": "float Module_AD_Sample(uchar CJ_index,uchar MK_index,uchar CS_index,uchar latch)"
+        },
+        {
+          "name": "HVAC_RealTimeParameter",
+          "line": 184,
+          "declaration": "void HVAC_RealTimeParameter(void)"
+        },
+        {
+          "name": "Port_AD_Sample",
+          "line": 262,
+          "declaration": "void Port_AD_Sample(uchar latch)"
+        },
+        {
+          "name": "Port_RealTimeParameter",
+          "line": 612,
+          "declaration": "void Port_RealTimeParameter(void)"
+        },
+        {
+          "name": "Module_TotalUdc_Sample",
+          "line": 720,
+          "declaration": "void Module_TotalUdc_Sample(void)"
+        },
+        {
+          "name": "Port_AD_Sample",
+          "line": 795,
+          "declaration": "void Port_AD_Sample(uchar latch)"
+        },
+        {
+          "name": "Port_RealTimeParameter",
+          "line": 940,
+          "declaration": "void Port_RealTimeParameter(void)"
+        },
+        {
+          "name": "Module_TotalUdc_Sample",
+          "line": 1102,
+          "declaration": "void Module_TotalUdc_Sample(void)"
+        },
+        {
+          "name": "Port_AD_Sample",
+          "line": 1157,
+          "declaration": "void Port_AD_Sample(uchar latch)"
+        },
+        {
+          "name": "Port_RealTimeParameter",
+          "line": 1355,
+          "declaration": "void Port_RealTimeParameter(void)"
+        },
+        {
+          "name": "Module_TotalUdc_Sample",
+          "line": 1490,
+          "declaration": "void Module_TotalUdc_Sample(void)"
+        },
+        {
+          "name": "Port_AD_Sample",
+          "line": 1541,
+          "declaration": "void Port_AD_Sample(uchar latch)"
+        },
+        {
+          "name": "Port_RealTimeParameter",
+          "line": 1751,
+          "declaration": "void Port_RealTimeParameter(void)"
+        },
+        {
+          "name": "Module_TotalUdc_Sample",
+          "line": 1892,
+          "declaration": "void Module_TotalUdc_Sample(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/02_Measurement/ADC_Sample.H",
+      "lines": 133,
+      "sha256": "73fca1b40afdcb1678215db51396a6539ce1df4191014b09aece7f390a056f96",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/Comm2PcDebug.cpp",
+      "lines": 293,
+      "sha256": "c09bc95c7fbfc71950fd3aea8a89db5c8c153ebae62b43a3b89f6bd47f68d511",
+      "functions": [
+        {
+          "name": "SstAnyEyes_Crc8",
+          "line": 38,
+          "declaration": "uint8_t SstAnyEyes_Crc8(const uint8_t *data,uint16_t count)"
+        },
+        {
+          "name": "C_COMM2PC::Init",
+          "line": 56,
+          "declaration": "void C_COMM2PC::Init()"
+        },
+        {
+          "name": "C_COMM2PC::RxByte",
+          "line": 70,
+          "declaration": "void C_COMM2PC::RxByte(uint8_t byte)"
+        },
+        {
+          "name": "C_COMM2PC::ParseInstruct",
+          "line": 101,
+          "declaration": "s16 C_COMM2PC::ParseInstruct(u16 *DataList,u16 *ValidLenth)"
+        },
+        {
+          "name": "C_COMM2PC::Pack",
+          "line": 178,
+          "declaration": "bool C_COMM2PC::Pack(u16 instruction,const u16 *data,u16 count)"
+        },
+        {
+          "name": "C_COMM2PC::ExecuteInstruct",
+          "line": 195,
+          "declaration": "s16 C_COMM2PC::ExecuteInstruct()"
+        },
+        {
+          "name": "C_COMM2PC::MainFSM",
+          "line": 258,
+          "declaration": "void C_COMM2PC::MainFSM()"
+        },
+        {
+          "name": "SstAnyEyes_Init",
+          "line": 276,
+          "declaration": "void SstAnyEyes_Init(void)"
+        },
+        {
+          "name": "SstAnyEyes_RxByte",
+          "line": 284,
+          "declaration": "void SstAnyEyes_RxByte(uint8_t byte)"
+        },
+        {
+          "name": "SstAnyEyes_Service",
+          "line": 292,
+          "declaration": "void SstAnyEyes_Service(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/Comm2PcDebug.hpp",
+      "lines": 132,
+      "sha256": "6c64c3da9e4ebbd4fe5ed1e53e097c1fb0a45049deccedd893109e2f28355b07",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/MaintenanceProtocol.C",
+      "lines": 1219,
+      "sha256": "c1f7663164d2801ae5f19f19738dd603d6c26b9186971fad45d0eb21eee972fd",
+      "functions": [
+        {
+          "name": "MaintenanceProtocol_IsSaving",
+          "line": 55,
+          "declaration": "unsigned short MaintenanceProtocol_IsSaving(void)"
+        },
+        {
+          "name": "MaintApplyChbCommand",
+          "line": 108,
+          "declaration": "static void MaintApplyChbCommand(void)"
+        },
+        {
+          "name": "MaintRead16",
+          "line": 142,
+          "declaration": "static unsigned short MaintRead16(const unsigned char *data)"
+        },
+        {
+          "name": "MaintWrite16",
+          "line": 155,
+          "declaration": "static void MaintWrite16(unsigned char *data, unsigned short value)"
+        },
+        {
+          "name": "MaintCRC16",
+          "line": 169,
+          "declaration": "static unsigned short MaintCRC16(const unsigned char *data, unsigned short length)"
+        },
+        {
+          "name": "MaintResetParser",
+          "line": 197,
+          "declaration": "static void MaintResetParser(void)"
+        },
+        {
+          "name": "MaintSendFrame",
+          "line": 215,
+          "declaration": "static void MaintSendFrame(unsigned char flags, unsigned char sequence,\n                           unsigned char command, const unsigned char *payload,\n                           unsigned short length)"
+        },
+        {
+          "name": "MaintSendError",
+          "line": 252,
+          "declaration": "static void MaintSendError(unsigned char sequence, unsigned char command,\n                           unsigned char error)"
+        },
+        {
+          "name": "MaintObjectLength",
+          "line": 270,
+          "declaration": "static unsigned short MaintObjectLength(unsigned char object, unsigned char index)"
+        },
+        {
+          "name": "MaintReadObjectWord",
+          "line": 308,
+          "declaration": "static unsigned short MaintReadObjectWord(unsigned char object, unsigned char index,\n                                          unsigned short offset)"
+        },
+        {
+          "name": "MaintReadParameter",
+          "line": 367,
+          "declaration": "static unsigned short MaintReadParameter(unsigned char index, unsigned short word)"
+        },
+        {
+          "name": "MaintRecountHVAC",
+          "line": 442,
+          "declaration": "static void MaintRecountHVAC(void)"
+        },
+        {
+          "name": "MaintRecountHVDC",
+          "line": 480,
+          "declaration": "static void MaintRecountHVDC(void)"
+        },
+        {
+          "name": "MaintParameterSupported",
+          "line": 505,
+          "declaration": "static unsigned char MaintParameterSupported(unsigned char index)"
+        },
+        {
+          "name": "MaintParameterWritable",
+          "line": 523,
+          "declaration": "static unsigned char MaintParameterWritable(unsigned char index)"
+        },
+        {
+          "name": "MaintSetParameter",
+          "line": 543,
+          "declaration": "static unsigned char MaintSetParameter(unsigned char index, const unsigned char *data,\n                                       unsigned short count)"
+        },
+        {
+          "name": "MaintExecuteControl",
+          "line": 642,
+          "declaration": "static unsigned char MaintExecuteControl(unsigned char command, unsigned short value)"
+        },
+        {
+          "name": "MaintWriteObject",
+          "line": 707,
+          "declaration": "static unsigned char MaintWriteObject(unsigned char object, unsigned char index,\n                                      unsigned short offset, unsigned short count,\n                                      const unsigned char *data)"
+        },
+        {
+          "name": "MaintSavePersistent",
+          "line": 775,
+          "declaration": "static unsigned char MaintSavePersistent(void)"
+        },
+        {
+          "name": "MaintHandleFrame",
+          "line": 817,
+          "declaration": "static void MaintHandleFrame(void)"
+        },
+        {
+          "name": "MaintenanceProtocol_Init",
+          "line": 951,
+          "declaration": "void MaintenanceProtocol_Init(void)"
+        },
+        {
+          "name": "MaintenanceProtocol_RxByte",
+          "line": 971,
+          "declaration": "void MaintenanceProtocol_RxByte(unsigned char value)"
+        },
+        {
+          "name": "MaintenanceProtocol_RxByteForUart",
+          "line": 989,
+          "declaration": "unsigned char MaintenanceProtocol_RxByteForUart(unsigned char value)"
+        },
+        {
+          "name": "MaintenanceProtocol_Process",
+          "line": 1073,
+          "declaration": "void MaintenanceProtocol_Process(void)"
+        },
+        {
+          "name": "MaintenanceProtocol_LoadPersistent",
+          "line": 1180,
+          "declaration": "void MaintenanceProtocol_LoadPersistent(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/MaintenanceProtocol.H",
+      "lines": 155,
+      "sha256": "af2fd3779f12c2e1d990439c03589bfa73690221a8d9cb3026f91036ce223a98",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/SstDebug.c",
+      "lines": 252,
+      "sha256": "6f6470dc09f6474afc71956d1e1d406f9dafe2242b183bc05963b00e5be02ca3",
+      "functions": [
+        {
+          "name": "SstDebug_GetTick10ms",
+          "line": 52,
+          "declaration": "uint32_t SstDebug_GetTick10ms(void)"
+        },
+        {
+          "name": "SstDebug_GetTick1ms",
+          "line": 60,
+          "declaration": "uint32_t SstDebug_GetTick1ms(void)"
+        },
+        {
+          "name": "SstDebug_GetTxDropped",
+          "line": 68,
+          "declaration": "uint16_t SstDebug_GetTxDropped(void)"
+        },
+        {
+          "name": "SstSerial_TxFreeFrames",
+          "line": 76,
+          "declaration": "uint16_t SstSerial_TxFreeFrames(void)"
+        },
+        {
+          "name": "SstSerial_SendFrame",
+          "line": 85,
+          "declaration": "int SstSerial_SendFrame(const uint8_t *bytes,uint16_t length)"
+        },
+        {
+          "name": "SstSerial_TxService",
+          "line": 103,
+          "declaration": "static void SstSerial_TxService(void)"
+        },
+        {
+          "name": "SstSerial_RouteByte",
+          "line": 126,
+          "declaration": "static void SstSerial_RouteByte(uint8_t value)"
+        },
+        {
+          "name": "SstDebug_Init",
+          "line": 188,
+          "declaration": "void SstDebug_Init(void)"
+        },
+        {
+          "name": "SstDebug_Tick10ms",
+          "line": 220,
+          "declaration": "void SstDebug_Tick10ms(void)"
+        },
+        {
+          "name": "SstDebug_Service",
+          "line": 228,
+          "declaration": "void SstDebug_Service(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/SstDebug.h",
+      "lines": 101,
+      "sha256": "c7c6a4ad476cbeb3d420c5df459d9fe15eb7e6cf2c42771f3680661d11bfaa4d",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/vofa.c",
+      "lines": 104,
+      "sha256": "8aaaf66bee2771e35c829cfb0d555d07055874e2a3e53d61a1fc73f508b3841c",
+      "functions": [
+        {
+          "name": "VOFA_Init",
+          "line": 13,
+          "declaration": "void VOFA_Init(void)"
+        },
+        {
+          "name": "VOFA_Process",
+          "line": 21,
+          "declaration": "void VOFA_Process(void)"
+        },
+        {
+          "name": "VOFA_SendFloatArray",
+          "line": 30,
+          "declaration": "static void VOFA_SendFloatArray(const float *values,unsigned short count)"
+        },
+        {
+          "name": "VOFA_Send4Float",
+          "line": 52,
+          "declaration": "void VOFA_Send4Float(float a,float b,float c,float d)"
+        },
+        {
+          "name": "VOFA_Send6Float",
+          "line": 66,
+          "declaration": "void VOFA_Send6Float(float a,float b,float c,float d,float e,float f)"
+        },
+        {
+          "name": "VOFA_Send8Float",
+          "line": 82,
+          "declaration": "void VOFA_Send8Float(float a,float b,float c,float d,float e,float f,float g,float h)"
+        },
+        {
+          "name": "VOFA_Send12Float",
+          "line": 102,
+          "declaration": "void VOFA_Send12Float(float a,float b,float c,float d,float e,float f,float g,float h,float i,float j,float k,float l)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/03_PcDebug/vofa.h",
+      "lines": 136,
+      "sha256": "8720ca881a1ec83a28366a8c258be935a28c2a88a07af0a7120b6cc5ebb7ef06",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/04_Control/ChbDabControl.c",
+      "lines": 1642,
+      "sha256": "6ccfdf47625c91c94306f1c4bab75f59c7fc42f593cd039dcfddf78f5fa5c8ec",
+      "functions": [
+        {
+          "name": "Chb_Clamp",
+          "line": 150,
+          "declaration": "static float Chb_Clamp(float value, float minimum, float maximum)"
+        },
+        {
+          "name": "Chb_Abs",
+          "line": 171,
+          "declaration": "static float Chb_Abs(float value)"
+        },
+        {
+          "name": "Chb_Min3",
+          "line": 185,
+          "declaration": "static float Chb_Min3(float a, float b, float c)"
+        },
+        {
+          "name": "Chb_Max3",
+          "line": 202,
+          "declaration": "static float Chb_Max3(float a, float b, float c)"
+        },
+        {
+          "name": "Chb_WrapAngle",
+          "line": 217,
+          "declaration": "static float Chb_WrapAngle(float angle)"
+        },
+        {
+          "name": "Chb_SourceEquivalentPiStep",
+          "line": 242,
+          "declaration": "static float Chb_SourceEquivalentPiStep(CHB_PI_STATE *state, float error,\n                                        float kp, float ki, float period)"
+        },
+        {
+          "name": "Chb_ResetControllers",
+          "line": 264,
+          "declaration": "static void Chb_ResetControllers(void)"
+        },
+        {
+          "name": "Chb_ResetStartupSequence",
+          "line": 285,
+          "declaration": "static void Chb_ResetStartupSequence(void)"
+        },
+        {
+          "name": "Chb_AlignVoltagePiToIdReference",
+          "line": 310,
+          "declaration": "static void Chb_AlignVoltagePiToIdReference(float voltage_error,\n                                             float id_reference)"
+        },
+        {
+          "name": "Chb_UpdateVoltageReference",
+          "line": 333,
+          "declaration": "static void Chb_UpdateVoltageReference(void)"
+        },
+        {
+          "name": "Chb_WriteNormalizedReferences",
+          "line": 387,
+          "declaration": "static void Chb_WriteNormalizedReferences(float phase_a, float phase_b,\n                                          float phase_c)"
+        },
+        {
+          "name": "Chb_WriteNeutralReferences",
+          "line": 431,
+          "declaration": "static void Chb_WriteNeutralReferences(void)"
+        },
+        {
+          "name": "Chb_WriteDabDuty",
+          "line": 444,
+          "declaration": "static void Chb_WriteDabDuty(unsigned short duty)"
+        },
+        {
+          "name": "Chb_SetAcInput",
+          "line": 502,
+          "declaration": "static void Chb_SetAcInput(unsigned short closed)"
+        },
+        {
+          "name": "Chb_ClearAcInputPulse",
+          "line": 533,
+          "declaration": "static void Chb_ClearAcInputPulse(void)"
+        },
+        {
+          "name": "Chb_SetPrechargeBypass",
+          "line": 548,
+          "declaration": "static void Chb_SetPrechargeBypass(unsigned short closed)"
+        },
+        {
+          "name": "Chb_DisableAllPwm",
+          "line": 563,
+          "declaration": "static void Chb_DisableAllPwm(void)"
+        },
+        {
+          "name": "Chb_SetLegacyStatus",
+          "line": 586,
+          "declaration": "static void Chb_SetLegacyStatus(unsigned short port_status)"
+        },
+        {
+          "name": "Chb_EnterState",
+          "line": 602,
+          "declaration": "static void Chb_EnterState(unsigned short state)"
+        },
+        {
+          "name": "Chb_ConfigurationValid",
+          "line": 719,
+          "declaration": "static unsigned short Chb_ConfigurationValid(void)"
+        },
+        {
+          "name": "ChbDabControl_Init",
+          "line": 782,
+          "declaration": "void ChbDabControl_Init(void)"
+        },
+        {
+          "name": "ChbDabControl_Tick10ms",
+          "line": 833,
+          "declaration": "void ChbDabControl_Tick10ms(void)"
+        },
+        {
+          "name": "ChbDabControl_ApplyRemoteCommand",
+          "line": 847,
+          "declaration": "void ChbDabControl_ApplyRemoteCommand(unsigned short start_word,\n                                      unsigned short stop_word)"
+        },
+        {
+          "name": "ChbDabControl_ForceFault",
+          "line": 875,
+          "declaration": "void ChbDabControl_ForceFault(unsigned short fault_code)"
+        },
+        {
+          "name": "Chb_ServiceOpenLoop",
+          "line": 908,
+          "declaration": "static void Chb_ServiceOpenLoop(void)"
+        },
+        {
+          "name": "ChbDabControl_Service",
+          "line": 979,
+          "declaration": "void ChbDabControl_Service(void)"
+        },
+        {
+          "name": "Chb_UpdatePll",
+          "line": 1171,
+          "declaration": "static void Chb_UpdatePll(float voltage_alpha, float voltage_beta)"
+        },
+        {
+          "name": "Chb_RunOpenLoop",
+          "line": 1254,
+          "declaration": "static void Chb_RunOpenLoop(void)"
+        },
+        {
+          "name": "Chb_GetClosedLoopIdReference",
+          "line": 1294,
+          "declaration": "static float Chb_GetClosedLoopIdReference(void)"
+        },
+        {
+          "name": "Chb_RunClosedLoop",
+          "line": 1388,
+          "declaration": "static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)"
+        },
+        {
+          "name": "Chb_CheckSoftwareProtection",
+          "line": 1511,
+          "declaration": "static void Chb_CheckSoftwareProtection(void)"
+        },
+        {
+          "name": "ChbDabControl_FastStep",
+          "line": 1576,
+          "declaration": "void ChbDabControl_FastStep(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/04_Control/ChbDabControl.h",
+      "lines": 209,
+      "sha256": "5bc47245a1930b2b1c077f0dee787fdf708bbddcb5486ca4fe1e08987a1ea240",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/04_Control/HVAC_Strategy.C",
+      "lines": 1820,
+      "sha256": "052cd3526316af61498c848ee0e6d3bcfaffc786071d451d5e2adc8d5404d31b",
+      "functions": [
+        {
+          "name": "BandH2_100_Filter",
+          "line": 176,
+          "declaration": "float BandH2_100_Filter(float FilterIN)"
+        },
+        {
+          "name": "BandH6_100_Filter",
+          "line": 225,
+          "declaration": "float BandH6_100_Filter(float FilterIN)"
+        },
+        {
+          "name": "BandH12_100_Filter",
+          "line": 274,
+          "declaration": "float BandH12_100_Filter(float FilterIN)"
+        },
+        {
+          "name": "BandH2_20_Filter",
+          "line": 323,
+          "declaration": "float BandH2_20_Filter(float FilterIN)"
+        },
+        {
+          "name": "SineHar_2_Controller",
+          "line": 372,
+          "declaration": "float SineHar_2_Controller(float ErrorIn)"
+        },
+        {
+          "name": "SineHar_6_Controller",
+          "line": 424,
+          "declaration": "float SineHar_6_Controller(float ErrorIn)"
+        },
+        {
+          "name": "SineHar_12_Controller",
+          "line": 476,
+          "declaration": "float SineHar_12_Controller(float ErrorIn)"
+        },
+        {
+          "name": "U_Decomposition_PLL",
+          "line": 530,
+          "declaration": "void U_Decomposition_PLL(void)"
+        },
+        {
+          "name": "Iin_Decomposition",
+          "line": 853,
+          "declaration": "void Iin_Decomposition(void)"
+        },
+        {
+          "name": "Iload_Decomposition",
+          "line": 915,
+          "declaration": "void Iload_Decomposition(void)"
+        },
+        {
+          "name": "P_Q_Calculator",
+          "line": 987,
+          "declaration": "void P_Q_Calculator(void)"
+        },
+        {
+          "name": "SVG_Q_Reference",
+          "line": 1049,
+          "declaration": "void SVG_Q_Reference(uchar StatcomIndex)"
+        },
+        {
+          "name": "SVG_Udc_Average",
+          "line": 1128,
+          "declaration": "void SVG_Udc_Average(void)"
+        },
+        {
+          "name": "SVG_Total_Udc_Controller",
+          "line": 1428,
+          "declaration": "void SVG_Total_Udc_Controller(void)"
+        },
+        {
+          "name": "SVG_I_Reference",
+          "line": 1505,
+          "declaration": "void SVG_I_Reference(uchar ApfIndex)"
+        },
+        {
+          "name": "SVG_Current_Controller",
+          "line": 1579,
+          "declaration": "void SVG_Current_Controller(void)"
+        },
+        {
+          "name": "SVG_Controller",
+          "line": 1802,
+          "declaration": "void SVG_Controller(uchar StatcomIndex,uchar ApfIndex)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/04_Control/HVAC_Strategy.H",
+      "lines": 299,
+      "sha256": "06fb13317cb9fc19748aa08053fc914dcc7b1fd60e744717541d21a818228fc4",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/04_Control/SstCommand.c",
+      "lines": 43,
+      "sha256": "2b7fac80154b1ff933fd8a1c81789c55a48a300b9d861ec703e20ec66087f682",
+      "functions": [
+        {
+          "name": "SstCommand_ApplyDpram",
+          "line": 17,
+          "declaration": "void SstCommand_ApplyDpram(unsigned short start, unsigned short stop,\n                          unsigned short pulse_on, unsigned short pulse_off,\n                          unsigned short reset)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/04_Control/SstCommand.h",
+      "lines": 24,
+      "sha256": "50fa53f7e244b65b1ceade5ce518bcc2a9c816ee32bb92f309cdfe84056a6605",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/04_Control/Stateflow.C",
+      "lines": 3792,
+      "sha256": "27503bf5ca54720e86e80e2db66a3b4102160b7830fded9dd9a811d6defccef4",
+      "functions": [
+        {
+          "name": "PortStartup_Effectiveness",
+          "line": 133,
+          "declaration": "void PortStartup_Effectiveness(void)"
+        },
+        {
+          "name": "Port_StateUpdate_Read",
+          "line": 352,
+          "declaration": "void Port_StateUpdate_Read(void)"
+        },
+        {
+          "name": "Port_StateUpdate_Write",
+          "line": 454,
+          "declaration": "void Port_StateUpdate_Write(void)"
+        },
+        {
+          "name": "Port_AllStopFlag_RST",
+          "line": 537,
+          "declaration": "void Port_AllStopFlag_RST(void)"
+        },
+        {
+          "name": "Judge_MainPowerSupply",
+          "line": 670,
+          "declaration": "ushort Judge_MainPowerSupply(void)"
+        },
+        {
+          "name": "NormalRun_flow",
+          "line": 706,
+          "declaration": "void NormalRun_flow(void)"
+        },
+        {
+          "name": "Start_flow",
+          "line": 792,
+          "declaration": "void Start_flow(void)"
+        },
+        {
+          "name": "Start_flow",
+          "line": 1261,
+          "declaration": "void Start_flow(void)"
+        },
+        {
+          "name": "Start_flow",
+          "line": 1411,
+          "declaration": "void Start_flow(void)"
+        },
+        {
+          "name": "Start_flow_Manual",
+          "line": 1620,
+          "declaration": "void Start_flow_Manual(void)"
+        },
+        {
+          "name": "Start_flow_Manual",
+          "line": 1774,
+          "declaration": "void Start_flow_Manual(void)"
+        },
+        {
+          "name": "Start_flow_Manual",
+          "line": 1922,
+          "declaration": "void Start_flow_Manual(void)"
+        },
+        {
+          "name": "Stop_flow",
+          "line": 2073,
+          "declaration": "void Stop_flow(void)"
+        },
+        {
+          "name": "SwitchTable_Start",
+          "line": 2530,
+          "declaration": "void SwitchTable_Start(void)"
+        },
+        {
+          "name": "SwitchTable_Start",
+          "line": 2818,
+          "declaration": "void SwitchTable_Start(void)"
+        },
+        {
+          "name": "SwitchTable_Start",
+          "line": 3107,
+          "declaration": "void SwitchTable_Start(void)"
+        },
+        {
+          "name": "SwitchTable_Start",
+          "line": 3309,
+          "declaration": "void SwitchTable_Start(void)"
+        },
+        {
+          "name": "SwitchOperation_Dispose",
+          "line": 3509,
+          "declaration": "void SwitchOperation_Dispose(void)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/04_Control/Stateflow.H",
+      "lines": 104,
+      "sha256": "b72ceb283f30a8d8626bc9dc4379054dea5a240b61876d4ed22b5dac51429b49",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/08_Fault/FaultCheck.C",
+      "lines": 3619,
+      "sha256": "c66e6f03043713551c1b7a74f7793f63337e2756c33112378e990c6bede0aabb",
+      "functions": [
+        {
+          "name": "OC_OV_LV_faultcheck",
+          "line": 117,
+          "declaration": "void OC_OV_LV_faultcheck(void)"
+        },
+        {
+          "name": "OC_OV_LV_FaultDispose",
+          "line": 232,
+          "declaration": "void OC_OV_LV_FaultDispose(void)"
+        },
+        {
+          "name": "OC_OV_LV_faultcheck",
+          "line": 280,
+          "declaration": "void OC_OV_LV_faultcheck(void)"
+        },
+        {
+          "name": "OC_OV_LV_FaultDispose",
+          "line": 391,
+          "declaration": "void OC_OV_LV_FaultDispose(void)"
+        },
+        {
+          "name": "FaultCheckAndDispose_StepOne",
+          "line": 453,
+          "declaration": "void FaultCheckAndDispose_StepOne(void)"
+        },
+        {
+          "name": "FaultDispose",
+          "line": 676,
+          "declaration": "void FaultDispose(void)"
+        },
+        {
+          "name": "FaultLatch_Clear",
+          "line": 3002,
+          "declaration": "void FaultLatch_Clear(uchar runindex,uchar RstFlagFault)"
+        },
+        {
+          "name": "PWMPluseEnable_Initial",
+          "line": 3097,
+          "declaration": "void PWMPluseEnable_Initial(void)"
+        },
+        {
+          "name": "PWMPluse_Enable",
+          "line": 3123,
+          "declaration": "void PWMPluse_Enable(uchar HbridgeIndexEn)"
+        },
+        {
+          "name": "PWMPluse_Disable",
+          "line": 3186,
+          "declaration": "void PWMPluse_Disable(uchar IndexDis)"
+        },
+        {
+          "name": "PWMPluseEnable_Initial",
+          "line": 3273,
+          "declaration": "void PWMPluseEnable_Initial(void)"
+        },
+        {
+          "name": "PWMPluse_Enable",
+          "line": 3296,
+          "declaration": "void PWMPluse_Enable(uchar HbridgeIndexEn)"
+        },
+        {
+          "name": "PWMPluse_Disable",
+          "line": 3324,
+          "declaration": "void PWMPluse_Disable(uchar IndexDis)"
+        },
+        {
+          "name": "PWMPluseEnable_Initial",
+          "line": 3380,
+          "declaration": "void PWMPluseEnable_Initial(void)"
+        },
+        {
+          "name": "PWMPluse_Enable",
+          "line": 3403,
+          "declaration": "void PWMPluse_Enable(uchar HbridgeIndexEn)"
+        },
+        {
+          "name": "PWMPluse_Disable",
+          "line": 3462,
+          "declaration": "void PWMPluse_Disable(uchar IndexDis)"
+        },
+        {
+          "name": "PWMPluseEnable_Initial",
+          "line": 3501,
+          "declaration": "void PWMPluseEnable_Initial(void)"
+        },
+        {
+          "name": "PWMPluse_Enable",
+          "line": 3525,
+          "declaration": "void PWMPluse_Enable(uchar HbridgeIndexEn)"
+        },
+        {
+          "name": "PWMPluse_Disable",
+          "line": 3584,
+          "declaration": "void PWMPluse_Disable(uchar IndexDis)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/08_Fault/FaultCheck.H",
+      "lines": 120,
+      "sha256": "c578907f5fc1cdd2197446fe6f8050180cdbe44dfd32cf680cf4ee6f495ec85d",
+      "functions": []
+    },
+    {
+      "path": "Source/04_App/08_Fault/SstFault.c",
+      "lines": 379,
+      "sha256": "3a917805e49af1021a0a7e15059b5e9092549ff46fc9b3c0bc53f03199259d75",
+      "functions": [
+        {
+          "name": "SstFault_ReadInput",
+          "line": 86,
+          "declaration": "static unsigned short SstFault_ReadInput(SST_FAULT_INPUT *input)"
+        },
+        {
+          "name": "SstFault_Add",
+          "line": 123,
+          "declaration": "static void SstFault_Add(unsigned short code, unsigned short level,\n                         const SST_FAULT_INPUT *input)"
+        },
+        {
+          "name": "SstFault_Init",
+          "line": 166,
+          "declaration": "void SstFault_Init(void)"
+        },
+        {
+          "name": "SstFault_Service",
+          "line": 188,
+          "declaration": "void SstFault_Service(void)"
+        },
+        {
+          "name": "SstFault_GetCode",
+          "line": 271,
+          "declaration": "unsigned short SstFault_GetCode(unsigned short index)"
+        },
+        {
+          "name": "SstFault_GetFirstCode",
+          "line": 283,
+          "declaration": "unsigned short SstFault_GetFirstCode(void)"
+        },
+        {
+          "name": "SstFault_GetLevel",
+          "line": 291,
+          "declaration": "unsigned short SstFault_GetLevel(void)"
+        },
+        {
+          "name": "SstFault_GetActiveCount",
+          "line": 299,
+          "declaration": "unsigned short SstFault_GetActiveCount(void)"
+        },
+        {
+          "name": "SstFault_GetHistoryCount",
+          "line": 307,
+          "declaration": "unsigned short SstFault_GetHistoryCount(void)"
+        },
+        {
+          "name": "SstFault_GetLegacyHistoryWord",
+          "line": 316,
+          "declaration": "unsigned short SstFault_GetLegacyHistoryWord(unsigned short index)"
+        },
+        {
+          "name": "SstFault_HistoryIndex",
+          "line": 328,
+          "declaration": "static unsigned short SstFault_HistoryIndex(unsigned short index)"
+        },
+        {
+          "name": "SstFault_GetHistoryCode",
+          "line": 341,
+          "declaration": "unsigned short SstFault_GetHistoryCode(unsigned short newest_index)"
+        },
+        {
+          "name": "SstFault_GetHistoryLevel",
+          "line": 354,
+          "declaration": "unsigned short SstFault_GetHistoryLevel(void)"
+        },
+        {
+          "name": "SstFault_GetHistory",
+          "line": 373,
+          "declaration": "unsigned short SstFault_GetHistory(unsigned short newest_index,\n                                  SST_FAULT_RECORD *record)"
+        }
+      ]
+    },
+    {
+      "path": "Source/04_App/08_Fault/SstFault.h",
+      "lines": 200,
+      "sha256": "7ec5e1816a31626181db469841d3e3bd9d86b29049602bb6a3940ea65ac30088",
+      "functions": []
+    }
+  ]
+}
