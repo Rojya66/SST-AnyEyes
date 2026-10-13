@@ -1,8 +1,8 @@
 # DPRAM 模式并口地址与信号映射
 
-本文于 2026-10-13 核对，基于提交 `b151f12962a1d9f5d716f17606c65c93ec978b91` 的源码。对应 `D:\Code\SST\AnyEyesVersion` 当前 `HVAC_online` 构建，记录 `SST_ENABLE_DPRAM=1` 时的固定 DPRAM 布局、软件协议方向、数值缩放和实际功能接入情况。
+本文记录当前 `HVAC_online` 构建的原固定块兼容布局。2026-10-13已删除485 MaintenanceProtocol，并在原尾部预留区增加现代并口维护；新接口与事务说明见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)，54点参数地址见 [DPRAM_PARAMETERS.md](DPRAM_PARAMETERS.md)。旧固定块地址不变，不能把下文旧Block2无消费字段误认为新版扩展也未接入。
 
-完整逐字地址见 [DPRAM_ADDRESSES.csv](DPRAM_ADDRESSES.csv)，逐位定义见 [DPRAM_BITS.csv](DPRAM_BITS.csv)。CSV 同时列出 DSP 字节地址、相对字节偏移及16位字地址，并标记仅缓存、无生产者、轮询跳过等状态。本文描述当前实现；本次整理没有修改固件或补接缺少的接口。
+完整逐字地址见 [DPRAM_ADDRESSES.csv](DPRAM_ADDRESSES.csv)，逐位定义见 [DPRAM_BITS.csv](DPRAM_BITS.csv)。CSV包含原2142字与新增896字，共3038条，分别标记原块缓存/未消费和已生效扩展。
 
 ## 使用前提
 
@@ -16,7 +16,7 @@
 | DSP 通知主机 | DSP 写右邮箱 `0x66003FFE`，值为块号 |
 | 权限说明 | 下表 R/W 是当前软件协议方向；源码没有字段级只读保护。外部主机实际总线访问能力以硬件设计为准 |
 | DPRAM 使能 | `SST_ENABLE_DPRAM=1` |
-| 远程控制/遥调附加条件 | `SST_SIMULATOR_MODE=0`；默认仿真器模式为 `1`，此时遥测可运行，但 DPRAM 启停、封波、复位和遥调提交均被门控 |
+| 远程控制/遥调附加条件 | `SST_SIMULATOR_MODE=0`；当前默认DPRAM=1/SIM=0。设SIM=1时遥测可运行，但DPRAM修改、启停、封波、复位及存储均门控 |
 
 固定地址来自 [`C6748.cmd`](../C6748.cmd)、[`DpramConfig.h`](../Source/02_Peripheral/01_DPRAM/DpramConfig.h) 和 [`DPRAM.H`](../Source/02_Peripheral/01_DPRAM/DPRAM.H)。链接审计还验证了这些区域为 `NOINIT`，不会由 C 运行库写入启动镜像。
 
@@ -31,10 +31,12 @@
 | Block3 公共遥测 | `0x66000A00` | `0x0500` | 33 字（66 B） | R：主机读 | 状态、旧故障位图、端口遥测 |
 | Block4 U2 | `0x66000D00` | `0x0680` | 128 字（256 B） | R：主机读 | 插件 U2 原始采样/状态 |
 | Block4 U3…U17 | `0x66000D00+(n-2)*0x200` | `0x0680+(n-2)*0x100` | 每块128字 | R：主机读 | 插件原始采样/状态 |
-| 左邮箱 | `0x66003FFC` | `0x1FFE` | 1 字 | W：主机写 | 写 `1` 请求读 Block1，写 `2` 请求读 Block2 |
-| 右邮箱 | `0x66003FFE` | `0x1FFF` | 1 字 | R：主机读 | DSP 回报 `3`、`4..19` 或 `20` |
+| 新请求/回复 | `0x66002C00/0x66002D00` | `0x1600/0x1680` | 各128字 | W/R | 扩展54点维护，邮箱21 |
+| 新遥测/历史 | `0x66002E00/0x66002F00` | `0x1700/0x1780` | 128/512字 | R | 现代状态、五位故障码、详细历史 |
+| 左邮箱 | `0x66003FFC` | `0x1FFE` | 1 字 | W：主机写 | 写1遥控、2旧遥调、21现代维护 |
+| 右邮箱 | `0x66003FFE` | `0x1FFF` | 1 字 | R：主机读 | DSP回报3、4..19、20、21 |
 
-邮箱不是带序号的可靠事务协议。没有 CRC、请求序号、软件执行结果 ACK、错误码、队列和超时回报。按现有接口定义，DSP 读取左邮箱会应答对端的硬件通知；这不表示遥控或遥调已执行成功。主机应先完整写入 16 字或 43 字，再写左邮箱；DSP 读取后不会清零遥控块。每次请求都应把未使用的命令字清零，否则上一次的 START/ON/STOP/OFF/RESET 位可能被重放。Block2 的主机写入区和 DSP 回读区共用同一内存，回读可能覆盖主机刚写入的数据。
+原块1/2没有CRC、请求序号、软件执行结果ACK、错误码或队列；新块21另有CRC、序号、受理结果和版本戳。硬件邮箱读取应答不等同执行成功。旧遥控应先完整写16字、旧遥调写43字，再写左邮箱；固件不会清零命令块，未用命令字须清零避免重放。旧Block2的主机写入和DSP回读共用内存，不能同时操作；新接口请求与回复分区。
 
 左邮箱和中断待处理标志均只保留最后一次通知，前一请求未消费前连续写入新块号可能覆盖请求。主机应逐笔提交，等待可观察的状态变化或遥调回读后再提交；并避免与DSP回写同一Block2同时访问。
 
@@ -122,7 +124,7 @@ Block2 首地址为 `0x660003FE`，地址计算为 `0x660003FE + 2*word`。本�
 
 Block2 只有完全停机且参数存储不忙时才进入旧 `RemoteRegulate_Dispose_2(0)`。当前 HVAC 分支中系统模式、AD/FO/FB 使能、P/Q/F、谐波、模块配置和 PI 处理段均被注释；函数也没有向 `g_chb_dab_command` 或 `g_chb_dab_params` 赋值。因此 `PORT_V_SET` 和 `STATCOM_Q_SET` 不能当作迁移后 CHB/DAB 闭环给定。新核心实际读取的是 `g_chb_dab_command.dc_voltage_ref_v` 和 `iq_reference_a`。
 
-收到满足处理条件的遥调后，旧函数还会同步调用 EEPROM Page1 写入，保存旧V_SET/Q_SET各2字节，**这段写入不受 `EEPROM_ON` 门控**；随后置 `FLAG_RemRegulate_SetOver`。只有该标志置位时，后台轮询到位置20才回写整块43字并通知右邮箱 `20`；启用 `EEPROM_ON` 时，回写前还会从旧EEPROM Page1/Page2恢复缓存。该旧写入路径不等同于新参数存储服务，`20`不表示所有43字段已应用，更不表示现代控制参数修改成功。上位机在运行或保存忙时下发块2，DSP仍先搬入缓存再拒绝处理，没有失败返回码。
+本轮已取消HVAC旧遥调同步Page1写入，以及块20回写前的Page1/Page2恢复。有效遥调只更新当前RAM与旧FPGA镜像，然后置 `FLAG_RemRegulate_SetOver`，轮询到20时回写43字并通知右邮箱20。20仍不表示所有字段或现代参数已应用；运行/保存忙时仍先搬缓存再拒绝处理，无失败返回码。新主机应使用扩展21调参及显式SAVE，保存到v2页6/7。
 
 ## Block3：公共遥测地址表
 
@@ -217,7 +219,7 @@ bits9:8 的附加模式二：0无、1注入谐波、2治理谐波；bits11:10 �
 | 14 | 原软件过流 `HVAC_OC_Fault` |
 | 15 | 汇总故障；由 `(PORT_FAULT & 0x75FF) != 0` 生成 |
 
-头文件中 bit13/14 的通用注释仍写作通信/SYNC，但 HVAC 运行代码已将它们用于原软件过压/过流。新快速保护、预充超时、PLL超时、非法配置只进入现代 `g_chb_dab_status.fault_code` 和 FAULT 状态，没有写入 Block3 的数字故障码或对应原因位。因此 DPRAM 可能读到 `P_Status=0x0D`，但无法仅靠 Block3 区分具体快速保护原因。
+头文件中bit13/14的通用注释仍写作通信/SYNC，但HVAC实际用于原软件过压/过流。新快速保护、预充/PLL超时及非法配置仍不增加旧Block3原因位；具体原因现可读取新 `0x66002E08`，五位数字码读取 `0x66002E10` 或 `0x66002E40` 起当前表。
 
 汇总掩码 `0x75FF` 不包含 bit9（频率）和 bit11（欠压）；bit15不能理解为bit0..14的全部按位或。快速保护故障可能出现 `P_Status=0x0D` 而 `PORT_FAULT=0`；读取旧故障位图为0不能据此断言控制核心无故障。
 
@@ -299,27 +301,27 @@ bits9:8 的附加模式二：0无、1注入谐波、2治理谐波；bits11:10 �
 | 故障复位 | **已接入**，word10 bit0，完全停机才接受 | DPRAM；AnyEyes普通复位在此模式被拒绝 |
 | 旧状态码/PWM状态 | **已接入**，Block3 word0/1 | 读取 Block3 |
 | 旧故障位图 | **已接入**，Block3 word2 | 读取 Block3 |
-| 191xx/291xx 数字故障码、等级、首故障、历史 | **未映射到 DPRAM** | AnyEyes/SstFault 接口 |
-| 当前 CHB_STATE、启动阶段、锁相状态 | **未提供独立 DPRAM 字段**；仅映射为旧 `P_Status` | AnyEyes状态显示 |
-| 新核心 DC 给定、Iq给定、开环调制/频率、`ac_mode` | **未接入 DPRAM** | AnyEyes固定参数组 |
-| 新核心 PLL/电压环/电流环 PI | **未接入 DPRAM**；Block2旧PI字段仅缓存 | AnyEyes固定参数组 |
-| 快速过流/过压阈值、确认拍数、软件保护总使能 | **未接入 DPRAM** | AnyEyes固定参数组 |
-| 原软件 OC/OV 阈值和计时 | **未接入 DPRAM**，AnyEyes当前也无映射 | CCS/源码，或开启维护协议后用旧PARAMETER索引6..11 |
-| 新预充阈值、预充稳定/超时、旁路延时、断路器脉冲 | **未接入 DPRAM** | AnyEyes固定参数组 |
-| `HA_H_Voltage`、`HA_L_Voltage_Precharge` | **未接入 DPRAM、AnyEyes或维护协议** | CCS运行变量或源码默认值 |
-| DAB起始/目标占空比及斜坡 | **未接入 DPRAM** | AnyEyes固定参数组 |
-| 旧 `PORT_V_SET` | **已接入旧缓存/旧FPGA寄存器**，不改变新核心 DC 给定 | 若要改新闭环目标，应写 AnyEyes `group=0,index=6` |
-| 旧 `STATCOM_Q_SET` | **已接入旧缓存/旧FPGA寄存器**，不改变新核心 Iq 给定 | 若要改新 Iq，应写 AnyEyes `group=0,index=7` |
+| 五位数字故障码、等级、当前表首项、历史 | **已接入扩展**，旧Block3仍无数字码 | `0x66002E10/12`、`0x66002E40`当前表、`0x66002F00`详细历史 |
+| 当前CHB_STATE、启动阶段、锁相状态 | **已接入扩展** | `0x66002E06/0A/0C` |
+| 新DC/Iq给定、开环调制/频率、ac_mode | **已接入54点表** | 点号6/7/4/5/2 |
+| 新PLL/电压环/电流环PI | **已接入54点表**；旧Block2 PI仍只缓存 | 点号17/18、24/25、33/34 |
+| 快速OC/OV阈值、确认拍数、保护总使能 | **已接入54点表** | 点号39/40/41/8 |
+| 原软件OC/OV阈值和计时 | **已接入54点表** | 点号46..51；计时0..65534 |
+| 新预充阈值、稳定/超时、旁路延时、断路器脉冲 | **已接入54点表** | 点号11..15 |
+| HA_L_Voltage_Precharge/HA_H_Voltage | **已接入54点表**，0.1V/count | 点号52/53 |
+| DAB起始/目标占空比、斜坡、相位 | **已接入54点表** | 点号42..45 |
+| 旧PORT_V_SET | 已接入旧缓存/旧FPGA寄存器，不改变新DC给定 | 新核心请写扩展点6 |
+| 旧STATCOM_Q_SET | 已接入旧缓存/旧FPGA寄存器，不改变新Iq给定 | 新核心请写扩展点7 |
 
-AnyEyes 的现代参数 group/index 不是 DPRAM 地址。例如预充阈值为 `group=1,index=2`，预充稳定/超时/旁路/断路器时序为 `group=1,index=3..6`，PLL PI为 `group=1,index=8..9`，电压 PI为 `group=1,index=15..16`，电流 PI为 `group=1,index=24..25`，快速保护为 `group=1,index=30..32`。这些地址属于 AnyEyes 参数协议，不能直接写入 `0x6600xxxx`。VOFA本身只有JustFloat观测发送，不提供这些参数读写；选VOFA时可另开启旧维护协议，但旧维护参数不自动等于现代AnyEyes参数表。
+AnyEyes组/index仍不是物理并口地址。新版扩展复用同一16位参数缩放，但使用自己的请求区、点号和回读地址：点0..8命令/总使能、点9..45为37个现代参数、点46..53为8个原保护/巡检参数。每个实际回读地址及写入编码见 [DPRAM_PARAMETERS.md](DPRAM_PARAMETERS.md)。VOFA仍仅发送JustFloat波形，维护经DPRAM进行，485旧维护协议已经删除。
 
 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)`，因此启用DPRAM并允许远控时，AnyEyes普通启停/DAB/复位被拒绝，停机参数读写和显示仍可用；AnyEyes `FC` 急停独立有效。若改由AnyEyes普通遥控，应设置 `SST_ENABLE_DPRAM=0,SST_SIMULATOR_MODE=0`。
 
-预充和保护阈值相互独立，当前均无DPRAM调参字段：现代 `precharge_voltage_v` 默认350 V；旧 `HA_L_Voltage_Precharge` 默认350 V（模块预充巡检）；旧 `HA_H_Voltage` 默认780 V（单模块高压状态巡检）；原软件 `OV_level_SET` 默认830 V（三相均压合成滤波值）；新快速 `dc_overvoltage_trip_v` 默认780 V（三相模块均压最大值）。`PORT_V_SET`是旧运行电压参考，不是预充或过压阈值。新旧PI字段名称相近也不代表访问的是同一个对象。
+预充与保护阈值仍独立，现均可通过扩展点表维护：precharge_voltage_v默认350V（点11）；HA_L_Voltage_Precharge默认350V（点52，逐模块预充巡检）；HA_H_Voltage默认780V（点53，逐模块高压巡检）；OV_level_SET默认830V（点50，三相均压合成滤波值）；dc_overvoltage_trip_v默认780V（点40，三相模块均压最大值）。旧PORT_V_SET是旧参考，不是这些阈值。
 
 ## 源码依据
 
-本次文档核验记录见 [dpram_mapping_audit.json](evidence/dpram_mapping_audit.json)。核验内容为TI C6000 8.3.12编译器对4种线上结构的 `sizeof/offsetof` 编译期断言、CSV地址转换/唯一性、当前链接脚本及已有DPRAM映射文件。没有重新编译完整固件，没有进行硬件通信测试，未改变10 kHz FPGA中断路径。
+原固定块布局审计见 [dpram_mapping_audit.json](evidence/dpram_mapping_audit.json)，该记录只对应扩展前固定版本；当前扩展、编译及回归结果见 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json)。未进行实板并口或100us时序测量。
 
 - 固定地址和链接段：[`C6748.cmd`](../C6748.cmd#L94)、[`DpramRegister.c`](../Source/02_Peripheral/01_DPRAM/DpramRegister.c#L1)
 - 块复制和邮箱协议：[`DPRAM.C`](../Source/02_Peripheral/01_DPRAM/DPRAM.C#L173)、[`DPRAM.C`](../Source/02_Peripheral/01_DPRAM/DPRAM.C#L338)

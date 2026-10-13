@@ -11,19 +11,18 @@
 3. 构建 Debug 或 Release；上电默认停机，初始化保持原 20 秒等待。
 4. 仿真器查看或修改 `g_chb_dab_command`、`g_chb_dab_params`、`g_chb_dab_status`。开环/闭环由 `ac_mode` 选择。
 
-默认配置为 **AnyEyes + 仿真器控制 + DPRAM 关闭 + EEPROM 自动加载关闭**。
+默认配置为 **AnyEyes + DPRAM远程控制/维护 + EEPROM自动加载关闭**（`SST_SIMULATOR_MODE=0`、`SST_ENABLE_DPRAM=1`）。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。
 
 | 宏 | 值 | 行为 |
 |---|---|---|
 | `SST_DEBUG_PROTOCOL` | 1 / 2 | AnyEyes / VOFA，必须二选一 |
-| `SST_SIMULATOR_MODE` | 1 / 0 | 仿真器直接控制 / 允许远程控制 |
-| `SST_ENABLE_DPRAM` | 0 / 1 | 不注册、不访问 DPRAM / 保留 DPRAM 遥控遥测 |
-| `SST_ENABLE_MAINTENANCE` | 0 / 1 | 默认关闭 / 兼容 A5 5A 维护帧 |
+| `SST_SIMULATOR_MODE` | 默认0；1可选 | 0=允许远程控制，1=仿真器直接控制 |
+| `SST_ENABLE_DPRAM` | 默认1；0可选 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
 | `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
 | `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
 
-仿真器模式允许通信观测及停机参数访问，远程启动及普通运行控制被拒绝。非仿真器且 DPRAM 开启时，DPRAM 是运行命令来源，串口仍提供参数与观测；紧急停机仅请求停机。其余非仿真器配置由串口协议提供运行命令。
+仿真器模式允许通信观测及AnyEyes停机参数访问，远程启动及普通运行控制被拒绝。非仿真器且DPRAM开启时，DPRAM是运行命令来源，AnyEyes仍提供参数与观测；AnyEyes紧急停机仅请求停机。DPRAM关闭时可由AnyEyes提供运行命令，VOFA仅提供观测。切换VOFA不影响已启用的DPRAM维护。
 
 ## 命令行构建
 
@@ -31,7 +30,7 @@
 python tools/build.py --configuration Debug
 python tools/build.py --configuration Release
 python tools/build.py --configuration Debug --variant vofa --define SST_DEBUG_PROTOCOL=2
-python tools/build.py --configuration Debug --variant dpram --define SST_ENABLE_DPRAM=1 --define SST_SIMULATOR_MODE=0
+python tools/build.py --configuration Debug --variant simulator --define SST_SIMULATOR_MODE=1 --define SST_ENABLE_DPRAM=0
 ```
 
 脚本自动枚举工程源码并调用 TI 原生 C6000 编译器，可通过 `--tool-root` 或环境变量 `SST_CGT_ROOT` 指定位置。产物在 `build/<配置>/<变体>/`，包含 `.out`、`.map`、链接 XML、完整日志和 `build_result.json`。
@@ -45,6 +44,8 @@ python tools/build.py --configuration Debug --variant dpram --define SST_ENABLE_
 - [AnyEyes 参数、波形、状态对应表](docs/ANYEYES_MAPPING.md)
 - [通信协议与串口实现](docs/COMMUNICATION.md)
 - [DPRAM并口逐字地址、权限、数值位定义及功能覆盖](docs/DPRAM_MAPPING.md)
+- [DPRAM扩展维护点表、事务、状态与故障历史](docs/DPRAM_EXTENSION.md)
+- [C6748Test原并口维护与迁移对比](docs/DPRAM_LEGACY_COMPARISON.md)
 - [DPRAM完整地址CSV](docs/DPRAM_ADDRESSES.csv) · [DPRAM位定义CSV](docs/DPRAM_BITS.csv)
 - [SST 故障码及参考故障机制](docs/FAULT_CODES.md)
 - [构建与验证报告](docs/VALIDATION.md)
@@ -56,6 +57,8 @@ python tools/build.py --configuration Debug --variant dpram --define SST_ENABLE_
 ## GitHub 版本区分
 
 私有仓库：[Rojya66/SST-AnyEyes](https://github.com/Rojya66/SST-AnyEyes)。重构前版本为 `main` 及标签 `baseline-pre-framework-2026-10-12`，提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`；重构后版本为 `refactor/f28377s-framework` 及标签 `framework-refactored-2026-10-12`。完整验证结果见 [VALIDATION.md](docs/VALIDATION.md)，可携带的软件证据见 [software_validation.json](docs/evidence/software_validation.json)。
+
+2026-10-13并口维护调整保存在同一分支，版本标签为 `dpram-maintenance-2026-10-13`，证据单独见 [dpram_maintenance_validation.json](docs/evidence/dpram_maintenance_validation.json)。框架发布标签及旧软件摘要是历史固定版本，不代表本轮扩展源码的构建结果。
 
 CCS 工作区内克隆重构版本时使用目录名 `AnyEyesVersion`，与工程名保持一致：
 

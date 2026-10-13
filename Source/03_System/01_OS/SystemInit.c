@@ -12,12 +12,12 @@
 #include "hw_syscfg0_C6748.h"
 #include "gpio.h"
 #include "FaultCheck.h"
-#include "MaintenanceProtocol.H"
 #include "ChbDabControl.h"
 #include "ChbBuildConfig.h"
 #include "SstDebug.h"
 #include "SstFault.h"
 #include "SstParams.h"
+#include "SstDpramMaintenance.h"
 
 /*==================================================================
  * 函数功能: 按原顺序完成时钟、EMIFA、GPIO、Timer2 和指示灯初始化
@@ -81,16 +81,13 @@ void SystemInit_Runtime(void)
 {
     Initial_Variable();
     Variable_RST();
-#if CHB_LOAD_EEPROM_PARAMETERS && SST_ENABLE_MAINTENANCE
-    /* 由编译宏决定是否使用EEPROM覆盖本地默认参数。 */
-    MaintenanceProtocol_LoadPersistent();
-#endif
     FaultLatch_Clear(0, 1);
 
     Port_State = PortStatusNum_Initial;
     Port_RunStatus = PortStatusNum_Initial;
     ChbDabControl_Init();
     SstFault_Init();
+    SstDpramMaintenance_Init();
     SstDebug_Init();
 #if CHB_LOAD_EEPROM_PARAMETERS
     SstParameters_LoadPersistent();

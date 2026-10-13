@@ -210,10 +210,26 @@ def main() -> None:
               f"missing={[entity.key for entity in missing]}")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))
+    extension_memory = {
+        "CS5_SST_REQUEST": (0x66002C00, 0x100), "CS5_SST_RESPONSE": (0x66002D00, 0x100),
+        "CS5_SST_TELEMETRY": (0x66002E00, 0x100), "CS5_SST_HISTORY": (0x66002F00, 0x400),
+    }
+    memory_line = r'(?m)^\s*(CS5_SST_\w+)\s+o\s*=\s*(0x[0-9a-fA-F]+)\s+l\s*=\s*(0x[0-9a-fA-F]+)\s*$'
+    actual_extension = {name: (int(origin, 16), int(size, 16))
+                        for name, origin, size in re.findall(memory_line, migrated_linker)}
+    canonical_linker = re.sub(memory_line, "", migrated_linker)
+    reserve_line = r'(?m)^\s*CS5_DPRAMBLOCK_BACK\s+o\s*=\s*(0x[0-9a-fA-F]+)\s+l\s*=\s*(0x[0-9a-fA-F]+)\s*$'
+    reserve = re.findall(reserve_line, canonical_linker)
+    reserve_exact = len(reserve) == 1 and tuple(int(value, 16) for value in reserve[0]) == (0x66003300, 0xD00)
+    old_reserve = re.search(reserve_line, baseline_linker).group(0)
+    canonical_linker = re.sub(reserve_line, lambda match: old_reserve, canonical_linker)
+    extension_section = r'(?m)^\s*\.DPRAM_Sst\w+\s*>\s*CS5_SST_\w+\s*,\s*type\s*=\s*NOINIT\s*$'
+    canonical_linker, extension_count = re.subn(extension_section, "", canonical_linker)
     noinit_line = r'(?m)^(\s*\.DPRAM_\w+\s*>\s*CS5_DPRAMBLOCK_\w+)\s*,\s*type\s*=\s*NOINIT\s*$'
-    canonical_linker, noinit_count = re.subn(noinit_line, r'\1', migrated_linker)
-    check(noinit_count == 19 and tokens(baseline_linker) == tokens(canonical_linker),
-          "linker preserves all source layout tokens except 19 DPRAM NOINIT attributes")
+    canonical_linker, noinit_count = re.subn(noinit_line, r'\1', canonical_linker)
+    check(actual_extension == extension_memory and reserve_exact and extension_count == 4 and
+          noinit_count == 19 and tokens(baseline_linker) == tokens(canonical_linker),
+          "linker preserves every original layout token except NOINIT and the exact four extensions carved from unused tail")
     original_plugin = select_dpram_branches(read(args.baseline / "PluginUnit.C"), True)
     selected_entities = {
         enabled: [entity for path, contents in source_texts.items()
@@ -242,15 +258,18 @@ def main() -> None:
 
     mapped = set(re.findall(r'#\s*pragma\s+DATA_SECTION\(\s*(DPRAM_\w+)\s*,',
                             uncomment(all_text)))
-    noinit_sections = set(re.findall(r'(?m)^\s*\.(DPRAM_\w+)\s*>\s*CS5_DPRAMBLOCK_\w+\s*,\s*type\s*=\s*NOINIT\s*$', migrated_linker))
-    check(len(mapped) == 19 and noinit_sections == mapped,
-          "all 19 mapped DPRAM objects have explicit linker NOINIT storage")
+    noinit_sections = set(re.findall(r'(?m)^\s*\.(DPRAM_\w+)\s*>\s*CS5_(?:DPRAMBLOCK|SST)_\w+\s*,\s*type\s*=\s*NOINIT\s*$', migrated_linker))
+    extension_objects = {"DPRAM_SstRequest", "DPRAM_SstResponse", "DPRAM_SstTelemetry", "DPRAM_SstHistory"}
+    original_mapped = {"DPRAM_Block1_remControl", "DPRAM_Block2_remRegulate", "DPRAM_Block3_remMeaSig"}
+    original_mapped.update("DPRAM_Block4_PluginUnit" + str(index) for index in range(2, 18))
+    check(mapped == original_mapped | extension_objects and noinit_sections == mapped,
+          "all original 19 plus exact four extension objects have explicit linker NOINIT storage")
     selected_ports = re.findall(r'^\s*#\s*define\s+(\w+_online)\b',
                                 uncomment(all_text), re.MULTILINE)
     check(selected_ports == ["HVAC_online"], "DPRAM reachability analysis uses the configured HVAC port")
     no_dpram_reached = set().union(*(closure(name, no_dpram_functions)
                                   for name in ("main", "FPGAIsr", "FAULTIsr", "Timer2Isr")))
-    dpram_access = re.compile(r'\b(?:DPRAM_Block[1-4]_\w+|DPRAM_Maibox_\w+|0x66[0-9A-Fa-f]{6})\b')
+    dpram_access = re.compile(r'\b(?:DPRAM_Block[1-4]_\w+|DPRAM_Sst\w+|DPRAM_Maibox_\w+|0x66[0-9A-Fa-f]{6})\b')
     live_accesses = sorted(name for name in no_dpram_reached
                           if dpram_access.search(no_dpram_functions.get(name, "")))
     check(not live_accesses,

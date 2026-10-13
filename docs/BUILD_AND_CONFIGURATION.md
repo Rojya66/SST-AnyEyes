@@ -2,7 +2,7 @@
 
 ## 工程导入与产物
 
-工程目录为 `D:/Code/SST/AnyEyesVersion`，CCS工程名为 `AnyEyesVersion`，固件文件名保持 `SST_AnyEyes.out`，目标为TMS320C6748。使用CCS 12.5与TI C6000 8.3.12，原 `C6748.cmd` 的FPGA/DPRAM链接映射保持不变。
+工程目录为 `D:/Code/SST/AnyEyesVersion`，CCS工程名为 `AnyEyesVersion`，固件文件名保持 `SST_AnyEyes.out`，目标为TMS320C6748。使用CCS 12.5与TI C6000 8.3.12，原 `C6748.cmd` 的FPGA/DPRAM固定地址保持，新并口维护扩展位于原空闲尾区。
 
 框架整理后从 `Source/03_System/01_OS/Main.c` 阅读入口，从 `SystemInit.c` 阅读初始化顺序，从 `TaskSlice.c` 阅读后台顺序。原 `main_485test.c` 不再参与构建，历史 UART/按键路径归档在 `archive/legacy/`；活动 `Source/` 下的文件由脚本递归枚举，CCS 工程配置也需随实际模块目录同步。重构后的当次构建状态见 `docs/FRAMEWORK_REFACTOR_RESULT.md`，不能沿用旧日志认定新源码已经编译通过。
 
@@ -41,24 +41,23 @@ python tools/ccs_validate.py
 
 `ccs_validate.py`在系统临时目录建立独立工作区，再调用CCS实际导入和构建应用。它的日志位于 `build/ccs_validation/`；默认eclipsec路径为 `E:/Applications/ti/ccs1250/ccs/eclipse/eclipsec.exe`，移动工具链后需更新该脚本或使用CCS界面导入。工程元数据包含C++ PcDebug与C控制模块，并保留CCS所需的XML版本处理指令。
 
-Debug使用原`-g`，Release沿用原工程关闭优化的策略。两者都没有为了通信迁移提高控制算法优化等级；Release名称不代表本次新增实时性能优化。映射DPRAM的section使用`NOINIT`，C运行库不在EMIFA初始化前清零外部通信区；DPRAM启用后由原后台收发使用实际内容，普通RAM缓存仍按原初始化。
+Debug使用原`-g`，Release沿用原工程关闭优化的策略。两者都没有为了通信迁移提高控制算法优化等级；Release名称不代表本次新增实时性能优化。映射DPRAM的section使用`NOINIT`，C运行库不在EMIFA初始化前清零外部通信区；DPRAM启用后由后台收发和扩展初始化使用实际内容，普通RAM缓存仍按原初始化。
 
 ## 宏与控制来源
 
 修改 `Source/04_App/00_Config/ChbBuildConfig.h`，或在CCS编译器预定义符号中覆盖宏。命令行示例：
 
 ```powershell
-python tools/build.py --variant anyeyes_remote --define SST_SIMULATOR_MODE=0
-python tools/build.py --variant vofa_sim --define SST_DEBUG_PROTOCOL=2
+python tools/build.py --variant anyeyes_serial --define SST_SIMULATOR_MODE=0 --define SST_ENABLE_DPRAM=0
+python tools/build.py --variant vofa_sim --define SST_DEBUG_PROTOCOL=2 --define SST_SIMULATOR_MODE=1 --define SST_ENABLE_DPRAM=0
 python tools/build.py --variant anyeyes_dpram --define SST_ENABLE_DPRAM=1 --define SST_SIMULATOR_MODE=0
 ```
 
 | 选择 | 默认 | 说明 |
 |---|---:|---|
 | `SST_DEBUG_PROTOCOL` | 1 | 1=AnyEyes，2=VOFA；不能同时发送两种连续遥测 |
-| `SST_SIMULATOR_MODE` | 1 | 1=通过仿真器直接写控制命令；0=允许远程控制 |
-| `SST_ENABLE_DPRAM` | 0 | 独立启用DPRAM中断、后台读写和原布局 |
-| `SST_ENABLE_MAINTENANCE` | 0 | 可选原A5 5A维护帧，与所选遥测协议共用整帧队列 |
+| `SST_SIMULATOR_MODE` | 0 | 1=通过仿真器直接写控制命令；0=允许远程控制 |
+| `SST_ENABLE_DPRAM` | 1 | 独立启用DPRAM中断、原块及现代54点维护扩展 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 | 1=初始化停机时载入新SST参数；非法图像拒绝并保留默认值 |
 | `SST_UART_BAUD` | 115200 | UART2，8N1；AnyEyes限频也使用该值 |
 | `SST_UART_INPUT_CLOCK_HZ` | 228000000 | 与原UART2实际输入时钟一致，板卡时钟变化需核对 |
@@ -67,11 +66,13 @@ python tools/build.py --variant anyeyes_dpram --define SST_ENABLE_DPRAM=1 --defi
 | 仿真器宏 | DPRAM宏 | 运行命令来源 | 串口观测/停机调参 |
 |---:|---:|---|---|
 | 1 | 0 | 仿真器 | 可用 |
-| 1 | 1 | 仿真器；DPRAM仅通信兼容，远程启动不生效 | 可用 |
-| 0 | 0 | AnyEyes控制命令；VOFA构建可选维护控制 | 可用 |
+| 1 | 1 | 仿真器；DPRAM读回/观测可用，普通远控及点写拒绝 | AnyEyes可用；VOFA仅观测 |
+| 0 | 0 | AnyEyes控制命令；VOFA构建只观测，运行由仿真器调试 | AnyEyes可用；VOFA仅观测 |
 | 0 | 1 | DPRAM；串口普通启动/复位拒绝 | 可用 |
 
-AnyEyes FC急停始终清运行命令。VOFA本身是单向JustFloat观测格式，没有虚构VOFA启停报文；需要远程控制时可启用原维护协议或DPRAM。两种保存任务共享忙标志，启动/修改在保存期间拒绝，停止/关闭仍有效。仿真器直接写RAM无法被通信权限机制拦截，调试期间由操作者遵守停机调参要求。
+默认源码选择AnyEyes、DPRAM开启及非仿真器模式。AnyEyes FC急停始终清运行命令。VOFA是单向JustFloat观测格式，远程启停和参数维护使用DPRAM；切换VOFA无需关闭并口。485的MaintenanceProtocol及 `SST_ENABLE_MAINTENANCE` 宏已删除。AnyEyes/DPRAM共享统一参数保存忙状态，启动/修改在保存期间拒绝，停止/关闭仍有效。仿真器直接写RAM无法被通信权限机制拦截，调试期间由操作者遵守停机调参要求。
+
+并口旧地址与新54点编码见 [DPRAM_MAPPING.md](DPRAM_MAPPING.md)、[DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。新SAVE显式保存EEPROM页6/7的v2镜像108字节/50字，兼容读取v1的92字节/42字；旧Block2的V/Q自动Page1保存已取消。保护总使能是临时调试开关，不保存。
 
 旧 `CHB_CONTROL_MODE` 常量仅为共享源码兼容。正常选择应使用上述独立宏。`CHB_OPEN_LOOP_PULSE_TEST`指旧透明EMIF桥，本工程不启用；普通开环逆变通过 `ac_mode=0` 完整保留。
 
@@ -103,7 +104,7 @@ AnyEyes FC急停始终清运行命令。VOFA本身是单向JustFloat观测格式
 | 框架整理实施前方案 | `docs/FRAMEWORK_REFACTOR_PLAN.md`（保留为历史方案） |
 | 旧非活动路径 | `archive/legacy/`，在 `Source/` 外，不进入构建 |
 | 构建记录与软件验证 | `docs/VALIDATION.md`、`build/` |
-| 固件校验清单 | `build/delivery_manifest.json`（源码输入与15个固件产物SHA256） |
+| 固件校验清单 | `build/delivery_manifest.json`（本轮源码输入与14个固件产物SHA256） |
 | 板级验收 | `docs/BOARD_ACCEPTANCE.md` |
 | 构建和回归脚本 | `tools/`、`tests/` |
 

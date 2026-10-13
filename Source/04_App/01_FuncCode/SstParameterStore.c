@@ -1,27 +1,29 @@
 //###########################################################################
 // FILE: SstParameterStore.c
-// FUNCTION: EEPROM页6/7的92字节镜像及分步保存/整体校验加载事务。
+// FUNCTION: EEPROM页6/7的v2镜像及分步保存/整体校验加载事务；兼容v1加载。
 //           参数表归SstParameterTable；停机判断归SstCommand。
 //###########################################################################
 #include <string.h>
 #include "SstParameterStore.h"
 #include "SstParameterTable.h"
+#include "SstLegacyParameters.h"
 #include "SstCommand.h"
 #include "ChbDabControl.h"
 #include "ChbBuildConfig.h"
 #include "EEProm.H"
-#if SST_ENABLE_MAINTENANCE
-#include "MaintenanceProtocol.H"
-#endif
 static uint16_t storageResult,storagePending,storagePosition; /* storageResult：最近一次参数保存/加载的 SST_PARAM_* 结果。 */
 /* storagePending：异步参数保存正在执行的标志。 */
 /* storagePosition：参数镜像写入/提交/读回校验所处的步序。 */
 static uint32_t storageTick; /* storageTick：上次推进参数存储任务的 10 ms 节拍。 */
-/* SST_STORE_LENGTH：页 6/7 参数镜像总长度，92 字节。 */
-#define SST_STORE_LENGTH 92U
-static uint8_t storageImage[SST_STORE_LENGTH]; /* storageImage：页 6/7 的 92 字节参数镜像，包含魔数、版本及 CRC。 */
+/* SST_STORE_V1_LENGTH：旧版本参数镜像长度，92字节，载荷为42字。 */
+#define SST_STORE_V1_LENGTH 92U
+/* SST_STORE_SNAPSHOT_WORDS：v2镜像字数，42现代字及8原保护/预充字；不保存运行期保护旁路。 */
+#define SST_STORE_SNAPSHOT_WORDS 50U
+/* SST_STORE_LENGTH：v2页6/7参数镜像总长度，108字节。 */
+#define SST_STORE_LENGTH (8U + 2U * SST_STORE_SNAPSHOT_WORDS)
+static uint8_t storageImage[SST_STORE_LENGTH]; /* storageImage：页6/7的v2镜像，包含魔数、版本、50字载荷及CRC。 */
 /*==================================================================
- * 函数功能: 查询 AnyEyes 与可选维护协议共享的存储忙状态
+ * 函数功能: 查询 AnyEyes 与 DPRAM 共用参数存储服务的忙状态
  * 输入参数: 无
  * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
  * 返回值: 1 表示存储正在进行，0 表示空闲
@@ -29,18 +31,14 @@ static uint8_t storageImage[SST_STORE_LENGTH]; /* storageImage：页 6/7 的 92 
  *================================================================*/
 uint16_t SstParameterStore_IsBusy(void)
 {
-#if SST_ENABLE_MAINTENANCE
- return (uint16_t)(storagePending || MaintenanceProtocol_IsSaving());
-#else
  return storagePending;
-#endif
 }
 
 /*==================================================================
  * 函数功能: 读取本参数镜像事务正在保存的标志
  * 输入参数: 无
  * 输出参数: 无。
- * 返回值: 1表示本事务进行中；不包括维护协议事务
+ * 返回值: 1表示参数镜像事务进行中，0表示空闲
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
 uint16_t SstParameterStore_IsPending(void)
@@ -51,7 +49,7 @@ uint16_t SstParameterStore_IsPending(void)
 /*==================================================================
  * 函数功能: 计算参数存储镜像的 CRC16，初值 FFFF、多项式 A001
  * 输入参数: data：本次协议载荷或 EEPROM 镜像数据缓存，长度由当前接口限定
- *           count：有效字节数；维护对象按其接口约定使用 16 位字数
+ *           count：参与校验的有效字节数
  * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
  * 返回值: 16 位 CRC 校验值
  * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
@@ -91,7 +89,7 @@ static uint16_t StoreGet(uint16_t offset)
 }
 
 /*==================================================================
- * 函数功能: 停机时读取页 6/7 的 92 字节镜像，整体校验后恢复可持久化参数
+ * 函数功能: 停机时读取页6/7的v1/v2镜像，整体校验后恢复可持久化参数
  * 输入参数: 无
  * 输出参数: 读接口写入输出指针；写/存储接口更新受控参数、命令或存储状态。
  * 返回值: SST_PARAM_* 操作结果
@@ -99,20 +97,37 @@ static uint16_t StoreGet(uint16_t offset)
  *================================================================*/
 static uint16_t StoreLoad(void)
 {
- uint16_t i,result; /* i：镜像读取及快照解码的索引。 */
- /* result：整体42字快照校验结果。 */
- uint16_t snapshot[42]; /* snapshot：页6/7镜像解码后的37参数和5命令给定。 */
+ uint16_t i,result,length,words; /* i：镜像读取及快照解码的索引。 */
+ /* result：现代及原保护/预充快照的整体校验结果。 */
+ /* length：由已识别版本决定的合法镜像字节数。 */
+ /* words：本次版本的快照字数，v1为42、v2为50。 */
+ uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* snapshot：现代参数及v2原保护/预充编码。 */
  if(!SstCommand_IsStopped()) return SST_PARAM_BUSY;
- for(i=0;i<SST_STORE_LENGTH;++i)
+ /* 先读6字节头并识别固定版本；不接受EEPROM给出的任意长度。 */
+ for(i=0;i<6U;++i)
   storageImage[i]=r_eeprom_byte_read((uint8_t)(6+i/64),(uint8_t)(i%64));
- if(storageImage[0]!=0x53 || storageImage[1]!=0x54 || storageImage[2]!=1 ||
-    storageImage[3]!=SST_STORE_LENGTH || StoreGet(90)!=StoreCrc(storageImage,90))
+ if(storageImage[0]!=0x53 || storageImage[1]!=0x54) return SST_PARAM_STORAGE;
+ if(storageImage[2]==1U && storageImage[3]==SST_STORE_V1_LENGTH) {
+  length=SST_STORE_V1_LENGTH;words=42U;
+ } else if(storageImage[2]==2U && storageImage[3]==SST_STORE_LENGTH) {
+  length=SST_STORE_LENGTH;words=SST_STORE_SNAPSHOT_WORDS;
+ } else return SST_PARAM_STORAGE;
+ for(i=6U;i<length;++i)
+  storageImage[i]=r_eeprom_byte_read((uint8_t)(6+i/64),(uint8_t)(i%64));
+ if(StoreGet((uint16_t)(length-2U))!=StoreCrc(storageImage,(uint16_t)(length-2U)))
   return SST_PARAM_STORAGE;
- /* 先解码并整体校验42字；全部通过后才恢复任一活动成员。 */
- for(i=0;i<42;++i) snapshot[i]=StoreGet((uint16_t)(6+2*i));
+ /* 先解码并整体校验；v2任一原保护参数非法时，现代参数也不能部分生效。 */
+ for(i=0;i<words;++i) snapshot[i]=StoreGet((uint16_t)(6+2*i));
  result=SstParameterTable_SnapshotValidate(snapshot);
  if(result!=SST_PARAM_OK) return result;
+ if(words==SST_STORE_SNAPSHOT_WORDS) {
+  result=SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
+  if(result!=SST_PARAM_OK) return result;
+ }
  SstParameterTable_SnapshotApply(snapshot);
+ if(words==SST_STORE_SNAPSHOT_WORDS) {
+  SstLegacyParameters_ApplySnapshot(&snapshot[42]);
+ }
  return SST_PARAM_OK;
 }
 
@@ -125,13 +140,21 @@ static uint16_t StoreLoad(void)
  *================================================================*/
 uint16_t SstParameterStore_Request(uint16_t load)
 {
- uint16_t i; /* i：本次数组、参数或模块遍历的索引。 */
+ uint16_t i,result; /* i：参数快照、原保护/预充项及镜像遍历索引。 */
+ /* result：完整保存快照的范围校验结果。 */
+ uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* snapshot：保存前整体校验的50字编码快照。 */
  if(SstParameterStore_IsBusy() || !SstCommand_IsStopped()) return SST_PARAM_BUSY;
  if(load) { storageResult=StoreLoad();return storageResult; }
+ for(i=0;i<42U;++i) snapshot[i]=SstParameterTable_SnapshotRead(i);
+ for(i=0;i<8U;++i) snapshot[42U+i]=SstLegacyParameters_Read(i);
+ result=SstParameterTable_SnapshotValidate(snapshot);
+ if(result!=SST_PARAM_OK) return result;
+ result=SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
+ if(result!=SST_PARAM_OK) return result;
  memset(storageImage,0,sizeof(storageImage));
- storageImage[0]=0x53;storageImage[1]=0x54;storageImage[2]=1;storageImage[3]=SST_STORE_LENGTH;
- for(i=0;i<42;++i) StorePut((uint16_t)(6+2*i),SstParameterTable_SnapshotRead(i));
- StorePut(90,StoreCrc(storageImage,90));
+ storageImage[0]=0x53;storageImage[1]=0x54;storageImage[2]=2;storageImage[3]=SST_STORE_LENGTH;
+ for(i=0;i<SST_STORE_SNAPSHOT_WORDS;++i) StorePut((uint16_t)(6+2*i),snapshot[i]);
+ StorePut(SST_STORE_LENGTH-2U,StoreCrc(storageImage,SST_STORE_LENGTH-2U));
  storagePending=1;storagePosition=0;storageResult=SST_PARAM_BUSY;
  storageTick=(uint32_t)g_chb_dab_status.tick_10ms-1;
  return SST_PARAM_OK;

@@ -37,7 +37,7 @@ int main(void) {
  assert(SstParams_Write(0,3,1)==SST_PARAM_BUSY);
  assert(SstParams_Write(1,24,1000)==SST_PARAM_BUSY);
  assert(SstParams_RunCommand(0)==SST_PARAM_OK);
- for(i=0;i<200;++i) {++g_chb_dab_status.tick_10ms;SstParams_Service();}
+ for(i=0;i<240;++i) {++g_chb_dab_status.tick_10ms;SstParams_Service();}
  assert(!SstParams_IsStorageBusy() && SstParams_GetStorageResult()==SST_PARAM_OK);
  assert(SstParams_Write(29,1,0xA55A)==SST_PARAM_OK);
  assert(!g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable);
@@ -84,9 +84,9 @@ def main():
         unit = work / "parameter_precision.cpp"
         unit.write_text("\n".join(("#include <math.h>", prefix, defaults, implementation, TEST)), encoding="utf-8")
         binary = work / "parameter_precision.exe"
-        objects=compile_modules(compiler,protocol_modules(project),work,["SST_SIMULATOR_MODE=0"],
+        objects=compile_modules(compiler,protocol_modules(project),work,["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"],
                                 exclude=("SstParameterTable.c",))
-        subprocess.run([compiler, "-std=c++11", "-O2", "-DSST_SIMULATOR_MODE=0",
+        subprocess.run([compiler, "-std=c++11", "-O2", "-DSST_SIMULATOR_MODE=0", "-DSST_ENABLE_DPRAM=0",
                         "-include",str(work/"host_protocol_io.h"),str(unit),
                         *[str(obj) for obj in objects], "-o", str(binary)], check=True)
         result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)

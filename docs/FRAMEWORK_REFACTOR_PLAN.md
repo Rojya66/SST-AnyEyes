@@ -1,5 +1,7 @@
 # SST 工程按 F28377S_Plat 框架整理的完整方案
 
+本文是2026-10-12实施前的历史规划，已由 [框架交付说明](FRAMEWORK_REFACTOR_RESULT.md) 记录实施结果。2026-10-13进一步移除485 MaintenanceProtocol，维护恢复为并口并新增54点/现代快照，默认DPRAM=1、仿真器=0；当前通信、地址和配置以 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)、[DPRAM_MAPPING.md](DPRAM_MAPPING.md)、[COMMUNICATION.md](COMMUNICATION.md) 为准，不按本文旧维护协议或旧默认值接线/配置。
+
 审查日期：2026-10-12。对象：`D:/Code/SST/AnyEyesVersion`。参考：`D:/Code/CCSv12/F28377S_Plat`。
 
 本文是实施前方案，本轮没有修改固件源码、工程配置或重新生成固件。文件及函数行号来自本次读取的当前代码；词法清单与源码 SHA256 见 [FRAMEWORK_REFACTOR_INVENTORY.json](/D:/Code/SST/AnyEyesVersion/docs/FRAMEWORK_REFACTOR_INVENTORY.json)。清单涵盖 46 个自定义源文件/头文件，排除 TI 的 `00_Device`、`01_Drive`；其中包含条件编译分支，不能把文本统计当作活动代码数量。

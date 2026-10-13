@@ -114,33 +114,3 @@ void SstCommand_ApplyDpram(unsigned short start, unsigned short stop,
     (void)start; (void)stop; (void)pulse_on; (void)pulse_off; (void)reset;
 #endif
 }
-
-/*==================================================================
- * 函数功能: 按原维护协议顺序提交启停、脉冲与故障复位请求
- * 输入参数: start：启动位图，bit0请求CHB和DAB运行
- *           stop：停止位图，bit0撤销两路运行并抑制本次启动/开脉冲
- *           on：开脉冲位图，bit0为DAB、bit1为CHB
- *           off：关脉冲位图，各位优先于对应on位
- *           reset：故障复位位图，仅bit0有效
- * 输出参数: g_chb_dab_command的运行、DAB使能及故障复位字段
- * 返回值: 无
- * 执行说明: 后台串口兼容入口；存储忙仅抑制启动/开脉冲及复位，保持原停止顺序。
- *================================================================*/
-void SstCommand_ApplyMaintenance(unsigned short start, unsigned short stop,
-                                 unsigned short on, unsigned short off,
-                                 unsigned short reset)
-{
-#if SST_ALLOW_SERIAL_COMMANDS
-    if(SstParameterStore_IsBusy()) { start = 0; on = 0; }
-    if(stop & 1U) { start = 0; on = 0; }
-    ChbDabControl_ApplyRemoteCommand(start, stop);
-    if(off & 1U) g_chb_dab_command.dab_enable = 0;
-    else if(on & 1U) g_chb_dab_command.dab_enable = 1;
-    if(off & 2U) g_chb_dab_command.run_enable = 0;
-    else if(on & 2U) g_chb_dab_command.run_enable = 1;
-    if((reset & 1U) && SstCommand_IsStopped() && !SstParameterStore_IsBusy())
-        g_chb_dab_command.fault_reset = 1;
-#else
-    (void)start; (void)stop; (void)on; (void)off; (void)reset;
-#endif
-}

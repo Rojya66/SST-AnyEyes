@@ -1,10 +1,29 @@
 # SST 框架重构验证报告
 
-后续保护注释修正：计时单位、回差和测量口径说明已更新，检查记录见 [protection_comment_correction.json](evidence/protection_comment_correction.json)。执行token和预处理指令相对 `framework-refactored-2026-10-12` 保持一致；本次未重新编译。下列完整构建证据及其字节哈希仍对应该固定标签。
+## 当前并口维护调整（2026-10-13）
 
-## 本次交付验证（2026-10-12）
+当前源码已删除485的MaintenanceProtocol/A5帧及使能宏，485仅选择AnyEyes或VOFA；默认改为DPRAM开启、仿真器关闭。旧固定区保留，新增54点维护、现代遥测/故障历史及16字后台分片，参数持久化改为页6/7的v2镜像108字节/50字并兼容v1。说明见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)，本轮结果以 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json) 的输入、返回码和固件记录为准。
 
-本节对应最终框架重构源码。固定参照为Git标签 `baseline-pre-framework-2026-10-12`、提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。模块对应、数据所有权、初始化步骤和调用关系见 [FRAMEWORK_REFACTOR_RESULT.md](FRAMEWORK_REFACTOR_RESULT.md)。可随Git提交携带的结果、源码指纹、报告及固件哈希见 [software_validation.json](evidence/software_validation.json)；完整本机日志与产物在 `build/`、`Debug/`、`Release/`。
+| 本轮检查 | 已完成结果 |
+|---|---|
+| TI目标Debug/Release | 各87个源文件编译、链接通过；各17个既有告警，无新增维护模块告警 |
+| 宏配置矩阵 | AnyEyes/VOFA、仿真器、DPRAM的8种组合及2种上电恢复组合，共10种通过 |
+| CCS导入及构建 | 独立CCS工作区导入、Debug/Release通过；项目位于工作区直接子目录的导入修正也通过 |
+| 主机软件回归 | 13项通过，含串口范围、v1/v2存储兼容、并口CRC/序号/互锁/分片发布 |
+| 独立点表核验 | 3038字地址唯一，原2142字布局不变，54点与真实参数表一致，TI类型大小核验通过 |
+| 链接布局审计 | 14份map固定并口地址、NOINIT、无启动加载镜像通过 |
+| 中断编译对照 | FPGA/FAULT/Timer2/DPRAM四个ISR的指令、直接调用、代码尺寸和栈量与固定参照一致；FPGAIsr为572字节、栈8字节 |
+| 最终清单 | 14份固件产物及报告匹配源码输入SHA256 `13b5009537ca27f8b02ade3123f0e333594e8f7dc7fd18f2ace94b6419396b15` |
+
+新增独立点表审计不重新生成输入CSV，避免生成器与审计共用同一错误。复验运行 `python tests/dpram_point_table_audit.py`，再生成清单与摘要。以上为软件检查；未执行实板并口握手、负载下的100µs时限或PWM测试。
+
+以下2026-10-12及更早表格是固定历史版本的验证记录，包括已删除的485维护和旧默认宏配置；不能用其中的文件数、宏组合数、告警数或固件哈希认定本轮源码已通过。当前构建与回归结果由本轮证据记录，不在本文沿用历史数字。
+
+历史保护注释修正：计时单位、回差和测量口径说明已更新，检查记录见 [protection_comment_correction.json](evidence/protection_comment_correction.json)。该注释阶段执行token和预处理指令相对 `framework-refactored-2026-10-12` 保持一致，当时未重新编译。下列完整构建证据及其字节哈希对应该固定标签。
+
+## 历史框架交付验证（2026-10-12）
+
+本节对应2026-10-12框架发布源码。固定参照为Git标签 `baseline-pre-framework-2026-10-12`、提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。模块对应、数据所有权、初始化步骤和调用关系见 [FRAMEWORK_REFACTOR_RESULT.md](FRAMEWORK_REFACTOR_RESULT.md)。该阶段结果、源码指纹、报告及固件哈希见 [software_validation.json](evidence/software_validation.json)；本机同名build文件可能已由新检查覆盖，应按指纹区分。
 
 | 验证项 | 最终结果 | 本机证据 |
 |---|---|---|

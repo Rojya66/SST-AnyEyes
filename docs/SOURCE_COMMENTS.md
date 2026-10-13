@@ -1,5 +1,7 @@
 # 自定义源码注释说明
 
+2026-10-13并口维护新增模块也按此规范说明上下文、数值缩放、权限、CRC、版本戳和分片预算；485 MaintenanceProtocol已移除。当前覆盖/构建结果见 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json)，下文较早的计数和等价结果对应历史框架交付，不能沿用为当前源码验收。
+
 按 `F28377S_Plat` 的横线函数说明块维护 `Source` 中的全部自定义代码注释。框架拆分后的范围包括入口、启动、后台调度、中断、板级适配、各域数据与初始化、原 SST 控制、采样、保护、FPGA、DPRAM、通信和存储模块。TI 设备文件 `Source/00_Device/`、TI 驱动库 `Source/01_Drive/` 不属于本次自定义注释范围。最终文件和声明计数见 [随版本验证摘要](evidence/software_validation.json) 及 `build/comment_inventory/verification.json`。
 
 ## 注释格式
@@ -8,7 +10,7 @@
 
 变量、局部计算缓存及结构体成员在声明处以具名中文注释说明用途。同一声明中的多个变量逐个说明。可确认的电压、电流、频率、角度分别标明 V、A、Hz、rad；软件计时区分 ms、10 ms 节拍和 TAD 次数；FPGA 占空比、周期及死区使用原硬件计数。
 
-参数映射另说明线上 16 位编码、缩放比例、符号和受控目标。原 DPRAM 浮点/定点结构的成员说明区分物理量与旧协议编码，完整地址、比例仍以 [AnyEyes 对应表](ANYEYES_MAPPING.md) 和原遥调/遥测转换代码为准。保留字段、原拼写、未执行的批量查询以及空 VOFA 兼容入口均按实际实现注释，不宣称其具有额外功能。
+参数映射另说明线上16位编码、缩放比例、符号和受控目标。原DPRAM成员区分物理量与旧协议编码，原区完整地址见 [DPRAM_MAPPING.md](DPRAM_MAPPING.md)，新54点和快照见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)；AnyEyes独立组/索引见 [ANYEYES_MAPPING.md](ANYEYES_MAPPING.md)。保留字段、原拼写、未执行查询和空VOFA入口按实际实现说明，不宣称额外功能。
 
 宏、枚举常量也补充语义，尤其是协议二选一、DPRAM 使能、仿真器命令权限、固定参数地址容量及五位故障码。原作者署名和历史注释保留。
 
@@ -31,4 +33,4 @@ python tests/comment_coverage.py
 
 后续直接维护所属源文件和公开头的接口契约，再运行覆盖与等价审计。`tools/comment_inventory.py` 和 `tools/comment_semantics.py` 提供语法清单及具名说明检查，日常构建不依赖历史注释缓存，也不通过生成器覆盖当前功能代码。
 
-本次完成 TI Debug/Release、实际 CCS 导入及 Clean Build、11 种宏组合、主机回归、独立 C/C++ 头编译、3×17 启动/调度/ISR 轨迹及四个 ISR 指令/栈/尺寸对照。最终计数和产物哈希见 [software_validation.json](evidence/software_validation.json)、[框架交付说明](FRAMEWORK_REFACTOR_RESULT.md) 和 `build/delivery_manifest.json`。注释等价及编译不能代替板上 100 µs 时序实测，实测步骤见 [板级验收](BOARD_ACCEPTANCE.md)。
+2026-10-12框架交付完成TI Debug/Release、实际CCS导入、11种宏组合、主机回归、独立头编译、3×17启动/调度/ISR轨迹及四个ISR指令/栈/尺寸对照。该阶段计数和产物哈希见 [software_validation.json](evidence/software_validation.json)，当前并口调整见本页开头的新证据。注释等价及编译不能代替板上100µs时序实测，步骤见 [板级验收](BOARD_ACCEPTANCE.md)。

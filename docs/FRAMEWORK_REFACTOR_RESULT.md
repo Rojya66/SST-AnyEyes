@@ -1,8 +1,10 @@
 # F28377S_Plat 框架整理交付说明
 
+2026-10-13后续并口调整：删除485 MaintenanceProtocol及其宏，默认DPRAM=1、仿真器=0；增加54点维护、现代遥测/历史和16字分片发布，统一存储支持v2/v1镜像。当前接口见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)，当前证据见 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json)。本文历史对象数、token数、宏组合和ISR尺寸表对应2026-10-12框架发布，不作为本轮扩展构建结果。
+
 日期：2026-10-12。工程：`D:/Code/SST/AnyEyesVersion`；CCS 名称仍为 `AnyEyesVersion`，固件名称仍为 `SST_AnyEyes.out`。本次落实 [实施前方案](FRAMEWORK_REFACTOR_PLAN.md) 中的职责划分，不迁入 F28377S 的 PIE、CLA、ePWM 或 C2000 工具链。硬件仍为 C6748 + FPGA。
 
-本次完成入口、中断、后台任务、各域数据、初始化、通信、参数存储和输出控制的职责拆分，并完成 TI 编译、实际 CCS Clean Build 与软件回归。随版本提交的验证摘要为 [software_validation.json](evidence/software_validation.json)，本地完整产物清单为 `build/delivery_manifest.json`；两者记录当前源码指纹和对应证据，避免把旧版本日志当作本次结果。
+2026-10-12框架交付完成入口、中断、后台任务、各域数据、初始化、通信、存储和输出控制的职责拆分，以及TI编译、CCS Clean Build和回归。该阶段摘要为 [software_validation.json](evidence/software_validation.json)；当前并口变更使用本页开头的新证据，避免把固定历史版本的日志当作当前结果。
 
 ## 1. 阅读入口与职责
 
@@ -29,9 +31,9 @@ Main.main
   ├─ SystemInit_WaitPowerOnDelay                  原20秒等待
   ├─ SystemInit_Runtime
   │    ├─ Initial_Variable → Variable_RST
-  │    ├─ 可选旧维护参数装载 → 原故障锁存清除
-  │    ├─ CHB/DAB核心 → 故障报告 → 通信初始化
-  │    ├─ 可选新SST参数装载
+  │    ├─ 原故障锁存清除
+  │    ├─ CHB/DAB核心 → 故障报告 → DPRAM扩展 → 通信初始化
+  │    ├─ 可选统一SST参数装载
   │    └─ GPIO TAD/FAULT开放 → 可选DPRAM mailbox处理
   └─ for(;;) TaskSlice_Service
 ```
@@ -45,6 +47,7 @@ CpuTask_ServiceHeartbeat
   → ChbDabControl_Service
   → SstFault_Service
   → 可选 SstDpramHost_ServiceRemoteControl / ServiceTelemetry
+  → SstDpramMaintenance_Service                  后台16数据字分片
   → 捕获原10ms节拍
   → SstSerial_TxService
   → SstDebug_ReceiveService
@@ -64,7 +67,7 @@ CpuTask_ServiceHeartbeat
 |---|---|
 | `FpgaRegister` | FPGA 映射窗口、控制字与参考核对量 |
 | `Ft3RecorderData` | FT3 映射窗口、录波状态及采样序号 |
-| `DpramRegister` | 19 个 DPRAM 固定地址对象及原块布局 |
+| `DpramRegister`、`SstDpramExtension` | 原固定地址对象及4个尾区扩展对象；均NOINIT |
 | `DpramHostData` | DPRAM 遥控、遥调、轮询的普通 RAM 缓存 |
 | `PortStatusData` | 端口运行、开关流程及兼容镜像 |
 | `ControlData` | 旧控制系数、PLL/PI/谐振历史和参考量 |
@@ -72,7 +75,7 @@ CpuTask_ServiceHeartbeat
 | `ProtectionData` | 使能、阈值、计数、锁存、欠压/高压判断及故障策略 |
 | `SoftTimeData` | Timer2 的等待、节拍和指示标志 |
 | `TransformData` | 旧坐标变换结果与控制器计算共享状态 |
-| `LegacySerialData` | 仍需保留的维护/UART兼容符号，不注册旧 ISR |
+| `LegacySerialData` | 历史UART兼容符号；不恢复485维护协议或旧ISR |
 
 机器可读的旧声明行号及新所有者见 [REFACTOR_OBJECT_MOVES.json](REFACTOR_OBJECT_MOVES.json)。定义只存在于所属 `.c`；共享访问通过对应 `.h` 的必要 `extern`，不批量改变 `volatile/static/const` 或调试器可见符号。
 
@@ -118,11 +121,11 @@ CpuTask_ServiceHeartbeat
 | `FaultCheck.C` 的正常 PWM 动作 | `PwmGate` 维护安全初始化、CHB/DAB 开锁及封锁；快速故障检测留 `FaultCheck` |
 | `SstDebug` | 协议选择、分流及服务；UART/RS485寄存器、队列和有界收发归 `SstSerial` |
 | `SstParams` | 固定地址读取/写入权限入口；唯一参数表归 `SstParameterTable`，显示/波形归 `PcDebugDispData`，存储事务归 `SstParameterStore` |
-| DPRAM 应用处理 | `SstDpramHost` 负责命令语义及遥测轮询，`DPRAM` 负责既有块读写 |
+| DPRAM 应用处理 | `SstDpramHost`负责原区兼容；`SstDpramMaintenance`负责54点事务与分片快照；`DPRAM/SstDpramExtension`提供固定映射 |
 
-`ChbDabControl` 保持控制算法和控制私有历史；`SstCommand` 统一普通串口、DPRAM 和可选维护协议的命令策略、停机判断及急停。固定参数地址的 CHB 运行、DAB 使能和复位字段通过窄命令接口写入，仍只修改原指定字段；参数门面先执行原存储互锁，结果码及判断顺序保持。快速保护仍在原快链作出动作，`SstFault` 只在后台整理五位码、等级、当前/历史及上报；不把串口、存储或故障字符串放进 FPGA 中断。
+`ChbDabControl` 保持控制算法和私有历史；`SstCommand`统一AnyEyes、原DPRAM及并口扩展的命令策略、停机判断和急停。参数单点写明确目标、权限及存储互锁，不恢复旧遥控的直接门极/开关操作。`SstLegacyParameters`提供原保护和模块巡检8点，`SstParameterStore`统一显式保存现代及原参数。快速保护仍在原快链动作，`SstFault`在后台整理五位码、等级、当前/历史及上报，不把通信、存储或故障字符串放进FPGA中断。
 
-AnyEyes/VOFA 宏二选一、DPRAM独立开关、仿真器/开环/闭环模式、保存忙互锁、Stop优先规则均沿用基线。PcDebug 的命令、地址、200字显示表、16波形通道及故障码接入见原映射文档，本轮不重新分配。
+AnyEyes/VOFA仍二选一、DPRAM独立开关；保留仿真器、开环、闭环、保存互锁及STOP优先。当前默认改为AnyEyes+DPRAM远控；485维护协议删除，VOFA构建仍可并口维护。PcDebug命令、地址、200字显示表和16波形通道保持，DPRAM新增区独立定义，不重新分配AnyEyes地址。
 
 ## 6. 历史代码与注释
 
@@ -132,7 +135,7 @@ AnyEyes/VOFA 宏二选一、DPRAM独立开关、仿真器/开环/闭环模式、
 
 后续维护直接修改所属源码模块。构建和审计工具读取当前文件及固定 Git 基线，不把历史缓存自动覆盖回工程；工具职责和复核方法见 [REFACTOR_VALIDATION_TOOLS.md](REFACTOR_VALIDATION_TOOLS.md)。
 
-## 7. 验证结果与适用边界
+## 7. 历史框架验证结果与适用边界
 
 | 验证项 | 结果 | 证据位置 |
 |---|---|---|

@@ -130,7 +130,7 @@ functions('''
 ReadEntry|读取映射参数并按比例、符号和 16 位范围饱和编码|16 位线上值，有符号参数使用二补码
 WriteEntry|检查线上值范围后，反比例换算并写入映射成员|SST_PARAM_OK 或 SST_PARAM_RANGE
 SstControl_GetTick10ms|读取控制状态中的 10 ms 节拍|32 位 10 ms 计数，允许自然回绕
-SstParams_IsStorageBusy|查询 AnyEyes 与可选维护协议共享的存储忙状态|1 表示存储正在进行，0 表示空闲
+SstParams_IsStorageBusy|查询 AnyEyes 与 DPRAM 共用参数存储服务的忙状态|1 表示存储正在进行，0 表示空闲
 SstParams_IsStopped|同时检查状态、启动命令和两类 PWM 的停机条件|1 表示可以执行停机专属操作，0 表示不可
 SstParams_RunCommand|检查串口控制权限及存储互锁后提交 CHB/DAB 启停命令|SST_PARAM_* 操作结果
 SstParams_EmergencyStop|无条件撤销 CHB 和 DAB 启动命令，由控制核心执行停机
@@ -168,7 +168,7 @@ SstDebug_GetTxDropped|读取发送队列满或帧非法导致的丢弃计数|累
 SstSerial_TxFreeFrames|查询共享发送队列剩余整帧容量|可用帧槽数量
 SstSerial_SendFrame|验证帧长并复制到共享发送队列，不等待 UART 硬件|1 表示入队成功，0 表示失败
 SstSerial_TxService|在字节预算内向可写的 UART FIFO 推进发送队列
-SstSerial_RouteByte|按编译协议及可选维护帧头将 UART 接收字节分流到后台解析器
+SstSerial_RouteByte|将 UART 接收字节交给编译选中的 AnyEyes 解析器；VOFA只发送波形
 SstDebug_Init|初始化共享收发状态、UART2 及编译选中的调试协议
 SstDebug_Tick10ms|保留后台 10 ms 调试任务入口，推进故障状态报告
 SstDebug_Service|以固定 RX/TX 字节预算轮询 UART 并调度所选协议、故障与参数服务
@@ -180,33 +180,6 @@ VOFA_Send6Float|按通道顺序发送六个浮点波形值
 VOFA_Send8Float|按通道顺序发送八个浮点波形值
 VOFA_Send12Float|按通道顺序发送十二个浮点波形值
 ''', '主循环通信路径；AnyEyes/VOFA 由宏二选一，UART 收发有固定预算，不在 FPGA ISR 内打包或发送。', '协议工作标志、接收缓存及共享整帧发送队列；控制命令通过受控参数入口提交。')
-functions('''
-MaintenanceProtocol_IsSaving|查询维护协议参数保存任务是否仍在执行|非零表示维护保存忙
-MaintApplyChbCommand|把旧遥控缓存的启停、脉冲和复位字段转为统一 CHB/DAB 命令
-MaintRead16|从字节缓存读取小端 16 位字|小端解码后的字值
-MaintWrite16|把 16 位字按小端顺序写入字节缓存
-MaintCRC16|计算维护帧的 Modbus CRC16，初值 FFFF、多项式 A001|16 位 CRC 值
-MaintResetParser|复位维护帧解析位置、预期长度和状态
-MaintSendFrame|组装维护响应帧及 CRC，提交共享 UART 整帧队列
-MaintSendError|组装维护协议错误载荷并发送错误响应
-MaintObjectLength|查询对象及实例所支持的 16 位字数|有效对象的字数；不支持返回 0
-MaintReadObjectWord|按对象、实例和偏移读取兼容状态、遥测、插件或参数字|对应的 16 位字
-MaintReadParameter|读取旧参数表的一个字或浮点数的指定半字|参数的 16 位编码字
-MaintRecountHVAC|根据 HVAC 各相模块位图重新统计在线模块数
-MaintRecountHVDC|根据 HVDC 模块位图重新统计在线模块数
-MaintParameterSupported|检查编译端口是否支持指定旧参数索引|非零表示支持
-MaintParameterWritable|检查旧参数索引是否允许写入|非零表示可写
-MaintSetParameter|校验旧参数长度和值并写入端口配置或浮点给定|维护协议 MAINT_ERR_* 结果码
-MaintExecuteControl|执行旧遥控缓存中的安全控制，受编译权限及停机互锁约束
-MaintWriteObject|检查对象范围和写入权限后更新旧兼容缓存或参数|维护协议 MAINT_ERR_* 结果码
-MaintSavePersistent|把旧维护参数组装为页 4/5 镜像并启动后台逐字节保存|维护协议 MAINT_ERR_* 结果码
-MaintHandleFrame|处理校验通过的维护请求并构造对应读写或控制响应
-MaintenanceProtocol_Init|清空维护接收队列、帧解析及持久化任务状态
-MaintenanceProtocol_RxByte|将接收字节放入维护协议环形队列
-MaintenanceProtocol_RxByteForUart|检查维护帧头与长度以决定当前字节是否属于维护协议|非零表示字节已被维护协议接收
-MaintenanceProtocol_Process|在接收预算内推进维护帧解析及逐字节参数保存
-MaintenanceProtocol_LoadPersistent|读取页 4/5 维护镜像并在校验通过时恢复旧参数
-''', 'SST_ENABLE_MAINTENANCE 可选后台兼容路径；不会把旧 UART ISR 注册到新的调试收发链路。', '维护接收/响应缓存、兼容参数或页 4/5 存储镜像；启停仍由控制核心执行。')
 functions('''
 Chb_Clamp|把输入值限制在指定上下限之间|限幅后的浮点值
 Chb_Abs|计算浮点数绝对值|非负绝对值
@@ -712,22 +685,6 @@ D_Trans|通用 Park 变换 d 轴输出，与输入量同单位
 Q_Trans|通用 Park 变换 q 轴输出，与输入量同单位
 ''')
 variables('''
-MaintRxQueue|维护接收字节环形缓存，后台从队尾解析
-MaintRxHead|维护接收环下一写入位置
-MaintRxTail|维护接收环下一读取位置
-MaintFrame|当前维护帧的组装字节缓存
-MaintFrameIndex|当前维护帧已组装字节数
-MaintFrameExpected|当前维护帧预期总字节数
-MaintFrameState|维护帧头、长度及载荷解析状态
-MaintWireIndex|UART 字节分流的维护帧位置
-MaintWireExpected|UART 分流预期维护帧长度
-MaintWireState|UART 字节分流的维护帧头识别状态
-MaintWireHeader|UART 分流使用的八字节维护帧头缓存
-MaintSaveImage|维护协议页 4/5 的 92 字节保存镜像
-MaintSavePosition|维护镜像逐字节保存的当前步序
-MaintSavePending|维护镜像异步保存忙标志
-MaintSaveSequence|保存请求序号，用于后台完成响应
-MaintSaveTick|维护保存上次推进的 10 ms 节拍
 bytes|发送帧槽的完整字节缓存
 budget|本次服务允许处理的最大字节数，避免后台单轮无界阻塞
 status|维护协议固定状态字响应缓存
@@ -827,10 +784,9 @@ txOffset|当前队尾帧已经发送的字节数
 txDropped|因帧非法或队列满累计丢弃的帧数
 txWaiting|RS485 最后一个字节发送完成前的方向保持标志
 rxTick|最近一次后台 UART 接收的毫秒节拍
-muxState|主协议与可选维护协议的接收分流状态
+muxState|AnyEyes接收状态，0等帧头、2等长度、3接收正文
 muxIndex|当前分流帧已接收字节数
-muxExpected|当前分流帧预期总字节数
-maintHeader|维护协议分流使用的前八字节帧头缓存
+muxExpected|AnyEyes当前帧剩余正文及校验字节数
 lastVofaTick|最近提交 VOFA 波形帧的 10 ms 节拍
 savePinmux|引脚复用寄存器的读改写缓存，保留非目标引脚字段
 savePinMux|EMIFA 引脚复用寄存器的读改写缓存
@@ -1029,9 +985,8 @@ FUNCTIONS['VOFA_Process']['purpose']='保留旧 VOFA 周期入口；实际四通
 FUNCTIONS['VOFA_SendFloatArray']['purpose']='按小端 IEEE754 组成最多十二通道的 JustFloat 帧，追加 00 00 80 7F 帧尾并提交队列'
 FUNCTIONS['VOFA_SendFloatArray']['result']='无；队列入队结果沿用原接口直接忽略'
 FUNCTIONS['SstDebug_Tick10ms']['purpose']='保留 10 ms 调试服务兼容入口，本函数为空；时间基准直接读取控制状态'
-FUNCTIONS['SstDebug_Service']['purpose']='以固定 RX/TX 字节预算轮询 UART 并调度所选协议、可选维护与参数保存服务'
+FUNCTIONS['SstDebug_Service']['purpose']='以固定 RX/TX 字节预算轮询 UART 并调度所选协议与参数保存服务'
 VARIABLES['rxTick']='最近接收字节的 10 ms 节拍，用于后台分流超时判断'
-VARIABLES['maintHeader']='可选维护分流的整帧字节缓存，容量 SST_FRAME_MAX'
 LOCALS[('VOFA_SendFloatArray','word')]='通过 memcpy 得到的单通道 IEEE754 位表示，用于按小端逐字节打包'
 for owner in ('BandH2_100_Filter','BandH6_100_Filter','BandH12_100_Filter','BandH2_20_Filter'):
     locals_for(owner,'tempjs_0|差分式当前系数，最后用于输出增益\ntempjs_1|本拍及前两拍输入项的累计值\ntempjs_2|输入缓存及本拍滤波输出计算值\ntempjs_3|前一拍输出乘第一反馈系数的缓存\ntempjs_4|前两拍输出乘第二反馈系数的缓存')
@@ -1042,9 +997,7 @@ for key in ('Chb_Clamp','Chb_Abs','Chb_Min3','Chb_Max3','Chb_WrapAngle','Chb_Con
             'SstParams_IsStorageBusy','SstParams_IsStopped','SstTelemetry_ReadFloat',
             'SstDisplay_Read','StoreCrc','StoreGet','SstParams_GetStorageResult',
             'SstDebug_GetTick10ms','SstDebug_GetTick1ms','SstDebug_GetTxDropped',
-            'SstSerial_TxFreeFrames','MaintRead16','MaintCRC16','MaintObjectLength',
-            'MaintReadObjectWord','MaintReadParameter','MaintParameterSupported',
-            'MaintParameterWritable','MaintenanceProtocol_IsSaving','CRC16','BCD2HEX','HEX2BCD',
+            'SstSerial_TxFreeFrames','CRC16','BCD2HEX','HEX2BCD',
             'SstFault_GetCode','SstFault_GetFirstCode','SstFault_GetLevel','SstFault_GetActiveCount',
             'SstFault_GetHistoryCount','SstFault_GetLegacyHistoryWord','SstFault_HistoryIndex',
             'SstFault_GetHistoryCode','SstFault_GetHistoryLevel'):
@@ -1062,7 +1015,6 @@ for key, contract in dict(
     SstFault_ReadInput='input 指向的后台故障输入；不保证各标量为同一硬件瞬间。',
     SstFault_GetHistory='record 指向的一条历史记录，newest_index=0 读取最新。',
     StorePut='storageImage 中 offset、offset+1 两字节。',
-    MaintWrite16='data[0..1]，低字节在前。',
     Chb_SourceEquivalentPiStep='更新指定 PI 状态的 integral，返回本拍限幅输出。',
     VOFA_Init='无。', VOFA_Process='无。', SstDebug_Tick10ms='无。'
 ).items(): FUNCTIONS[key]['output']=contract
@@ -1082,7 +1034,6 @@ FUNCTIONS['Chb_SourceEquivalentPiStep']['purpose']='按原增量 PI 等效的位
 FUNCTIONS['Chb_SourceEquivalentPiStep']['result']='kp*error+integral 的本拍 PI 输出，本函数内不额外限幅'
 FUNCTIONS['Chb_SourceEquivalentPiStep']['context']='TAD 快速控制子函数；外环在调用处限幅 Id，内环通过相电压限幅，系数符号保持原方向。'
 FUNCTIONS['main']['result']='声明为 int；初始化完成后进入永久主循环，正常运行不返回'
-FUNCTIONS['MaintExecuteControl']['result']='维护协议 MAINT_ERR_* 结果码，成功为 MAINT_ERR_OK'
 FUNCTIONS['Judge_MainPowerSupply']['purpose']='检查原四端口状态字是否存在主电源模式且外部有电的端口'
 FUNCTIONS['Judge_MainPowerSupply']['result']='存在主电源且有电返回 1，否则返回 0'
 FUNCTIONS['Judge_MainPowerSupply']['output']='无；只检查 MainStatus_HVAC/HVDC/LVDC/LVAC 的模式和外部电源位。'
@@ -1121,5 +1072,5 @@ for key,contract in dict(
 ).items(): FUNCTIONS[key]['output']=contract
 for owner in ('C_COMM2PC::RxByte','C_COMM2PC::ExecuteInstruct','C_COMM2PC::MainFSM'):
     LOCALS[(owner,'now')]='本轮读取的单调毫秒节拍，用于接收/连接超时或周期上报'
-for owner in ('SstSerial_RouteByte','SstDebug_Service','SstParams_Service','MaintenanceProtocol_Process'):
+for owner in ('SstSerial_RouteByte','SstDebug_Service','SstParams_Service'):
     LOCALS[(owner,'now')]='本轮读取的 10 ms 控制节拍，用于后台超时或逐拍服务'

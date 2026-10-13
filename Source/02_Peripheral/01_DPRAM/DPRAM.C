@@ -305,8 +305,7 @@ void DPRAM_Write(ushort Flag_R)
 				tt=1;
 				
 #ifdef EEPROM_ON				
-				EEPROM_Page1_2_DSP();
-				EEPROM_Page2_2_DSP();
+                /* 旧Block2回读使用当前RAM，避免EEPROM旧PI覆盖本次遥调缓存。 */
 #endif	        
 				MemDataCopy_1(&PORT_Regulate_DATA_Buf.DPRAM_Block2Buf[0], DPRAMBlock2_Length, &DPRAM_Block2_remRegulate.DPRAM_Block2Buf[0]);
 				FLAG_RemRegulate_SetOver=0;
@@ -1800,10 +1799,8 @@ void RemoteRegulate_Dispose_2(uchar Inital_Y)
 	
 	if(Inital_Y==0)
 	{
-		DSP_2_EEPROM_Page1();
-//		DSP_2_EEPROM_Page2();
-//		DSP_2_EEPROM_Page3();
-		
+        /* 并口兼容遥调仅更新RAM/旧FPGA镜像，不进行阻塞EEPROM写。
+         * 新参数需通过邮箱21显式SAVE，后台每10ms推进一字节。 */
 		FLAG_RemRegulate_SetOver=1;
 	}
 	Flag_PC=0;

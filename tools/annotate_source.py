@@ -478,7 +478,6 @@ def constant_meaning(name,declaration):
     if name.startswith('DPRAMBlock') and name.endswith('_Length'): return '对应 DPRAM 块的连续 16 位字数，保持原布局'
     if name.startswith('ModuleIndex_'): return '模块采样类型 '+name[12:].replace('DCbus_Volt','直流电压').replace('DCbus_Current','直流电流').replace('Port_Current','端口电流').replace('Temp','温度')+' 的索引编号'
     if name.startswith('PortStatusNum_'): return '原端口状态机 '+name[14:]+' 状态编号，保持兼容数值'
-    if name.startswith('MAINT_'): return MAINT_CONSTANTS.get(name[6:])
     if name.startswith('VOFA_'): return VOFA_CONSTANTS.get(name[5:])
     if name.endswith('_Ratio'): return '原 '+name[:-6]+' 采样量的传感器/工程量换算比例'
     if name in ('ushort','Uint16'): return '旧代码无符号 16 位整数类型别名'
@@ -493,7 +492,6 @@ SST_ENABLE_DPRAM|DPRAM 硬件访问及通知中断使能，0 禁用、1 启用
 SST_SIMULATOR_MODE|仿真器控制模式，1 禁止普通串口/DPRAM 远程启动，急停仍有效
 SST_ALLOW_REMOTE_COMMANDS|由仿真器模式与 DPRAM 配置派生的遥控权限
 SST_ALLOW_SERIAL_COMMANDS|由仿真器模式派生的普通串口命令权限
-SST_ENABLE_MAINTENANCE|旧维护协议兼容服务使能，0 关闭、1 启用
 SST_UART_BAUD|UART2 调试通信波特率，单位 bit/s
 SST_UART_INPUT_CLOCK_HZ|UART2 输入时钟，单位 Hz，需与板级 SYSCLK 一致
 SST_TELEMETRY_PERIOD_10MS|VOFA 周期上报间隔，单位 10 ms
@@ -651,59 +649,6 @@ SYNC|同步故障五位上报码
 PARAM_RESULTS=dict(OK='成功结果码',BAD_ADDRESS='地址非法结果码',READ_ONLY='只读地址拒绝结果码',BUSY='忙或不满足停机条件结果码',RANGE='数值越界结果码',DENIED='编译权限拒绝结果码',STORAGE='存储校验/读写失败结果码',GROUPS='固定参数组数，参考协议为 30',PER_GROUP='每组固定参数字数，参考协议为 34')
 STATE_CONSTANTS=dict(STOPPED='停止',PRECHARGE='预充',BYPASS_DELAY='旁路等待',WAIT_PLL='等待 PLL',RUNNING='运行',FAULT='故障')
 CONTROL_FAULTS=dict(NONE='无',PRECHARGE_TIMEOUT='预充超时',PLL_TIMEOUT='PLL 超时',AC_OVERCURRENT='交流过流',DC_OVERVOLTAGE='直流过压',HARDWARE='硬件',BAD_CONFIGURATION='配置非法')
-MAINT_CONSTANTS=dict(row.split('|',1) for row in '''
-FRAME_SIZE|维护完整帧最大字节数，含 8 字节头及 2 字节 CRC
-STATUS_WORDS|维护固定状态对象长度，16 个字
-PARAM_COUNT|旧维护参数对象索引数量，28 个
-ALL_PARAM_WORDS|旧维护全部参数编码字数，44 个字
-PLUGIN_COUNT|旧 FPGA 插件对象数量，15 个
-PLUGIN_SUMMARY_WORDS|插件摘要长度，每插件 5 个字
-PERSIST_MAGIC0|旧维护参数镜像魔数第一字节 4D
-PERSIST_MAGIC1|旧维护参数镜像魔数第二字节 50
-SOF0|维护帧头第一字节
-SOF1|维护帧头第二字节
-VERSION|维护线上帧版本编号
-RX_QUEUE_SIZE|维护字节接收环容量
-MAX_PAYLOAD|维护帧允许的最大载荷字节数
-UART_BAUD|旧维护协议串口波特率兼容定义
-FLAG_RESPONSE|维护帧响应标志位
-FLAG_ERROR|维护帧错误响应标志位
-CMD_HELLO|维护连接信息查询命令
-CMD_READ_OBJECT|维护对象读取命令
-CMD_WRITE_OBJECT|维护对象写入命令
-CMD_EXEC_CONTROL|维护遥控执行命令
-CMD_SAVE|维护参数保存命令
-OBJ_STATUS|维护固定状态对象编号
-OBJ_TELEMETRY|维护端口遥测对象编号
-OBJ_CONTROL|维护遥控缓存对象编号
-OBJ_REGULATE|维护遥调缓存对象编号
-OBJ_PLUGIN|维护原始插件对象编号
-OBJ_PARAMETER|维护单个旧参数对象编号
-OBJ_ALL_PARAMETERS|维护全部旧参数对象编号
-OBJ_PLUGIN_SUMMARY|维护插件摘要对象编号
-ERR_OK|维护操作成功结果码
-ERR_BAD_VERSION|维护版本不支持错误码
-ERR_BAD_CRC|维护 CRC 校验失败错误码
-ERR_BAD_LENGTH|维护载荷长度非法错误码
-ERR_BAD_COMMAND|维护命令不支持错误码
-ERR_BAD_OBJECT|维护对象不支持错误码
-ERR_BAD_RANGE|维护对象范围/数值非法错误码
-ERR_BUSY|维护共享存储忙/非停机错误码
-ERR_NOT_ALLOWED|维护权限拒绝错误码
-ERR_EEPROM|维护 EEPROM 校验/写入失败错误码
-CTL_START|维护端口启动控制选择
-CTL_STOP|维护端口停止控制选择
-CTL_FAULT_CLEAR|维护故障清除控制选择
-CTL_HF_ON|维护 DAB 高频桥使能控制选择
-CTL_HF_OFF|维护 DAB 高频桥禁用控制选择
-CTL_LF_ON|维护 CHB 工频桥使能控制选择
-CTL_LF_OFF|维护 CHB 工频桥禁用控制选择
-CTL_SWITCH_ON|维护开关闭合控制选择
-CTL_SWITCH_OFF|维护开关断开控制选择
-CTL_SWITCH_EN|维护开关动作允许控制选择
-CTL_SWITCH_DIS|维护开关动作禁止控制选择
-CTL_MODE|维护旧端口模式设置控制选择
-'''.strip().splitlines())
 VOFA_CONSTANTS=dict(RX_BUFFER_SIZE='旧 VOFA 接收缓存容量兼容定义',TX_BUFFER_SIZE='旧 VOFA 发送缓存容量兼容定义')
 
 if __name__=='__main__': raise SystemExit(apply())

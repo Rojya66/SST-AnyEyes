@@ -12,6 +12,7 @@
 #include "SstFault.h"
 #include "SstDebug.h"
 #include "SstParams.h"
+#include "SstLegacyParameters.h"
 #include "SstBoard.h"
 #include "vofa.h"
 #define SOC_UART_2_REGS 0U
@@ -45,6 +46,9 @@ uint8_t r_eeprom_byte_write(uint8_t page,uint8_t offset,uint8_t value)
 {assert(page>=6&&page<=7);eeprom[page*64+offset]=value;++eepromWrites;return 1;}
 volatile CHB_DAB_STATUS g_chb_dab_status;
 volatile unsigned short g_chb_dab_protection_enable=1;
+unsigned short OC_level_SET=600,OC_time_SET=300,OC_level_SET_L2=900,OC_time_SET_L2=100;
+unsigned short OV_level_SET=850,OV_time_SET=100;
+float HA_L_Voltage_Precharge=650.0F,HA_H_Voltage=780.0F;
 float HA_Port_Volt_A=1.25F,HA_Port_Volt_B=2,HA_Port_Volt_C=3;
 float HA_Port_Current_A=-4,HA_Port_Current_B=5,HA_Port_Current_C=6;
 HOST_PORT_REALTIME PORT_RealTime_DATA = { 1.25F };
@@ -161,11 +165,12 @@ static void Params(void)
  assert(SstParams_Write(0,1,0)==(SST_ALLOW_SERIAL_COMMANDS?SST_PARAM_OK:SST_PARAM_DENIED));
  assert(g_chb_dab_command.dab_enable==(SST_ALLOW_SERIAL_COMMANDS?0:1));
  SstParams_EmergencyStop();
- for(int i=0;i<200;++i) {
+ for(int i=0;i<240;++i) {
   unsigned old=eepromWrites;++g_chb_dab_status.tick_10ms;SstParams_Service();
   assert(eepromWrites-old<=1);
  }
- assert(SstParams_GetStorageResult()==0&&eepromWrites==93);
+ assert(SstParams_GetStorageResult()==0&&eepromWrites==109);
+ assert(eeprom[6*64+2]==2&&eeprom[6*64+3]==108);
  const uint16_t differentCommands[5]={0,1000,5000,6800,100};
  for(int i=0;i<5;++i) assert(SstParams_Write(0,commandIndices[i],differentCommands[i])==0);
  assert(SstParams_Write(1,24,0)==0);
@@ -193,6 +198,10 @@ static void Protocol(void)
 {
 #if SST_DEBUG_PROTOCOL == SST_DEBUG_PROTOCOL_ANYEYES
  Reset();
+ /* Former A5/5A maintenance bytes have no parser/response; AnyEyes still synchronizes. */
+ const uint8_t retired[]={0xA5,0x5A,1,0,0x37,1,0,0,0,0};
+ for(size_t i=0;i<sizeof(retired);++i)hwRx.push_back(retired[i]);
+ Drain();assert(hwTx.empty());
  Send(0xF0,{1,24});Drain();assert(hwTx.empty());
  Send(0xFF,{255,255,255,255});Drain();
  assert(hwTx==Frame(0x7F,{0x55,255,43,1,0,1,0}));hwTx.clear();
@@ -226,6 +235,12 @@ static void Vofa(void)
  Reset();VOFA_Send4Float(1,-2,0,3.5F);Drain();
  const uint8_t expected[]={0,0,128,63,0,0,0,192,0,0,0,0,0,0,96,64,0,0,128,127};
  assert(hwTx==std::vector<uint8_t>(expected,expected+sizeof(expected)));
+#if SST_DEBUG_PROTOCOL == SST_DEBUG_PROTOCOL_VOFA
+ hwTx.clear();Send(0xFF,{255,255,255,255});
+ const uint8_t retired[]={0xA5,0x5A,1,0,0x37,1,0,0,0,0};
+ for(size_t i=0;i<sizeof(retired);++i)hwRx.push_back(retired[i]);
+ Drain();assert(hwTx.empty());
+#endif
 }
 int main(void)
 {

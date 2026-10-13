@@ -61,7 +61,7 @@
 
 参数直接映射 `g_chb_dab_params`，命令直接映射 `g_chb_dab_command`；不以 reference 原产品的参数含义替代 SST 参数。DAB start duty <= target duty；反馈极性仅+1/-1；open_loop_modulation <= modulation_max。sample_period_s只读，以防串口参数与真实TAD时序不一致。所有普通调参停机写；不会在运行中跨多个控制成员更新参数。
 
-`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。默认模拟器配置中这些串口控制写返回5，保留原调试器直接控制。有效 `FC` 急停始终把run/dab清零，不受通信控制源选择阻止。
+`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。当前默认 `SST_SIMULATOR_MODE=0,SST_ENABLE_DPRAM=1`，运行控制由并口接管，以上串口控制写返回5；AnyEyes普通停机参数访问和观测仍可用。有效 `FC` 急停始终把run/dab清零，不受控制源选择阻止。485只使用AnyEyes或VOFA，旧MaintenanceProtocol已移除。
 
 | 功能码范围 | 含义 |
 |---|---|
@@ -75,7 +75,9 @@
 | 29/3 | 当前是否允许串口控制 |
 | 29/4 | 调试协议1=AnyEyes，2=VOFA |
 
-保存/恢复只允许停机。参数保存使用EEPROM **6/7页**（原Page_LOG_C/D在基线只有定义无使用），版本1图像92字节含37个控制参数、ac_mode和4个浮点给定、CRC16；不保存run_enable/dab_enable/fault_reset或软件保护开关。保存后台每10ms最多写1字节，先使magic无效，最后提交magic，再每10ms回读1字节验证，约1.85秒完成，不屏蔽全局中断。29/0立即应答表示请求接受，继续读29/0等待由4变0；6代表存储失败。恢复在停机时同步读92字节并整体校验后应用，期间后台通信可能延迟，TAD中断不被屏蔽。页4/5继续留给旧维护参数。默认 `CHB_LOAD_EEPROM_PARAMETERS=0`；显式启用时由runtime在初始化停机状态调用 `SstParameters_LoadPersistent`。实板掉电保存、I2C时序仍须验证。
+保存/恢复只允许停机，AnyEyes和DPRAM调用同一存储服务。EEPROM **6/7页**保存v2镜像108字节：50字载荷含37个现代控制参数、ac_mode及4个浮点给定、8个原软件保护/模块巡检参数，另有头和CRC16；不保存run_enable/dab_enable/fault_reset或临时软件保护总使能。兼容读取v1的92字节/42字镜像，旧版本未包含的8项保留当前默认值。保存后台每10ms最多写1字节，先使magic无效，最后提交magic，再逐字节回读验证，不屏蔽全局中断；完成时间随后台节拍和硬件耗时变化。29/0立即应答表示请求接受，继续读取至由4变0；6代表存储失败。恢复停机同步读取对应长度并整体校验后应用，后台通信可能延迟，TAD中断不屏蔽。页4/5旧维护镜像不再作为活动服务加载。默认 `CHB_LOAD_EEPROM_PARAMETERS=0`，显式启用后由runtime停机调用 `SstParameters_LoadPersistent`。实板掉电保存、I2C时序仍须验证。
+
+AnyEyes的组/索引地址保持不变；新增的8项原保护/巡检参数通过DPRAM54点扩展访问，未虚构新的AnyEyes地址。并口点表和直接回读地址见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)；切换VOFA仍可使用并口启停、参数维护及故障查询。
 
 ## 显示/示波器索引
 

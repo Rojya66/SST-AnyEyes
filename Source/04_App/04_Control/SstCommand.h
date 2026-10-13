@@ -52,20 +52,6 @@ uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value);
 void SstCommand_ApplyDpram(unsigned short start, unsigned short stop,
                           unsigned short pulse_on, unsigned short pulse_off,
                           unsigned short reset);
-/*==================================================================
- * 函数功能: 将维护协议的启停、开关脉冲及复位统一提交给控制核心
- * 输入参数: start：启动位图，仅bit0参与启动
- *           stop：停止位图，bit0抑制本次启动及开脉冲
- *           on：开脉冲位图，bit0为DAB、bit1为CHB
- *           off：关脉冲位图，各位优先于对应on位
- *           reset：故障复位位图，仅停机且存储空闲时接受bit0
- * 输出参数: g_chb_dab_command的运行、DAB使能及故障复位字段
- * 返回值: 无
- * 执行说明: 保留串口权限和原维护策略，与DPRAM策略分别执行；不直接操作PWM硬件。
- *================================================================*/
-void SstCommand_ApplyMaintenance(unsigned short start, unsigned short stop,
-                                 unsigned short on, unsigned short off,
-                                 unsigned short reset);
 #ifdef __cplusplus
 }
 #endif

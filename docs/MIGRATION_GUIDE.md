@@ -14,19 +14,19 @@
 | `01_Drive` | drivers | TI 原平台驱动 |
 | `01_ComLib` | CommonProgram、SstTypes、SstWireTypes、ControlAlgorithmTypes、TransformData | 公共算法、基础类型、共享线上字段、坐标变换兼容状态 |
 | `02_Peripheral/00_FPGA` | FpgaRegister、Ft3RecorderData、FpgaIo、FpgaModulation、Ft3Recorder、DacOutput | 固定寄存器布局、映射对象与按职责分开的外围访问 |
-| `02_Peripheral/01_DPRAM` | DpramRegister、DpramConfig、DPRAM | 既有地址布局、映射对象与块读写 |
+| `02_Peripheral/01_DPRAM` | DpramRegister、DpramConfig、DPRAM、SstDpramExtension | 既有地址布局、映射对象、扩展固定区与块读写 |
 | `02_Peripheral/02_Storage` | EEProm、X1226_RW | 原 EEPROM/RTC 硬件接口 |
 | `02_Peripheral/03_Serial` | SstSerial | UART2/RS485、整帧队列、有界收发 |
 | `03_System/00_Board` | SstBoard、Hardware、EMIFAPinmuxSetup | PSC、引脚、EMIFA、GPIO及Timer2硬件配置 |
 | `03_System/01_OS` | Main、SystemInit、TaskSlice、CpuTask、SoftTimeData | 程序入口、启动顺序、后台顺序、心跳、毫秒时基与软件节拍 |
 | `03_System/02_ISR` | Redef_Interrupt | 中断注册/映射及Timer2、FPGA、FAULT、DPRAM的原中断正文 |
 | `04_App/00_Config` | ChbBuildConfig、SstControlConfig；main.H 仅兼容 | 构建选择与控制常量；活动模块不依赖万能头 |
-| `04_App/01_FuncCode` | SstParams、SstParameterTable、SstParameterStore、SstParamTypes | 固定地址权限、参数表与 EEPROM 事务分别维护 |
+| `04_App/01_FuncCode` | SstParams、SstParameterTable、SstParameterStore、SstLegacyParameters、SstParamTypes | 固定地址权限、现代/原保护参数和 EEPROM 事务 |
 | `04_App/02_Measurement` | ADC_Sample、MeasurementData、MeasurementInit、MeasurementService | 标定、快速采样、滤波/RMS数据、初始化与后台整理 |
-| `04_App/03_PcDebug` | Comm2PcDebug、SstDebug、PcDebugDispData、VOFA、MaintenanceProtocol、LegacySerialData | 协议解析、协议选择、显示/波形映射、兼容符号 |
+| `04_App/03_PcDebug` | Comm2PcDebug、SstDebug、PcDebugDispData、VOFA、LegacySerialData | AnyEyes/VOFA协议选择、显示/波形映射、历史兼容符号 |
 | `04_App/04_Control` | ChbDabControl、HVAC_Strategy、ControlData、ControlInit、PortStatusData、SstPortStatus、PwmGate | CHB/DAB 核心、控制历史、初始化、端口联锁及 PWM 动作 |
 | `04_App/08_Fault` | FaultCheck、ModuleVoltageCheck、ProtectionData/Types/Config、SstFault | 快速保护、模块电压巡检、保护数据与后台报告 |
-| `04_App/10_Host` | SstDpramHost、DpramHostData | DPRAM 遥控/遥调语义及遥测轮询 |
+| `04_App/10_Host` | SstDpramHost、SstDpramMaintenance、DpramHostData | DPRAM旧区兼容、54点维护事务及分片快照 |
 
 重构前首版仍把数据和中断放在原主文件；本轮按 [FRAMEWORK_REFACTOR_PLAN.md](FRAMEWORK_REFACTOR_PLAN.md) 将这些职责归回所属模块。原 `main_485test.c` 从活动源码移除，必要数据保留原符号、类型、初值和硬件布局；不用另建一个全局变量集合文件替代它。`main.H` 仅供历史兼容，活动模块使用明确的类型、数据及函数接口。原控制算法不改为新的对象模型，也不批量修改 `volatile/static` 语义。
 
@@ -36,11 +36,11 @@
 
 `Main.main` → `CpuTask_InitBootFlags` → `SystemInit_Hardware` → `SystemInit_WaitPowerOnDelay` → `SystemInit_Runtime` → 无限调用 `TaskSlice_Service`。
 
-硬件阶段保持 PSC/引脚/EMIFA/Timer2 和指示灯初值；上电等待保持 20 秒。运行阶段按原顺序完成变量初始化与复位、可选旧维护参数加载、故障锁存清除、CHB/DAB/故障/通信初始化、可选 SST 参数加载，最后开放 GPIO TAD/FAULT 中断。初始化拆分按原语句顺序划成有明确所属域的段，同一域多次出现时保留多个有序段，不按变量名重新排序。
+硬件阶段保持PSC/引脚/EMIFA/Timer2和指示灯初值；上电等待保持20秒。运行阶段完成变量初始化与复位、故障锁存清除、CHB/DAB核心、故障报告、DPRAM扩展与通信初始化、可选SST参数加载，最后开放GPIO TAD/FAULT中断。原有域初始化仍按原有序段执行，同一域多次出现时保持多个有序段。
 
-运行对象与安全输出在 TAD/FAULT 注册前初始化。Timer2 在上电等待期间保持原 10 ms 节拍。通信不在等待期间执行启停。旧维护参数加载仅在两个相关宏同时开启时执行，它不等同于SST控制参数；新的SST参数图像在核心初始化后加载，避免被默认值初始化覆盖。
+运行对象与安全输出在 TAD/FAULT 注册前初始化。Timer2 在上电等待期间保持原 10 ms 节拍。通信不在等待期间执行启停。旧485维护页4/5的加载及协议已移除；统一SST参数镜像在核心初始化后可选加载，避免被默认初始化覆盖。v2镜像同时保存现代参数和8项原保护/模块巡检参数。
 
-`TaskSlice_Service` 显式列出：看门狗/LED → CHB/DAB 慢状态机 → 故障汇总 → 可选 DPRAM 遥控/遥测 → 捕获本轮原 10 ms 节拍 → 串口发送服务 → 有界接收及协议分流 → 调试协议服务 → 参数持久化服务 → 串口发送服务 → 原实时参数整理。通信收发、CRC、参数访问、波形编码、故障上报和持久化均在后台；存储任务不再隐藏在通信综合服务内。
+`TaskSlice_Service` 显式列出：看门狗/LED → CHB/DAB慢状态机 → 故障汇总 → 可选DPRAM遥控/遥测 → DPRAM维护分片服务 → 捕获本轮原10ms节拍 → 串口发送 → 有界接收 → 所选调试协议 → 参数持久化 → 串口发送 → 原实时参数整理。DPRAM扩展每轮至多搬运16个数据字及两个版本标记；CRC、维护、快照和持久化均在后台。
 
 ## 保留的控制行为
 
@@ -74,11 +74,13 @@ TI 原中断入口不自动允许低优先级 ISR 内被高优先级抢占，因
 - 波形与状态使用 16 位传输的观测适配，浮点控制参数以映射表中的量纲/比例接入。
 - VOFA 使用原小端 float32 和 JustFloat 帧尾，默认后台限频，发送结束等待改为非阻塞检查。
 - DPRAM 的启用和控制权限由独立宏明确；仿真器模式不接受 DPRAM 或串口远程启动。
-- 原CS5地址对象保持链接地址，其19个DPRAM section在链接文件标为`NOINIT`，避免C运行库在EMIFA初始化前清零外部通信区。DPRAM关闭时后台不读写、GPIO中断不注册；启用后由原后台收发使用实际内容。普通RAM中的`PORT_*_Buf`仍初始化，串口不依赖映射DPRAM对象。
+- 原CS5地址对象保持链接地址；原区及4个尾区扩展section均为`NOINIT`，避免C运行库在EMIFA初始化前清零外部通信区。DPRAM关闭时后台不读写、GPIO中断不注册；启用后在后台初始化/收发。普通RAM中的`PORT_*_Buf`仍初始化，串口不依赖映射DPRAM对象。
 
-DPRAM控制块仍使用原地址及字位图：START/STOP的bit0，PLUSE_ON/OFF的bit0为DAB、bit1为CHB，FAULT_CLEAR的bit0请求停机复位；其余位保留。STOP优先于START，OFF优先于同一路ON。新`SstCommand`适配只修改核心命令，PWM由原控制状态机驱动。旧直接开关器件/门极命令不再从DPRAM控制块执行；REGULATE仍更新原兼容对象，不能当作新的CHB参数表。新的CHB调参使用AnyEyes表或调试器。
+DPRAM控制块仍使用原地址及字位图：START/STOP的bit0，PLUSE_ON/OFF的bit0为DAB、bit1为CHB，FAULT_CLEAR的bit0请求停机复位；其余位保留。STOP优先于START，OFF优先于同一路ON。`SstCommand`只修改核心命令，PWM由原控制状态机驱动。旧直接开关/门极入口不恢复；REGULATE的V/Q仅更新旧缓存及FPGA镜像，取消自动EEPROM Page1保存。现代调参通过AnyEyes、DPRAM54点扩展或仿真器，详见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。
 
-参数保存与旧维护保存共享忙标志，存储期间远程启动和修改拒绝/过滤，停止和封波请求仍有效。仿真器直接写RAM属于调试操作，工程无法拦截调试器写入；保存时若检测到运行，则中止并报告忙，保持即时保护链。
+AnyEyes与DPRAM使用同一参数存储忙状态；存储期间启动和修改拒绝/过滤，停止和封波仍有效。新显式SAVE使用页6/7的v2镜像108字节/50字，兼容读取v1的92字节/42字，不保存启停、复位和临时软件保护总使能。仿真器直接写RAM无法拦截；保存时检测到运行则中止并报告忙。
+
+2026-10-13调整默认配置为AnyEyes、DPRAM=1、仿真器=0；485只走AnyEyes或VOFA，切换VOFA仍可并口维护。原并口能力对比见 [DPRAM_LEGACY_COMPARISON.md](DPRAM_LEGACY_COMPARISON.md)。当前变更的验证以 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json) 为准；先前框架证据描述固定历史版本。
 
 ## 验证层次和交付边界
 

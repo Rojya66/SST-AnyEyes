@@ -11,21 +11,17 @@
 #define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_ANYEYES
 #endif
 #ifndef SST_ENABLE_DPRAM
-/* SST_ENABLE_DPRAM：DPRAM 硬件访问及通知中断使能，0 禁用、1 启用。 */
-#define SST_ENABLE_DPRAM 0U
+/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；默认1，0时仅保留所选串口调试协议。 */
+#define SST_ENABLE_DPRAM 1U
 #endif
 #ifndef SST_SIMULATOR_MODE
-/* SST_SIMULATOR_MODE：仿真器控制模式，1 禁止普通串口/DPRAM 远程启动，急停仍有效。 */
-#define SST_SIMULATOR_MODE 1U
+/* SST_SIMULATOR_MODE：默认0由并口远控；设1保留仿真器控制并禁止普通远程启动，急停仍有效。 */
+#define SST_SIMULATOR_MODE 0U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
 /* SST_ALLOW_SERIAL_COMMANDS：由仿真器模式派生的普通串口命令权限。 */
 #define SST_ALLOW_SERIAL_COMMANDS (SST_ALLOW_REMOTE_COMMANDS && !SST_ENABLE_DPRAM)
-#ifndef SST_ENABLE_MAINTENANCE
-/* SST_ENABLE_MAINTENANCE：旧维护协议兼容服务使能，0 关闭、1 启用。 */
-#define SST_ENABLE_MAINTENANCE 0U
-#endif
 #ifndef SST_UART_BAUD
 /* SST_UART_BAUD：UART2 调试通信波特率，单位 bit/s。 */
 #define SST_UART_BAUD 115200U
@@ -72,7 +68,7 @@
 #if SST_DEBUG_PROTOCOL != SST_DEBUG_PROTOCOL_ANYEYES && SST_DEBUG_PROTOCOL != SST_DEBUG_PROTOCOL_VOFA
 #error "Select ANYEYES(1) or VOFA(2)"
 #endif
-#if (SST_ENABLE_DPRAM > 1U) || (SST_SIMULATOR_MODE > 1U) || (SST_ENABLE_MAINTENANCE > 1U)
+#if (SST_ENABLE_DPRAM > 1U) || (SST_SIMULATOR_MODE > 1U)
 #error "SST boolean switches must be 0 or 1"
 #endif
 #if SST_TELEMETRY_PERIOD_10MS < 1U

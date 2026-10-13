@@ -2,6 +2,288 @@
   "baseline_commit": "ddaeb56f21a81a70cdb76085728f91b67dc3c7a0",
   "changes": [
     {
+      "key": "function:DPRAM_Write",
+      "new_keys": [
+        "function:DPRAM_Write"
+      ],
+      "reason": "旧Block2回读使用当前RAM遥调缓存，移除EEPROM_Page1_2_DSP/Page2_2_DSP，避免EEPROM旧PI覆盖当前值；保留所有块号、固定地址、复制长度及右邮箱通知。现代参数保存加载由邮箱21显式提交独立页6/7事务。",
+      "validation": "tests/dpram_maintenance.py; tests/realtime_audit.py; tests/dpram_map_audit.py",
+      "baseline_sha256s": [
+        "669ec3f4c2078b2866299d897b26501881e14bf8f006b117be589877e718d36c"
+      ],
+      "current_sha256s": [
+        "ca6410d289002c01a271a4a19f9e284e7250964623226ebaabc85a7d41686ef3"
+      ]
+    },
+    {
+      "key": "function:MaintApplyChbCommand",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "ae0fb1197da00e50107055327d40ac66a3e1c33c63ae045dc7ffff02328c7d30"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintCRC16",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "79f8587bc4e9335003141e9da44f18399d96c5c2f1eddaf3b8c31069ef82178f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintExecuteControl",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "ecdaf0f0274df455e9091a2880b82fbbb489f3c7377af5cfbab1ecd7469d262f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintHandleFrame",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "add963a839590514f56d0457b16dd06149da86ece39099528ca53e7eb32af84f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintObjectLength",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d68672b5236cd0af50674392645a20e8a6c2a68927cae2e7373c91a8d11956b1"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintParameterSupported",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "19fda61898a66d7865cb7db88d4820daa80fcb308a19ebeff17b69881df25856"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintParameterWritable",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8e90eb854f406408a19b9e60702e339cd61b797ef887bf71a139fd667325beab"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintRead16",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "aa5c7460b61083c10d0bd09260da7e1adb855bc7cd8f3f90b8c41fc521214da4"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintReadObjectWord",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "04c1583f9a9b593c3df312dc0c2b1281b7f3490418b6b0454d1b6bac90650950"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintReadParameter",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d06678dda75efebec720e2623aa23ad30c80ce15d732543ecc4ffbf9b91c4430"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintRecountHVAC",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "07069628ec85706839ddd170ebe24869b38c5aabffa3d12f024785e7cfc66ac3"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintRecountHVDC",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "33a6943827f9726bcce73401b5e42779a9b5eb5932302f643cbdcc3fc843ae0f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintResetParser",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "f5386b986a0ff452ff4185ce08f86bed3f954c690b850e7477a56f338eff0c94"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintSavePersistent",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8a611be90aa7c675e546d867078da00d498599be5fddd39faa75caa4c5a1a95a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintSendError",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "aba4b1b27905dfac4390d454721417fe422a2b6fc5dd042d617cd1c762636c31"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintSendFrame",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "dcde7c0287395c8dff7eddbcb29e2eb602f3b27b245c934004cd899165713850"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintSetParameter",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "7fb7894974e691571e2e69dd6f588e57dbed1d7d7d3fa76b2a7b1fbe05a9cba1"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintWrite16",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "968704a5299d378179576cd002f430c54bd164df8edf37cb342a1f5d8939786f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintWriteObject",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d3dbc347172c5bdf59552a5753e2bac0de63f9ee34198c83c16288fb981c9e65"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_Init",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d4eb758ee917e3dd0eb8d434a90003ee6301dfbc58b716c96f18b83ce41006c9"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_IsSaving",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "4a058e0981f0e4063267c4dc5b6f3a713bebb0c019e531052ddc717533426322"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_LoadPersistent",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8b64610ed16e602fcfa54da6177ee4b6ffb4cb48909200fb16962be2384dd219"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_Process",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "faad1163b1f853bde70c05f326c3faa9eea18afda3952689e7490359fb3f01a5"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_RxByte",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "9126f5bbdb36167aeafb5230a0ea1d1ea14e18c34c4cddd77f220a0c02b8b3a4"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:MaintenanceProtocol_RxByteForUart",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "3d7cd7214f00e75c4aeca31c81094eb516c0398d10e5b37500b65c779897df43"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "function:RemoteRegulate_Dispose_2",
+      "new_keys": [
+        "function:RemoteRegulate_Dispose_2"
+      ],
+      "reason": "HVAC旧Block2遥调仅更新原RAM/FPGA兼容镜像并置回读标志，移除隐式同步DSP_2_EEPROM_Page1，避免旧EEPROM事务长时间阻塞及全局关中断；其他端口条件分支与编码保持。现代参数用显式并口SAVE的异步页6/7存储。",
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/realtime_audit.py",
+      "baseline_sha256s": [
+        "327e808bcb4b8e07c4cc1cd92e709ffa7bdef402e5952ba36a0cc234cd1db404",
+        "43f0a65ded2bd1f099e00607e5a2026de17842ebb36a72fa8588934a49f33b3c",
+        "58b6f898fa3c9523625c300d25ae22509b5c4f0987f20acfd7df3543f4726b79"
+      ],
+      "current_sha256s": [
+        "43f0a65ded2bd1f099e00607e5a2026de17842ebb36a72fa8588934a49f33b3c",
+        "58b6f898fa3c9523625c300d25ae22509b5c4f0987f20acfd7df3543f4726b79",
+        "626ba1267ffb30a6b119e56adeb1af981d07b471cb5a4ebd2d257d6c49fba3a7"
+      ]
+    },
+    {
       "key": "function:SstCommand_ApplyDpram",
       "new_keys": [
         "function:SstCommand_ApplyDpram",
@@ -15,7 +297,7 @@
         "60e2d2970671c1f8a3dea14508be720f2ef4a3b55cdb561967a0e713ae5c57c5"
       ],
       "reason": "命令层直接查询存储事务和本层停机条件，保留STOP/OFF优先及所有分支。",
-      "validation": "tests/dpram_commands.py; tests/maintenance_regression.py"
+      "validation": "tests/dpram_commands.py; tests/dpram_maintenance.py; tests/parameter_store_migration.py"
     },
     {
       "key": "function:SstDebug_GetTick10ms",
@@ -57,11 +339,11 @@
         "cee0bf751eccdd37849c1150933fcdbadb6dc32a84a23ee4fcd5eea78bbb5b51"
       ],
       "current_sha256s": [
-        "798e8481288cc3f15caa8d09bca9aea60f4f340b4fdd4a70df5b9e4cdca47ffa",
+        "6c288af47af99c775dbe13c5c2bb1928df4caf45c53558eaa26d3050a3afa2ed",
         "948dbed202f0cd19a6323c4362353015625ec02069bd74849d2a9fa74dc2f69c"
       ],
-      "reason": "队列复位及UART寄存器配置迁入SstSerial_Init，协议复位留在调试层；初始化完成前不开放控制中断。",
-      "validation": "tests/protocol_regression.py; tests/framework_structure.py"
+      "reason": "队列/UART仍归SstSerial_Init，协议复位留在调试层；删除Maintenance初始化和缓存，AnyEyes复位接收状态，VOFA初始化同一发送节拍，运行初始化仍在开放TAD/FAULT中断前。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py; tests/firmware_trace.py; tests/framework_structure.py"
     },
     {
       "key": "function:SstDebug_Service",
@@ -76,14 +358,14 @@
         "4bba0fd95a32aa97744592d8f85fb68187607e040e8b10cdb05157d213ed4ec2"
       ],
       "current_sha256s": [
+        "34bb5b9b5c38f23ca1c0e33223c3e3c80227aaff885811957ddfa5b91b622f83",
         "50c39a7123f458eeedc4a5ddcfde4d5d49c8caddb6b7647abc3a15164b60e718",
         "67bcf87d3a8a52496081acfcddcfee5505b79a759a51477c9a9bd824d4b6925e",
-        "921f51d7b78518aff0b05997a2b49ab4c2817fb4942760b9faee9297280fa630",
-        "ce56948c10f243992cdf9ce2edd63544a6b9cfcb894564f27967882c182f3db8",
-        "f3c3fb8f65b078495cb6b73ed2db1890bcde40907a06f5b83090d9893026a512"
+        "78ab6ce555a6c2568497901fb966b819fea26524dd441a406bf7341f746bb504",
+        "ce56948c10f243992cdf9ce2edd63544a6b9cfcb894564f27967882c182f3db8"
       ],
-      "reason": "原服务按TX、RX64、协议、存储、TX拆开；tick仍在首TX前捕获；TaskSlice显式列出各步骤。",
-      "validation": "tests/protocol_regression.py; tests/framework_structure.py; tests/maintenance_regression.py"
+      "reason": "原服务保持TX、RX64、所选协议、存储、TX顺序，tick仍在首TX前捕获；删除485维护处理，TaskSlice在原DPRAM服务后增加并口维护分片，所有通信及存储仍在主循环。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py; tests/firmware_trace.py; tests/framework_structure.py; tests/dpram_maintenance.py; tests/realtime_audit.py"
     },
     {
       "key": "function:SstDisplay_Refresh",
@@ -121,7 +403,7 @@
         "cd22e41f404e7df69d10e74d7d7c38e48ef4efc3f88d8de4e871c5a354f4af5e"
       ],
       "reason": "旧启动持久化接口保留，加载事务归存储模块。",
-      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/parameter_precision.py"
     },
     {
       "key": "function:SstParams_EmergencyStop",
@@ -137,7 +419,7 @@
         "d3dba402a0fa7458a990205b2b30ba6ee7706a2e84c0b548623a107114e88684"
       ],
       "reason": "无条件清run/dab命令动作归唯一命令层，旧接口转发。",
-      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/protocol_regression.py"
     },
     {
       "key": "function:SstParams_GetStorageResult",
@@ -169,7 +451,7 @@
         "fb04a46ed5cd629319c4e3a67040f6968ab8c4bb892a07da3f9cd99703224345"
       ],
       "reason": "保留原全部停机判据，定义归命令层消除互相调用。",
-      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/protocol_regression.py"
     },
     {
       "key": "function:SstParams_IsStorageBusy",
@@ -181,11 +463,11 @@
         "6f3ca177668722a31ab0938e27f737e0b896989085818890725df0ef7eefa43f"
       ],
       "current_sha256s": [
-        "121eb4a2d6a6ae31ee31c29fa33af1c80339da7ff29ea6998fd4c57a00eefe88",
-        "c6761ed8201441177454279cb1ed719bc3de3fe16684edbfe5a25807c191fd95"
+        "c6761ed8201441177454279cb1ed719bc3de3fe16684edbfe5a25807c191fd95",
+        "cfc063ff58cdcd5463c0792a75db0147030a7d0271fbbe33acefc2efc386dde4"
       ],
-      "reason": "共享维护/参数存储忙判据归唯一存储模块。",
-      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+      "reason": "共享忙判据归SstParameterStore；删除485维护事务，AnyEyes和DPRAM查询同一异步页6/7事务，避免重叠保存加载及运行期间参数写入。",
+      "validation": "tests/protocol_regression.py; tests/parameter_store_migration.py; tests/dpram_maintenance.py"
     },
     {
       "key": "function:SstParams_Read",
@@ -223,7 +505,7 @@
         "c4f8bba7f7aa3e43941c3849cf961a3c268df30b9c323fbc79d64c507d16f80c"
       ],
       "reason": "串口命令权限、停机及存储互锁归唯一命令层，保留结果码/停机优先。",
-      "validation": "tests/maintenance_regression.py; tests/protocol_regression.py"
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/protocol_regression.py"
     },
     {
       "key": "function:SstParams_Service",
@@ -239,7 +521,7 @@
         "403c19fbd22f4e59f33b95c980b75d43a0a9d0be3892b1359d47679264f67bdf"
       ],
       "reason": "原逐拍单字节事务完整搬到存储模块；原服务接口转发。",
-      "validation": "tests/maintenance_regression.py; tests/parameter_precision.py"
+      "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/parameter_precision.py"
     },
     {
       "key": "function:SstParams_Write",
@@ -254,14 +536,14 @@
         "433ed824e55118354ea2bf87db01bd2c454d2b2d40dcd83aa61aa510962f33cb"
       ],
       "current_sha256s": [
+        "28e65866de3902ecc12591d0f463ac6149c4e4fe100bda71a44539aa1cf87ccf",
         "356ad67b1c3d0ed3bccd5b7205db1b638581992dbca6857cafbbccc3b147f8da",
         "45b13c311b557f979563a3cb78622f817c023471d3ceef2739339cecc995885a",
-        "4b996cc7d854235746a8e79e5d3f080788353f890e24f30d757c4fc172ff6473",
         "8f8db3b798233458fd787451378f4152aca6d4e7578ada42678f0869f5c1fde8",
         "f390a87d40be79a4b4b79e0a67a90e2b79472d5cb65bf84ddc4f79658dd35cf8"
       ],
-      "reason": "固定地址与校验顺序保留；写表/存储请求归所属模块，运行、DAB及复位单字段权限/范围/停机判断归SstCommand。存储忙优先于命令范围和权限，停止零值例外，单字段写入不联动其他命令。",
-      "validation": "tests/protocol_regression.py (four configurations; independent command fields, denied ownership, reset stopped-only and BUSY/RANGE precedence); tests/parameter_precision.py; tests/maintenance_regression.py"
+      "reason": "固定地址与校验顺序保留；写表/存储请求归所属模块，运行、DAB及复位单字段权限/范围/停机判断归SstCommand。存储忙优先于命令范围和权限，停止零值例外，单字段写入不联动其他命令。 保存入口升级v2的50字镜像，AnyEyes地址和串口控制权限保持。",
+      "validation": "tests/protocol_regression.py (four configurations; independent command fields, denied ownership, reset stopped-only and BUSY/RANGE precedence); tests/parameter_precision.py; tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/parameter_store_migration.py; tests/dpram_maintenance.py"
     },
     {
       "key": "function:SstSerial_RouteByte",
@@ -272,10 +554,10 @@
         "c9e16b69d9adde45bd67b3e3ecb42219cc78fa2ed946645ebf7958445ddec8e4"
       ],
       "current_sha256s": [
-        "8979d782bb6e3074d68ab80112906ac6e1616a7b9ef0e2321366f608447ae8d4"
+        "54af71e813e2d706d7015e40d5b1b1e0e6b5a7e42352c50689601a723b34e0e0"
       ],
-      "reason": "逐字节协议分流仍在PcDebug，函数改名表明职责；原状态机正文保留。",
-      "validation": "tests/protocol_regression.py; tests/maintenance_regression.py"
+      "reason": "逐字节解析仍在PcDebug并改名SstDebug_RouteByte；移除Maintenance分流，AnyEyes原帧头/长度/正文与超时逻辑保持，VOFA仅发送波形并丢弃输入。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py"
     },
     {
       "key": "function:SstSerial_TxService",
@@ -303,11 +585,11 @@
       ],
       "current_sha256s": [
         "12b95ea5e8d571a4450fa3e742c82306cdc23e7d66631577861a5c9d6d7127b8",
-        "c6aaca00b980800d9354b763027232f5227e4e80a2e918d1fd5452fe089a6664",
-        "fbc53f6c53067f0f7a52052e80911a99436e33ffe9534a9e16211c19b040c8bc"
+        "749f814b3f9d3957f94b53a644f80a2efb751315fba55bce474d5fc065ce2c44",
+        "c6aaca00b980800d9354b763027232f5227e4e80a2e918d1fd5452fe089a6664"
       ],
-      "reason": "先整体解码并校验42字镜像再内部提交；保留硬件周期只核验不恢复及不加载启停字段。",
-      "validation": "tests/parameter_precision.py; tests/protocol_regression.py; tests/maintenance_regression.py"
+      "reason": "固定头识别v1的42字/92字节及v2的50字/108字节，校验CRC和所有现代参数；v2另整体校验8个原保护/巡检字，全部通过后才应用。任一非法不得部分应用，硬件采样周期仅核验不恢复，启停/复位/保护旁路不加载；v1不覆盖新增8项。",
+      "validation": "tests/parameter_store_migration.py (v1/v2, CRC/header/range rejection, no partial apply); tests/parameter_precision.py; tests/dpram_maintenance.py; tests/protocol_regression.py"
     },
     {
       "key": "function:StoreRequest",
@@ -320,24 +602,10 @@
       ],
       "current_sha256s": [
         "020a8812fe4dbb935b51bed3c983c20f9eea0efa9cfa01834fef857de86b6e45",
-        "4b996cc7d854235746a8e79e5d3f080788353f890e24f30d757c4fc172ff6473"
+        "28e65866de3902ecc12591d0f463ac6149c4e4fe100bda71a44539aa1cf87ccf"
       ],
-      "reason": "存储请求改公开模块接口；唯一参数表提供37参数+5命令快照读取，页6/7格式/CRC提交时机保持。",
-      "validation": "tests/parameter_precision.py; tests/maintenance_regression.py; tests/protocol_regression.py"
-    },
-    {
-      "key": "prototype:StoreRequest",
-      "new_keys": [
-        "prototype:SstParameterStore_Request"
-      ],
-      "baseline_sha256s": [
-        "6cd05d4bb0378973d2bf0f0abe4123af2b69acaea3bec9e422fc4a97463570f0"
-      ],
-      "current_sha256s": [
-        "52d610b562e22f39d67713388e5a14fa46beb85dfe32aa5fbb4d89ca0c94c610"
-      ],
-      "reason": "私有前向声明替换为公开存储头接口。",
-      "validation": "tests/framework_structure.py; tests/protocol_regression.py"
+      "reason": "公开存储入口保持完全停机/共享忙互锁；建立并整体校验v2的42现代字+8原保护/巡检字，写108字节镜像及CRC。魔数先无效后最后提交，每10ms最多单字节写入/校验，不调用同步页1保存。",
+      "validation": "tests/parameter_store_migration.py (109 writes, one per tick, interrupted invalid image, shared busy); tests/parameter_precision.py; tests/dpram_maintenance.py; tests/realtime_audit.py"
     },
     {
       "key": "function:main",
@@ -354,30 +622,922 @@
       ],
       "current_sha256s": [
         "2d504beba0c9d01e95f10f649afff4bd2c1fb43a319d2a46fbb453c3cc384d17",
+        "34bb5b9b5c38f23ca1c0e33223c3e3c80227aaff885811957ddfa5b91b622f83",
         "5e737881eb29c08cced4ea53f3594f3fe62d59d89b77d9c05fa5ec7379604d1b",
         "660e57f35fa725cf7082e4bd13f3ccb42e204021de1638e1303db01f9eb5c897",
-        "921f51d7b78518aff0b05997a2b49ab4c2817fb4942760b9faee9297280fa630",
-        "99411fce5598c4ac8fc02c168fed551b29cb6e9b6d71f74d026b89a4bea34874",
-        "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b"
+        "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b",
+        "fe0d6c199a3e61d5d7fc321fc1d984bd7c81d55f11e6916eedd5d77767186c60"
       ],
-      "reason": "入口只协调启动；原标志赋值和硬件/20s/运行/后台顺序搬入所属模块，原pulse分支保留。",
-      "validation": "tests/framework_structure.py; tests/realtime_audit.py"
+      "reason": "入口仍协调原启动/20s等待与pulse分支；删除485维护页4/5加载，在SstFault_Init后且外部中断开放前加入DPRAM维护初始化。TaskSlice原后台顺序中增加并口维护分片；CRC/遥测/存储均不进入10kHz FPGA ISR。",
+      "validation": "tests/framework_structure.py; tests/firmware_trace.py; tests/realtime_audit.py; tests/dpram_maintenance.py; tests/dpram_map_audit.py"
     },
     {
-      "key": "function:MaintApplyChbCommand",
-      "new_keys": [
-        "function:MaintApplyChbCommand",
-        "function:SstCommand_ApplyMaintenance"
-      ],
+      "key": "macro:MAINT_ALL_PARAM_WORDS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
       "baseline_sha256s": [
-        "ae0fb1197da00e50107055327d40ac66a3e1c33c63ae045dc7ffff02328c7d30"
+        "0ff6a8ed6891824518c5456963181b6b5732b6a6e642e84a86021fd9949b3890"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CMD_EXEC_CONTROL",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b2e75843acc5136a769cb9e67a7f7ecdcaf4099ecd804cbe90543ea51b676934"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CMD_HELLO",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "2fefed1000be08b9f0c38f825e5b0c3c34bf8a03ec2d286fe9711761f80d8d3e"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CMD_READ_OBJECT",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8eb8f8d0e2435f04878633520d27b2962db980b2ba2b0b9f9d734e02d40347eb"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CMD_SAVE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "e649ee8ae0de8b943611402584025c481e09d1dcf97133d8947baef0bb38982b"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CMD_WRITE_OBJECT",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "46638d11594b9262780a669af4da6a237743c98873158230f7aa471affba0308"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_FAULT_CLEAR",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "6c8de85dd404d7225d161aeb8cd97ebfb2e98acf613f294539a3d5f1261ef03c"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_HF_OFF",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "f49386527048e8e6ce995cd7a5b9447e8a039171fedda7d4060c967536dc61cf"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_HF_ON",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "839a429e8dfac20f08f7d38f11c3fdd1a5d52bcaef39079741ccbc87d15dccf9"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_LF_OFF",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "4f59ffd3e8359c24c2ff82f7f436cd5bcc8947e377163fe5cf4ed1cdb5c49ca7"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_LF_ON",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "90917dff4ab5f0cee0da56f63ba0cc972636c3e2871c36b4ac463ec93883d7ee"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_MODE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "02c474161019c9753783c9a7f99ecfaa263b404fb18ea42efa037c527df844e7"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_START",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "090b676b2014a381f64c5c018a63dbce180e06fa2ce8f3cd0cb2d75e61df4762"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_STOP",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "9ed566166c276d0d2426967724fad2df433d7446f42f6a83b65269a74cb897f3"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_SWITCH_DIS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "aa6ce2b54c22076251bae1d01d401d3ee8faf0ee018ba0eae62d1349bf297d72"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_SWITCH_EN",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "0970f5e8fecf53c90bd2a0245630e38d69a5326b5244bb42ba4123356c861ee9"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_SWITCH_OFF",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "771e92e7f488e1a08587991f6aee48afea4d93b02902a7c6e744fc9426ad863e"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_CTL_SWITCH_ON",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "c95ddffe9124245cf9855966a8dea82fb2249dc93b4c6586fcd5514203eafd8a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_COMMAND",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "cc92aca45d220b45337c01d16ec6d2b60a270b581ef8df7102960087132c7136"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_CRC",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8313853e30b3f463850ed46873c07ec0aa9d52ae70c29219d58156888a654025"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_LENGTH",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d2c334fbb3f080af5b175542dccf7bcfc145198643ce1608343f5bc9510b61a5"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_OBJECT",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "f98f80ce02b0b8379020f333b8ab4a95335beb5329a5a949650cc8636e51022a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_RANGE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "ad07a0ae777d7a09a9743df234c41a441323f39d7108f0e1714727e5baa01191"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BAD_VERSION",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "31130cd7b9c1c1b58e9146650c39e4dcd3c4aff5c7859fe894e3c861a39b4340"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_BUSY",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "e1e67ab3c3e36cea847b8fb5e7c8193e5405e6bda8ed415ce01c305a0866adab"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_EEPROM",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "6cd816f0143d5d34d44068d2e9877c442b57ae9d1e9b1091fbe2886fae7924a2"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_NOT_ALLOWED",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "595b32e5fc9b8517f4d6d7cb4891558a0180427e6d455804b05b90db768edcf5"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_ERR_OK",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "6d0e0ce067fc22a75ba79e3d0fee1bf150c38c0eea4565cbf777d9ab904ae9df"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_FLAG_ERROR",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "cc9ae1c69b769fbc11587d53b91885173abf2ad37a5de027f70cb336bc5772e2"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_FLAG_RESPONSE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "73fd1e7c05aed7ce9254adad99076665b20a3e50ba9029066f433ed674f39d94"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_FRAME_SIZE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b4f04541ba31696e05b9f104d85260428d2e2c82df86d98391141fa21d589fc9"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_MAX_PAYLOAD",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "5037fe0b68a091961aa84840a3746ca61cce79d9d93e0504c7e7673223dcea11"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_ALL_PARAMETERS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "01ae0f5e1f3aa36ca213720da7a33566daa537bb32faf712793b6d1eec440139"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_CONTROL",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "399be16a8f03705a6f81c582517383a83e0515114fbe01e9d699ff37dbb775b9"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_PARAMETER",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "0c652e760a3f52a432bb7a65241d8f103f7de415c11cf991b1031e761c94b80f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_PLUGIN",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "4d32276efb6a23c8ae2a53d3290027aa150624827e4afd7c9ea6b07318304a83"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_PLUGIN_SUMMARY",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "c6e342b742aecc0d5bc9c7e608b81fa4c36e6e314f2b98bf861259fd8fd186d3"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_REGULATE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "c5cd0fe9e201b07f1eb9665dbf0355f0fc5fadb1d651ac7ccea323b9b27d28ac"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_STATUS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b7496e261cb4281d406756b192bba28d00da1caaee3917eca4d06d2cfae4d8e3"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_OBJ_TELEMETRY",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "2b67174be9abcbc1801421454b0931971ad1b7626a247b4cba39a7a574990b7a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_PARAM_COUNT",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d41ffcc5dab6cfad9ddb12fffd7ac82ba0b2d2ddee00d2991500f3a7a8f23748"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_PERSIST_MAGIC0",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d911f867c025ebfeabeb68be36bc8a4897b9d2d734b08da12437b5be0fbefa6f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_PERSIST_MAGIC1",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "7d8bca8c626fa9817ca95200d80772370b23b3e63c9156c8b4077d031e486652"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_PLUGIN_COUNT",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "f27fc1c8f76362bc0bfa4dbea2f1a1ab08ffe72c6e768df4c8d5141a527fad5f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_PLUGIN_SUMMARY_WORDS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "2b5c5fcd4ea0d9cb136219472833234941b92caa6cf5b05d0a596fe2219fa034"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_RX_QUEUE_SIZE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "87761fc0ed67f243ecbb789168708b47f377195ec015aed5fc3f4beef9c5c28f"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_SOF0",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "0b7328b1c14f2e7d6691438893506fadfcf5f020421d7f3b3f92b531e8fac25a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_SOF1",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "590353ddd967850e5876bea5b56b17137b3aea405485cb6a020bea5d15cad5a3"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_STATUS_WORDS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "09391d6547786f7a21b93124a52244fec9b82b6895cf0a9caa2b94b73a04f1a8"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_UART_BAUD",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "c17557aeccde96ad8ca1a423ab32f55955813dfd3927cc94c0ab096acec23164"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:MAINT_VERSION",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "214631421ddf54377d5633d55a1311c3064414100fadca31787e31f474c5b2b4"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:SST_ENABLE_DPRAM",
+      "new_keys": [
+        "macro:SST_ENABLE_DPRAM"
+      ],
+      "reason": "默认由0改1，启用用户要求的并口DPRAM遥控、遥调、遥测及维护；编译宏仍可设0以禁用运行期并口访问。",
+      "validation": "tests/dpram_maintenance.py; tests/firmware_trace.py; tests/realtime_audit.py; tools/build_matrix.py",
+      "baseline_sha256s": [
+        "8d162152f08c3b28f7fcbd7f6b7057f021858a5168639e1c505a44b641d8dccf"
       ],
       "current_sha256s": [
-        "6321e0cd215dd2b41a99c5d7ea5a4bc4360db3e1699bf34e2522fadffb81cbab",
-        "b7c2d97b75b2ace4ee63ea7e1016981ba0b918d8e4cf67809672225dc5362ac7"
+        "2f8fda91b72b2ca1d9ef6a7fb747c54d0753af40e3fe7be8c2c8cf144426e831"
+      ]
+    },
+    {
+      "key": "macro:SST_ENABLE_MAINTENANCE",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "4f9ec85d4f82f5ddd0531624b2bf6891f429c43109ce2259f1188838567a2c57"
       ],
-      "reason": "Maintenance decoder retains the same five compatibility fields and serial-owner conditional; the original policy is moved to SstCommand with the same storage lock, STOP/ON/OFF ordering and stopped-only reset. Busy/stopped helpers now query their owning modules directly.",
-      "validation": "tests/maintenance_regression.py (four configurations; framed command ownership, STOP/OFF priority, independent gates, reset ownership and shared persistence locks); tests/refactor_equivalence.py"
+      "current_sha256s": []
+    },
+    {
+      "key": "macro:SST_SIMULATOR_MODE",
+      "new_keys": [
+        "macro:SST_SIMULATOR_MODE"
+      ],
+      "reason": "默认由1改0，使交付默认由并口DPRAM远控；仿真器可通过编译宏设1，继续禁止普通远程启动并保留停机路径。",
+      "validation": "tests/dpram_commands.py; tests/dpram_maintenance.py; tests/protocol_regression.py; tests/firmware_trace.py; tools/build_matrix.py",
+      "baseline_sha256s": [
+        "9a5ce167d41d3a8db57608a8b323ea7e5b0ea6c08a9863a1416f5a093822adb8"
+      ],
+      "current_sha256s": [
+        "d1032b45e08b539b702455026796cc4790083da79e6346a7aac99cf570443acb"
+      ]
+    },
+    {
+      "key": "macro:SST_STORE_LENGTH",
+      "new_keys": [
+        "macro:SST_STORE_LENGTH"
+      ],
+      "reason": "页6/7镜像升级v2：8字节头尾加50字，共108字节，原42现代参数/给定加8原保护/巡检字；启停、复位与运行期保护旁路不保存，v1的92字节仍可加载。",
+      "validation": "tests/parameter_store_migration.py; tests/parameter_precision.py; tests/dpram_maintenance.py",
+      "baseline_sha256s": [
+        "f6717ff72e3e44b137c12c99254c64da481b19887fc26a99ce0e2170d2d89730"
+      ],
+      "current_sha256s": [
+        "f6474a682cae065bcfb6f1341642e77b71dca3955174f4967407dc3893481d94"
+      ]
+    },
+    {
+      "key": "object:MaintFrame",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "6f955114746ea50c28100ef908c7b0e2a63db33e57ff781bbfa65cd4839ab09c"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintFrameExpected",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "7e7b36fe0826f49580b98725444a7e75fa98e87c3f466c04dc0095dd8220c027"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintFrameIndex",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "bc3d350265b062de904a18f0bd8acd2c2dc8405da2757cb5431fa9096c1295ec"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintFrameState",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "1658e42df90ec978d8fc1dc1ccd124e9e0e29c70baa6258160f656b263a37203"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintRxHead",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "a7712b817292d02aef703a489c108f754e6544e67d37b1aa64a0b3af56d9a2ba"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintRxQueue",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "8be2cc52b033c7f9326aba3c64930dc4e07ac5064c4e46fd7f49a0ed05c32758"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintRxTail",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "be2d5c762ac7c1af88937d67cd0237fb4db7f4aea89ee7f970f7bc98b051f623"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintSaveImage",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "86ca1a54d2c8bffedba480dcec1f4b38b9d36ac2c4451389089901e15df1d3cf"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintSavePending",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "13c068c22499bf4f3efd5726788147b08e3d6a0afe8e83aff799a094ae640039"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintSavePosition",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "ec91fc2f2b81c4576aaf5146b3f8635e2ed4dce1801888b264a7875d40fe9be6"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintSaveSequence",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d1e9deeba0f7fd5d23d4392b2954fbdf3f12a967a1049b203052ab2144f70dae"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintSaveTick",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "d9660821d2e31fde8339fa6af1a88ffff658058bea1f63d9ee199ba8931295e4"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintWireExpected",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b64d9e3f3dbd6e8448bb8bc2a0d92c5b1cedd838830c052e9aa8d58d26cd3715"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintWireHeader",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "604b37112fe6c671d006682e4801d338aa85cd04fad9ab4a16401fd1855a1d44"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintWireIndex",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "76d8a521482cbd069789d79ed252b99ef8a982c5bdd15b7d3915a7a002504e1a"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:MaintWireState",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "315666058c3116064557b89f6a4798fc1b5d13475babc5c061b3ed80b3d6c327"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:maintHeader",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "457ef2b94258278c989de72903672b8fe086e73a99d0d23feca2e71619f43074"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:muxExpected",
+      "new_keys": [
+        "object:muxExpected"
+      ],
+      "reason": "接收剩余字节计数仅在AnyEyes分支定义；删除维护整帧长度计数，AnyEyes正文及CRC剩余字节计算保持。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py",
+      "baseline_sha256s": [
+        "01982a09e864066278d48c36619388d3f910acc514f61887fc9643fdaafcfe2a"
+      ],
+      "current_sha256s": [
+        "53ca536ae2326661b0b3c8c56138b08200fe465ef4e08d91cf76d3f9a0e85026"
+      ]
+    },
+    {
+      "key": "object:muxIndex",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "ecb0928f99ebef29990a2209d43c1cfac51d1cf667046c9855c023a142888529"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "object:muxState",
+      "new_keys": [
+        "object:muxState"
+      ],
+      "reason": "接收状态仅在AnyEyes分支定义；删除Maintenance分流状态，保留AnyEyes帧头、长度、正文状态及超时恢复。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py",
+      "baseline_sha256s": [
+        "16218b3f858fec33bd8800e2d393c1927b324bfb4a1126896846d2c46570ff19"
+      ],
+      "current_sha256s": [
+        "2180ea4deb4d64be91f894d73c1a36a3d2cfe8541a2cedeb633893e4bc0ac9c5"
+      ]
+    },
+    {
+      "key": "object:rxTick",
+      "new_keys": [
+        "object:rxTick"
+      ],
+      "reason": "AnyEyes接收超时节拍仅在AnyEyes分支保留；删除串口维护后VOFA仅发送波形，不再保留无用接收节拍。AnyEyes同一10ms节拍及超时判据保持。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py",
+      "baseline_sha256s": [
+        "ac3ad9936d943610f94c854eec8e7cdede4b79f8e061e3dc21cbfc69fe79a99f"
+      ],
+      "current_sha256s": [
+        "32b0d5ed7017f71cef03908cd2449d41f302dc4ad150e7ea6d13ada65123bc34"
+      ]
+    },
+    {
+      "key": "prototype:MaintParameterSupported",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "3a7aecff8c3fdda86e3243eb4950437a51306210901fc70198bd023a5a1bc64d"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintParameterWritable",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "c4e5c29412b05d7ea96d48a24a15d1cbd99133272766ca4e1d8c49037f2ec6a2"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintReadParameter",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b1f0923d5ca3ce217875e14ce5184bf8fd398009de9ab1184635b8ba3c7a5f70"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintSetParameter",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "02d893de6b9f7c3470784b72f8610b160869e42d9996c98d3149233f2564d210"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_Init",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "782579e9a26bee533dfba2f256d3c83a1d3ef65bae9a7c131af7f4ea71434bc6"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_IsSaving",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "adcf85d34946c658ad22dbc53143daa0062090d35c98a884004380443bb759d1"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_LoadPersistent",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "db64c79f0054fc1e53aa3690483fd4d26fa7903ee06d59c18c4a7971b24d96fb"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_Process",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "45ead391e75595a5df1c394d159e45fbc59322fb8fcc954af5373f4be5a237a7"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_RxByte",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "cc820e0f7cfd99b8d9192f30c636cb78906caff2045e90ab87f2ea2711994507"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:MaintenanceProtocol_RxByteForUart",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "4b8cd528453b711b9cac6880f1f378961d2930b8d38af8f3a4406935f70b9aef"
+      ],
+      "current_sha256s": []
+    },
+    {
+      "key": "prototype:StoreRequest",
+      "new_keys": [
+        "prototype:SstParameterStore_Request"
+      ],
+      "baseline_sha256s": [
+        "6cd05d4bb0378973d2bf0f0abe4123af2b69acaea3bec9e422fc4a97463570f0"
+      ],
+      "current_sha256s": [
+        "52d610b562e22f39d67713388e5a14fa46beb85dfe32aa5fbb4d89ca0c94c610"
+      ],
+      "reason": "私有前向声明替换为公开存储头接口。",
+      "validation": "tests/framework_structure.py; tests/protocol_regression.py"
+    },
+    {
+      "key": "type:MAINT_FLOAT_WORDS",
+      "new_keys": [],
+      "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
+      "validation": "tests/serial_protocol_scope.py; tests/protocol_regression.py (retired A5/5A byte recovery and VOFA input discard); tests/dpram_maintenance.py; tests/refactor_equivalence.py",
+      "baseline_sha256s": [
+        "b358dd980a6db138dd41a3e6d550dd8249624da552622e56d92cb8164f464b98"
+      ],
+      "current_sha256s": []
     }
   ]
 }

@@ -14,9 +14,8 @@ for protocol, name in [(1, 'anyeyes'), (2, 'vofa')]:
                 [f'SST_DEBUG_PROTOCOL={protocol}', f'SST_SIMULATOR_MODE={simulator}',
                  f'SST_ENABLE_DPRAM={dpram}']))
 variants += [
-    ('anyeyes_maintenance', ['SST_SIMULATOR_MODE=0', 'SST_ENABLE_MAINTENANCE=1']),
-    ('vofa_maintenance', ['SST_SIMULATOR_MODE=0', 'SST_ENABLE_MAINTENANCE=1', 'SST_DEBUG_PROTOCOL=2']),
     ('anyeyes_persistent', ['CHB_LOAD_EEPROM_PARAMETERS=1']),
+    ('vofa_dpram_persistent', ['SST_DEBUG_PROTOCOL=2', 'CHB_LOAD_EEPROM_PARAMETERS=1']),
 ]
 
 def build(item):

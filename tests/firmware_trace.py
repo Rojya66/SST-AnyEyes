@@ -48,8 +48,9 @@ def main():
     includes.insert(1, ROOT / "Source/00_Device/include/c674x/c6748")
     template = Path(__file__).with_suffix(".c")
     variants = [("default", []),
-                ("dpram", ["SST_ENABLE_DPRAM=1", "SST_SIMULATOR_MODE=0"]),
-                ("eeprom_maintenance", ["CHB_LOAD_EEPROM_PARAMETERS=1", "SST_ENABLE_MAINTENANCE=1"])]
+                ("simulator", ["SST_ENABLE_DPRAM=0", "SST_SIMULATOR_MODE=1"]),
+                ("serial", ["SST_ENABLE_DPRAM=0", "SST_SIMULATOR_MODE=0"]),
+                ("eeprom", ["CHB_LOAD_EEPROM_PARAMETERS=1"])]
     rows = []
     for name, defines in variants:
         # "default.exe" triggers a local Windows executable-name compatibility

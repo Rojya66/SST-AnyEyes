@@ -6,7 +6,7 @@ import json
 import re
 
 
-def inspect(path):
+def inspect(path, dpram_enabled=None):
     data = path.read_bytes()
     text = data.decode("utf-8", errors="replace")
     expected = {
@@ -16,6 +16,23 @@ def inspect(path):
     }
     expected.update({f"DPRAM_Block4_PluginUnit{i}":
                      (0x66000D00 + (i - 2) * 0x200, 0x100) for i in range(2, 18)})
+    extensions = {
+        "DPRAM_SstRequest": (0x66002C00, 0x100), "DPRAM_SstResponse": (0x66002D00, 0x100),
+        "DPRAM_SstTelemetry": (0x66002E00, 0x100), "DPRAM_SstHistory": (0x66002F00, 0x400),
+    }
+    expected.update(extensions)
+    # Reproducible builds record exact definitions. Disabled extension objects
+    # may be pruned, but every retained section must still match its fixed range.
+    build_report = path.with_name("build_result.json")
+    if dpram_enabled is None and build_report.exists():
+        definitions = json.loads(build_report.read_text(encoding="utf-8"))["defines"]
+        setting = next((definition.split("=", 1)[1] for definition in definitions
+                        if definition.startswith("SST_ENABLE_DPRAM=")), None)
+        if setting is None:
+            project = Path(__file__).resolve().parents[1]
+            config = (project / "Source/04_App/00_Config/ChbBuildConfig.h").read_text(encoding="utf-8")
+            setting = re.search(r'^\s*#define\s+SST_ENABLE_DPRAM\s+([01])U?\s*$', config, re.MULTILINE)[1]
+        dpram_enabled = setting.rstrip("Uu") == "1"
     errors = []
     if re.search(r'\.cinit[^\r\n]*DPRAM_|\.binit[^\r\n]*DPRAM_', text):
         errors.append("DPRAM startup initialization image present")
@@ -26,7 +43,11 @@ def inspect(path):
         sections[name] = location
         if expected.get(name) != location:
             errors.append(f"Unexpected layout for {name}: {location}")
-    required = set(expected) - {"DPRAM_Block4_PluginUnit17"}
+    required = set(expected) - set(extensions) - {"DPRAM_Block4_PluginUnit17"}
+    if dpram_enabled is None:
+        dpram_enabled = bool(set(extensions) & sections.keys())
+    if dpram_enabled:
+        required.update(extensions)
     if not required.issubset(sections):
         errors.append("Missing retained DPRAM sections: " + str(sorted(required - sections.keys())))
     hardware_expected = {
@@ -54,7 +75,9 @@ def inspect(path):
         if int(file_size, 16):
             errors.append(f"DPRAM segment {address} has loadable file bytes")
     return {"path": str(path.resolve()), "sha256": hashlib.sha256(data).hexdigest(),
-            "retained_sections": len(sections), "fpga_ft3_sections": hardware_sections,
+            "retained_sections": len(sections), "dpram_enabled": dpram_enabled,
+            "retained_extension_sections": sorted(set(extensions) & sections.keys()),
+            "fpga_ft3_sections": hardware_sections,
             "errors": errors, "passed": not errors}
 
 
@@ -62,7 +85,9 @@ def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("maps", type=Path, nargs="*")
-    parser.add_argument("--delivery", action="store_true", help="audit the 11 matrix and 4 default/CCS maps")
+    parser.add_argument("--delivery", action="store_true", help="audit all current matrix and default/CCS maps")
+    parser.add_argument("--dpram", choices=("auto", "enabled", "disabled"), default="auto",
+                        help="require the four extension sections when enabled; auto reads adjacent build metadata")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     if args.delivery:
@@ -72,7 +97,8 @@ def main():
                   "build/Release/default/SST_AnyEyes.map", "Debug/SST_AnyEyes.map", "Release/SST_AnyEyes.map")]
     else:
         paths = args.maps or [root / "build/Debug/default/SST_AnyEyes.map"]
-    results = [inspect(path) for path in paths]
+    configured = None if args.dpram == "auto" else args.dpram == "enabled"
+    results = [inspect(path, configured) for path in paths]
     for result in results:
         print(("PASS" if result["passed"] else "FAIL") + f": {result['path']}: "
               f"{result['retained_sections']} DPRAM sections, " +

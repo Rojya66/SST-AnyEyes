@@ -72,10 +72,11 @@ void IntGlobalEnable(void) { event("global_interrupts"); }
 STUB(TimerInit,"timer_init")
 STUB(Initial_Variable,"variable_init")
 STUB(Variable_RST,"variable_reset")
-STUB(MaintenanceProtocol_LoadPersistent,"maintenance_load")
 STUB(SstParameters_LoadPersistent,"sst_load")
 void ChbDabControl_Init(void) { event("core_init"); core_ready=1; }
 void SstFault_Init(void) { event("fault_init"); fault_ready=1; }
+STUB(SstDpramMaintenance_Init,"dpram_maintenance_init")
+STUB(SstDpramMaintenance_Service,"dpram_maintenance_service")
 void SstDebug_Init(void) { event("debug_init"); debug_ready=1; }
 void FaultLatch_Clear(unsigned char run,unsigned char reset) { (void)reset; event(run?"latch_runtime_clear":"latch_boot_clear"); }
 void ChbDabControl_Tick10ms(void) { event("core_tick"); g_chb_dab_status.tick_10ms++; }
@@ -124,7 +125,7 @@ int main(void) {
     static const char *dpram_trace[]={"bank6off","event_clear","pending","gpio_clear","bank6on"};
     static const char *background[]={"core_service","fault_service",
 #if SST_ENABLE_DPRAM
-      "dpram_control","dpram_telemetry",
+      "dpram_control","dpram_telemetry","dpram_maintenance_service",
 #endif
       "tick_capture","tx","rx","protocol","store","tx","realtime_background"};
     CpuTask_InitBootFlags(); SystemInit_Hardware();
@@ -135,10 +136,7 @@ int main(void) {
     SystemInit_WaitPowerOnDelay(); check(!Flag_20s && !Flag_WDI,"startup wait consumes elapsed flag"); scenarios++;
     reset_events(); SystemInit_Runtime();
     before("variable_init","variable_reset"); before("variable_reset","latch_boot_clear");
-    before("latch_boot_clear","core_init"); before("core_init","fault_init"); before("fault_init","debug_init"); before("debug_init","enable_tad");
-#if CHB_LOAD_EEPROM_PARAMETERS && SST_ENABLE_MAINTENANCE
-    before("variable_reset","maintenance_load"); before("maintenance_load","latch_boot_clear");
-#endif
+    before("latch_boot_clear","core_init"); before("core_init","fault_init"); before("fault_init","dpram_maintenance_init"); before("dpram_maintenance_init","debug_init"); before("debug_init","enable_tad");
 #if CHB_LOAD_EEPROM_PARAMETERS
     before("debug_init","sst_load"); before("sst_load","enable_tad");
 #endif

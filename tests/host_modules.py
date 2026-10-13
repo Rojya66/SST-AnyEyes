@@ -31,6 +31,7 @@ def protocol_modules(project):
     sources = [app / "01_FuncCode/SstParams.c", app / "03_PcDebug/SstDebug.c",
                app / "03_PcDebug/Comm2PcDebug.cpp", app / "03_PcDebug/vofa.c"]
     additions = [app / "01_FuncCode/SstParameterTable.c", app / "01_FuncCode/SstParameterStore.c",
+                 app / "01_FuncCode/SstLegacyParameters.c",
                  app / "03_PcDebug/PcDebugDispData.c", app / "04_Control/SstCommand.c",
                  project / "Source/02_Peripheral/03_Serial/SstSerial.c"]
     return sources + [path for path in additions if path.exists()]

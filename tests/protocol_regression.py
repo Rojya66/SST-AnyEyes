@@ -23,9 +23,10 @@ def main():
         evidence=ROOT/"build/protocol_host"
         evidence.mkdir(parents=True,exist_ok=True)
         shutil.copy2(unit,evidence/"protocol_unit.cpp")
-        for name,defines in [("sim_anyeyes",[]),("remote_anyeyes",["SST_SIMULATOR_MODE=0"]),
+        for name,defines in [("sim_anyeyes",["SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0"]),
+                             ("remote_anyeyes",["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"]),
                              ("dpram_anyeyes",["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=1"]),
-                             ("sim_vofa",["SST_DEBUG_PROTOCOL=2"])]:
+                             ("sim_vofa",["SST_DEBUG_PROTOCOL=2","SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0"])]:
             binary=work/(name+".exe")
             objects=compile_modules(cc,files,work,defines)
             command=[cc,"-std=c++11","-O2","-static","-Wall","-Wextra","-Wno-misleading-indentation",

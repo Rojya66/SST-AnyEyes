@@ -1,0 +1,711 @@
+{
+  "created_utc": "2026-10-13T09:48:18.456269+00:00",
+  "project": "AnyEyesVersion",
+  "baseline_reference": "baseline-pre-framework-2026-10-12",
+  "baseline_commit": "ddaeb56f21a81a70cdb76085728f91b67dc3c7a0",
+  "refactored_branch": "refactor/f28377s-framework",
+  "refactored_tag": "dpram-maintenance-2026-10-13",
+  "scope": "Parallel DPRAM maintenance; RS485 selects AnyEyes or VOFA only",
+  "firmware_input_sha256": "13b5009537ca27f8b02ade3123f0e333594e8f7dc7fd18f2ace94b6419396b15",
+  "target_builds": [
+    {
+      "configuration": "Debug",
+      "source_count": 87,
+      "warnings": 17,
+      "link_status": 0,
+      "compile_failures": []
+    },
+    {
+      "configuration": "Release",
+      "source_count": 87,
+      "warnings": 17,
+      "link_status": 0,
+      "compile_failures": []
+    }
+  ],
+  "macro_builds": [
+    {
+      "variant": "anyeyes_sim",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=1",
+        "SST_SIMULATOR_MODE=1",
+        "SST_ENABLE_DPRAM=0"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "anyeyes_sim_dpram",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=1",
+        "SST_SIMULATOR_MODE=1",
+        "SST_ENABLE_DPRAM=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "anyeyes_remote",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=1",
+        "SST_SIMULATOR_MODE=0",
+        "SST_ENABLE_DPRAM=0"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "anyeyes_remote_dpram",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=1",
+        "SST_SIMULATOR_MODE=0",
+        "SST_ENABLE_DPRAM=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "vofa_sim",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=2",
+        "SST_SIMULATOR_MODE=1",
+        "SST_ENABLE_DPRAM=0"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "vofa_sim_dpram",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=2",
+        "SST_SIMULATOR_MODE=1",
+        "SST_ENABLE_DPRAM=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "vofa_remote",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=2",
+        "SST_SIMULATOR_MODE=0",
+        "SST_ENABLE_DPRAM=0"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "vofa_remote_dpram",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=2",
+        "SST_SIMULATOR_MODE=0",
+        "SST_ENABLE_DPRAM=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "anyeyes_persistent",
+      "defines": [
+        "CHB_LOAD_EEPROM_PARAMETERS=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    },
+    {
+      "variant": "vofa_dpram_persistent",
+      "defines": [
+        "SST_DEBUG_PROTOCOL=2",
+        "CHB_LOAD_EEPROM_PARAMETERS=1"
+      ],
+      "warnings": 17,
+      "exit_code": 0
+    }
+  ],
+  "ccs_results": [
+    {
+      "action": "import",
+      "exit_code": 0,
+      "clean_exit_code": null
+    },
+    {
+      "action": "Debug",
+      "exit_code": 0,
+      "clean_exit_code": 0
+    },
+    {
+      "action": "Release",
+      "exit_code": 0,
+      "clean_exit_code": 0
+    }
+  ],
+  "workspace_import_results": [
+    {
+      "action": "before",
+      "exit_code": 1
+    },
+    {
+      "action": "after",
+      "exit_code": 0
+    },
+    {
+      "action": "Debug",
+      "exit_code": 0
+    },
+    {
+      "action": "Release",
+      "exit_code": 0
+    }
+  ],
+  "host_checks": [
+    {
+      "check": "realtime_audit",
+      "exit_code": 0,
+      "log": "build/host_validation/realtime_audit.log",
+      "log_sha256": "cbfcf28f21d732b856eb7badcc6aba7d211a8767d2106cd11e996fd70343a35a"
+    },
+    {
+      "check": "control_regression",
+      "exit_code": 0,
+      "log": "build/host_validation/control_regression.log",
+      "log_sha256": "4242fa87c45e9bdee122d1893a62d46a3f6554b590619bdbff617a160f7c4a9d"
+    },
+    {
+      "check": "fault_reporting",
+      "exit_code": 0,
+      "log": "build/host_validation/fault_reporting.log",
+      "log_sha256": "c43725e3b8cabdd70cae59e5f1a06fda0c33a0eab0a50079c45110d15d9cd8b8"
+    },
+    {
+      "check": "dpram_commands",
+      "exit_code": 0,
+      "log": "build/host_validation/dpram_commands.log",
+      "log_sha256": "b8fff7aa66224517d0b1a459ea3ab05049ca7ac89dc234f92da892d8e71ce883"
+    },
+    {
+      "check": "parameter_precision",
+      "exit_code": 0,
+      "log": "build/host_validation/parameter_precision.log",
+      "log_sha256": "33eae721a1dbb4c259c7d5df0712bf60cf44ac2ffb485ce8fd17f83c6108474c"
+    },
+    {
+      "check": "protocol_regression",
+      "exit_code": 0,
+      "log": "build/host_validation/protocol_regression.log",
+      "log_sha256": "78b58bd17348cf26d9a6000f929ab908551883e7e0ce283dd18142177a9ca74a"
+    },
+    {
+      "check": "refactor_equivalence",
+      "exit_code": 0,
+      "log": "build/host_validation/refactor_equivalence.log",
+      "log_sha256": "08abd54ef741c87cdf65f21fb4e158e731374ea5d4409b7c867451abe7f2d9dd"
+    },
+    {
+      "check": "comment_coverage",
+      "exit_code": 0,
+      "log": "build/host_validation/comment_coverage.log",
+      "log_sha256": "0ccd6f3029cbc7a048fb04f7e1c64d34d9d49f3f0fe8a433e3629917bbfbcd62"
+    },
+    {
+      "check": "framework_structure",
+      "exit_code": 0,
+      "log": "build/host_validation/framework_structure.log",
+      "log_sha256": "55f9a03a00f0b84c5315f64a73d6fe07b3f088d79b57be4ab498a43bd1ecb40f"
+    },
+    {
+      "check": "firmware_trace",
+      "exit_code": 0,
+      "log": "build/host_validation/firmware_trace.log",
+      "log_sha256": "6aae36a96f1832635c67ea3adfeac712a9eb7a96c1b10e2d16850963f6092014"
+    },
+    {
+      "check": "serial_protocol_scope",
+      "exit_code": 0,
+      "log": "build/host_validation/serial_protocol_scope.log",
+      "log_sha256": "86121583640c79df2a423be5329b6148ac6d7e35d5fde9ec3fa0eab380a3e969"
+    },
+    {
+      "check": "parameter_store_migration",
+      "exit_code": 0,
+      "log": "build/host_validation/parameter_store_migration.log",
+      "log_sha256": "e7eb04eb6537e3eb2b80d1724e2446adb289729803894ad86147678e4b0bd582"
+    },
+    {
+      "check": "dpram_maintenance",
+      "exit_code": 0,
+      "log": "build/host_validation/dpram_maintenance.log",
+      "log_sha256": "4d685ee5c73f89f05c31bfb0f5175313d57eec28f33224b025c67cfcbff97259"
+    }
+  ],
+  "refactor_equivalence": {
+    "original_entities": 2419,
+    "current_entities": 2285,
+    "entity_groups": {
+      "moved_or_redeclared": 1397,
+      "preserved_in_noncompiled_archive": 129,
+      "unchanged": 564,
+      "reviewed_interface_or_organization_change": 135,
+      "exact_ordered_initialization_expansion": 2
+    },
+    "failures": []
+  },
+  "initialization_equivalence": {
+    "baseline": "baseline-pre-framework-2026-10-12",
+    "method": "Expand ordered no-argument helpers; check relocated local types; compare full original executable token and preprocessor stream",
+    "results": [
+      {
+        "name": "Initial_Variable",
+        "steps": 16,
+        "executable_tokens": 3120,
+        "preprocessor_directives": 14,
+        "ordered_tokens_and_directives_equal": true,
+        "token_sha256": "d41337e40365650cc445e7ec8f274867d222d0bfe5f8b36ff3aa3b51679bf271"
+      },
+      {
+        "name": "Variable_RST",
+        "steps": 1,
+        "executable_tokens": 175,
+        "preprocessor_directives": 2,
+        "ordered_tokens_and_directives_equal": true,
+        "token_sha256": "91506e146b5d93bc1d4d00616164b79c5493df63025e84e408d0aaffee1a6b7d"
+      }
+    ]
+  },
+  "comments": {
+    "custom_source_files": 128,
+    "symbol_counts": {
+      "prototype": 323,
+      "parameter": 538,
+      "function": 363,
+      "variable": 1591,
+      "field": 866,
+      "enum": 43
+    },
+    "failures": []
+  },
+  "structure": {
+    "assertions": [
+      {
+        "assertion": "activity source has no legacy umbrella-header includes: []",
+        "passed": true
+      },
+      {
+        "assertion": "Main performs boot flags, hardware, original 20s wait, runtime initialization in order",
+        "passed": true
+      },
+      {
+        "assertion": "Main retains pulse-test and normal main-loop branches with the same background service",
+        "passed": true
+      },
+      {
+        "assertion": "Main owns no domain data or interrupt implementations",
+        "passed": true
+      },
+      {
+        "assertion": "TaskSlice explicit heartbeat/control/fault/DPRAM/parallel maintenance, capture-before-TX, TX/RX/protocol/store/TX/measurement order",
+        "passed": true
+      },
+      {
+        "assertion": "SystemInit initializes safe control/fault/debug objects before enabling external interrupts",
+        "passed": true
+      },
+      {
+        "assertion": "SystemInit retains Timer2 Flag_20s power-on wait",
+        "passed": true
+      },
+      {
+        "assertion": "each external function/object/MMIO assignment has one owning translation unit: []",
+        "passed": true
+      },
+      {
+        "assertion": "custom public headers have no include dependency cycle: []",
+        "passed": true
+      },
+      {
+        "assertion": "standalone TI C/C++ header compilation (140 units): []",
+        "passed": true
+      },
+      {
+        "assertion": "TI Debug build has no implicit function-declaration diagnostics: []",
+        "passed": true
+      }
+    ],
+    "header_compile_units": 140,
+    "failures": []
+  },
+  "firmware_traces": {
+    "variants": [
+      {
+        "variant": "default",
+        "defines": [],
+        "status": "pass",
+        "output": "PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries"
+      },
+      {
+        "variant": "simulator",
+        "defines": [
+          "SST_ENABLE_DPRAM=0",
+          "SST_SIMULATOR_MODE=1"
+        ],
+        "status": "pass",
+        "output": "PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries"
+      },
+      {
+        "variant": "serial",
+        "defines": [
+          "SST_ENABLE_DPRAM=0",
+          "SST_SIMULATOR_MODE=0"
+        ],
+        "status": "pass",
+        "output": "PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries"
+      },
+      {
+        "variant": "eeprom",
+        "defines": [
+          "CHB_LOAD_EEPROM_PARAMETERS=1"
+        ],
+        "status": "pass",
+        "output": "PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries"
+      }
+    ],
+    "method": "gcc separate real production startup/scheduler/ISR/data translation units, fake hardware/service callees",
+    "limitations": [
+      "Fake hardware checks branch/state/call order, not real-time latency.",
+      "Host ABI is not used to validate C6748 wire layouts; TI map/layout checks cover that separately."
+    ]
+  },
+  "isr_binary_comparison": {
+    "results": [
+      {
+        "function": "FPGAIsr",
+        "assembly_instructions_equal": true,
+        "direct_calls_equal": true,
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "Port_StateUpdate_Read",
+          "Port_AD_Sample",
+          "HVAC_RealTimeParameter",
+          "SVG_Udc_Average",
+          "ChbDabControl_FastStep",
+          "Udc_check",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_faultcheck",
+          "PortController_Communication",
+          "Port_AllStopFlag_RST",
+          "Port_StateUpdate_Write",
+          "ChbDabControl_ForceFault",
+          "FT3_PluginUint_Write",
+          "FT3_PluginUint_Read",
+          "DAC_Output",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "GPIOBankIntEnable"
+        ],
+        "baseline_stack": 8,
+        "current_stack": 8,
+        "stack_equal": true,
+        "baseline_elf": {
+          "address": 293655664,
+          "size": 572,
+          "sha256": "cf7b005bb9795d14918095bb89354cd4e9cee72c6916bed9e6a75a26060d8066"
+        },
+        "current_elf": {
+          "address": 293688164,
+          "size": 572,
+          "sha256": "7fd7eb047a11c496a97128a0827ecb0921b35d767b96fdf1382d8b2d6d2921a1"
+        },
+        "code_size_equal": true,
+        "passed": true
+      },
+      {
+        "function": "FAULTIsr",
+        "assembly_instructions_equal": true,
+        "direct_calls_equal": true,
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "FaultCheckAndDispose_StepOne",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "GPIOBankIntEnable"
+        ],
+        "baseline_stack": 8,
+        "current_stack": 8,
+        "stack_equal": true,
+        "baseline_elf": {
+          "address": 293656204,
+          "size": 132,
+          "sha256": "a82e19feadc1189164c6c056120d56ebf8399ad516e561d3c899c5f6d5ad9fb8"
+        },
+        "current_elf": {
+          "address": 293688712,
+          "size": 132,
+          "sha256": "e18ab79285924e1718cd00fe436aa2483c9b33a8e222b80ee5596d916e28a7b1"
+        },
+        "code_size_equal": true,
+        "passed": true
+      },
+      {
+        "function": "Timer2Isr",
+        "assembly_instructions_equal": true,
+        "direct_calls_equal": true,
+        "direct_calls": [
+          "TimerIntDisable",
+          "IntEventClear",
+          "TimerIntStatusClear",
+          "TimerIntEnable",
+          "ChbDabControl_Tick10ms",
+          "FaultLatch_Clear"
+        ],
+        "baseline_stack": 8,
+        "current_stack": 8,
+        "stack_equal": true,
+        "baseline_elf": {
+          "address": 293653784,
+          "size": 1104,
+          "sha256": "f4f3ea5613390cb29684f9b9e72d5833784d4de51b3b5f0a78e97367bdf8f076"
+        },
+        "current_elf": {
+          "address": 293687136,
+          "size": 1104,
+          "sha256": "de135b4222a70aa7c915d2ae81e5947c16893878cbda4d9d38423de807ee922b"
+        },
+        "code_size_equal": true,
+        "passed": true
+      },
+      {
+        "function": "DPRAMIsr",
+        "assembly_instructions_equal": true,
+        "direct_calls_equal": true,
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOBankIntEnable"
+        ],
+        "baseline_stack": 8,
+        "current_stack": 8,
+        "stack_equal": true,
+        "baseline_elf": {
+          "address": 293656328,
+          "size": 104,
+          "sha256": "8b9bd33e5f10714ee2a45fe0f7f2c889c48ca7770d37cc86a32bad0e9c89ad49"
+        },
+        "current_elf": {
+          "address": 293688836,
+          "size": 104,
+          "sha256": "0634c54590df55750d1a490467481a0797b559d40f6deed797ae44ca170b8625"
+        },
+        "code_size_equal": true,
+        "passed": true
+      }
+    ],
+    "passed": true,
+    "method": "TI unlinked symbolic assembly instructions with generated local label names normalized and DWARF directives excluded; ELF function sizes and generated DW_AT_TI_max_frame_size",
+    "limitations": "No board timing, nested interrupt, cache or EMIFA stall measurements; changed RAM symbol placement is expected.",
+    "firmware_sha256": "659ce5742874adb21228290ebe3de321475f1756eb98b7bbddc60ad170ff3993"
+  },
+  "map_audits": [
+    {
+      "path": "build/Debug/anyeyes_sim/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "4a33fcebb679c454084c7650d8eef70afdc24f25a6c0dadcc862b200bb0169bb"
+    },
+    {
+      "path": "build/Debug/anyeyes_sim_dpram/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "0db741354e9ad409ea106c39f82f5c6a0dc4a9a366faab58829c6d6fc472c763"
+    },
+    {
+      "path": "build/Debug/anyeyes_remote/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "4f8cd6b8c3f275b5e711b486d858792bce60e116b2b1247e9ac88e2902a2c6fb"
+    },
+    {
+      "path": "build/Debug/anyeyes_remote_dpram/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "451ca96e3c081a85875e6aa0d2ceb03493681fd2f6f1067d6bde9e459c1c2578"
+    },
+    {
+      "path": "build/Debug/vofa_sim/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "c2fad3a314058aa8798d789df1057fb1677c2af06e0fec354701b30a1e604b6c"
+    },
+    {
+      "path": "build/Debug/vofa_sim_dpram/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "d8656b42dc46a79eaa0c853b4577bf496e3c42f0a933c2796118a3d9a14894fa"
+    },
+    {
+      "path": "build/Debug/vofa_remote/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "6949117c553521ef1e6a3566908705e8f0639016c50f46cc1fcdbc64300d04b6"
+    },
+    {
+      "path": "build/Debug/vofa_remote_dpram/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "a43efafdc8be67298fdb8626cacab76193ff3a51bbc773c53ecd8e1835dfdf5d"
+    },
+    {
+      "path": "build/Debug/anyeyes_persistent/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "759b444c517d27bb8fc2c664c0ac39cc55ba3ddd2d88529be2552dfa0ce3a615"
+    },
+    {
+      "path": "build/Debug/vofa_dpram_persistent/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "fbd2b6fa782da1ca9395a7017ffac7208e2e96b107171d0679ccdfa4a2db5bdc"
+    },
+    {
+      "path": "build/Debug/default/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "b92b3e7d959cfd03a67d73a8286268126530ac61cff24a759ee32d67552bd4a9"
+    },
+    {
+      "path": "build/Release/default/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "f11b83d79b09f6e2a6d400f379c06fe5f013d43a895ff1a55da396d263790152"
+    },
+    {
+      "path": "Debug/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "cee2299ed3bed691385ab810546659384153df51500fb450fee0e5bb61547c72"
+    },
+    {
+      "path": "Release/SST_AnyEyes.map",
+      "passed": true,
+      "sha256": "09a199ec199db85778a9dce866770639931ad83a5cef9a1eb31027973826c346"
+    }
+  ],
+  "dpram_point_table_audit": {
+    "status": "pass",
+    "address_rows": 3038,
+    "legacy_rows_unchanged": 2142,
+    "baseline": "6415bad0169c5d3fd7132c5d4e713cd129b77e51",
+    "points_matched_to_source": 54,
+    "ti_layout_compile": 0,
+    "sha256": {
+      "docs/DPRAM_ADDRESSES.csv": "84cb8b732ac5a5561db51d2f7fb027d6721893f8e1c4ce6f1db4c506a5f78005",
+      "docs/DPRAM_PARAMETERS.csv": "259a71e607310d3534b6a4a8859132d8a23cada5cdae55652809dcdd536b660e",
+      "C6748.cmd": "d2a18de81bec64a46b62e4521831e471b78e5c14a8adb0d95d5df4d8680e72bd",
+      "Source/04_App/01_FuncCode/SstParameterTable.c": "f5f629a862568509104a203bd333edcac6ee8843f1da57f585ff288f5786bf28",
+      "Source/04_App/01_FuncCode/SstLegacyParameters.c": "8e926d4a75e944853f10de066de1e3fdd3b5c541127a101b024f57b2a7dd8ba7",
+      "Source/02_Peripheral/01_DPRAM/SstDpramExtension.h": "e92eda759b64e524d97e0fa5e0df95757170d6cc499935f9c5a56396298da45a"
+    }
+  },
+  "memory_usage": [
+    {
+      "configuration": "Debug",
+      "origin": "0x11801000",
+      "length": "0x0003f000",
+      "used": "0x00021907",
+      "remaining": "0x0001d6f9"
+    },
+    {
+      "configuration": "Release",
+      "origin": "0x11801000",
+      "length": "0x0003f000",
+      "used": "0x00021907",
+      "remaining": "0x0001d6f9"
+    }
+  ],
+  "firmware_artifacts": [
+    {
+      "path": "Debug/SST_AnyEyes.out",
+      "bytes": 722000,
+      "sha256": "e1aef320de68235494f1710b7c0ee37b344b1432538c2467bb5b37b2f8a91105"
+    },
+    {
+      "path": "Release/SST_AnyEyes.out",
+      "bytes": 722352,
+      "sha256": "34bf6d3ef0b4c32fd0cff52f1b3daa0bd01885a338633829e05580e1cfe7234c"
+    },
+    {
+      "path": "build/Debug/default/SST_AnyEyes.out",
+      "bytes": 750336,
+      "sha256": "659ce5742874adb21228290ebe3de321475f1756eb98b7bbddc60ad170ff3993"
+    },
+    {
+      "path": "build/Release/default/SST_AnyEyes.out",
+      "bytes": 750336,
+      "sha256": "e20d4185af696d0b9d59de68ac269e33b71dd789656dc14064f3db69b08a1c02"
+    },
+    {
+      "path": "build/Debug/anyeyes_sim/SST_AnyEyes.out",
+      "bytes": 719636,
+      "sha256": "f75037090f4febe18735c7858cd3c2a3ff06677c79ed0ea3e2fcd3e02a2da9d5"
+    },
+    {
+      "path": "build/Debug/anyeyes_sim_dpram/SST_AnyEyes.out",
+      "bytes": 747492,
+      "sha256": "97c550c6a3ec760bc65545f13cfda9504310c212c4a11e803b3f810697e9fcca"
+    },
+    {
+      "path": "build/Debug/anyeyes_remote/SST_AnyEyes.out",
+      "bytes": 720168,
+      "sha256": "ade96b3e3636cec059869aacdec74f0d9dd6fd2bd7f3e8b002cd7bee5f6bdf06"
+    },
+    {
+      "path": "build/Debug/anyeyes_remote_dpram/SST_AnyEyes.out",
+      "bytes": 750336,
+      "sha256": "0d9d49934dc817621d2f4e4ba6551c1927c08812c21283b7a492dd55c85d1abd"
+    },
+    {
+      "path": "build/Debug/vofa_sim/SST_AnyEyes.out",
+      "bytes": 719296,
+      "sha256": "22c223f051ed7da64d92bb715f1dba2689ab4bb0e228cacc750e5e88d4f50926"
+    },
+    {
+      "path": "build/Debug/vofa_sim_dpram/SST_AnyEyes.out",
+      "bytes": 747156,
+      "sha256": "0deb5a779839609763311a8e4d37d2fa9649ab90b32d181a982c1d222d12e995"
+    },
+    {
+      "path": "build/Debug/vofa_remote/SST_AnyEyes.out",
+      "bytes": 719828,
+      "sha256": "f9414ba981232b554a56b8b73a4fa0df76322c232dcf8a4b2f7c3f849ed8a793"
+    },
+    {
+      "path": "build/Debug/vofa_remote_dpram/SST_AnyEyes.out",
+      "bytes": 750000,
+      "sha256": "e4acbd83b680001db81b8a0ae3a81833e726d54b74fbbbe1ef2ee1334ee029ef"
+    },
+    {
+      "path": "build/Debug/anyeyes_persistent/SST_AnyEyes.out",
+      "bytes": 750588,
+      "sha256": "080b3a2fcc761da73354bf399665fb10b90f59faef2773f5ece0de53b8a0f701"
+    },
+    {
+      "path": "build/Debug/vofa_dpram_persistent/SST_AnyEyes.out",
+      "bytes": 750248,
+      "sha256": "ffdf8cfe9eff773f23340eac452afa9980d5152fdfe5d5b8d340c1a405e335b0"
+    }
+  ],
+  "report_sha256": {
+    "build/delivery_manifest.json": "ff133af7a28c3451f3f86ff620012aff97d53e2a5e3f4d019ab846a73ab44c3a",
+    "build/host_validation/result.json": "4090f165b4478a8c34ccf0a744a4e5f660e365c8325891644be7b33795765b03",
+    "build/matrix_result.json": "871a7f440c63ea20ab684442bde2270ff11c7b5414473d87eed8543786dae762",
+    "build/ccs_validation/result.json": "5f2cb149e321b95785e7fa628f027af8f9e3e5a37f554deb830fb814f24c3598",
+    "build/workspace_import_validation/result.json": "72979c8db733179b7fb6ca997b2bb1cbd4d13f68b96bdcd5424b49fd6aa85cf7",
+    "build/dpram_map_validation.json": "930eb13883a6b825338ad816b01daf0b9409f2f3839bc29b41ba590099334240",
+    "build/refactor_equivalence.json": "f63f3e13d9d022a69e3188e20459201f9ec59645d14b2c7736a297ed88fc8a7b",
+    "build/control_init_equivalence.json": "dcd36139544cf832e1f9972320bab811f8d631ae420bb60a7289951c6d7b8c91",
+    "build/comment_inventory/verification.json": "f7e59d817b1d1fd88bdd519d530f21295ab9feb8f7994a8b8accdec794f714b1",
+    "build/framework_structure/result.json": "4c5d6f5912fcdf4709c39bf7ab31399cb1f96602329d52cf5436e60f26b78d0a",
+    "build/firmware_trace/result.json": "67fed9928671101f762e8da929e6e6c71dbdebfda94842e88e0bc69fe8fb8862",
+    "build/isr_binary_audit/result.json": "dc6a41710ec28fa090df87586c73e896cfba031950bfa6fd9ea207b18a8591b2",
+    "build/dpram_point_table_audit/result.json": "b71d4ab48f2cb176e1f5ebe52af8beb878cad362554f3a5b974dc0f8599654c3"
+  },
+  "physical_board_validation_performed": false
+}

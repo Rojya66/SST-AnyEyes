@@ -18,6 +18,12 @@ refactor = json.loads((ROOT / 'build/refactor_equivalence.json').read_text(encod
 structure = json.loads((ROOT / 'build/framework_structure/result.json').read_text(encoding='utf-8'))
 trace = json.loads((ROOT / 'build/firmware_trace/result.json').read_text(encoding='utf-8'))
 binary = json.loads((ROOT / 'build/isr_binary_audit/result.json').read_text(encoding='utf-8'))
+point_table = json.loads((ROOT / 'build/dpram_point_table_audit/result.json').read_text(encoding='utf-8'))
+assert point_table['status'] == 'pass' and point_table['ti_layout_compile'] == 0
+assert point_table['address_rows'] == 3038 and point_table['points_matched_to_source'] == 54
+assert point_table['legacy_rows_unchanged'] == 2142
+for path, sha256 in point_table['sha256'].items():
+    assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == sha256, 'Point table changed after audit'
 assert binary['passed'] and all(r['passed'] for r in binary['results'])
 assert binary['firmware_sha256'] == hashlib.sha256((ROOT / 'build/Debug/default/SST_AnyEyes.out').read_bytes()).hexdigest()
 assert not comments['failures']
@@ -33,12 +39,12 @@ for path, sha256 in structure['input_sha256'].items():
 for path, sha256 in trace['input_sha256'].items():
     assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == sha256
 assert hashlib.sha256((ROOT / 'tests/firmware_trace.c').read_bytes()).hexdigest() == trace['fixture_sha256']
-assert len(maps) == 15 and all(r['passed'] for r in maps)
+assert len(maps) == len(matrix) + 4 and all(r['passed'] for r in maps)
 for item in maps:
     assert hashlib.sha256(Path(item['path']).read_bytes()).hexdigest() == item['sha256']
 assert host['firmware_unchanged_during_checks']
 assert all(r['exit_code'] == 0 for r in host['checks'])
-assert len(matrix) == 11 and all(r['exit_code'] == 0 for r in matrix)
+assert len(matrix) == 10 and all(r['exit_code'] == 0 for r in matrix)
 assert len(ccs['results']) == 3 and all(r['exit_code'] == 0 for r in ccs['results'])
 assert [r['exit_code'] for r in workspace_import['results']] == [1, 0, 0, 0], 'Unexpected direct-child import results'
 assert all(r['link_status'] == 0 and not r['compile_failures'] for r in defaults)
@@ -80,6 +86,7 @@ report = dict(created_utc=datetime.now(timezone.utc).isoformat(),
               firmware_execution_traces=dict(variants=trace['variants'], method=trace['method'],
                   report='build/firmware_trace/result.json'),
               isr_binary_comparison=binary,
+              dpram_point_table_audit=point_table,
               physical_board_validation_performed=False)
 target = ROOT / 'build/delivery_manifest.json'
 target.write_text(json.dumps(report, indent=2), encoding='utf-8')

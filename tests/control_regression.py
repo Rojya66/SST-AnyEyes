@@ -28,7 +28,8 @@ def run(source: Path, header: Path, config: Path, compiler: str, template: str) 
         unit = work / "control_test.c"
         unit.write_text(code, encoding="utf-8")
         binary = work / "control_test.exe"
-        command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra", str(unit),
+        command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
+                   "-DSST_SIMULATOR_MODE=1", "-DSST_ENABLE_DPRAM=0", str(unit),
                    "-lm", "-o", str(binary)]
         subprocess.run(command, check=True, capture_output=True, text=True)
         return subprocess.run([str(binary)], check=True, capture_output=True, text=True,

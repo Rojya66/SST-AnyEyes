@@ -3,6 +3,7 @@
 Run delivery_manifest.py first. Large local logs and generated firmware remain
 under ignored build directories; this summary records their hashes and results.
 """
+import argparse
 import hashlib
 import json
 import re
@@ -12,6 +13,13 @@ from firmware_inputs import fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / 'docs/evidence'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--output', default='dpram_maintenance_validation.json',
+                    help='Summary filename below docs/evidence; historical summaries are kept by default')
+parser.add_argument('--revision-tag', default='dpram-maintenance-2026-10-13',
+                    help='Release tag identifying the validated firmware inputs')
+args = parser.parse_args()
+assert Path(args.output).name == args.output and args.output.endswith('.json')
 
 
 def read(relative):
@@ -48,13 +56,15 @@ report_paths = ['build/delivery_manifest.json', 'build/host_validation/result.js
                 'build/workspace_import_validation/result.json', 'build/dpram_map_validation.json',
                 'build/refactor_equivalence.json', 'build/control_init_equivalence.json',
                 'build/comment_inventory/verification.json', 'build/framework_structure/result.json',
-                'build/firmware_trace/result.json', 'build/isr_binary_audit/result.json']
+                'build/firmware_trace/result.json', 'build/isr_binary_audit/result.json',
+                'build/dpram_point_table_audit/result.json']
 report = dict(
     created_utc=manifest['created_utc'], project='AnyEyesVersion',
     baseline_reference='baseline-pre-framework-2026-10-12',
     baseline_commit=refactor['baseline_commit'],
     refactored_branch='refactor/f28377s-framework',
-    refactored_tag='framework-refactored-2026-10-12',
+    refactored_tag=args.revision_tag,
+    scope='Parallel DPRAM maintenance; RS485 selects AnyEyes or VOFA only',
     firmware_input_sha256=manifest['firmware_input_sha256'],
     target_builds=[dict(configuration=d['configuration'], source_count=d['source_count'],
                         warnings=d['warnings'], link_status=d['link_status'],
@@ -78,10 +88,11 @@ report = dict(
                                limitations=binary['limitations'], firmware_sha256=binary['firmware_sha256']),
     map_audits=[dict(path=local_path(m['path']), passed=m['passed'], sha256=m['sha256'])
                 for m in manifest['dpram_map_checks']],
+    dpram_point_table_audit=manifest['dpram_point_table_audit'],
     memory_usage=memory, firmware_artifacts=manifest['firmware_artifacts'],
     report_sha256={path: sha(path) for path in report_paths},
     physical_board_validation_performed=False,
 )
 DEST.mkdir(parents=True, exist_ok=True)
-(DEST / 'software_validation.json').write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-print('Exported:', DEST / 'software_validation.json')
+(DEST / args.output).write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+print('Exported:', DEST / args.output)

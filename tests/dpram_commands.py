@@ -22,9 +22,9 @@ def main():
         unit = work / "commands_test.c"
         unit.write_text(template.replace("/* INSERT_COMMAND_IMPLEMENTATION */", source), encoding="utf-8")
         for name, defines in (
-            ("simulator", []),
-            ("serial_owner", ["SST_SIMULATOR_MODE=0"]),
-            ("simulator_with_dpram", ["SST_ENABLE_DPRAM=1"]),
+            ("simulator", ["SST_SIMULATOR_MODE=1", "SST_ENABLE_DPRAM=0"]),
+            ("serial_owner", ["SST_SIMULATOR_MODE=0", "SST_ENABLE_DPRAM=0"]),
+            ("simulator_with_dpram", ["SST_SIMULATOR_MODE=1", "SST_ENABLE_DPRAM=1"]),
             ("dpram_owner", ["SST_SIMULATOR_MODE=0", "SST_ENABLE_DPRAM=1"]),
         ):
             binary = work / (name + ".exe")

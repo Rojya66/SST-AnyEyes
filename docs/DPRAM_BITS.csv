@@ -226,3 +226,13 @@
 插件word102/103 FB/FB_LATCH,原插件15,13,13,0x2000,1故障置位,原始硬件位图
 插件word102/103 FB/FB_LATCH,原插件16,14,14,0x4000,1故障置位,原始硬件位图
 插件word102/103 FB/FB_LATCH,原插件17,15,15,0x8000,1故障置位,原始硬件位图
+0x66002E0C modern flags,ac_input_closed,0,0,0x0001,0否/1是,已接入
+0x66002E0C modern flags,precharge_bypassed,1,1,0x0002,0否/1是,已接入
+0x66002E0C modern flags,ac_pwm_enabled,2,2,0x0004,0否/1是,已接入
+0x66002E0C modern flags,dab_pwm_enabled,3,3,0x0008,0否/1是,已接入
+0x66002E0C modern flags,pll_locked,4,4,0x0010,0否/1是,已接入
+0x66002E0C modern flags,voltage_loop_active,5,5,0x0020,0否/1是,已接入
+0x66002E0C modern flags,protection_enable,6,6,0x0040,0否/1是,已接入
+0x66002E0C modern flags,run_request,7,7,0x0080,0否/1是,已接入
+0x66002E0C modern flags,dab_request,8,8,0x0100,0否/1是,已接入
+0x66002E0C modern flags,reserved,9,15,0xFE00,0,保留

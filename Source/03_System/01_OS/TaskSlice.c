@@ -3,6 +3,7 @@
 #include "ChbDabControl.h"
 #include "SstFault.h"
 #include "SstDpramHost.h"
+#include "SstDpramMaintenance.h"
 #include "ChbBuildConfig.h"
 #include "SstDebug.h"
 #include "SstSerial.h"
@@ -25,6 +26,7 @@ void TaskSlice_Service(void)
 #if SST_ENABLE_DPRAM
     SstDpramHost_ServiceRemoteControl();
     SstDpramHost_ServiceTelemetry();
+    SstDpramMaintenance_Service();
 #endif
     now = SstDebug_GetTick10ms();
     SstSerial_TxService();

@@ -1,5 +1,7 @@
 # 重构验证工具与等价证据
 
+2026-10-13调整删除485维护协议，新增DPRAM扩展与v2存储；当前结果由 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json) 记录。本文保留的历史等价实体数、ISR尺寸和配置数量对应框架固定版本；新接口不以旧摘要或旧源等价合同冒充本轮验证。
+
 本次重构的原始参照为 Git 标签 `baseline-pre-framework-2026-10-12`，提交为 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。工具读取原始提交，不用整理后的实现覆盖参照。随版本保存的最终汇总为 [software_validation.json](evidence/software_validation.json)，完整本地产物清单为 `build/delivery_manifest.json`；报告中保留输入指纹、各项返回码和产物哈希。
 
 ## 源码搬运、接口变化与历史归档
@@ -31,7 +33,7 @@
 
 结构结果为 `build/framework_structure/result.json`，列出实际独立头编译单元及其诊断；文件 SHA256 用于交付时校验报告没有过期。
 
-`tests/firmware_trace.py/.c` 分别编译真实 `SystemInit/TaskSlice/CpuTask/Redef_Interrupt` 和所属数据单元，仅替换 MMIO及外围/业务被调用函数。默认、DPRAM、EEPROM+维护 3 种配置各执行 17 个场景，核验 20 s Timer2时基、启动中断开放门槛、后台任务顺序、开闭环 TAD、硬件/软件故障分支、停机优先、无效边沿、FAULT/DPRAM/Timer2应答及单调时钟。结果为 `build/firmware_trace/result.json`；该运行轨迹与严格 ISR 正文等价、二进制审计、板级测量分别提供不同证据。
+`tests/firmware_trace.py/.c` 编译真实 `SystemInit/TaskSlice/CpuTask/Redef_Interrupt` 和所属数据单元，仅替换MMIO及外围/业务函数。当前配置不再包含485维护，调度轨迹包含DPRAM扩展Service；检查20s等待、启动开放门槛、后台次序、TAD/故障分支、停机优先、各中断应答及单调时钟。实际配置和场景数量以 `build/firmware_trace/result.json` 及本轮证据为准，与ISR对照及板级测量分别提供不同证据。
 
 ## ISR 的目标编译器对照
 
@@ -50,13 +52,13 @@
 
 协议回归将真实 `SstParams/SstParameterTable/SstParameterStore/PcDebugDispData/SstSerial/SstDebug/Comm2PcDebug/vofa/SstCommand` 分别编译再链接，硬件替身声明由 `tests/host_protocol_io.h` 提供。这样可以发现原来把多个 `.c` 拼在一起时被遮蔽的接口及链接错误。线上帧、映射、超时、CRC、流控制、RX64/TX16、RS485方向与存储互锁仍使用原断言。
 
-参数精度检查只在唯一参数表单元中访问其私有条目，其他真实模块独立编译。其核验 37 个参数和 5 个持久化命令的线上编码、半 LSB 往返误差及第二次加载稳定性，不复制另一套参数表。
+参数精度检查使用唯一参数表的37个现代参数和5个持久化命令/给定，另链接真实 `SstLegacyParameters` 校验8项原保护/巡检参数；核验线上编码、半LSB误差及重复加载稳定性，不复制另一套参数表。
 
-维护回归仍使用原假硬件布局和真实当前实现。假布局从 Git 原始头读取并记录 SHA256；这只用于测试存储，未恢复到目标工程。
+`serial_protocol_scope.py` 检查AnyEyes/VOFA构建不再执行或回复旧A5维护请求；`parameter_store_migration.py` 校验v1/v2兼容、范围、CRC及保护总使能不持久化。旧 `maintenance_regression.py/.c` 已删除，不再是当前验证入口。DPRAM扩展应校验固定区布局、54点、CRC/序号/权限、存储互锁和偶数快照；当前返回码以本轮证据为准。
 
 `tests/comment_coverage.py` 独立检查函数五项中文说明及命名参数、变量、成员、宏、枚举注释。旧路径逐文件 token 一致率仅作为历史信息；重构的代码等价验收由上述独立搬运检查负责。
 
-`tools/run_checks.py` 集中执行回归并记录源码/工程元数据指纹，`tools/delivery_manifest.py` 强制核验注释、搬运、结构及编译产物的报告与当前文件散列相符。实际 CCS 验证包含工程导入和 Debug/Release 的 clean、build，各步骤返回码记录于 `build/ccs_validation/result.json`。11 个宏配置的定义、编译及链接结果记录于 `build/matrix_result.json`。
+`tools/run_checks.py` 集中执行回归并记录源码/工程元数据指纹，交付检查应核验报告与当前文件散列相符。实际CCS验证的导入、clean和build返回码记录于 `build/ccs_validation/result.json`。当前宏矩阵已去除485维护配置，定义和数量以 `tools/build_matrix.py` 及 `build/matrix_result.json` 为准，不能沿用旧11种组合计数。
 
 最终证据分为三层：随 Git 版本提交的 [software_validation.json](evidence/software_validation.json) 提供便于审阅的摘要；`build/delivery_manifest.json` 提供当前工作区的输入和产物核对；各项 `build` 报告及日志保留具体断言和诊断。生成目录不进入源码提交，在新 clone 中按构建与验证文档重建，固定基线标签随仓库保留供等价审计使用。
 
