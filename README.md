@@ -44,6 +44,8 @@ python tools/build.py --configuration Debug --variant dpram --define SST_ENABLE_
 - [编译、宏配置及仿真器操作](docs/BUILD_AND_CONFIGURATION.md)
 - [AnyEyes 参数、波形、状态对应表](docs/ANYEYES_MAPPING.md)
 - [通信协议与串口实现](docs/COMMUNICATION.md)
+- [DPRAM并口逐字地址、权限、数值位定义及功能覆盖](docs/DPRAM_MAPPING.md)
+- [DPRAM完整地址CSV](docs/DPRAM_ADDRESSES.csv) · [DPRAM位定义CSV](docs/DPRAM_BITS.csv)
 - [SST 故障码及参考故障机制](docs/FAULT_CODES.md)
 - [构建与验证报告](docs/VALIDATION.md)
 - [板级调试与 10 kHz 验收步骤](docs/BOARD_ACCEPTANCE.md)

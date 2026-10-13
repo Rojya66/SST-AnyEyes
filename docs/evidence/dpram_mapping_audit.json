@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-13",
+  "audited_firmware_commit": "b151f12962a1d9f5d716f17606c65c93ec978b91",
+  "scope": "Documentation only; no firmware rebuild, no hardware timing or DPRAM board test",
+  "address_rows": 2142,
+  "bit_definition_rows": 227,
+  "layout_assertions": 224,
+  "compiler": "TI C6000 8.3.12 / mv6740 compile-only",
+  "layout_compile_exit": 0,
+  "linked_map_readonly_check": {
+    "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\anyeyes_remote_dpram\\SST_AnyEyes.map",
+    "sha256": "2968bba37f8ed34a0665336d3fcf2c4bd0b2520b3dd01ec27727d0f5b1459bda",
+    "retained_sections": 18,
+    "fpga_ft3_sections": {
+      "FPGA_InterfaceFile": [
+        1610612736,
+        7680
+      ],
+      "FT3_FaultRecorder_Register": [
+        1610620480,
+        64
+      ]
+    },
+    "errors": [],
+    "passed": true
+  },
+  "source_sha256": {
+    "C6748.cmd": "7ce2c95bb886f00f34f99a48e36246196bff0228dd66762ecd1987f5b0faf90a",
+    "Source/02_Peripheral/01_DPRAM/DPRAM.C": "d654d6c8764eae6924ce19b5ff6fe93a6eb84ba47e031fa8956131260f0d7ceb",
+    "Source/02_Peripheral/01_DPRAM/DpramRegister.h": "8d1794442979d1c6096a046ceb7bac261b31b789f617e35bf5122bdf96c59b3f",
+    "Source/04_App/10_Host/SstDpramHost.c": "2e8574c5c87d2069b436eff738709d207cfc5eae47b4b5e12917333543fbea6b",
+    "Source/04_App/04_Control/SstCommand.c": "cea3c60beae73e3775a2ffab866c9f7d60e667a96c1d71423a8643639fa3ea48",
+    "Source/04_App/04_Control/ChbDabControl.c": "950d3bbe6714fb4e4ce1e7dab9aa1396209a033d64b26933330cedf91d313105",
+    "Source/04_App/08_Fault/FaultCheck.C": "c4ad60bed69acb88095d2944375ccf107ca9d4db8867c62cb7411482f81937cc",
+    "Source/04_App/04_Control/SstPortStatus.c": "5167979b835d7284a245e31d4982faee9253a79aabd13d498faa2f32d62d463d"
+  },
+  "checks": [
+    "All 4 wire structs sizeof/offsetof verified with actual TI compiler",
+    "16+43+33+16*128+2 address rows; each address unique",
+    "DSP byte/relative byte/16-bit word address conversions verified",
+    "Current linker fixed ranges match documentation",
+    "Existing remote-DPRAM map fixed sections/NOINIT audited read-only"
+  ],
+  "passed": true
+}

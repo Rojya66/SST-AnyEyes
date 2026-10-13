@@ -47,6 +47,14 @@ AnyEyes帧以6B起始，长度字段包含指令+负载，CRC8覆盖头到负载
 
 启用两种回复格式意味着PC端须能识别两者；单协议VOFA/AnyEyes客户端不能保证识别另一种回复，只有发送相应维护请求才会出现维护响应。总线为RS485半双工，主机应请求-响应并遵守发送间隔，不能在从机连续发送期间无条件灌入；实板应验证收发方向、电气回显和RX溢出计数。
 
+## DPRAM并口地址与覆盖
+
+启用DPRAM并允许远控需 `SST_ENABLE_DPRAM=1,SST_SIMULATOR_MODE=0`。当前并口仍为旧固定块及邮箱协议：遥控 `0x660001E0`、遥调 `0x660003FE`、遥测 `0x66000A00`，按16位字访问；不是AnyEyes参数组地址。
+
+当前启停、CHB/DAB脉冲与停机故障复位已接入。旧遥调块虽然定义PI及保护使能字段，其当前消费代码被注释；新的PI、保护及预充参数没有DPRAM映射。五位SST故障码/等级/历史也未写入DPRAM，其公共故障字段仍是旧16位位图。旧 `PORT_V_SET/STATCOM_Q_SET`只改变旧缓存和FPGA镜像，不更新现代CHB直流目标/Iq给定。
+
+完整逐字地址、主机R/W方向、编码、有效字段和缺口见 [DPRAM_MAPPING.md](DPRAM_MAPPING.md)、[DPRAM_ADDRESSES.csv](DPRAM_ADDRESSES.csv) 和 [DPRAM_BITS.csv](DPRAM_BITS.csv)。
+
 ## 验证边界
 
 `tests/protocol_regression.py` 分别编译真实协议、参数表、存储、命令、VOFA、串口和调试模块再链接，仅替换硬件寄存器和 EEPROM 边界，验证 CRC、握手与响应字节、权限、参数缩放、坏帧恢复、范围、保存 CRC、RX64/TX16、背压及非阻塞整帧发送。维护、命令及参数精度另有回归；启动/调度/ISR 轨迹验证默认、DPRAM、EEPROM+维护 3 种配置各 17 个场景。最终软件证据见 [software_validation.json](evidence/software_validation.json) 和 `build/delivery_manifest.json`。
