@@ -2139,5 +2139,5 @@ PluginU17,124,Sum_IG,0x66002BF8,0x2BF8,0x15FC,R,int16,原始16位字；有效性
 PluginU17,125,Avg_IG,0x66002BFA,0x2BFA,0x15FD,R,int16,int16，当前Avg_IG换算raw/10 A,Avg_IG,仅通知块19；复制已注释，不刷新,DpramRegister.h;DPRAM.C;FPGA源无有效复制
 PluginU17,126,Sum_IR,0x66002BFC,0x2BFC,0x15FE,R,int16,原始16位字；有效性随插件类型,Sum_IR,仅通知块19；复制已注释，不刷新,DpramRegister.h;DPRAM.C;FPGA源无有效复制
 PluginU17,127,Avg_IR,0x66002BFE,0x2BFE,0x15FF,R,int16,原始16位字；有效性随插件类型,Avg_IR,仅通知块19；复制已注释，不刷新,DpramRegister.h;DPRAM.C;FPGA源无有效复制
-Mailbox,0,MailboxLeft,0x66003FFC,0x3FFC,0x1FFE,W,uint16,块号，见说明文档,主机写1遥控、2遥调；DSP读取,单槽通知；无序号/ACK/错误码,DPRAM.H;DPRAM.C
-Mailbox,0,MailboxRight,0x66003FFE,0x3FFE,0x1FFF,R,uint16,块号，见说明文档,DSP写3公共遥测、4..19插件、20遥调回读；主机读取,单槽通知；无序号/ACK/错误码,DPRAM.H;DPRAM.C
+Mailbox,0,MailboxLeft,0x66003FFC,0x3FFC,0x1FFE,W,uint16,块号，见说明文档,主机写1遥控、2遥调；DSP读取,单槽通知；读邮箱应答硬件通知；无序号/软件执行结果ACK/错误码,DPRAM.H;DPRAM.C
+Mailbox,0,MailboxRight,0x66003FFE,0x3FFE,0x1FFF,R,uint16,块号，见说明文档,DSP写3公共遥测、4..19插件、20遥调回读；主机读取,单槽通知；无序号/软件执行结果ACK/错误码,DPRAM.H;DPRAM.C
