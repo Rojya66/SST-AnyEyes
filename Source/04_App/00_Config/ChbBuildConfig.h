@@ -12,11 +12,11 @@
 #endif
 #ifndef SST_ENABLE_DPRAM
 /* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；默认1，0时仅保留所选串口调试协议。 */
-#define SST_ENABLE_DPRAM 1U
+#define SST_ENABLE_DPRAM 0U
 #endif
 #ifndef SST_SIMULATOR_MODE
 /* SST_SIMULATOR_MODE：默认0由并口远控；设1保留仿真器控制并禁止普通远程启动，急停仍有效。 */
-#define SST_SIMULATOR_MODE 0U
+#define SST_SIMULATOR_MODE 1U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
@@ -37,7 +37,7 @@
 
 /* Legacy constants kept for shared source compatibility. */
 /* CHB_CONTROL_MODE_SIMULATOR：旧接口的仿真器模式编号。 */
-#define CHB_CONTROL_MODE_SIMULATOR 0U
+#define CHB_CONTROL_MODE_SIMULATOR 1U
 /* CHB_CONTROL_MODE_DPRAM：旧接口的 DPRAM 模式编号。 */
 #define CHB_CONTROL_MODE_DPRAM 1U
 /* CHB_CONTROL_MODE_485：旧接口的串口 485 模式编号。 */
