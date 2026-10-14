@@ -20,7 +20,7 @@
 #endif
 #ifndef SST_BENCH_INPUT_SIM
 /* SST_BENCH_INPUT_SIM：临时无主回路输入注入，默认0；1生成测试采样，不替代功率回路模型。 */
-#define SST_BENCH_INPUT_SIM 0U
+#define SST_BENCH_INPUT_SIM 1U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)

@@ -1591,6 +1591,7 @@ void ChbDabControl_FastStep(void)
      * TAD 快速任务入口。该函数在 FPGA 采样同步中断中调用，不能放入耗时的
      * 通讯或 EEPROM 操作；这里只做浮点控制计算和 FPGA 寄存器/内存映射写入。
      */
+
     g_chb_dab_status.dc_voltage_average_v =
         (SVG_Udc_A_Ave + SVG_Udc_B_Ave + SVG_Udc_C_Ave) / 3.0F;
     g_chb_dab_status.dc_voltage_min_v =
@@ -1599,6 +1600,19 @@ void ChbDabControl_FastStep(void)
     voltage_alpha = HA_Port_Volt_A;
     voltage_beta = (HA_Port_Volt_A + 2.0F * HA_Port_Volt_B) *
                    CHB_ONE_BY_SQRT3;
+    /*****临时调试生成三相参考电压使用****/
+    //    static float theta_openloop = 0.0f;
+    //    if(theta_openloop < 6.283185307)
+    //    {
+    //        theta_openloop = theta_openloop + 6.283185307*0.005;
+    //    }
+    //    else
+    //    {
+    //        theta_openloop = 0;
+    //    }
+    //    voltage_alpha = 200*cosf(theta_openloop);
+    //    voltage_beta = 200*sinf(theta_openloop);
+
     Chb_UpdatePll(voltage_alpha, voltage_beta);
 
     if(g_chb_dab_status.state != CHB_STATE_RUNNING)
@@ -1641,7 +1655,7 @@ void ChbDabControl_FastStep(void)
         }
     }
 
-    /* 开环不让闭环软件保护决定是否发波；闭环保持源程序保护逻辑。 */
+    /* 开环不让闭环软件保护决定是否发波；闭环检查软件保护逻辑。 */
     if(g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
     {
         Chb_CheckSoftwareProtection();
