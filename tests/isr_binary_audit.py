@@ -30,7 +30,7 @@ def run(args,cwd):
 
 def assembly(project,source,folder):
     includes=[project,CGT/'include']+[p for p in (project/'Source').rglob('*') if p.is_dir()]
-    flags=['-mv6740','--define=c6748','--define=SST_ENABLE_DPRAM=1',
+    flags=['-mv6740','--define=c6748','--define=SST_BENCH_INPUT_SIM=0','--define=SST_ENABLE_DPRAM=1',
            '--define=SST_SIMULATOR_MODE=0','--diag_warning=225','--diag_wrap=off','--display_error_number','-g']
     flags+=['--include_path='+str(p) for p in includes]
     flags+=['--keep_asm','--asm_directory='+str(folder),'--compile_only','--output_file='+str(folder/'isr.obj'),str(project/source)]
@@ -84,7 +84,7 @@ def main():
         project=Path(temp)
         with zipfile.ZipFile(io.BytesIO(archive)) as z:z.extractall(project)
         output=run([sys.executable,project/'tools/build.py','--jobs','6',
-                    '--define','SST_ENABLE_DPRAM=1','--define','SST_SIMULATOR_MODE=0'],project)
+                    '--define','SST_BENCH_INPUT_SIM=0','--define','SST_ENABLE_DPRAM=1','--define','SST_SIMULATOR_MODE=0'],project)
         (DEST/'baseline_build.log').write_bytes(output)
         for name in ['baseline','current']:(DEST/name).mkdir(exist_ok=True)
         oldasm=assembly(project,'Source/03_System/01_OS/main_485test.c',DEST/'baseline')
@@ -109,7 +109,7 @@ def main():
                 (DEST/(name+'.diff')).write_text('\n'.join(difflib.unified_diff(a['instructions'],b['instructions'],fromfile='baseline',tofile='current')),encoding='utf-8')
             rows.append(row)
     report=dict(baseline=REF,compiler=str(CGT),configuration='Debug',
-                defines=['SST_ENABLE_DPRAM=1','SST_SIMULATOR_MODE=0'],
+                defines=['SST_BENCH_INPUT_SIM=0','SST_ENABLE_DPRAM=1','SST_SIMULATOR_MODE=0'],
                 results=rows,passed=all(r['passed'] for r in rows),
                 firmware_sha256=hashlib.sha256((ROOT/'build/Debug/default/SST_AnyEyes.out').read_bytes()).hexdigest(),
                 method='TI unlinked symbolic assembly instructions with generated local label names normalized and DWARF directives excluded; ELF function sizes and generated DW_AT_TI_max_frame_size',

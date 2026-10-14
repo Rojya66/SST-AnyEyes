@@ -1,5 +1,7 @@
 # 编译、模式与使用说明
 
+2026-10-14电子标签完善后新增`Source/04_App/00_Version/SoftVersion.h/.c`，CCS两构建配置已包含该目录。当前用户测试宏为`SST_BENCH_INPUT_SIM=1`，仿真器为1、DPRAM为0；本轮实际AnyEyes测试产物是`build/Debug/anyeyes_identity/SST_AnyEyes.out`，握手配置与串口连接见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。下文旧宏默认值均需按对应固定版本解读。
+
 2026-10-14单UNIT调试默认改为 `SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，新增默认关闭的 `SST_BENCH_INPUT_SIM`。本轮临时测试构建、固件路径、CCS变量及验收步骤见 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)，本轮软件验证见 [bench_input_validation.json](evidence/bench_input_validation.json)。下文的并口默认说明及旧交付数字对应此前固定版本，使用时以当前宏和对应版本证据为准。
 
 ## 工程导入与产物

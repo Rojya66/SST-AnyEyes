@@ -59,7 +59,7 @@ def main():
             binary = work / (name + ".exe")
             command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
                        "-Wno-unknown-pragmas", "-Wno-misleading-indentation",
-                       *["-D" + value for value in defines], "-I", str(work),
+                       "-DSST_BENCH_INPUT_SIM=0", *["-D" + value for value in defines], "-I", str(work),
                        "-include", str(hardware), str(unit),
                        *[str(path) for path in units], "-o", str(binary)]
             result = subprocess.run(command, capture_output=True, text=True)

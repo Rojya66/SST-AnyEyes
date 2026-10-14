@@ -47,7 +47,7 @@ typedef struct {
     bool ReadAllFuncCodeFlag,WriteAllFuncCodeFlag,QueryErrInfoFalg,QuerySoftInfoFalg; /* ReadAllFuncCodeFlag：保留参考 F6 请求标志，参考实现未执行批量读取。 */
     /* WriteAllFuncCodeFlag：保留参考 F7 请求标志，参考实现未执行批量写入。 */
     /* QueryErrInfoFalg：保留参考 F9 查询标志，故障通过显示表/组 19 上报。 */
-    /* QuerySoftInfoFalg：保留参考 FA 查询标志，参考实现未构造版本响应。 */
+    /* QuerySoftInfoFalg：FA版本查询待应答标志，7A成功入队或会话重置后清除。 */
 } ST_WORK_FLAG;
 class C_COMM2PC {
     ST_WORK_FLAG stWorkFlag; /* stWorkFlag：PcDebug 参数、波形、状态和连接任务的聚合状态。 */
@@ -61,6 +61,14 @@ class C_COMM2PC {
     /* lastLifeTick：最近 MCU 心跳上报时刻，单位 ms。 */
     C_FUNC_CODE FuncCode; /* FuncCode：参考参数访问接口，目标绑定到 SST 固定参数表。 */
     /*==================================================================
+     * 函数功能: 清除连接及待处理任务，避免重连恢复旧写请求或波形订阅
+     * 输入参数: 无
+     * 输出参数: PcDebug工作标志及周期发送时基复位，已入UART队列的帧保留
+     * 返回值: 无
+     * 执行说明: 初始化、新握手和失联时调用；不改变控制启停命令或接收帧缓存。
+     *================================================================*/
+    void ResetSession();
+    /*==================================================================
      * 函数功能: 按参考命令码校验载荷、设置参数读写/波形/面板标志并转接启停命令
      * 输入参数: dataList：输入参数/帧数据缓存，按该接口的固定字格式解释
      *           validLength：参考接口的有效数据长度
@@ -73,7 +81,7 @@ class C_COMM2PC {
      * 函数功能: 执行待处理参数读写及应答，并按毫秒节拍发送波形、状态和心跳
      * 输入参数: 无
      * 输出参数: 协议工作标志、接收缓存及共享整帧发送队列；控制命令通过受控参数入口提交。
-     * 返回值: 未连接返回 0，已连接服务返回 1
+     * 返回值: 未连接或握手应答待入队返回0，已连接正常服务返回1
      * 执行说明: 主循环通信路径；AnyEyes/VOFA 由宏二选一，UART 收发有固定预算，不在 FPGA ISR 内打包或发送。
      *================================================================*/
     s16 ExecuteInstruct();

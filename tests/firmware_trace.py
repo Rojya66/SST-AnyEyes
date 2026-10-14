@@ -53,6 +53,7 @@ def main():
                 ("eeprom", ["CHB_LOAD_EEPROM_PARAMETERS=1"])]
     rows = []
     for name, defines in variants:
+        defines = ["SST_BENCH_INPUT_SIM=0", *defines]
         # "default.exe" triggers a local Windows executable-name compatibility
         # path before main. Prefix the fixture binary; compiled bytes unchanged.
         binary = output / ("sst_trace_" + name + ".exe")

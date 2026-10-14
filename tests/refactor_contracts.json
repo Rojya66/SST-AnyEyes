@@ -1558,6 +1558,62 @@
       "current_sha256s": [
         "359aa42f0cc186f94e4cb61d151cde986fa34c722e4bdb87f5091907fd57afd9"
       ]
+    },
+    {
+      "key": "function:C_COMM2PC::Init",
+      "new_keys": [
+        "function:C_COMM2PC::Init"
+      ],
+      "reason": "用户要求集中电子标签配置及完善握手；初始化改用同一会话清理函数，接收缓存和时基仍由通信对象维护。",
+      "validation": "tests/protocol_regression.py (exact/wildcard/custom tag, FA, reconnect and TX backpressure); TI target Debug/Release and CCS builds; tests/bench_isolation.py",
+      "baseline_sha256s": [
+        "f2d478e73ee95fc7b6fa46c9386a0863969d3f8874db7059e9f11d845bb62bca"
+      ],
+      "current_sha256s": [
+        "8380c3ae85278932845433adb0c1ee27ebb2cf4c1815e87992d8c7235a86c1ee"
+      ]
+    },
+    {
+      "key": "function:C_COMM2PC::ParseInstruct",
+      "new_keys": [
+        "function:C_COMM2PC::ParseInstruct"
+      ],
+      "reason": "用户确认保留255/43/1/0；四字段标签匹配改用00_Version统一只读数据，新握手清理待处理会话任务，FF与全部FF规则和原参数地址保持。",
+      "validation": "tests/protocol_regression.py (exact/wildcard/custom tag, FA, reconnect and TX backpressure); TI target Debug/Release and CCS builds; tests/bench_isolation.py",
+      "baseline_sha256s": [
+        "ead8b30fd9948fc1852c38abdb05945602963a08405d488b9126100b1cfcc9d2"
+      ],
+      "current_sha256s": [
+        "74eedee4054ffc36de1209480381ad25aea70279919b482cdeb79d217f5c3cd0"
+      ]
+    },
+    {
+      "key": "function:C_COMM2PC::ExecuteInstruct",
+      "new_keys": [
+        "function:C_COMM2PC::ExecuteInstruct"
+      ],
+      "reason": "用户要求完善电子标签通信；7F仍发送结果及六版本但读取统一版本模块，新增FA/7A六字节版本查询，握手应答优先且队列满延后，不改原F0/F1/F2/F4布局。",
+      "validation": "tests/protocol_regression.py (exact/wildcard/custom tag, FA, reconnect and TX backpressure); TI target Debug/Release and CCS builds; tests/bench_isolation.py",
+      "baseline_sha256s": [
+        "da24057def11103ffc70a42636c35979aa881f5e38eb6ae7f44fc820dd31f92c"
+      ],
+      "current_sha256s": [
+        "bc17aecbed0b546622e8cbcd9d37bbe9e1beade49900a9c63ed6568c0e2fc21f"
+      ]
+    },
+    {
+      "key": "function:C_COMM2PC::MainFSM",
+      "new_keys": [
+        "function:C_COMM2PC::MainFSM"
+      ],
+      "reason": "30s失联统一清理全部未发送请求与订阅，避免旧写/版本请求重连后执行；不改控制运行命令，不清已入队完整帧。",
+      "validation": "tests/protocol_regression.py (exact/wildcard/custom tag, FA, reconnect and TX backpressure); TI target Debug/Release and CCS builds; tests/bench_isolation.py",
+      "baseline_sha256s": [
+        "0ed0468a5ef08f591c204fcf36a2d43d5eb04c723b4fff3236ac4bc2b38e83b4"
+      ],
+      "current_sha256s": [
+        "cb281775fa628e415733d0395f86e388a2aae1d1ccc6c94c5f9f67c419b46e23"
+      ]
     }
   ]
 }

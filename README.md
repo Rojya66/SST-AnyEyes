@@ -2,6 +2,8 @@
 
 本工程在 C6748 + FPGA 硬件上迁移 `Chb_DabPrim_vofa` 的 HVAC/CHB 和 DAB 原边功能，按 `F28377S_Plat` 的六层结构组织。AnyEyes 使用参考工程 PcDebug 的命令、功能码地址格式、波形通道与状态索引格式；VOFA 是可选构建。
 
+2026-10-14补齐`00_Version`电子标签模块，当前握手匹配号为`255/43/1/0`，版本为`255.43.1.0.1.0`。标签集中配置、FF/7F握手、FA/7A版本读取、心跳与485连接步骤见[AnyEyes电子标签与握手](docs/ANYEYES_HANDSHAKE.md)。本轮保留用户当前`SST_BENCH_INPUT_SIM=1`；此前输入测试标签中的默认0是固定历史版本，真实主回路恢复必须显式关闭输入测试。
+
 框架整理将入口、启动协调、后台任务、中断、数据定义及外围业务分别放回所属模块。先从 `Main.c`、`SystemInit.c`、`TaskSlice.c` 阅读执行顺序，再按数据域进入控制、采样、保护及通信模块；`main.H` 仅为历史兼容聚合头，活动模块直接包含所属接口。具体目录、调用关系及验证状态见 [框架整理交付说明](docs/FRAMEWORK_REFACTOR_RESULT.md)。
 
 ## 使用入口
@@ -13,14 +15,14 @@
 
 当前单UNIT调试配置为 **AnyEyes + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
 
-无主回路的临时输入注入默认关闭（`SST_BENCH_INPUT_SIM=0`）。测试构建设为1，每个实际TAD生成独立三相电网及可调直流反馈，保留真实PLL和启动控制；CCS变量、断点和测试步骤见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。本轮测试前版本为 `bench-input-baseline-2026-10-14`、提交 `6675a72`，加入临时注入后的版本标签为 `bench-input-simulation-2026-10-14`；验证记录见 [bench_input_validation.json](docs/evidence/bench_input_validation.json)。
+无主回路的临时输入注入在当前用户配置中开启（`SST_BENCH_INPUT_SIM=1`）。每个实际TAD生成独立三相电网及可调直流反馈，保留真实PLL和启动控制；CCS变量、断点和测试步骤见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。此前固定标签`bench-input-simulation-2026-10-14`默认关闭注入，其测试前版本为`bench-input-baseline-2026-10-14`、提交`6675a72`；历史证据为[bench_input_validation.json](docs/evidence/bench_input_validation.json)，当前证据为[anyeyes_identity_validation.json](docs/evidence/anyeyes_identity_validation.json)。
 
 | 宏 | 值 | 行为 |
 |---|---|---|
 | `SST_DEBUG_PROTOCOL` | 1 / 2 | AnyEyes / VOFA，必须二选一 |
 | `SST_SIMULATOR_MODE` | 当前默认1 | 0=允许远程控制，1=仿真器直接控制 |
 | `SST_ENABLE_DPRAM` | 当前默认0 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
-| `SST_BENCH_INPUT_SIM` | 默认0；测试设1 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭 |
+| `SST_BENCH_INPUT_SIM` | 当前默认1 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
 | `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
 | `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
@@ -46,6 +48,7 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 - [编译、宏配置及仿真器操作](docs/BUILD_AND_CONFIGURATION.md)
 - [AnyEyes 参数、波形、状态对应表](docs/ANYEYES_MAPPING.md)
 - [通信协议与串口实现](docs/COMMUNICATION.md)
+- [AnyEyes电子标签、握手与版本查询](docs/ANYEYES_HANDSHAKE.md)
 - [DPRAM并口逐字地址、权限、数值位定义及功能覆盖](docs/DPRAM_MAPPING.md)
 - [DPRAM扩展维护点表、事务、状态与故障历史](docs/DPRAM_EXTENSION.md)
 - [C6748Test原并口维护与迁移对比](docs/DPRAM_LEGACY_COMPARISON.md)
@@ -62,6 +65,8 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 私有仓库：[Rojya66/SST-AnyEyes](https://github.com/Rojya66/SST-AnyEyes)。重构前版本为 `main` 及标签 `baseline-pre-framework-2026-10-12`，提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`；重构后版本为 `refactor/f28377s-framework` 及标签 `framework-refactored-2026-10-12`。完整验证结果见 [VALIDATION.md](docs/VALIDATION.md)，可携带的软件证据见 [software_validation.json](docs/evidence/software_validation.json)。
 
 2026-10-13并口维护调整保存在同一分支，版本标签为 `dpram-maintenance-2026-10-13`，证据单独见 [dpram_maintenance_validation.json](docs/evidence/dpram_maintenance_validation.json)。框架发布标签及旧软件摘要是历史固定版本，不代表本轮扩展源码的构建结果。
+
+2026-10-14电子标签完善保存在同一分支，标签为`anyeyes-identity-2026-10-14`，修改前用户配置提交为`fc3c917`，本轮软件证据见[anyeyes_identity_validation.json](docs/evidence/anyeyes_identity_validation.json)。
 
 CCS 工作区内克隆重构版本时使用目录名 `AnyEyesVersion`，与工程名保持一致：
 

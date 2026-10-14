@@ -1,8 +1,28 @@
 # SST 框架重构验证报告
 
-2026-10-14新增默认关闭的单UNIT输入注入；当前源默认仿真器控制、DPRAM关闭。本轮实际构建、真实PLL/启动回归及测试宏隔离检查见 [bench_input_validation.json](evidence/bench_input_validation.json)，具体板上操作见 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)。下面各节是对应固定版本的历史记录，不代替本轮测试输入构建，也不证明其板上100µs时限。
+## 当前电子标签与握手完善（2026-10-14）
 
-## 当前并口维护调整（2026-10-13）
+本轮集中四标签`255/43/1/0`及六段版本`255.43.1.0.1.0`，保留FF/7F布局及参数、波形、状态地址，补齐FA/7A并统一重连/失联会话清理。当前用户配置为AnyEyes、`SST_BENCH_INPUT_SIM=1`、仿真器控制、DPRAM关闭、EEPROM上电加载关闭。修改前用户配置已保存于提交`fc3c917`；最终标签为`anyeyes-identity-2026-10-14`，本轮证据为[anyeyes_identity_validation.json](evidence/anyeyes_identity_validation.json)，握手及实板复验步骤见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。
+
+| 检查 | 本轮结果 |
+|---|---|
+| TI C6000 8.3.12 | 6种构建各89个源文件编译、链接通过，各17条既有告警 |
+| 配置覆盖 | 默认AnyEyes Debug/Release、关闭测试输入、DPRAM远程、VOFA、自定义六版本字段 |
+| CCS | 隔离工作区真实导入、Debug/Release Clean及Build均返回0 |
+| 主机回归 | 14项全部通过，源码指纹在检查期间保持一致 |
+| 握手协议 | 3种默认AnyEyes配置各63项，自定义标签67项通过；VOFA隔离通过；12种越界版本宏编译拒绝 |
+| 输入测试隔离 | 相对固定`6675a72`的38项检查通过；测试宏关闭时四个ISR的归一化TI汇编、直接调用和栈保持一致 |
+| 硬件地址 | 6份CLI和2份CCS map共8份通过；固定FPGA/FT3/DPRAM地址、NOINIT、零启动加载保持 |
+| 中文注释 | 132个自定义源文件/头文件覆盖通过 |
+| 交付源码 | SHA256 `651b0da1bc5e9cd148bb8ae163c401215b42f4f00a66323a9b86bb41365a41de` |
+
+推荐本轮测试固件为`build/Debug/anyeyes_identity/SST_AnyEyes.out`。本轮会话处理在后台执行；未修改FPGA ISR。上述软件证据不证明实板100µs截止期，开启输入注入的三相计算仍需实测耗时和漏中断；尚未进行实际UNIT、RS485及AnyEyes客户端验收。
+
+## 历史单UNIT输入注入交付（2026-10-14）
+
+此前固定标签`bench-input-simulation-2026-10-14`新增默认关闭的单UNIT输入注入，当时源默认仿真器控制、DPRAM关闭。该版本构建、真实PLL/启动回归及测试宏隔离检查见 [bench_input_validation.json](evidence/bench_input_validation.json)，具体板上操作见 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)。以下各节是对应固定版本的历史记录，不能代替当前电子标签版本的证据。
+
+## 历史并口维护调整（2026-10-13）
 
 当前源码已删除485的MaintenanceProtocol/A5帧及使能宏，485仅选择AnyEyes或VOFA；默认改为DPRAM开启、仿真器关闭。旧固定区保留，新增54点维护、现代遥测/故障历史及16字后台分片，参数持久化改为页6/7的v2镜像108字节/50字并兼容v1。说明见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)，本轮结果以 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json) 的输入、返回码和固件记录为准。
 

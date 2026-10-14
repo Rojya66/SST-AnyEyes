@@ -29,7 +29,7 @@ def main():
         ):
             binary = work / (name + ".exe")
             command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra", "-Werror",
-                       *["-D" + value for value in defines], str(unit), "-o", str(binary)]
+                       "-DSST_BENCH_INPUT_SIM=0", *["-D" + value for value in defines], str(unit), "-o", str(binary)]
             subprocess.run(command, check=True)
             result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
             if result.returncode:

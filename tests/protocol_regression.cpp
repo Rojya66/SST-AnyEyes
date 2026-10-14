@@ -14,6 +14,7 @@
 #include "SstParams.h"
 #include "SstLegacyParameters.h"
 #include "SstBoard.h"
+#include "SoftVersion.h"
 #include "vofa.h"
 #define SOC_UART_2_REGS 0U
 #define SOC_GPIO_0_REGS 0U
@@ -194,6 +195,177 @@ static void Transport(void)
  Reset();for(int i=0;i<1000;++i)hwRx.push_back(0x11);
  SstDebug_Service();assert(rxReads==64);
 }
+static std::vector<uint8_t> VersionBytes(void)
+{
+ return {SST_PRODUCT_SERIES,SST_PRODUCT_PART,SST_HARDWARE_PLATFORM,
+         SST_VERSION_BRANCH,SST_VERSION_RELEASE,SST_VERSION_BETA};
+}
+static std::vector<uint8_t> ElectronicTag(void)
+{
+ const auto version=VersionBytes();
+ return std::vector<uint8_t>(version.begin(),version.begin()+SST_TAG_FIELD_COUNT);
+}
+static std::vector<uint8_t> LinkReply(bool connected)
+{
+ auto payload=VersionBytes();payload.insert(payload.begin(),connected?0x55:0xAA);
+ return Frame(0x7F,payload);
+}
+#if SST_DEBUG_PROTOCOL == SST_DEBUG_PROTOCOL_ANYEYES
+static unsigned handshakeCases;
+static void AssertParameterAccess(bool connected)
+{
+ assert(hwTx.empty());Send(0xF0,{29,4});Drain();
+ if(connected) assert(hwTx==Frame(0x70,{29,4,0,SST_DEBUG_PROTOCOL,0}));
+ else assert(hwTx.empty());
+ hwTx.clear();++handshakeCases;
+}
+static void FeedParser(unsigned op,std::vector<uint8_t> payload)
+{
+ /* Exercise an already received frame when UART RX reserve prevents more reads. */
+ const auto frame=Frame(op,payload);
+ for(size_t i=0;i<frame.size();++i) SstAnyEyes_RxByte(frame[i]);
+}
+static std::vector<uint8_t> FillTxQueue(void)
+{
+ const uint8_t marker=0x19;
+ for(unsigned i=0;i<8;++i) assert(SstSerial_SendFrame(&marker,1));
+ assert(SstSerial_TxFreeFrames()==0);
+ return std::vector<uint8_t>(8,marker);
+}
+static void AppendFrame(std::vector<uint8_t>&bytes,const std::vector<uint8_t>&frame)
+{bytes.insert(bytes.end(),frame.begin(),frame.end());}
+static void Handshake(void)
+{
+ const auto tag=ElectronicTag();
+ const uint16_t wideTag[SST_TAG_FIELD_COUNT]={SST_PRODUCT_SERIES,SST_PRODUCT_PART,
+                                          SST_HARDWARE_PLATFORM,SST_VERSION_BRANCH};
+ uint16_t copied[SST_VERSION_FIELD_COUNT]={0};
+ SstVersion_CopyBytes(copied);
+ const auto version=VersionBytes();
+ assert(SST_TAG_FIELD_COUNT==4&&SST_VERSION_FIELD_COUNT==6);
+ assert(g_sst_soft_version.product_series==version[0]);
+ assert(g_sst_soft_version.product_part==version[1]);
+ assert(g_sst_soft_version.hardware_platform==version[2]);
+ assert(g_sst_soft_version.branch_version==version[3]);
+ assert(g_sst_soft_version.release_version==version[4]);
+ assert(g_sst_soft_version.beta_version==version[5]);
+ for(unsigned i=0;i<SST_VERSION_FIELD_COUNT;++i) assert(copied[i]==version[i]);
+ assert(SstVersion_MatchElectronicTag(wideTag)==1);++handshakeCases;
+ assert(SstVersion_MatchElectronicTag(0)==0);
+ SstVersion_CopyBytes(0);
+ for(unsigned i=0;i<SST_TAG_FIELD_COUNT;++i) {
+  uint16_t invalid[SST_TAG_FIELD_COUNT];memcpy(invalid,wideTag,sizeof(invalid));
+  invalid[i]=256;assert(SstVersion_MatchElectronicTag(invalid)==0);++handshakeCases;
+ }
+
+ /* No read/write, waveform or software query before the electronic-tag handshake. */
+ Reset();AssertParameterAccess(false);
+ const float before=g_chb_dab_params.current_kp;
+ Send(0xF1,{1,24,0,1});Send(0xFA,{});Send(0xF2,{1,0,81});Drain();
+ assert(hwTx.empty()&&g_chb_dab_params.current_kp==before);
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());++handshakeCases;
+
+ /* Every field participates in strict comparison; failed FF still identifies firmware. */
+ for(unsigned i=0;i<SST_TAG_FIELD_COUNT;++i) {
+  Reset();auto wrong=tag;wrong[i]=(uint8_t)(wrong[i]+1);
+  Send(0xFF,wrong);Drain();assert(hwTx==LinkReply(false));hwTx.clear();
+  AssertParameterAccess(false);Send(0xFA,{});Drain();assert(hwTx.empty());++handshakeCases;
+ }
+ /* FF is a wildcard only when all four bytes are FF, never field by field. */
+ for(unsigned mask=1;mask<15;++mask) {
+  auto partial=tag;
+  for(unsigned i=0;i<SST_TAG_FIELD_COUNT;++i) if(mask&(1U<<i)) partial[i]=255;
+  if(partial==tag||partial==std::vector<uint8_t>({255,255,255,255})) continue;
+  Reset();Send(0xFF,partial);Drain();assert(hwTx==LinkReply(false));hwTx.clear();
+  AssertParameterAccess(false);++handshakeCases;
+ }
+
+ /* Wildcard discovery and exact tags use the same seven-byte 7F payload. */
+ for(unsigned wildcard=0;wildcard<2;++wildcard) {
+  Reset();Send(0xFF,wildcard?std::vector<uint8_t>({255,255,255,255}):tag);Drain();
+  assert(hwTx==LinkReply(true));hwTx.clear();AssertParameterAccess(true);
+  Send(0xFA,{});Drain();assert(hwTx==Frame(0x7A,version));hwTx.clear();
+  Send(0xFA,{});Drain();assert(hwTx==Frame(0x7A,version));hwTx.clear();++handshakeCases;
+ }
+ /* A CRC-valid mismatch invalidates an existing session, including its streams. */
+ Send(0xF2,{1,0,81});Drain();assert(hwTx.empty());
+ Send(0xF4,{});Drain();assert(hwTx.empty());
+ auto wrong=tag;wrong[1]=(uint8_t)(wrong[1]+1);
+ Send(0xFF,wrong);Drain();assert(hwTx==LinkReply(false));hwTx.clear();
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());AssertParameterAccess(false);
+ Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());AssertParameterAccess(true);++handshakeCases;
+
+ /* Short/long FF, invalid FA payload and corrupted FF leave a valid session intact. */
+ Send(0xFF,{1,2,3});Send(0xFF,{1,2,3,4,5});Send(0xFA,{0});Drain();
+ assert(hwTx.empty());AssertParameterAccess(true);
+ auto bad=Frame(0xFF,wrong);bad.back()^=1;
+ for(size_t i=0;i<bad.size();++i)hwRx.push_back(bad[i]);Drain();
+ assert(hwTx.empty());AssertParameterAccess(true);++handshakeCases;
+ Reset();for(size_t i=0;i<bad.size();++i)hwRx.push_back(bad[i]);Drain();
+ assert(hwTx.empty());AssertParameterAccess(false);
+
+ /* Accepted life packets refresh the 30-second lease; timeout demands a new FF. */
+ Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ g_chb_dab_status.tick_10ms=2999;Send(0xFE,{});Drain();hwTx.clear();
+ g_chb_dab_status.tick_10ms=3001;Drain();hwTx.clear();AssertParameterAccess(true);
+ g_chb_dab_status.tick_10ms+=3001;Drain();hwTx.clear();AssertParameterAccess(false);
+ Send(0xFA,{});Drain();assert(hwTx.empty());
+ Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();AssertParameterAccess(true);
+ Send(0xFA,{});Drain();assert(hwTx==Frame(0x7A,version));hwTx.clear();++handshakeCases;
+
+ /* Successful handshakes also start a fresh session, without restoring streams. */
+ Reset();Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ Send(0xF2,{1,0,81});Send(0xF4,{});Drain();assert(hwTx.empty());
+ Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());++handshakeCases;
+ g_chb_dab_command.run_enable=1;g_chb_dab_command.dab_enable=1;
+ Send(0xFF,wrong);Drain();assert(hwTx==LinkReply(false));hwTx.clear();
+ assert(g_chb_dab_command.run_enable==1&&g_chb_dab_command.dab_enable==1);++handshakeCases;
+
+ /* FA remains pending across a full TX queue and is emitted exactly once later. */
+ Reset();Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ auto queued=FillTxQueue();FeedParser(0xFA,{});assert(hwTx.empty());
+ AppendFrame(queued,Frame(0x7A,version));Drain();assert(hwTx==queued);hwTx.clear();
+ Drain();assert(hwTx.empty());++handshakeCases;
+
+ /* A pending handshake reply precedes FA even when neither initially fits. */
+ Reset();queued=FillTxQueue();FeedParser(0xFF,tag);FeedParser(0xFA,{});
+ assert(hwTx.empty());AppendFrame(queued,LinkReply(true));AppendFrame(queued,Frame(0x7A,version));
+ Drain();assert(hwTx==queued);hwTx.clear();++handshakeCases;
+
+ /* Failed then successful FF cancel old writes/queries/streams before queue space returns. */
+ Reset();Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ Send(0xF2,{1,0,81});Send(0xF4,{});Drain();assert(hwTx.empty());
+ const float pendingWriteOriginal=g_chb_dab_params.current_kp;
+ queued=FillTxQueue();FeedParser(0xF1,{1,24,0,1});FeedParser(0xFA,{});
+ assert(g_chb_dab_params.current_kp==pendingWriteOriginal&&hwTx.empty());
+ FeedParser(0xFF,wrong);FeedParser(0xFF,tag);
+ assert(g_chb_dab_params.current_kp==pendingWriteOriginal&&hwTx.empty());
+ AppendFrame(queued,LinkReply(true));++g_chb_dab_status.tick_10ms;
+ Drain();assert(hwTx==queued&&g_chb_dab_params.current_kp==pendingWriteOriginal);hwTx.clear();
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());AssertParameterAccess(true);++handshakeCases;
+
+ /* Session expiry discards unexecuted F1/FA, retaining already queued transport bytes. */
+ Reset();Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ Send(0xF2,{1,0,81});Send(0xF4,{});Drain();assert(hwTx.empty());
+ queued=FillTxQueue();FeedParser(0xF1,{1,24,0,1});FeedParser(0xFA,{});
+ assert(g_chb_dab_params.current_kp==pendingWriteOriginal);
+ g_chb_dab_status.tick_10ms=3001;SstAnyEyes_Service();
+ Drain();assert(hwTx==queued&&g_chb_dab_params.current_kp==pendingWriteOriginal);hwTx.clear();AssertParameterAccess(false);
+ Send(0xFF,tag);Drain();assert(hwTx==LinkReply(true));hwTx.clear();
+ ++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty()&&g_chb_dab_params.current_kp==pendingWriteOriginal);
+ AssertParameterAccess(true);++handshakeCases;
+ printf("PASS: electronic-tag exact/wildcard/mismatch, six-byte version/FA, session validity/reconnect (%u checks)\n",handshakeCases);
+}
+#else
+static void Handshake(void)
+{
+ Reset();Send(0xFF,ElectronicTag());Send(0xFF,{255,255,255,255});Send(0xFA,{});Drain();
+ assert(hwTx.empty());
+ puts("PASS: VOFA ignores electronic-tag and software-version requests");
+}
+#endif
 static void Protocol(void)
 {
 #if SST_DEBUG_PROTOCOL == SST_DEBUG_PROTOCOL_ANYEYES
@@ -204,7 +376,7 @@ static void Protocol(void)
  Drain();assert(hwTx.empty());
  Send(0xF0,{1,24});Drain();assert(hwTx.empty());
  Send(0xFF,{255,255,255,255});Drain();
- assert(hwTx==Frame(0x7F,{0x55,255,43,1,0,1,0}));hwTx.clear();
+ assert(hwTx==LinkReply(true));hwTx.clear();
  Send(0xF1,{1,24,0xFA,0x24});Drain();assert(hwTx==Frame(0x71,{0}));hwTx.clear();
  Send(0xF0,{1,24});Drain();assert(hwTx==Frame(0x70,{1,24,0xFA,0x24,0}));hwTx.clear();
  Send(0xF2,{1,200});Drain();++g_chb_dab_status.tick_10ms;Drain();assert(hwTx.empty());
@@ -244,7 +416,7 @@ static void Vofa(void)
 }
 int main(void)
 {
- fprintf(stderr,"params\n");Params();fprintf(stderr,"transport\n");Transport();fprintf(stderr,"protocol\n");Protocol();fprintf(stderr,"vofa\n");Vofa();
+ fprintf(stderr,"params\n");Params();fprintf(stderr,"transport\n");Transport();fprintf(stderr,"handshake\n");Handshake();fprintf(stderr,"protocol\n");Protocol();fprintf(stderr,"vofa\n");Vofa();
  puts("PASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA");
 }
 

@@ -28,7 +28,7 @@ def prepare_headers(project, work):
 
 def protocol_modules(project):
     app = project / "Source/04_App"
-    sources = [app / "01_FuncCode/SstParams.c", app / "03_PcDebug/SstDebug.c",
+    sources = [app / "00_Version/SoftVersion.c", app / "01_FuncCode/SstParams.c", app / "03_PcDebug/SstDebug.c",
                app / "03_PcDebug/Comm2PcDebug.cpp", app / "03_PcDebug/vofa.c"]
     additions = [app / "01_FuncCode/SstParameterTable.c", app / "01_FuncCode/SstParameterStore.c",
                  app / "01_FuncCode/SstLegacyParameters.c",

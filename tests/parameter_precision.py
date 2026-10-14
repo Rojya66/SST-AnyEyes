@@ -84,9 +84,9 @@ def main():
         unit = work / "parameter_precision.cpp"
         unit.write_text("\n".join(("#include <math.h>", prefix, defaults, implementation, TEST)), encoding="utf-8")
         binary = work / "parameter_precision.exe"
-        objects=compile_modules(compiler,protocol_modules(project),work,["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"],
+        objects=compile_modules(compiler,protocol_modules(project),work,["SST_BENCH_INPUT_SIM=0","SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"],
                                 exclude=("SstParameterTable.c",))
-        subprocess.run([compiler, "-std=c++11", "-O2", "-DSST_SIMULATOR_MODE=0", "-DSST_ENABLE_DPRAM=0",
+        subprocess.run([compiler, "-std=c++11", "-O2", "-DSST_BENCH_INPUT_SIM=0", "-DSST_SIMULATOR_MODE=0", "-DSST_ENABLE_DPRAM=0",
                         "-include",str(work/"host_protocol_io.h"),str(unit),
                         *[str(obj) for obj in objects], "-o", str(binary)], check=True)
         result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)

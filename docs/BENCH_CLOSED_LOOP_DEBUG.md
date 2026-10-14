@@ -1,5 +1,7 @@
 # 单UNIT、无主回路的闭环输入模拟与CCS操作指南
 
+2026-10-14握手完善后的工作区保留用户手动设置`SST_BENCH_INPUT_SIM=1`，最新默认AnyEyes测试固件位于`build/Debug/anyeyes_identity/SST_AnyEyes.out`，电子标签见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。下述默认关闭说明及`bench_inputs`产物对应此前固定标签`bench-input-simulation-2026-10-14`；当前测试输入字段和启动操作仍相同。恢复真实采样应明确设置测试宏为0并重新构建。
+
 核对日期：2026-10-14。适用工程：`D:/Code/SST/AnyEyesVersion`。本次已经实现独立的测试输入模块，不需要照旧建议向控制核心或ISR粘贴代码。本次实现前的用户工作区保存在提交`6675a72`及标签`bench-input-baseline-2026-10-14`；构建和软件回归的最终结果以当次交付验证记录为准，本文的操作预期不代表已经完成板级测试。
 
 ## 1. 测试范围与实际实现

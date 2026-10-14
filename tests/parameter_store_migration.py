@@ -126,7 +126,7 @@ def main():
         prepare_headers(ROOT, work)
         unit = work / "parameter_store_migration.cpp"
         unit.write_text(prefix + "\n" + defaults + "\n" + TEST, encoding="utf-8")
-        defines = ["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=1"]
+        defines = ["SST_BENCH_INPUT_SIM=0","SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=1"]
         objects = compile_modules(compiler, protocol_modules(ROOT), work, defines)
         binary = work / "parameter_store_migration.exe"
         subprocess.run([compiler, "-std=c++11", "-O2", *["-D" + value for value in defines],

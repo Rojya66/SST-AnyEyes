@@ -8,6 +8,7 @@
 #include "Comm2PcDebug.hpp"
 #include "SstDebug.h"
 #include "ChbBuildConfig.h"
+#include "SoftVersion.h"
 
 enum E_PC_INSTRUCT {
  /* 参考 单参数读取请求命令码。 */ E_ReadFuncCode_Inst=0xF0,/* 参考 单参数读取响应命令码。 */ E_ReadFuncCode_Rply=0x70,
@@ -20,7 +21,7 @@ enum E_PC_INSTRUCT {
  /* 参考 全部参数写入保留请求命令码。 */ E_WriteAllFuncCode_Inst=0xF7,/* 参考 全部参数写入保留响应命令码。 */ E_WriteAllFuncCode_Rply=0x77,
  /* 参考 运行/停止请求命令码。 */ E_RunStopCmd_Inst=0xF8,/* 参考 运行/停止响应命令码。 */ E_RunStopCmd_Rply=0x78,
  /* 参考 故障查询保留请求命令码。 */ E_ReadErr_Inst=0xF9,/* 参考 故障查询保留响应命令码。 */ E_ReadErr_Rply=0x79,
- /* 参考 版本查询保留请求命令码。 */ E_ReadVersion_Inst=0xFA,/* 参考 版本查询保留响应命令码。 */ E_ReadVersion_Rply=0x7A,
+ /* 参考 版本查询请求命令码。 */ E_ReadVersion_Inst=0xFA,/* SST补齐的六段版本响应命令码。 */ E_ReadVersion_Rply=0x7A,
  /* 参考 复位保留请求命令码。 */ E_ReqReBoot_Inst=0xFB,/* 参考 复位保留响应命令码。 */ E_ReqReBoot_Rply=0x7B,
  /* 参考 紧急停止请求命令码。 */ E_ReqEmrgStop_Inst=0xFC,/* 参考 紧急停止响应命令码。 */ E_ReqEmrgStop_Rply=0x7C,
  /* 参考 PC 心跳请求命令码。 */ E_PC_LIFE_Inst=0xFE,/* 参考 MCU 心跳响应命令码。 */ E_MCU_LIFE_Rply=0x7E,
@@ -55,9 +56,21 @@ extern "C" uint8_t SstAnyEyes_Crc8(const uint8_t *data,uint16_t count)
  *================================================================*/
 void C_COMM2PC::Init()
 {
- memset(&stWorkFlag,0,sizeof(stWorkFlag));
+ ResetSession();
  rxCount=rxExpected=0;
- lastRxTick=lastServiceTick=lastScopeTick=lastPanelTick=lastLifeTick=SstDebug_GetTick1ms();
+ lastRxTick=SstDebug_GetTick1ms();
+}
+/*==================================================================
+ * 函数功能: 清除连接及待处理任务，避免重连恢复旧写请求或波形订阅
+ * 输入参数: 无
+ * 输出参数: PcDebug工作标志及周期发送时基复位，已入UART队列的帧保留
+ * 返回值: 无
+ * 执行说明: 初始化、新握手和失联时调用；不改变控制启停命令或接收帧缓存。
+ *================================================================*/
+void C_COMM2PC::ResetSession()
+{
+ memset(&stWorkFlag,0,sizeof(stWorkFlag));
+ lastServiceTick=lastScopeTick=lastPanelTick=lastLifeTick=SstDebug_GetTick1ms();
  stWorkFlag.stScope.ScopeRunSendInvertTickUp=1;
 }
 /*==================================================================
@@ -155,11 +168,10 @@ s16 C_COMM2PC::ParseInstruct(u16 *DataList,u16 *ValidLenth)
   if(n!=3 || DataList[3]!=0x55 || DataList[4]!=0xAA || DataList[5]!=0xCC) return -1;
   SstParams_EmergencyStop(); break;
  case E_PC_LINK_Inst:
-  if(n!=4) return -1;
+  if(n!=SST_TAG_FIELD_COUNT) return -1;
+  ResetSession();
   stWorkFlag.stPcLink.NeedAckPcLinkResulFlag=true;
-  stWorkFlag.stPcLink.PcLinkFlag=
-   ((DataList[3]==255 && DataList[4]==43 && DataList[5]==1 && DataList[6]==0) ||
-    (DataList[3]==255 && DataList[4]==255 && DataList[5]==255 && DataList[6]==255));
+  stWorkFlag.stPcLink.PcLinkFlag=(SstVersion_MatchElectronicTag(&DataList[3])!=0U);
   break;
  case E_PC_LIFE_Inst: break; /* reference accepts PC life as a valid no-op */
  default: return -1;
@@ -189,7 +201,7 @@ bool C_COMM2PC::Pack(u16 instruction,const u16 *data,u16 count)
  * 函数功能: 执行待处理参数读写及应答，并按毫秒节拍发送波形、状态和心跳
  * 输入参数: 无
  * 输出参数: 协议工作标志、接收缓存及共享整帧发送队列；控制命令通过受控参数入口提交。
- * 返回值: 未连接返回 0，已连接服务返回 1
+ * 返回值: 未连接或握手应答待入队返回0，已连接正常服务返回1
  * 执行说明: 主循环通信路径；AnyEyes/VOFA 由宏二选一，UART 收发有固定预算，不在 FPGA ISR 内打包或发送。
  *================================================================*/
 s16 C_COMM2PC::ExecuteInstruct()
@@ -201,10 +213,16 @@ s16 C_COMM2PC::ExecuteInstruct()
     uint32_t now=SstDebug_GetTick1ms(); /* now：本轮读取的单调毫秒节拍，用于接收/连接超时或周期上报。 */
  if(stWorkFlag.stPcLink.NeedAckPcLinkResulFlag) {
   data[0]=stWorkFlag.stPcLink.PcLinkFlag?0x55:0xAA;
-  data[1]=255;data[2]=43;data[3]=1;data[4]=0;data[5]=1;data[6]=0;
-  if(Pack(E_PC_LINK_Rply,data,7)) stWorkFlag.stPcLink.NeedAckPcLinkResulFlag=false;
+  SstVersion_CopyBytes(&data[1]);
+  if(!SstSerial_TxFreeFrames() ||
+     !Pack(E_PC_LINK_Rply,data,(u16)(SST_VERSION_FIELD_COUNT+1U))) return 0;
+  stWorkFlag.stPcLink.NeedAckPcLinkResulFlag=false;
  }
  if(!stWorkFlag.stPcLink.PcLinkFlag) return 0;
+ if(stWorkFlag.QuerySoftInfoFalg && SstSerial_TxFreeFrames()) {
+  SstVersion_CopyBytes(data);
+  if(Pack(E_ReadVersion_Rply,data,SST_VERSION_FIELD_COUNT)) stWorkFlag.QuerySoftInfoFalg=false;
+ }
  if(stWorkFlag.stReadFunc.ReadFuncCodeFlag && SstSerial_TxFreeFrames()) {
   word=0; result=FuncCode.GetOneValueFromRealMem(stWorkFlag.stReadFunc.ReadAdsH,stWorkFlag.stReadFunc.ReadAdsL,&word);
   data[0]=stWorkFlag.stReadFunc.ReadAdsH;data[1]=stWorkFlag.stReadFunc.ReadAdsL;
@@ -260,9 +278,7 @@ void C_COMM2PC::MainFSM()
  uint32_t now=SstDebug_GetTick1ms(); /* now：本轮读取的单调毫秒节拍，用于接收/连接超时或周期上报。 */
  if(rxCount && (uint32_t)(now-lastRxTick)>100U) rxCount=rxExpected=0;
  if(stWorkFlag.stPcLink.PcLinkFlag && (uint32_t)(now-stWorkFlag.stPcLink.LostPcLifeTick)>30000U) {
-  stWorkFlag.stPcLink.PcLinkFlag=false;
-  stWorkFlag.stScope.ScopeRunFalg=false;stWorkFlag.stStatePanel.StatePanelRunFlag=false;
-  stWorkFlag.stReadFunc.ReadFuncCodeFlag=false;stWorkFlag.stWriteFunc.WriteFuncCodeFalg=false;
+  ResetSession();
  }
  ExecuteInstruct();
 }

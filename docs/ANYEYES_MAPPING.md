@@ -61,7 +61,7 @@
 
 参数直接映射 `g_chb_dab_params`，命令直接映射 `g_chb_dab_command`；不以 reference 原产品的参数含义替代 SST 参数。DAB start duty <= target duty；反馈极性仅+1/-1；open_loop_modulation <= modulation_max。sample_period_s只读，以防串口参数与真实TAD时序不一致。所有普通调参停机写；不会在运行中跨多个控制成员更新参数。
 
-`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。当前默认 `SST_SIMULATOR_MODE=0,SST_ENABLE_DPRAM=1`，运行控制由并口接管，以上串口控制写返回5；AnyEyes普通停机参数访问和观测仍可用。有效 `FC` 急停始终把run/dab清零，不受控制源选择阻止。485只使用AnyEyes或VOFA，旧MaintenanceProtocol已移除。
+`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。当前用户源码为 `SST_BENCH_INPUT_SIM=1,SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，运行控制由仿真器接管，以上串口控制写返回5；AnyEyes握手、普通停机参数访问和观测仍可用。有效 `FC` 急停始终把run/dab清零，不受控制源选择阻止。485只使用AnyEyes或VOFA，旧MaintenanceProtocol已移除。
 
 | 功能码范围 | 含义 |
 |---|---|
@@ -123,16 +123,19 @@ AnyEyes的组/索引地址保持不变；新增的8项原保护/巡检参数通�
 
 | 命令 | 行为 |
 |---|---|
-| FF/7F | 握手，参考标签FF 2B 01 00或万能FF FF FF FF；响应55/AA+6字节版本FF 2B 01 00 01 00 |
-| FE/7E | 心跳；连接后每256ms上送参考低字节固定FF、实际AC或DAB PWM已使能55/均禁用AA、无故障55/有故障AA；30s无合法指令断链 |
+| FF/7F | 四标签精确匹配或全FF通用连接；当前标签FF 2B 01 00；响应55/AA+6字节版本FF 2B 01 00 01 00，字段统一来自00_Version/SoftVersion.h |
+| FA/7A | 连接后查询六段版本；FA无载荷，7A载荷为项目/部件/平台/分支/发布/测试6字节，SST补齐的扩展 |
+| FE/7E | 推荐无载荷PC心跳刷新活动时刻，保留此前FE载荷兼容；连接后约每256ms上送既有SST标记FF、实际AC或DAB PWM已使能55/均禁用AA、无故障55/有故障AA；30s无合法指令断链 |
 | F0/70、F1/71 | 单功能码读写，原地址格式 |
 | F2/72、F3 | 开始/停止波形；停止不新造73帧 |
 | F4/74、F5 | 开始/停止状态轮询；停止不新造75帧 |
 | F8 | 55启动run+dab、AA停止；保留参考无78应答，受控制源权限 |
 | FC | 55 AA CC急停，清run+dab；保留参考无7C应答 |
-| F6/F7/F9/FA | 保留参考状态flag；参考源码未实现76/77/79/7A打包，本移植不杜撰回复；批量读取由逐项F0实现，故障用原显示槽/19组，版本用握手 |
+| F6/F7/F9 | 保留参考状态flag；参考源码未实现76/77/79打包；批量读取由逐项F0实现，故障用原显示槽/19组 |
 | FB | 保留8字节55 AA重复校验入口；C6748硬复位尚未绑定，当前不复位、不伪造7B应答 |
 | FD | 保留未定义 |
 
 参考入口中的超长帧死循环、未校验通道索引、无效长度/半帧处理已换成有界丢弃及100ms超时；CRC8算法、F0/F1/F2/F4响应字节布局保持原实现。线上任何参数/状态值都不当作裸内存地址。
+
+电子标签不是新的参数地址。本轮集中配置并补齐版本查询，未增加或移动任何功能码、波形或状态索引。参考标签值本来对应F28377S的DCDC产品；当前SST按用户确认保留其匹配值，硬件仍为C6748 + FPGA。精确字节帧、CRC示例、参考命名歧义及CCS串口验证步骤见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。握手成功不改变启停权限。
 
