@@ -621,15 +621,15 @@
         "5f6dad51dfba44f0eea095fa5768662be9d7f27ed40bef0728e606edc6f893b2"
       ],
       "current_sha256s": [
+        "03a2dbdecfc00ea63e47cbee0eedb3182ee06a7753289b48602812fd68612602",
         "2d504beba0c9d01e95f10f649afff4bd2c1fb43a319d2a46fbb453c3cc384d17",
         "34bb5b9b5c38f23ca1c0e33223c3e3c80227aaff885811957ddfa5b91b622f83",
         "5e737881eb29c08cced4ea53f3594f3fe62d59d89b77d9c05fa5ec7379604d1b",
         "660e57f35fa725cf7082e4bd13f3ccb42e204021de1638e1303db01f9eb5c897",
-        "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b",
-        "fe0d6c199a3e61d5d7fc321fc1d984bd7c81d55f11e6916eedd5d77767186c60"
+        "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b"
       ],
-      "reason": "入口仍协调原启动/20s等待与pulse分支；删除485维护页4/5加载，在SstFault_Init后且外部中断开放前加入DPRAM维护初始化。TaskSlice原后台顺序中增加并口维护分片；CRC/遥测/存储均不进入10kHz FPGA ISR。",
-      "validation": "tests/framework_structure.py; tests/firmware_trace.py; tests/realtime_audit.py; tests/dpram_maintenance.py; tests/dpram_map_audit.py"
+      "reason": "入口仍协调原启动/20s等待与pulse分支；删除485维护页4/5加载，在SstFault_Init后且外部中断开放前加入DPRAM维护初始化。TaskSlice原后台顺序中增加并口维护分片；CRC/遥测/存储均不进入10kHz FPGA ISR。 临时仿真输入只在SST_BENCH_INPUT_SIM开启时于控制初始化后、中断开放前初始化，测试宏关闭后SystemInit_Runtime的TI预处理执行token对照6675a72精确一致。",
+      "validation": "tests/framework_structure.py; tests/firmware_trace.py; tests/realtime_audit.py; tests/dpram_maintenance.py; tests/dpram_map_audit.py; tests/bench_isolation.py; tests/bench_inputs.py"
     },
     {
       "key": "macro:MAINT_ALL_PARAM_WORDS",
@@ -1142,20 +1142,6 @@
       "current_sha256s": []
     },
     {
-      "key": "macro:SST_ENABLE_DPRAM",
-      "new_keys": [
-        "macro:SST_ENABLE_DPRAM"
-      ],
-      "reason": "默认由0改1，启用用户要求的并口DPRAM遥控、遥调、遥测及维护；编译宏仍可设0以禁用运行期并口访问。",
-      "validation": "tests/dpram_maintenance.py; tests/firmware_trace.py; tests/realtime_audit.py; tools/build_matrix.py",
-      "baseline_sha256s": [
-        "8d162152f08c3b28f7fcbd7f6b7057f021858a5168639e1c505a44b641d8dccf"
-      ],
-      "current_sha256s": [
-        "2f8fda91b72b2ca1d9ef6a7fb747c54d0753af40e3fe7be8c2c8cf144426e831"
-      ]
-    },
-    {
       "key": "macro:SST_ENABLE_MAINTENANCE",
       "new_keys": [],
       "reason": "用户明确授权删除不再需要的485 MaintenanceProtocol。删除串口维护解析、请求响应、兼容对象访问及页4/5维护保存；485仅使用AnyEyes或VOFA，并口维护由独立DPRAM接口及点表承担。",
@@ -1164,20 +1150,6 @@
         "4f9ec85d4f82f5ddd0531624b2bf6891f429c43109ce2259f1188838567a2c57"
       ],
       "current_sha256s": []
-    },
-    {
-      "key": "macro:SST_SIMULATOR_MODE",
-      "new_keys": [
-        "macro:SST_SIMULATOR_MODE"
-      ],
-      "reason": "默认由1改0，使交付默认由并口DPRAM远控；仿真器可通过编译宏设1，继续禁止普通远程启动并保留停机路径。",
-      "validation": "tests/dpram_commands.py; tests/dpram_maintenance.py; tests/protocol_regression.py; tests/firmware_trace.py; tools/build_matrix.py",
-      "baseline_sha256s": [
-        "9a5ce167d41d3a8db57608a8b323ea7e5b0ea6c08a9863a1416f5a093822adb8"
-      ],
-      "current_sha256s": [
-        "d1032b45e08b539b702455026796cc4790083da79e6346a7aac99cf570443acb"
-      ]
     },
     {
       "key": "macro:SST_STORE_LENGTH",
@@ -1538,6 +1510,54 @@
         "b358dd980a6db138dd41a3e6d550dd8249624da552622e56d92cb8164f464b98"
       ],
       "current_sha256s": []
+    },
+    {
+      "key": "function:Port_AD_Sample",
+      "new_keys": [
+        "function:Port_AD_Sample"
+      ],
+      "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
+      "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
+      "baseline_sha256s": [
+        "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
+        "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
+        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba",
+        "caf0bb641e50c8fa36091c926d2d02d502846f8048b678fc234b93877b0b5896"
+      ],
+      "current_sha256s": [
+        "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
+        "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
+        "66de247a7fe84ac657264fece941da19c2016beb26c76174055cdac09d963628",
+        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba"
+      ]
+    },
+    {
+      "key": "function:SVG_Udc_Average",
+      "new_keys": [
+        "function:SVG_Udc_Average"
+      ],
+      "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
+      "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
+      "baseline_sha256s": [
+        "1f7c8cec76688932ce61579d84a5a2b49a7aa505eb150126f319f55d64331595"
+      ],
+      "current_sha256s": [
+        "7a4fc2b92ad9190c76d6055799f5a010ea2d7db212d671cf06f2f83cb5c038d6"
+      ]
+    },
+    {
+      "key": "function:Udc_check",
+      "new_keys": [
+        "function:Udc_check"
+      ],
+      "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
+      "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
+      "baseline_sha256s": [
+        "667f14067c26708c281a670bac3d3f072776438a3e10911554b9e89d1318d010"
+      ],
+      "current_sha256s": [
+        "359aa42f0cc186f94e4cb61d151cde986fa34c722e4bdb87f5091907fd57afd9"
+      ]
     }
   ]
 }

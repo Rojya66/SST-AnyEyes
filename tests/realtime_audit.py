@@ -100,7 +100,11 @@ def select_dpram_branches(text: str, enabled: bool) -> str:
                 if kind == "ifndef":
                     known = not known
             if kind == "if":
-                if expression == "SST_ENABLE_DPRAM":
+                if expression == "SST_BENCH_INPUT_SIM":
+                    known = False
+                elif expression == "!SST_BENCH_INPUT_SIM":
+                    known = True
+                elif expression == "SST_ENABLE_DPRAM":
                     known = enabled
                 elif expression == "!SST_ENABLE_DPRAM":
                     known = not enabled

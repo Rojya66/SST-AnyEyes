@@ -25,6 +25,7 @@
 #include "ADC_Sample.h"
 #include "hw_types.h" 
 #include "FaultCheck.h"
+#include "SstBenchInputs.h"
 /************************Variable definition********************************/
 short Port_AD_Buf[16]; /* Port_AD_Buf：原端口 FPGA AD 采样字缓存。 */  
 
@@ -275,6 +276,13 @@ void Port_AD_Sample(uchar latch)
 
 	float HA_Port_Current_A_Temp; /* HA_Port_Current_A_Temp：高压交流端口 A 相/相间端口电流，单位 A。 */
 	float HA_Port_Current_B_Temp; /* HA_Port_Current_B_Temp：高压交流端口 B 相/相间端口电流，单位 A。 */
+#if SST_BENCH_INPUT_SIM
+    if(latch == 0U)
+    {
+        SstBenchInputs_FastStep(); /* 常规采样注入虚拟量；锁存采样接口仍保留原硬件语义。 */
+        return;
+    }
+#endif
 //	float HA_Port_Current_C_Temp;
 
 //float HA_Grid_Current_A_Temp;

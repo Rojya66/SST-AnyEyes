@@ -1,6 +1,8 @@
 # 随版本软件验证证据
 
-当前并口维护调整（2026-10-13）的摘要是 [dpram_maintenance_validation.json](dpram_maintenance_validation.json)：删除485 MaintenanceProtocol、DPRAM54点/快照、v2参数存储，以及本轮构建和主机检查。其结果须匹配当前源码指纹；本文下面的 `software_validation.json` 和保护注释修正是固定历史版本，不能代替当前验证。
+当前单UNIT输入测试（2026-10-14）的证据是 [bench_input_validation.json](bench_input_validation.json)，由 `tools/export_bench_validation.py` 在本轮构建和检查完成后生成。其测试前固定提交为 `6675a72`。此前并口维护与框架发布摘要保留为历史版本。
+
+2026-10-13并口维护固定版本的摘要是 [dpram_maintenance_validation.json](dpram_maintenance_validation.json)：删除485 MaintenanceProtocol、DPRAM54点/快照、v2参数存储，以及该版本构建和主机检查。其源码指纹对应当时的标签；它与下面的 `software_validation.json`、保护注释修正均是历史记录，不能代替当前输入测试验证。
 
 保护注释后续修正见 [protection_comment_correction.json](protection_comment_correction.json)：原保护计时单位、回差及测量口径说明已纠正，全部固件输入的执行token与预处理指令相对已编译版本保持一致。本次只运行注释覆盖及源码等价核验，没有重跑目标构建。下面的完整软件验证摘要固定对应 `framework-refactored-2026-10-12`，其中原始文件字节哈希不代表修正注释后的源码。
 

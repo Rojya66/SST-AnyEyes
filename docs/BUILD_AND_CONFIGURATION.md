@@ -1,5 +1,7 @@
 # 编译、模式与使用说明
 
+2026-10-14单UNIT调试默认改为 `SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，新增默认关闭的 `SST_BENCH_INPUT_SIM`。本轮临时测试构建、固件路径、CCS变量及验收步骤见 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)，本轮软件验证见 [bench_input_validation.json](evidence/bench_input_validation.json)。下文的并口默认说明及旧交付数字对应此前固定版本，使用时以当前宏和对应版本证据为准。
+
 ## 工程导入与产物
 
 工程目录为 `D:/Code/SST/AnyEyesVersion`，CCS工程名为 `AnyEyesVersion`，固件文件名保持 `SST_AnyEyes.out`，目标为TMS320C6748。使用CCS 12.5与TI C6000 8.3.12，原 `C6748.cmd` 的FPGA/DPRAM固定地址保持，新并口维护扩展位于原空闲尾区。

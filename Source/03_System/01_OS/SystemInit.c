@@ -18,6 +18,7 @@
 #include "SstFault.h"
 #include "SstParams.h"
 #include "SstDpramMaintenance.h"
+#include "SstBenchInputs.h"
 
 /*==================================================================
  * 函数功能: 按原顺序完成时钟、EMIFA、GPIO、Timer2 和指示灯初始化
@@ -86,6 +87,9 @@ void SystemInit_Runtime(void)
     Port_State = PortStatusNum_Initial;
     Port_RunStatus = PortStatusNum_Initial;
     ChbDabControl_Init();
+#if SST_BENCH_INPUT_SIM
+    SstBenchInputs_Init();                 // 测试输入初始化，保持启动命令为0
+#endif
     SstFault_Init();
     SstDpramMaintenance_Init();
     SstDebug_Init();

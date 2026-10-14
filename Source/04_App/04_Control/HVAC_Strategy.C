@@ -1137,6 +1137,9 @@ void SVG_Q_Reference(uchar StatcomIndex)
  *================================================================*/
 void SVG_Udc_Average(void)
 {
+#if SST_BENCH_INPUT_SIM
+    return; /* Port_AD_Sample已注入三相及总均压，测试时不以真实FPGA采样覆盖。 */
+#else
 	short SampleBuf_short_1; /* SampleBuf_short_1：第一个 FPGA 原始采样/汇总字缓存。 */
 	short SampleBuf_short_2; /* SampleBuf_short_2：第二个 FPGA 原始采样/汇总字缓存。 */
 	float tempAve1,tempAve2,tempAve3; /* tempAve1：第一相/第一组模块采样总和与平均值缓存。 */
@@ -1421,6 +1424,7 @@ void SVG_Udc_Average(void)
 //		DAC_BUF[2]=SVG_Udc_C_Ave/50.0;
 //		DAC_BUF[3]=SVG_Udc_Ave/50.0;
 //		DAC_Output();				
+#endif
 }
 
 /****************************************************************************/

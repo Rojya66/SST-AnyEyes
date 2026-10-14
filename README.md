@@ -11,13 +11,16 @@
 3. 构建 Debug 或 Release；上电默认停机，初始化保持原 20 秒等待。
 4. 仿真器查看或修改 `g_chb_dab_command`、`g_chb_dab_params`、`g_chb_dab_status`。开环/闭环由 `ac_mode` 选择。
 
-默认配置为 **AnyEyes + DPRAM远程控制/维护 + EEPROM自动加载关闭**（`SST_SIMULATOR_MODE=0`、`SST_ENABLE_DPRAM=1`）。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。
+当前单UNIT调试配置为 **AnyEyes + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
+
+无主回路的临时输入注入默认关闭（`SST_BENCH_INPUT_SIM=0`）。测试构建设为1，每个实际TAD生成独立三相电网及可调直流反馈，保留真实PLL和启动控制；CCS变量、断点和测试步骤见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。本轮测试前版本为 `bench-input-baseline-2026-10-14`、提交 `6675a72`，加入临时注入后的版本标签为 `bench-input-simulation-2026-10-14`；验证记录见 [bench_input_validation.json](docs/evidence/bench_input_validation.json)。
 
 | 宏 | 值 | 行为 |
 |---|---|---|
 | `SST_DEBUG_PROTOCOL` | 1 / 2 | AnyEyes / VOFA，必须二选一 |
-| `SST_SIMULATOR_MODE` | 默认0；1可选 | 0=允许远程控制，1=仿真器直接控制 |
-| `SST_ENABLE_DPRAM` | 默认1；0可选 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
+| `SST_SIMULATOR_MODE` | 当前默认1 | 0=允许远程控制，1=仿真器直接控制 |
+| `SST_ENABLE_DPRAM` | 当前默认0 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
+| `SST_BENCH_INPUT_SIM` | 默认0；测试设1 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
 | `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
 | `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |

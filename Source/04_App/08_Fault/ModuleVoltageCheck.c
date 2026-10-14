@@ -21,6 +21,9 @@
  *================================================================*/
 void Udc_check(void)
 {
+#if SST_BENCH_INPUT_SIM
+    return; /* 仅无主回路输入测试跳过48位置真实巡检，FO/FB和软件OC/OV均保留。 */
+#else
     ushort index_temp; /* index_temp：本次模块电压检查使用的模块/相索引。 */
     ushort Check_temp_A,Check_temp_B,Check_temp_C; /* Check_temp_A：A 相模块电压巡检的位图/判定缓存。 */
     /* Check_temp_B：B 相模块电压巡检的位图/判定缓存。 */
@@ -203,5 +206,6 @@ void Udc_check(void)
             PortRunFLAG.Bbits.Port_HighUdc=0;
         }
     }
+#endif
 }
 #endif

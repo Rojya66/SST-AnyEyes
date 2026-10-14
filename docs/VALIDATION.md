@@ -1,5 +1,7 @@
 # SST 框架重构验证报告
 
+2026-10-14新增默认关闭的单UNIT输入注入；当前源默认仿真器控制、DPRAM关闭。本轮实际构建、真实PLL/启动回归及测试宏隔离检查见 [bench_input_validation.json](evidence/bench_input_validation.json)，具体板上操作见 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)。下面各节是对应固定版本的历史记录，不代替本轮测试输入构建，也不证明其板上100µs时限。
+
 ## 当前并口维护调整（2026-10-13）
 
 当前源码已删除485的MaintenanceProtocol/A5帧及使能宏，485仅选择AnyEyes或VOFA；默认改为DPRAM开启、仿真器关闭。旧固定区保留，新增54点维护、现代遥测/故障历史及16字后台分片，参数持久化改为页6/7的v2镜像108字节/50字并兼容v1。说明见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)，本轮结果以 [dpram_maintenance_validation.json](evidence/dpram_maintenance_validation.json) 的输入、返回码和固件记录为准。

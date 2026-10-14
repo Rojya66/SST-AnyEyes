@@ -11,12 +11,16 @@
 #define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_ANYEYES
 #endif
 #ifndef SST_ENABLE_DPRAM
-/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；默认1，0时仅保留所选串口调试协议。 */
+/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；当前单UNIT调试默认0。 */
 #define SST_ENABLE_DPRAM 0U
 #endif
 #ifndef SST_SIMULATOR_MODE
-/* SST_SIMULATOR_MODE：默认0由并口远控；设1保留仿真器控制并禁止普通远程启动，急停仍有效。 */
+/* SST_SIMULATOR_MODE：当前默认1由仿真器控制；0允许所选通信源远控，急停仍有效。 */
 #define SST_SIMULATOR_MODE 1U
+#endif
+#ifndef SST_BENCH_INPUT_SIM
+/* SST_BENCH_INPUT_SIM：临时无主回路输入注入，默认0；1生成测试采样，不替代功率回路模型。 */
+#define SST_BENCH_INPUT_SIM 0U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
@@ -37,7 +41,7 @@
 
 /* Legacy constants kept for shared source compatibility. */
 /* CHB_CONTROL_MODE_SIMULATOR：旧接口的仿真器模式编号。 */
-#define CHB_CONTROL_MODE_SIMULATOR 1U
+#define CHB_CONTROL_MODE_SIMULATOR 0U
 /* CHB_CONTROL_MODE_DPRAM：旧接口的 DPRAM 模式编号。 */
 #define CHB_CONTROL_MODE_DPRAM 1U
 /* CHB_CONTROL_MODE_485：旧接口的串口 485 模式编号。 */
@@ -70,6 +74,12 @@
 #endif
 #if (SST_ENABLE_DPRAM > 1U) || (SST_SIMULATOR_MODE > 1U)
 #error "SST boolean switches must be 0 or 1"
+#endif
+#if SST_BENCH_INPUT_SIM > 1U
+#error "SST_BENCH_INPUT_SIM must be 0 or 1"
+#endif
+#if SST_BENCH_INPUT_SIM && (!SST_SIMULATOR_MODE || SST_ENABLE_DPRAM || CHB_LOAD_EEPROM_PARAMETERS)
+#error "Bench input simulation requires simulator=1, DPRAM=0 and EEPROM boot load=0"
 #endif
 #if SST_TELEMETRY_PERIOD_10MS < 1U
 #error "Telemetry period must be at least 10ms"
