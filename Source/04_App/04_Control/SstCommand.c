@@ -12,10 +12,9 @@
  *================================================================*/
 uint16_t SstCommand_IsStopped(void)
 {
-    return (g_chb_dab_status.state == CHB_STATE_STOPPED ||
-            g_chb_dab_status.state == CHB_STATE_FAULT) &&
-           !g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable &&
-           !g_chb_dab_status.ac_pwm_enabled && !g_chb_dab_status.dab_pwm_enabled;
+    return (g_chb_dab_status.state == CHB_STATE_STOPPED || g_chb_dab_status.state == CHB_STATE_FAULT) &&
+           !g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable && !g_chb_dab_status.ac_pwm_enabled &&
+           !g_chb_dab_status.dab_pwm_enabled;
 }
 
 /*==================================================================
@@ -28,8 +27,10 @@ uint16_t SstCommand_IsStopped(void)
 uint16_t SstCommand_RunSerial(uint16_t enable)
 {
 #if SST_ALLOW_SERIAL_COMMANDS
-    if(enable > 1U) return SST_PARAM_RANGE;
-    if(enable && SstParameterStore_IsBusy()) return SST_PARAM_BUSY;
+    if (enable > 1U)
+        return SST_PARAM_RANGE;
+    if (enable && SstParameterStore_IsBusy())
+        return SST_PARAM_BUSY;
     g_chb_dab_command.run_enable = enable;
     g_chb_dab_command.dab_enable = enable;
     return SST_PARAM_OK;
@@ -63,15 +64,22 @@ void SstCommand_EmergencyStop(void)
 uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value)
 {
 #if SST_ALLOW_SERIAL_COMMANDS
-    if(value > 1U) return SST_PARAM_RANGE;
-    if(index == 3U && !SstCommand_IsStopped()) return SST_PARAM_BUSY;
-    if(index == 0U) g_chb_dab_command.run_enable = value;
-    else if(index == 1U) g_chb_dab_command.dab_enable = value;
-    else if(index == 3U) g_chb_dab_command.fault_reset = value;
-    else return SST_PARAM_BAD_ADDRESS;
+    if (value > 1U)
+        return SST_PARAM_RANGE;
+    if (index == 3U && !SstCommand_IsStopped())
+        return SST_PARAM_BUSY;
+    if (index == 0U)
+        g_chb_dab_command.run_enable = value;
+    else if (index == 1U)
+        g_chb_dab_command.dab_enable = value;
+    else if (index == 3U)
+        g_chb_dab_command.fault_reset = value;
+    else
+        return SST_PARAM_BAD_ADDRESS;
     return SST_PARAM_OK;
 #else
-    (void)index; (void)value;
+    (void)index;
+    (void)value;
     return SST_PARAM_DENIED;
 #endif
 }
@@ -87,30 +95,39 @@ uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value)
  * 返回值: 无
  * 执行说明: 后台DPRAM控制入口；只提交请求，实际PWM动作由原控制核心执行。
  *================================================================*/
-void SstCommand_ApplyDpram(unsigned short start, unsigned short stop,
-                          unsigned short pulse_on, unsigned short pulse_off,
-                          unsigned short reset)
+void SstCommand_ApplyDpram(
+    unsigned short start, unsigned short stop, unsigned short pulse_on, unsigned short pulse_off, unsigned short reset)
 {
 #if SST_ALLOW_REMOTE_COMMANDS && SST_ENABLE_DPRAM
     /* Only defined command bits participate; all other bits are reserved. */
     pulse_on &= 3U;
     pulse_off &= 3U;
-    if(stop & 1U)
+    if (stop & 1U)
     {
         g_chb_dab_command.run_enable = 0U;
         g_chb_dab_command.dab_enable = 0U;
         return;
     }
     /* Off always wins, including while parameter persistence is in progress. */
-    if(pulse_off & 1U) g_chb_dab_command.dab_enable = 0U;
-    if(pulse_off & 2U) g_chb_dab_command.run_enable = 0U;
-    if(SstParameterStore_IsBusy()) return;
-    if((start & 1U) && !pulse_off)
+    if (pulse_off & 1U)
+        g_chb_dab_command.dab_enable = 0U;
+    if (pulse_off & 2U)
+        g_chb_dab_command.run_enable = 0U;
+    if (SstParameterStore_IsBusy())
+        return;
+    if ((start & 1U) && !pulse_off)
         ChbDabControl_ApplyRemoteCommand(start, stop);
-    if((pulse_on & 1U) && !(pulse_off & 1U)) g_chb_dab_command.dab_enable = 1U;
-    if((pulse_on & 2U) && !(pulse_off & 2U)) g_chb_dab_command.run_enable = 1U;
-    if((reset & 1U) && SstCommand_IsStopped()) g_chb_dab_command.fault_reset = 1U;
+    if ((pulse_on & 1U) && !(pulse_off & 1U))
+        g_chb_dab_command.dab_enable = 1U;
+    if ((pulse_on & 2U) && !(pulse_off & 2U))
+        g_chb_dab_command.run_enable = 1U;
+    if ((reset & 1U) && SstCommand_IsStopped())
+        g_chb_dab_command.fault_reset = 1U;
 #else
-    (void)start; (void)stop; (void)pulse_on; (void)pulse_off; (void)reset;
+    (void)start;
+    (void)stop;
+    (void)pulse_on;
+    (void)pulse_off;
+    (void)reset;
 #endif
 }

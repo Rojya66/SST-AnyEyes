@@ -30,6 +30,11 @@ def decode(data: bytes) -> str:
 def tokens(text: str) -> tuple[str, ...]:
     # Strings and character literals are single tokens so spaces inside them
     # remain significant; comments, external whitespace and CRLF do not.
+    # Apply the C preprocessor's physical-line splicing before lexing.  A
+    # backslash immediately followed by CRLF/LF is not an executable token;
+    # leaving it in the inventory makes equivalent multi-line macros and
+    # continued function declarations compare as different sources.
+    text = re.sub(r"\\(?:\r\n|\n|\r)", "", text)
     pattern = r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')|/\*[\s\S]*?\*/|//[^\n]*'
     clean = re.sub(pattern, lambda match: match[1] or " ", text)
     return tuple(re.findall(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|\w+|[^\s\w]', clean))

@@ -7,38 +7,38 @@
  * derived from the masks by Initial_Variable().
  */
 /* CHB_PM_A1_MASK：A1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A1_MASK                 0x0001U//0x007FU
+#define CHB_PM_A1_MASK 0x0001U //0x007FU
 /* CHB_PM_A2_MASK：A2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A2_MASK                 0x0000U//0x003FU
+#define CHB_PM_A2_MASK 0x0000U //0x003FU
 /* CHB_PM_B1_MASK：B1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_B1_MASK                 0x007FU
+#define CHB_PM_B1_MASK 0x007FU
 /* CHB_PM_B2_MASK：B2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_B2_MASK                 0x003FU
+#define CHB_PM_B2_MASK 0x003FU
 /* CHB_PM_C1_MASK：C1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_C1_MASK                 0x007FU
+#define CHB_PM_C1_MASK 0x007FU
 /* CHB_PM_C2_MASK：C2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_C2_MASK                 0x003FU
+#define CHB_PM_C2_MASK 0x003FU
 
 /* CHB_AC_MODE_OPEN_LOOP：工频桥开环模式编号 0。 */
-#define CHB_AC_MODE_OPEN_LOOP          0U
+#define CHB_AC_MODE_OPEN_LOOP 0U
 /* CHB_AC_MODE_CLOSED_LOOP：工频桥闭环模式编号 1。 */
-#define CHB_AC_MODE_CLOSED_LOOP        1U
+#define CHB_AC_MODE_CLOSED_LOOP 1U
 
 /* 闭环启动策略：0=兼容原版，1=固定Idref斜坡后再投入电压外环。 */
 /* CHB_STARTUP_SOURCE_COMPATIBLE：原闭环启动兼容策略编号 0。 */
-#define CHB_STARTUP_SOURCE_COMPATIBLE  0U
+#define CHB_STARTUP_SOURCE_COMPATIBLE 0U
 /* CHB_STARTUP_ID_RAMP：先固定 Id 斜坡再移交电压环策略编号 1。 */
-#define CHB_STARTUP_ID_RAMP            1U
+#define CHB_STARTUP_ID_RAMP 1U
 
 /* 闭环启动阶段，供上位机/调试器观察。 */
 /* CHB_STARTUP_IDLE：闭环启动尚未进行阶段编号。 */
-#define CHB_STARTUP_IDLE               0U
+#define CHB_STARTUP_IDLE 0U
 /* CHB_STARTUP_ID_RAMP_PHASE：闭环固定 Id 斜坡阶段编号。 */
-#define CHB_STARTUP_ID_RAMP_PHASE      1U
+#define CHB_STARTUP_ID_RAMP_PHASE 1U
 /* CHB_STARTUP_VOLTAGE_HANDOVER：电压环给定平滑移交阶段编号。 */
-#define CHB_STARTUP_VOLTAGE_HANDOVER   2U
+#define CHB_STARTUP_VOLTAGE_HANDOVER 2U
 /* CHB_STARTUP_NORMAL：闭环正常电压环运行阶段编号。 */
-#define CHB_STARTUP_NORMAL              3U
+#define CHB_STARTUP_NORMAL 3U
 
 typedef enum
 {
@@ -64,23 +64,29 @@ typedef enum
 /* Direct debugger/upper-computer commands. All commands are level signals. */
 typedef struct
 {
-    unsigned short run_enable; /* run_enable：CHB 启动命令，0 停止、1 启动；开环直接解锁，闭环走预充流程。 */       /* 闭环：启动预充/运行；开环：直接解锁CHB PWM */
-    unsigned short dab_enable; /* dab_enable：DAB 原边使能命令，0 停止、1 启动；开环可独立控制。 */       /* DAB原边使能；开环下可独立于run_enable */
-    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行。 */          /* CHB_AC_MODE_OPEN_LOOP/CLOSED_LOOP */
-    unsigned short fault_reset; /* fault_reset：停机时置 1 请求复位控制故障，控制核心消费后清零。 */      /* Set to 1 while stopped; auto-clears */
-    float open_loop_modulation; /* open_loop_modulation：开环调制比，范围 0..modulation_max。 */      /* 0.0 ... modulation_max */
+    unsigned short run_enable;
+    /* run_enable：CHB 启动命令，0 停止、1 启动；开环直接解锁，闭环走预充流程。 */ /* 闭环：启动预充/运行；开环：直接解锁CHB PWM */
+    unsigned short dab_enable;
+    /* dab_enable：DAB 原边使能命令，0 停止、1 启动；开环可独立控制。 */ /* DAB原边使能；开环下可独立于run_enable */
+    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行。 */ /* CHB_AC_MODE_OPEN_LOOP/CLOSED_LOOP */
+    unsigned short fault_reset;
+    /* fault_reset：停机时置 1 请求复位控制故障，控制核心消费后清零。 */ /* Set to 1 while stopped; auto-clears */
+    float open_loop_modulation;
+    /* open_loop_modulation：开环调制比，范围 0..modulation_max。 */ /* 0.0 ... modulation_max */
     float open_loop_frequency_hz; /* open_loop_frequency_hz：开环正弦输出频率，单位 Hz。 */
-    float dc_voltage_ref_v; /* dc_voltage_ref_v：单模块直流电压目标，单位 V。 */          /* Per-module DC voltage reference */
+    float dc_voltage_ref_v; /* dc_voltage_ref_v：单模块直流电压目标，单位 V。 */ /* Per-module DC voltage reference */
     float iq_reference_a; /* iq_reference_a：闭环 q 轴电流目标，单位 A。 */
 } CHB_DAB_COMMAND;
 
 /* Runtime-tunable values; debugger writes take effect without rebuilding. */
 typedef struct
 {
-    float sample_period_s; /* sample_period_s：TAD 计算周期，单位 s，默认 0.0001；通信只读，不改变硬件中断频率。 */           /* TAD control interrupt period */
+    float sample_period_s;
+    /* sample_period_s：TAD 计算周期，单位 s，默认 0.0001；通信只读，不改变硬件中断频率。 */ /* TAD control interrupt period */
     float modulation_max; /* modulation_max：三相调制比绝对值上限，默认 0.98。 */
 
-    float precharge_voltage_v; /* precharge_voltage_v：三相单模块最低直流电压的预充达标阈值，单位 V。 */       /* Minimum of A/B/C per-module DC */
+    float precharge_voltage_v;
+    /* precharge_voltage_v：三相单模块最低直流电压的预充达标阈值，单位 V。 */ /* Minimum of A/B/C per-module DC */
     unsigned short precharge_stable_10ms; /* precharge_stable_10ms：预充电压须持续达标的 10 ms 拍数。 */
     unsigned short precharge_timeout_10ms; /* precharge_timeout_10ms：预充允许的最大等待时间，单位 10 ms。 */
     unsigned short bypass_delay_10ms; /* bypass_delay_10ms：投入预充旁路后的等待时间，单位 10 ms。 */
@@ -95,18 +101,26 @@ typedef struct
     unsigned short pll_lock_10ms; /* pll_lock_10ms：PLL 连续锁定确认时间，单位 10 ms。 */
     unsigned short pll_timeout_10ms; /* pll_timeout_10ms：PLL 等待锁定超时，单位 10 ms。 */
 
-    float voltage_kp; /* voltage_kp：直流电压外环比例系数，沿用原增量 PI 等效值。 */                /* Converted from source incremental PI */
+    float voltage_kp;
+    /* voltage_kp：直流电压外环比例系数，沿用原增量 PI 等效值。 */ /* Converted from source incremental PI */
     float voltage_ki; /* voltage_ki：直流电压外环积分系数，积分乘 sample_period_s。 */
     float voltage_current_limit_a; /* voltage_current_limit_a：电压外环输出 Id 的绝对值上限，单位 A。 */
 
-    unsigned short startup_strategy; /* startup_strategy：闭环启动策略，0 原版兼容、1 固定 Id 斜坡后移交电压环。 */ /* 0：兼容原版；1：Idref斜坡后接管 */
-    float startup_udc_offset_v; /* startup_udc_offset_v：PWM 解锁时叠加在实测电压上的给定偏移，单位 V。 */      /* PWM解锁时当前电压上的初始偏移 */
-    float startup_udc_step_v; /* startup_udc_step_v：电压环接管后每个 TAD 的电压给定步长，单位 V。 */        /* 电压环接管后的电压给定步长 */
-    float startup_id_reference_a; /* startup_id_reference_a：启动阶段固定 Id 目标/状态镜像，单位 A。 */    /* 启动阶段固定Id目标 */
-    float startup_id_ramp_step_a; /* startup_id_ramp_step_a：启动阶段每个 TAD 的 Id 斜坡步长，单位 A。 */    /* 每个TAD的Id给定斜坡步长 */
-    unsigned short startup_ramp_tad; /* startup_ramp_tad：固定 Id 启动斜坡最长持续拍数，单位 TAD。 */ /* 启动斜坡最长TAD数 */
+    unsigned short startup_strategy;
+    /* startup_strategy：闭环启动策略，0 原版兼容、1 固定 Id 斜坡后移交电压环。 */ /* 0：兼容原版；1：Idref斜坡后接管 */
+    float startup_udc_offset_v;
+    /* startup_udc_offset_v：PWM 解锁时叠加在实测电压上的给定偏移，单位 V。 */ /* PWM解锁时当前电压上的初始偏移 */
+    float startup_udc_step_v;
+    /* startup_udc_step_v：电压环接管后每个 TAD 的电压给定步长，单位 V。 */ /* 电压环接管后的电压给定步长 */
+    float startup_id_reference_a;
+    /* startup_id_reference_a：启动阶段固定 Id 目标/状态镜像，单位 A。 */ /* 启动阶段固定Id目标 */
+    float startup_id_ramp_step_a;
+    /* startup_id_ramp_step_a：启动阶段每个 TAD 的 Id 斜坡步长，单位 A。 */ /* 每个TAD的Id给定斜坡步长 */
+    unsigned short startup_ramp_tad;
+    /* startup_ramp_tad：固定 Id 启动斜坡最长持续拍数，单位 TAD。 */ /* 启动斜坡最长TAD数 */
 
-    float current_kp; /* current_kp：dq 电流内环比例系数，保留原反馈方向对应的符号。 */                /* Signed gain: source control direction */
+    float current_kp;
+    /* current_kp：dq 电流内环比例系数，保留原反馈方向对应的符号。 */ /* Signed gain: source control direction */
     float current_ki; /* current_ki：dq 电流内环积分系数，积分乘 sample_period_s。 */
     float closed_loop_voltage_limit_factor; /* closed_loop_voltage_limit_factor：dq 电压指令上限相对电网幅值的比例。 */
     float current_feedback_sign; /* current_feedback_sign：电流采样方向系数，只允许 +1 或 -1。 */
@@ -114,7 +128,8 @@ typedef struct
     float output_phase_compensation_rad; /* output_phase_compensation_rad：输出电压坐标逆变换相位补偿，单位 rad。 */
 
     float ac_overcurrent_trip_a; /* ac_overcurrent_trip_a：快速过流阈值，比较每TAD标定相电流绝对值最大值，单位A。 */
-    float dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：快速过压阈值，比较三相各自模块平均直流电压的最大值，单位V。 */
+    float
+        dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：快速过压阈值，比较三相各自模块平均直流电压的最大值，单位V。 */
     unsigned short protection_confirm_samples; /* protection_confirm_samples：新增软件保护所需的连续超限 TAD 样本数。 */
 
     unsigned short dab_start_duty_count; /* dab_start_duty_count：DAB 使能时初始占空比计数，默认 350。 */
@@ -149,14 +164,18 @@ typedef struct
     float modulation_actual; /* modulation_actual：当前三相调制指令的最大绝对值。 */
 } CHB_DAB_STATUS;
 
-extern volatile CHB_DAB_COMMAND g_chb_dab_command; /* g_chb_dab_command：调试器/通信提交的控制命令与给定，控制核心读取执行。 */
-extern volatile CHB_DAB_PARAMETERS g_chb_dab_params; /* g_chb_dab_params：CHB/DAB 控制参数；调试器可观察，通信写入需停机校验。 */
-extern volatile CHB_DAB_STATUS g_chb_dab_status; /* g_chb_dab_status：控制核心维护的运行状态镜像，后台仅用于读取上报。 */
-/* Debugger switch for the added software OC/OV checks. Hardware faults remain active. */
-extern volatile unsigned short g_chb_dab_protection_enable; /* g_chb_dab_protection_enable：新增软件过流/过压保护使能，0 关闭、1 开启；硬件保护不受其影响。 */
+extern volatile CHB_DAB_COMMAND
+    g_chb_dab_command; /* g_chb_dab_command：调试器/通信提交的控制命令与给定，控制核心读取执行。 */
+extern volatile CHB_DAB_PARAMETERS
+    g_chb_dab_params; /* g_chb_dab_params：CHB/DAB 控制参数；调试器可观察，通信写入需停机校验。 */
+extern volatile CHB_DAB_STATUS
+    g_chb_dab_status; /* g_chb_dab_status：控制核心维护的运行状态镜像，后台仅用于读取上报。 */
+/* 仿真器可修改的快速软件过流/过压检查开关，不代表现场硬件保护状态。 */
+extern volatile unsigned short
+    g_chb_dab_protection_enable; /* g_chb_dab_protection_enable：新增软件过流/过压检查使能，0 关闭、1 开启；硬件保护能力取决于现场 FPGA 位流。 */
 
 /*==================================================================
- * 函数功能: 清空控制状态并初始化安全 PWM、开关及原兼容状态
+ * 函数功能: 清空控制状态，撤销 PWM 使能并初始化开关及兼容状态
  * 输入参数: 无
  * 输出参数: CHB/DAB 命令、参数派生状态、PI 历史量以及原 FPGA 参考/使能寄存器。
  * 返回值: 无
@@ -195,8 +214,7 @@ extern void ChbDabControl_FastStep(void);
  * 返回值: 无
  * 执行说明: 控制核心；FastStep 及其计算子函数属于原 100 µs TAD 路径，Service 属于主循环。
  *================================================================*/
-extern void ChbDabControl_ApplyRemoteCommand(unsigned short start_word,
-                                             unsigned short stop_word);
+extern void ChbDabControl_ApplyRemoteCommand(unsigned short start_word, unsigned short stop_word);
 /*==================================================================
  * 函数功能: 锁存控制故障并关闭 PWM，进入故障状态
  * 输入参数: fault_code：控制核心 CHB_FAULT_* 故障编号

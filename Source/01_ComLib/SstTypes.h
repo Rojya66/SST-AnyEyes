@@ -3,7 +3,8 @@
 #define SSTTYPES_H_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /* ushort：旧代码无符号 16 位整数类型别名。 */
 #define ushort unsigned short

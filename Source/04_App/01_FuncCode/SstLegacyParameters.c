@@ -13,20 +13,33 @@
 uint16_t SstLegacyParameters_Read(uint16_t index)
 {
     float scaled; /* scaled：巡检电压换算后的线上值，处理调试器可能写入的非法值。 */
-    switch(index)
+    switch (index)
     {
-        case 0: return OC_level_SET;
-        case 1: return OC_time_SET;
-        case 2: return OC_level_SET_L2;
-        case 3: return OC_time_SET_L2;
-        case 4: return OV_level_SET;
-        case 5: return OV_time_SET;
-        case 6: scaled = HA_L_Voltage_Precharge * 10.0F; break;
-        case 7: scaled = HA_H_Voltage * 10.0F; break;
-        default: return 0U;
+        case 0:
+            return OC_level_SET;
+        case 1:
+            return OC_time_SET;
+        case 2:
+            return OC_level_SET_L2;
+        case 3:
+            return OC_time_SET_L2;
+        case 4:
+            return OV_level_SET;
+        case 5:
+            return OV_time_SET;
+        case 6:
+            scaled = HA_L_Voltage_Precharge * 10.0F;
+            break;
+        case 7:
+            scaled = HA_H_Voltage * 10.0F;
+            break;
+        default:
+            return 0U;
     }
-    if(scaled != scaled || scaled <= 0.0F) return 0U;
-    if(scaled >= 65535.0F) return 65535U;
+    if (scaled != scaled || scaled <= 0.0F)
+        return 0U;
+    if (scaled >= 65535.0F)
+        return 65535U;
     return (uint16_t)(scaled + 0.5F);
 }
 
@@ -39,10 +52,11 @@ uint16_t SstLegacyParameters_Read(uint16_t index)
  *================================================================*/
 uint16_t SstLegacyParameters_ValidateSnapshot(const uint16_t *snapshot)
 {
-    if(!snapshot) return SST_PARAM_BAD_ADDRESS;
-    if(!snapshot[0] || !snapshot[2] || !snapshot[4] ||
-       snapshot[1] == 65535U || snapshot[3] == 65535U || snapshot[5] == 65535U ||
-       !snapshot[7] || snapshot[6] >= snapshot[7]) return SST_PARAM_RANGE;
+    if (!snapshot)
+        return SST_PARAM_BAD_ADDRESS;
+    if (!snapshot[0] || !snapshot[2] || !snapshot[4] || snapshot[1] == 65535U || snapshot[3] == 65535U ||
+        snapshot[5] == 65535U || !snapshot[7] || snapshot[6] >= snapshot[7])
+        return SST_PARAM_RANGE;
     return SST_PARAM_OK;
 }
 
@@ -55,9 +69,12 @@ uint16_t SstLegacyParameters_ValidateSnapshot(const uint16_t *snapshot)
  *================================================================*/
 void SstLegacyParameters_ApplySnapshot(const uint16_t *snapshot)
 {
-    OC_level_SET = snapshot[0]; OC_time_SET = snapshot[1];
-    OC_level_SET_L2 = snapshot[2]; OC_time_SET_L2 = snapshot[3];
-    OV_level_SET = snapshot[4]; OV_time_SET = snapshot[5];
+    OC_level_SET = snapshot[0];
+    OC_time_SET = snapshot[1];
+    OC_level_SET_L2 = snapshot[2];
+    OC_time_SET_L2 = snapshot[3];
+    OV_level_SET = snapshot[4];
+    OV_time_SET = snapshot[5];
     HA_L_Voltage_Precharge = (float)snapshot[6] / 10.0F;
     HA_H_Voltage = (float)snapshot[7] / 10.0F;
 }
@@ -74,11 +91,15 @@ uint16_t SstLegacyParameters_Write(uint16_t index, uint16_t value)
     uint16_t snapshot[SST_LEGACY_PARAMETER_COUNT]; /* snapshot：原参数快照，用于跨阈值校验。 */
     uint16_t i; /* i：当前数组、快照或点表遍历下标。 */
     uint16_t result; /* result：镜像校验结果。 */
-    if(index >= SST_LEGACY_PARAMETER_COUNT) return SST_PARAM_BAD_ADDRESS;
-    if(!SstParams_IsStopped() || SstParams_IsStorageBusy()) return SST_PARAM_BUSY;
-    for(i = 0U; i < SST_LEGACY_PARAMETER_COUNT; ++i) snapshot[i] = SstLegacyParameters_Read(i);
+    if (index >= SST_LEGACY_PARAMETER_COUNT)
+        return SST_PARAM_BAD_ADDRESS;
+    if (!SstParams_IsStopped() || SstParams_IsStorageBusy())
+        return SST_PARAM_BUSY;
+    for (i = 0U; i < SST_LEGACY_PARAMETER_COUNT; ++i)
+        snapshot[i] = SstLegacyParameters_Read(i);
     snapshot[index] = value;
     result = SstLegacyParameters_ValidateSnapshot(snapshot);
-    if(result == SST_PARAM_OK) SstLegacyParameters_ApplySnapshot(snapshot);
+    if (result == SST_PARAM_OK)
+        SstLegacyParameters_ApplySnapshot(snapshot);
     return result;
 }

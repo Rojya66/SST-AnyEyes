@@ -11,7 +11,3 @@
 extern void EMIFAPinMuxSetup(void);
 
 #endif
-
-
-
-

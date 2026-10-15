@@ -2,7 +2,8 @@
 #ifndef PROTECTIONCONFIG_H_
 #define PROTECTIONCONFIG_H_
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 /* OC_level_SET_DEFAULT：原HVAC一级过流默认阈值，比较三相电流有效值，单位A。 */
 #define OC_level_SET_DEFAULT 70

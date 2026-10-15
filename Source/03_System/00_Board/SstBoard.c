@@ -21,11 +21,9 @@
 
 /* Timer2保留原10 ms节拍；UART2的寄存器配置由SstSerial_Init负责。 */
 /* TMR_PERIOD_LSB32：Timer2 周期计数低 32 位，按原时钟对应 10 ms。 */
-#define TMR_PERIOD_LSB32  (228000/0.1)
+#define TMR_PERIOD_LSB32 (228000 / 0.1)
 /* TMR_PERIOD_MSB32：Timer2 周期计数高 32 位。 */
-#define TMR_PERIOD_MSB32  (0)
-
-
+#define TMR_PERIOD_MSB32 (0)
 
 /****************************************************************************/
 /*==================================================================
@@ -39,9 +37,8 @@ void Delay(unsigned int n)
 {
     unsigned int i; /* i：本次数组、参数或模块遍历的索引。 */
 
-    for(i=n;i>0;i--)
+    for (i = n; i > 0; i--)
     {
-
     }
 }
 
@@ -61,8 +58,8 @@ void PSCInit(void)
 {
     /* 先打开GPIO/UART2/EMIFA模块时钟，后续寄存器访问才有效。 */
     PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_GPIO, PSC_POWERDOMAIN_ALWAYS_ON, PSC_MDCTL_NEXT_ENABLE);
-  PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_UART2, PSC_POWERDOMAIN_ALWAYS_ON,PSC_MDCTL_NEXT_ENABLE);
-  PSCModuleControl(SOC_PSC_0_REGS, HW_PSC_EMIFA, PSC_POWERDOMAIN_ALWAYS_ON,PSC_MDCTL_NEXT_ENABLE);
+    PSCModuleControl(SOC_PSC_1_REGS, HW_PSC_UART2, PSC_POWERDOMAIN_ALWAYS_ON, PSC_MDCTL_NEXT_ENABLE);
+    PSCModuleControl(SOC_PSC_0_REGS, HW_PSC_EMIFA, PSC_POWERDOMAIN_ALWAYS_ON, PSC_MDCTL_NEXT_ENABLE);
 }
 
 /****************************************************************************/
@@ -169,29 +166,23 @@ void EMIFASetup(void)
     /* CS2连接FPGA控制区，CS5连接插件/模块区，两者均为16位异步访问。 */
     EMIFAPinMuxSetup();
 
-    EMIFAAsyncDevDataBusWidthSelect(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_2,
-                                    EMIFA_DATA_BUSWITTH_16BIT);
-    EMIFAAsyncDevDataBusWidthSelect(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_5,
-                                    EMIFA_DATA_BUSWITTH_16BIT);
+    EMIFAAsyncDevDataBusWidthSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_2, EMIFA_DATA_BUSWITTH_16BIT);
+    EMIFAAsyncDevDataBusWidthSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_DATA_BUSWITTH_16BIT);
 
+    EMIFAAsyncDevOpModeSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_2, EMIFA_ASYNC_INTERFACE_NORMAL_MODE);
+    EMIFAAsyncDevOpModeSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_ASYNC_INTERFACE_NORMAL_MODE);
 
-    EMIFAAsyncDevOpModeSelect(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_2,
-                               EMIFA_ASYNC_INTERFACE_NORMAL_MODE);
-    EMIFAAsyncDevOpModeSelect(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_5,
-                               EMIFA_ASYNC_INTERFACE_NORMAL_MODE);
+    EMIFAExtendedWaitConfig(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_2, EMIFA_EXTENDED_WAIT_DISABLE);
+    EMIFAExtendedWaitConfig(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_EXTENDED_WAIT_ENABLE);
 
-    EMIFAExtendedWaitConfig(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_2,
-                             EMIFA_EXTENDED_WAIT_DISABLE);
-    EMIFAExtendedWaitConfig(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_5,
-                             EMIFA_EXTENDED_WAIT_ENABLE);
-
-    EMIFAWaitTimingConfig(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_2,
-                           EMIFA_ASYNC_WAITTIME_CONFIG(2, 2, 1, 3, 12, 6, 3));//2, 3, 2, 2, 3, 2, 0      2, 2, 1, 1, 9, 1, 2
+    EMIFAWaitTimingConfig(
+        SOC_EMIFA_0_REGS,
+        EMIFA_CHIP_SELECT_2,
+        EMIFA_ASYNC_WAITTIME_CONFIG(2, 2, 1, 3, 12, 6, 3)); //2, 3, 2, 2, 3, 2, 0      2, 2, 1, 1, 9, 1, 2
     //                     EMIFA_ASYNC_WAITTIME_CONFIG(2, 10, 2, 2, 10, 6, 2));
 
-    EMIFAWaitTimingConfig(SOC_EMIFA_0_REGS,EMIFA_CHIP_SELECT_5,
-                           EMIFA_ASYNC_WAITTIME_CONFIG(1, 4, 1, 1, 4, 1, 2));//2, 3, 2, 2, 3, 2, 0
-
+    EMIFAWaitTimingConfig(
+        SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_ASYNC_WAITTIME_CONFIG(1, 4, 1, 1, 4, 1, 2)); //2, 3, 2, 2, 3, 2, 0
 
     EMIFAWaitPinPolaritySet(SOC_EMIFA_0_REGS, EMIFA_EMA_WAIT_PIN1, EMIFA_EMA_WAIT_PIN_POLARITY_LOW);
     EMIFACSWaitPinSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_EMA_WAIT_PIN1);
@@ -227,13 +218,11 @@ void TimerInit(void)
 /*                                                                          */
 /****************************************************************************/
 
-
 /****************************************************************************/
 /*                                                                          */
 /*                   UART Initialization                                    */
 /*                                                                          */
 /****************************************************************************/
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -241,17 +230,14 @@ void TimerInit(void)
 /*                                                                          */
 /****************************************************************************/
 
-
 /****************************************************************************/
 /*                                                                          */
 /*              GPIO INT Initialization                                     */
 /*                                                                          */
 /****************************************************************************/
 
-
 /****************************************************************************/
 /*                                                                          */
 /*              DSP INT Initialization                                      */
 /*                                                                          */
 /****************************************************************************/
-

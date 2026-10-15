@@ -50,4 +50,3 @@ void Variable_RST(void)
 {
     ControlDefaults_ResetRegulators();
 }
-

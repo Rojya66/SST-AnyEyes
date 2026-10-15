@@ -26,13 +26,12 @@ void FpgaInit_SetSafeOutputs(void)
 {
     PWMPluseEnable_Initial();
     TX_EN_Control_Write();
-    Module_PM_CTL.PM_CTL16=0x0F00;
+    Module_PM_CTL.PM_CTL16 = 0x0F00;
     Module_Control_Write();
     Port_BKU_Send(1);
-    Port_FB_EN=0;
+    Port_FB_EN = 0;
     Port_FB_EN_Set();
-//  FaultLatch_Clear(0,1);
-
+    //  FaultLatch_Clear(0,1);
 }
 
 /*==================================================================
@@ -65,7 +64,7 @@ void FpgaInit_ConfigureModuleLayout(void)
     FPGA_Interface[14].ID.ID16 = 0x602E;
     /* Slot 17 uses the dedicated FT3 register section at 0x60001E00. */
 
-/*
+    /*
  * PM is a bit map, not only a module count.
  * bitX=1 means TX/RX channel X on this FPGA501 communication card is
  * connected to a valid power module.
@@ -75,20 +74,20 @@ void FpgaInit_ConfigureModuleLayout(void)
  * H-bridge arms. The left/right bridge-arm PWM is generated inside
  * each module command by FPGA501.
  */
-//PM
-    HA_PM_A1=CHB_PM_A1_MASK;
-    HA_PM_A2=CHB_PM_A2_MASK;
-    HA_PM_B1=CHB_PM_B1_MASK;
-    HA_PM_B2=CHB_PM_B2_MASK;
-    HA_PM_C1=CHB_PM_C1_MASK;
-    HA_PM_C2=CHB_PM_C2_MASK;
+    //PM
+    HA_PM_A1 = CHB_PM_A1_MASK;
+    HA_PM_A2 = CHB_PM_A2_MASK;
+    HA_PM_B1 = CHB_PM_B1_MASK;
+    HA_PM_B2 = CHB_PM_B2_MASK;
+    HA_PM_C1 = CHB_PM_C1_MASK;
+    HA_PM_C2 = CHB_PM_C2_MASK;
 
-    FPGA_Interface[Com_A1_PluginUnit_5-2].PM=HA_PM_A1;
-    FPGA_Interface[Com_A2_PluginUnit_6-2].PM=HA_PM_A2;
-    FPGA_Interface[Com_B1_PluginUnit_9-2].PM=HA_PM_B1;
-    FPGA_Interface[Com_B2_PluginUnit_10-2].PM=HA_PM_B2;
-    FPGA_Interface[Com_C1_PluginUnit_13-2].PM=HA_PM_C1;
-    FPGA_Interface[Com_C2_PluginUnit_14-2].PM=HA_PM_C2;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].PM = HA_PM_A1;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].PM = HA_PM_A2;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].PM = HA_PM_B1;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].PM = HA_PM_B2;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].PM = HA_PM_C1;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].PM = HA_PM_C2;
 
     /*
      * Convert PM bit maps into total chain-link module counts.
@@ -103,89 +102,88 @@ void FpgaInit_ConfigureModuleLayout(void)
      * PM changes keep NUM and ReferenceDEF consistent.
      */
     //module number
-    NHA_module_A=0;
-    NHA_module_B=0;
-    NHA_module_C=0;
+    NHA_module_A = 0;
+    NHA_module_B = 0;
+    NHA_module_C = 0;
 
-    for(i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
     {
-        InitialTemp=HA_PM_A1;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_A1;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_A++;
         }
-        InitialTemp=HA_PM_A2;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_A2;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_A++;
         }
     }
 
-    for(i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
     {
-        InitialTemp=HA_PM_B1;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_B1;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_B++;
         }
-        InitialTemp=HA_PM_B2;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_B2;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_B++;
         }
     }
 
-    for(i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
     {
-        InitialTemp=HA_PM_C1;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_C1;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_C++;
         }
-        InitialTemp=HA_PM_C2;
-        if(InitialTemp&(0x0001<<i))
+        InitialTemp = HA_PM_C2;
+        if (InitialTemp & (0x0001 << i))
         {
             NHA_module_C++;
         }
     }
-    FPGA_Interface[Com_A1_PluginUnit_5-2].NUM=NHA_module_A;
-    FPGA_Interface[Com_A2_PluginUnit_6-2].NUM=NHA_module_A;
-    FPGA_Interface[Com_B1_PluginUnit_9-2].NUM=NHA_module_B;
-    FPGA_Interface[Com_B2_PluginUnit_10-2].NUM=NHA_module_B;
-    FPGA_Interface[Com_C1_PluginUnit_13-2].NUM=NHA_module_C;
-    FPGA_Interface[Com_C2_PluginUnit_14-2].NUM=NHA_module_C;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].NUM = NHA_module_A;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].NUM = NHA_module_A;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].NUM = NHA_module_B;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].NUM = NHA_module_B;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].NUM = NHA_module_C;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].NUM = NHA_module_C;
 
     /*
      * ReferenceDEF is a one-module reference scale. Multiplying by NUM
      * gives the phase-level neutral/mid reference used before writing
      * Reference to both communication cards of the same phase.
      */
-    InitialTemp=NHA_module_A;
-    HA_ReferenceDEF_A=(float)InitialTemp;
-    InitialTempFloat=ReferenceDEF;
-    HA_ReferenceDEF_A=HA_ReferenceDEF_A*InitialTempFloat;
+    InitialTemp = NHA_module_A;
+    HA_ReferenceDEF_A = (float)InitialTemp;
+    InitialTempFloat = ReferenceDEF;
+    HA_ReferenceDEF_A = HA_ReferenceDEF_A * InitialTempFloat;
 
-    InitialTemp=NHA_module_B;
-    HA_ReferenceDEF_B=(float)InitialTemp;
-    InitialTempFloat=ReferenceDEF;
-    HA_ReferenceDEF_B=HA_ReferenceDEF_B*InitialTempFloat;
+    InitialTemp = NHA_module_B;
+    HA_ReferenceDEF_B = (float)InitialTemp;
+    InitialTempFloat = ReferenceDEF;
+    HA_ReferenceDEF_B = HA_ReferenceDEF_B * InitialTempFloat;
 
-    InitialTemp=NHA_module_C;
-    HA_ReferenceDEF_C=(float)InitialTemp;
-    InitialTempFloat=ReferenceDEF;
-    HA_ReferenceDEF_C=HA_ReferenceDEF_C*InitialTempFloat;
+    InitialTemp = NHA_module_C;
+    HA_ReferenceDEF_C = (float)InitialTemp;
+    InitialTempFloat = ReferenceDEF;
+    HA_ReferenceDEF_C = HA_ReferenceDEF_C * InitialTempFloat;
 
     //regulate
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[0]=HA_PM_A1;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[1]=HA_PM_A2;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V0_SET=HA_PM_B1;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET=HA_PM_B2;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET=PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET*10;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET=HA_PM_C1;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET=PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET*10;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET=HA_PM_C2;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET=PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET*10;
-
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[0] = HA_PM_A1;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[1] = HA_PM_A2;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V0_SET = HA_PM_B1;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET = HA_PM_B2;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_F0_SET * 10;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET = HA_PM_C1;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KF_SET * 10;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET = HA_PM_C2;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_KV_SET * 10;
 }
 
 /*==================================================================
@@ -198,34 +196,33 @@ void FpgaInit_ConfigureModuleLayout(void)
 void FpgaInit_InitTimingDuty(void)
 {
     //TAD
-    FPGA_Interface[Com_A1_PluginUnit_5-2].TAD=ControlTAD;
-    FPGA_Interface[Com_A2_PluginUnit_6-2].TAD=ControlTAD;
-    FPGA_Interface[Com_B1_PluginUnit_9-2].TAD=ControlTAD;
-    FPGA_Interface[Com_B2_PluginUnit_10-2].TAD=ControlTAD;
-    FPGA_Interface[Com_C1_PluginUnit_13-2].TAD=ControlTAD;
-    FPGA_Interface[Com_C2_PluginUnit_14-2].TAD=ControlTAD;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].TAD = ControlTAD;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].TAD = ControlTAD;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].TAD = ControlTAD;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].TAD = ControlTAD;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].TAD = ControlTAD;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].TAD = ControlTAD;
 
+    //  HA_DAB_T=5000;
+    //  FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_T=HA_DAB_T;
+    //  FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_T=HA_DAB_T;
+    //  FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_T=HA_DAB_T;
+    //  FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_T=HA_DAB_T;
+    //  FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_T=HA_DAB_T;
+    //  FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_T=HA_DAB_T;
+    //
+    //
+    //  HA_DABDuty_A=2500;
+    //  HA_DABDuty_B=2500;
+    //  HA_DABDuty_C=2500;
+    //  FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_Duty=HA_DABDuty_A;
+    //  FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_Duty=HA_DABDuty_A;
+    //  FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_Duty=HA_DABDuty_B;
+    //  FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_Duty=HA_DABDuty_B;
+    //  FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_Duty=HA_DABDuty_C;
+    //  FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_Duty=HA_DABDuty_C;
 
-//  HA_DAB_T=5000;
-//  FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_T=HA_DAB_T;
-//  FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_T=HA_DAB_T;
-//  FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_T=HA_DAB_T;
-//  FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_T=HA_DAB_T;
-//  FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_T=HA_DAB_T;
-//  FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_T=HA_DAB_T;
-//
-//
-//  HA_DABDuty_A=2500;
-//  HA_DABDuty_B=2500;
-//  HA_DABDuty_C=2500;
-//  FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_Duty=HA_DABDuty_A;
-//  FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_Duty=HA_DABDuty_A;
-//  FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_Duty=HA_DABDuty_B;
-//  FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_Duty=HA_DABDuty_B;
-//  FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_Duty=HA_DABDuty_C;
-//  FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_Duty=HA_DABDuty_C;
-
-/*
+    /*
         FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_LEFTDuty=2500;
         FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_LEFTDuty=2500;
         FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_RIGHTDuty=2500;
@@ -248,29 +245,26 @@ void FpgaInit_InitTimingDuty(void)
         FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_Start=1250;
         FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_Start=1250;
 */
-        FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_A1_PluginUnit_5-2].DAB_Start=1250;
-        FPGA_Interface[Com_A2_PluginUnit_6-2].DAB_Start=1250;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].DAB_Start = 1250;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].DAB_Start = 1250;
 
-        FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_B1_PluginUnit_9-2].DAB_Start=1250;
-        FPGA_Interface[Com_B2_PluginUnit_10-2].DAB_Start=1250;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].DAB_Start = 1250;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].DAB_Start = 1250;
 
-
-        FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_LEFTDuty=350;
-        FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_RIGHTDuty=350;
-        FPGA_Interface[Com_C1_PluginUnit_13-2].DAB_Start=1250;
-        FPGA_Interface[Com_C2_PluginUnit_14-2].DAB_Start=1250;
-
-
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].DAB_LEFTDuty = 350;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].DAB_RIGHTDuty = 350;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].DAB_Start = 1250;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].DAB_Start = 1250;
 }
 
 /*==================================================================
@@ -283,7 +277,7 @@ void FpgaInit_InitTimingDuty(void)
 void FpgaInit_InitOutputControls(void)
 {
     //module control
-    Module_PM_CTL.PM_CTL16=0x0F00;
+    Module_PM_CTL.PM_CTL16 = 0x0F00;
     /*
     HW_RST   = 1   清除模块控制板故障锁存
     FAN_OFF  = 1   关闭模块风扇
@@ -291,17 +285,15 @@ void FpgaInit_InitOutputControls(void)
     DAB_SHUT = 1   闭锁 DAB H 桥
     */
     Module_Control_Write();
-    Module_HW_RST(0);//避免一直保持清锁存命令
+    Module_HW_RST(0); //避免一直保持清锁存命令
 
     //IO OUTPUT
-    Port_DOUT.SwitchINOUT16=0;
+    Port_DOUT.SwitchINOUT16 = 0;
     Port_IO_Out();
 
     //DSP Control
     Port_DSPControl_FBRST(0);
     Port_DSPControl_AllShutdown(1);
-
-
 }
 
 /*==================================================================
@@ -314,21 +306,21 @@ void FpgaInit_InitOutputControls(void)
 void FpgaInit_InitRecorderFanStatus(void)
 {
     uchar i; /* i：本分域初始化的循环索引，每个循环均从0开始。 */
-    for(i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
     {
-        FPGA_Interface[Com_A1_PluginUnit_5-2].HD_S_PH[i]=0;
+        FPGA_Interface[Com_A1_PluginUnit_5 - 2].HD_S_PH[i] = 0;
     }
 
-    for(i=0;i<8;i++)
+    for (i = 0; i < 8; i++)
     {
-        FPGA_Interface[Com_A2_PluginUnit_6-2].HD_S_PH[i]=0;
+        FPGA_Interface[Com_A2_PluginUnit_6 - 2].HD_S_PH[i] = 0;
     }
 
-//  Port_RealStatus.Bbits.S_Mode=2;   //手动
+    //  Port_RealStatus.Bbits.S_Mode=2;   //手动
 
     Module_FAN_OFF(0);
 
-    Port_OnState=0x000B;
+    Port_OnState = 0x000B;
     /*
     bit0 = 0x0001  LVAC
     bit1 = 0x0002  LVDC
@@ -338,4 +330,3 @@ void FpgaInit_InitRecorderFanStatus(void)
 }
 
 #endif /* HVAC_online */
-

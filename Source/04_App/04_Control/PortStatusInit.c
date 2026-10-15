@@ -20,31 +20,31 @@
  *================================================================*/
 void PortStatusInit_DefaultState(void)
 {
-    WriteBlock_Index=WriteBlock_PluginUnit_2;
+    WriteBlock_Index = WriteBlock_PluginUnit_2;
 
-    Port_MainStatus.MainStatus16=0x003f;
-    Port_MainStatus.Bbits.P_M_Mode=0x03;
-    Port_MainStatus.Bbits.P_S1_Mode=0x00;
-    Port_MainStatus.Bbits.P_S2_Mode=0x00;
+    Port_MainStatus.MainStatus16 = 0x003f;
+    Port_MainStatus.Bbits.P_M_Mode = 0x03;
+    Port_MainStatus.Bbits.P_S1_Mode = 0x00;
+    Port_MainStatus.Bbits.P_S2_Mode = 0x00;
 
-    Port_Main_WorkMode=3;
-    Port_STATCOM_WorkMode=0;
-    Port_APF_WorkMode=0;
-    Port_Outer_Elec=0;
-    Port_Sys_Stop=0;
-    Port_State=PortStatusNum_Nonvaild;
-    Port_RunStatus=PortStatusNum_Nonvaild;
-    ControlFLAG.ControlFLAG16=0;
+    Port_Main_WorkMode = 3;
+    Port_STATCOM_WorkMode = 0;
+    Port_APF_WorkMode = 0;
+    Port_Outer_Elec = 0;
+    Port_Sys_Stop = 0;
+    Port_State = PortStatusNum_Nonvaild;
+    Port_RunStatus = PortStatusNum_Nonvaild;
+    ControlFLAG.ControlFLAG16 = 0;
 
-    SW.SwitchFLAG16=0x0040;  //EXT_CB_ON_EN=1
-    SW.Bbits.S_EXT_CB_ON_EN=1;
+    SW.SwitchFLAG16 = 0x0040; //EXT_CB_ON_EN=1
+    SW.Bbits.S_EXT_CB_ON_EN = 1;
 
-    PortRunFLAG.PortRunFLAG16=0x007c; //all port don't need shutdown
-    Port_RealStatus.Bbits.S_Mode=0;  //Auto Run
+    PortRunFLAG.PortRunFLAG16 = 0x007c; //all port don't need shutdown
+    Port_RealStatus.Bbits.S_Mode = 0; //Auto Run
 
-    Port_RealFault.PORT_FAULT16=0;
-    FaultTypeFLAG.FaultTypeFLAG16=0;
-    FaultDisposeFLAG.FaultDisposeFLAG16=0;
+    Port_RealFault.PORT_FAULT16 = 0;
+    FaultTypeFLAG.FaultTypeFLAG16 = 0;
+    FaultDisposeFLAG.FaultDisposeFLAG16 = 0;
 
 #ifdef EEPROM_FirstW
     DSP_2_EEPROM_Page0();
@@ -55,8 +55,6 @@ void PortStatusInit_DefaultState(void)
 #endif
 
     Port_StateUpdate_Write();
-
-
 }
 
 #endif /* HVAC_online */

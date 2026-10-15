@@ -27,33 +27,32 @@
  *================================================================*/
 void DAC_Output(void)
 {
-	unsigned char i; /* i：本次数组、参数或模块遍历的索引。 */
-	float tempDAC; /* tempDAC：单通道 DA 输出缩放、限幅后的计数缓存。 */
-	
-	for(i=0;i<4;i++)
-	{
-		if(DAC_BUF[i]>5.0)
-		{
-			DAC_BUF[i]=5.0;
-		}
+    unsigned char i; /* i：本次数组、参数或模块遍历的索引。 */
+    float tempDAC; /* tempDAC：单通道 DA 输出缩放、限幅后的计数缓存。 */
 
-		if(DAC_BUF[i]<0)
-		{
-			DAC_BUF[i]=0;
-		}
-		
-		tempDAC=DAC_BUF[i]*4095.0/5.0;
-		
-		DAC_BUF[i]=tempDAC;
-	}
-	
-//tempInt=-SIN_Vin;
-//tempInt=tempInt*10.0+10.0;
-//DAC_BUF[3]=tempInt/2.0;
-	
-	FPGA_Interface[MainControl_PluginUnit_4-2].DA_DATA0=(unsigned short)DAC_BUF[0];
-	FPGA_Interface[MainControl_PluginUnit_4-2].DA_DATA1=(unsigned short)DAC_BUF[1];
-	FPGA_Interface[MainControl_PluginUnit_4-2].DA_DATA2=(unsigned short)DAC_BUF[2];
-	FPGA_Interface[MainControl_PluginUnit_4-2].DA_DATA3=(unsigned short)DAC_BUF[3];
+    for (i = 0; i < 4; i++)
+    {
+        if (DAC_BUF[i] > 5.0)
+        {
+            DAC_BUF[i] = 5.0;
+        }
+
+        if (DAC_BUF[i] < 0)
+        {
+            DAC_BUF[i] = 0;
+        }
+
+        tempDAC = DAC_BUF[i] * 4095.0 / 5.0;
+
+        DAC_BUF[i] = tempDAC;
+    }
+
+    //tempInt=-SIN_Vin;
+    //tempInt=tempInt*10.0+10.0;
+    //DAC_BUF[3]=tempInt/2.0;
+
+    FPGA_Interface[MainControl_PluginUnit_4 - 2].DA_DATA0 = (unsigned short)DAC_BUF[0];
+    FPGA_Interface[MainControl_PluginUnit_4 - 2].DA_DATA1 = (unsigned short)DAC_BUF[1];
+    FPGA_Interface[MainControl_PluginUnit_4 - 2].DA_DATA2 = (unsigned short)DAC_BUF[2];
+    FPGA_Interface[MainControl_PluginUnit_4 - 2].DA_DATA3 = (unsigned short)DAC_BUF[3];
 }
-

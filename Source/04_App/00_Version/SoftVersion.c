@@ -1,11 +1,13 @@
 // 文件职责：实现统一电子标签匹配及六段软件版本读取，不拥有UART或控制状态。
 #include "SoftVersion.h"
 
-const SST_SOFT_VERSION g_sst_soft_version =
-{
-    SST_PRODUCT_SERIES, SST_PRODUCT_PART, SST_HARDWARE_PLATFORM,
-    SST_VERSION_BRANCH, SST_VERSION_RELEASE, SST_VERSION_BETA
-}; /* g_sst_soft_version：编译期确定的唯一产品/版本数据，前四字段同时用于握手。 */
+const SST_SOFT_VERSION g_sst_soft_version = {
+    SST_PRODUCT_SERIES,
+    SST_PRODUCT_PART,
+    SST_HARDWARE_PLATFORM,
+    SST_VERSION_BRANCH,
+    SST_VERSION_RELEASE,
+    SST_VERSION_BETA}; /* g_sst_soft_version：编译期确定的唯一产品/版本数据，前四字段同时用于握手。 */
 
 /*==================================================================
  * 函数功能: 比较上位机四字节电子标签，保留全FF通用连接规则
@@ -16,13 +18,13 @@ const SST_SOFT_VERSION g_sst_soft_version =
  *================================================================*/
 uint16_t SstVersion_MatchElectronicTag(const uint16_t *tag)
 {
-    if(!tag) return 0U;
-    if((tag[0] == 255U) && (tag[1] == 255U) &&
-       (tag[2] == 255U) && (tag[3] == 255U)) return 1U;
-    return (uint16_t)((tag[0] == g_sst_soft_version.product_series) &&
-        (tag[1] == g_sst_soft_version.product_part) &&
-        (tag[2] == g_sst_soft_version.hardware_platform) &&
-        (tag[3] == g_sst_soft_version.branch_version));
+    if (!tag)
+        return 0U;
+    if ((tag[0] == 255U) && (tag[1] == 255U) && (tag[2] == 255U) && (tag[3] == 255U))
+        return 1U;
+    return (uint16_t)((tag[0] == g_sst_soft_version.product_series) && (tag[1] == g_sst_soft_version.product_part) &&
+                      (tag[2] == g_sst_soft_version.hardware_platform) &&
+                      (tag[3] == g_sst_soft_version.branch_version));
 }
 
 /*==================================================================
@@ -34,7 +36,8 @@ uint16_t SstVersion_MatchElectronicTag(const uint16_t *tag)
  *================================================================*/
 void SstVersion_CopyBytes(uint16_t *bytes)
 {
-    if(!bytes) return;
+    if (!bytes)
+        return;
     bytes[0] = g_sst_soft_version.product_series;
     bytes[1] = g_sst_soft_version.product_part;
     bytes[2] = g_sst_soft_version.hardware_platform;

@@ -1539,10 +1539,10 @@
       "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
       "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
       "baseline_sha256s": [
-        "1f7c8cec76688932ce61579d84a5a2b49a7aa505eb150126f319f55d64331595"
+        "108d87fe787330d9b5d9f13c9ab0f558bac561cf8f7f55bed532212be047e17d"
       ],
       "current_sha256s": [
-        "7a4fc2b92ad9190c76d6055799f5a010ea2d7db212d671cf06f2f83cb5c038d6"
+        "842b1d2df7f3c65faf8596a19171ac4ab21249885784141fe892678084eea4e4"
       ]
     },
     {

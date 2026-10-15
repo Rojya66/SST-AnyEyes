@@ -7,8 +7,8 @@
 
 /* SST_BENCH_TWO_PI：电网相角归一化及频率积分常数2pi。 */
 #define SST_BENCH_TWO_PI 6.28318530717958647692F
-volatile SST_BENCH_INPUTS g_sst_bench_inputs =
-    {300.0F, 300.0F, 300.0F, 325.0F, 50.0F, 0.0F}; /* g_sst_bench_inputs：无预充达标的默认测试输入，需CCS人工升压。 */
+volatile SST_BENCH_INPUTS g_sst_bench_inputs = {
+    300.0F, 300.0F, 300.0F, 325.0F, 50.0F, 0.0F}; /* g_sst_bench_inputs：无预充达标的默认测试输入，需CCS人工升压。 */
 volatile SST_BENCH_STATUS g_sst_bench_status; /* g_sst_bench_status：本拍注入观察量，不用作控制反馈。 */
 static float s_grid_angle_rad; /* s_grid_angle_rad：下一TAD输入相角，独立于控制PLL输出。 */
 
@@ -65,18 +65,18 @@ void SstBenchInputs_FastStep(void)
     float frequency = g_sst_bench_inputs.grid_frequency_hz; /* frequency：本拍独立电网频率快照。 */
     float peak_a = g_sst_bench_inputs.current_peak_a; /* peak_a：本拍虚拟相电流峰值快照。 */
     float period = g_chb_dab_params.sample_period_s; /* period：每TAD积分周期，测试保持0.0001s。 */
-    float phase_a, phase_b; /* phase_a：本拍A相单位幅值余弦。 */
-    /* phase_b：本拍B相单位幅值余弦，滞后A相120度。 */
+    float phase_a, /* phase_a：本拍A相单位幅值余弦。 */
+        phase_b; /* phase_b：本拍B相单位幅值余弦，滞后A相120度。 */
     uint16_t valid; /* valid：所有测试参数有限且在规定范围内的整体结果。 */
 
-    valid = (uint16_t)(BenchRangeValid(dc_a, 0.0F, 10000.0F) &&
-        BenchRangeValid(dc_b, 0.0F, 10000.0F) && BenchRangeValid(dc_c, 0.0F, 10000.0F) &&
-        BenchRangeValid(peak_v, 0.0F, 20000.0F) && BenchRangeValid(frequency, 0.0F, 100.0F) &&
-        BenchRangeValid(peak_a, 0.0F, 10000.0F) && BenchRangeValid(period, 0.000001F, 0.01F));
+    valid = (uint16_t)(BenchRangeValid(dc_a, 0.0F, 10000.0F) && BenchRangeValid(dc_b, 0.0F, 10000.0F) &&
+                       BenchRangeValid(dc_c, 0.0F, 10000.0F) && BenchRangeValid(peak_v, 0.0F, 20000.0F) &&
+                       BenchRangeValid(frequency, 0.0F, 100.0F) && BenchRangeValid(peak_a, 0.0F, 10000.0F) &&
+                       BenchRangeValid(period, 0.000001F, 0.01F));
     g_sst_bench_status.invalid_input = (uint16_t)!valid;
     ++g_sst_bench_status.tad_count;
     g_sst_bench_status.angle_rad = s_grid_angle_rad;
-    if(valid)
+    if (valid)
     {
         phase_a = cosf(s_grid_angle_rad);
         phase_b = cosf(s_grid_angle_rad - SST_BENCH_TWO_PI / 3.0F);
@@ -102,10 +102,11 @@ void SstBenchInputs_FastStep(void)
     SVG_Udc_B_Ave = dc_b;
     SVG_Udc_C_Ave = dc_c;
     SVG_Udc_Ave = (dc_a + dc_b + dc_c) / 3.0F;
-    if(valid)
+    if (valid)
     {
         s_grid_angle_rad += SST_BENCH_TWO_PI * frequency * period;
-        if(s_grid_angle_rad >= SST_BENCH_TWO_PI) s_grid_angle_rad -= SST_BENCH_TWO_PI;
+        if (s_grid_angle_rad >= SST_BENCH_TWO_PI)
+            s_grid_angle_rad -= SST_BENCH_TWO_PI;
     }
 #endif
 }

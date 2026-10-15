@@ -44,193 +44,189 @@
  *================================================================*/
 void Timer2Isr(void)
 {
-//  float tempInt;
-//  unsigned char i;
+    //  float tempInt;
+    //  unsigned char i;
 
-  TimerIntDisable(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
+    TimerIntDisable(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
 
-  IntEventClear(SYS_INT_T64P2_TINTALL);
-// TimerIntStatusClear(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
-  TimerIntStatusClear(SOC_TMR_2_REGS, TMR_INTSTAT12_TIMER_NON_CAPT);
+    IntEventClear(SYS_INT_T64P2_TINTALL);
+    // TimerIntStatusClear(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
+    TimerIntStatusClear(SOC_TMR_2_REGS, TMR_INTSTAT12_TIMER_NON_CAPT);
 
-  TimerIntEnable(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
+    TimerIntEnable(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
 
-  ChbDabControl_Tick10ms();                    // 10 ms节拍，推进状态机和超时计数
+    ChbDabControl_Tick10ms(); // 10 ms节拍，推进状态机和超时计数
 
-  if(Flag_Clear_0==1)
-  {
-    Flag_Clear_0=0;
-    Flag_Clear_1=1;
-  }
-  else
-  {
-    if(Flag_Clear_1==1)
+    if (Flag_Clear_0 == 1)
     {
-      Flag_Clear_1=0;
-        FaultLatch_Clear(1,Flag_Clear_zhi);
+        Flag_Clear_0 = 0;
+        Flag_Clear_1 = 1;
     }
-  }
+    else
+    {
+        if (Flag_Clear_1 == 1)
+        {
+            Flag_Clear_1 = 0;
+            FaultLatch_Clear(1, Flag_Clear_zhi);
+        }
+    }
 
     cout_Wait--;
-    if(cout_Wait==0)
+    if (cout_Wait == 0)
     {
-        Flag_Wait=1;
+        Flag_Wait = 1;
     }
 
-    if(Flag_StopWait)
+    if (Flag_StopWait)
     {
         coutStopWait--;
-        if(coutStopWait==0)
+        if (coutStopWait == 0)
         {
-            Flag_StopWait=0;
-            Flag_StopWaitEnd=1;
+            Flag_StopWait = 0;
+            Flag_StopWaitEnd = 1;
         }
     }
 
     cout1s++;
-  if(cout1s==100)
-  {
-    cout1s=0;
-    Flag_1s=1;
-  }
+    if (cout1s == 100)
+    {
+        cout1s = 0;
+        Flag_1s = 1;
+    }
 
     cout20s++;
-  if(cout20s==2000)
-  {
-    cout20s=0;
-    Flag_20s=1;
-  }
+    if (cout20s == 2000)
+    {
+        cout20s = 0;
+        Flag_20s = 1;
+    }
 
-    if(Flag_50ms)
+    if (Flag_50ms)
     {
         cout50ms++;
-        if(cout50ms==5)
+        if (cout50ms == 5)
         {
-            cout50ms=0;
-            Flag_50ms=0;
+            cout50ms = 0;
+            Flag_50ms = 0;
         }
     }
 
     cout100ms++;
-    if(cout100ms==10)
+    if (cout100ms == 10)
     {
-        cout100ms=0;
-        Flag_100ms=1;
+        cout100ms = 0;
+        Flag_100ms = 1;
     }
-
 
     coutRemoteMeasure++;
-    if(coutRemoteMeasure==3)
+    if (coutRemoteMeasure == 3)
     {
-        coutRemoteMeasure=0;
-        Flag_RemoteMeasure=1;
+        coutRemoteMeasure = 0;
+        Flag_RemoteMeasure = 1;
     }
 
-
-    if(Flag_Switch500ms)
+    if (Flag_Switch500ms)
     {
         coutSwitch500ms--;
-        if(coutSwitch500ms==0)
+        if (coutSwitch500ms == 0)
         {
-            Flag_Switch500ms=0;
+            Flag_Switch500ms = 0;
         }
     }
 
-    if(Flag_Switch1s)
+    if (Flag_Switch1s)
     {
         coutSwitch1s--;
-        if(coutSwitch1s==0)
+        if (coutSwitch1s == 0)
         {
-            Flag_Switch1s=0;
+            Flag_Switch1s = 0;
         }
     }
 
-    if(Flag_Precharge500ms)
+    if (Flag_Precharge500ms)
     {
         coutPrecharge500ms++;
-        if(coutPrecharge500ms==1000)
+        if (coutPrecharge500ms == 1000)
         {
-            coutPrecharge500ms=0;
-            Flag_Precharge500ms=0;
+            coutPrecharge500ms = 0;
+            Flag_Precharge500ms = 0;
         }
     }
 
-    if(Flag_PreStart3s)
+    if (Flag_PreStart3s)
     {
         coutPreStart3s++;
-        if(coutPreStart3s==300)
+        if (coutPreStart3s == 300)
         {
-            coutPreStart3s=0;
-            Flag_PreStart3s=0;
+            coutPreStart3s = 0;
+            Flag_PreStart3s = 0;
         }
     }
 
-
-    if(Flag_SVG1s)
+    if (Flag_SVG1s)
     {
         coutSVG1s++;
-        if(coutSVG1s==500)
+        if (coutSVG1s == 500)
         {
-            coutSVG1s=0;
-            Flag_SVG1s=0;
+            coutSVG1s = 0;
+            Flag_SVG1s = 0;
         }
     }
 
-
     countWaitPowerStart10s++;
-    if(countWaitPowerStart10s==1000)
+    if (countWaitPowerStart10s == 1000)
     {
-        countWaitPowerStart10s=0;
-        Flag_WaitPowerStart10s=1;
+        countWaitPowerStart10s = 0;
+        Flag_WaitPowerStart10s = 1;
     }
 
 #ifdef HVAC_online
-    if(Flag_V_L)
+    if (Flag_V_L)
     {
         Cout_V_L++;
-        if(Cout_V_L>LV_Time_1)
+        if (Cout_V_L > LV_Time_1)
         {
-            Flag_V_L1_END=1;
+            Flag_V_L1_END = 1;
         }
 
-        if(Cout_V_L>LV_Time_2)
+        if (Cout_V_L > LV_Time_2)
         {
-            Flag_V_L2_MID=1;
+            Flag_V_L2_MID = 1;
         }
 
-        if(Cout_V_L>LV_Time_1)
+        if (Cout_V_L > LV_Time_1)
         {
-            Flag_V_L2_END=1;
-            Flag_V_L=0;
-            Cout_V_L=0;
+            Flag_V_L2_END = 1;
+            Flag_V_L = 0;
+            Cout_V_L = 0;
         }
     }
 
-    if(ISO_counter_on<500)
+    if (ISO_counter_on < 500)
     {
         ISO_counter_on++;
     }
 
-    if(ISO_counter_off<500)
+    if (ISO_counter_off < 500)
     {
         ISO_counter_off++;
     }
 #endif
 
-// 原HVAC软件保护计时：以下计数在Timer2中断内按10 ms递增，非TAD样本计数。
+    // 原HVAC软件保护计时：以下计数在Timer2中断内按10 ms递增，非TAD样本计数。
 
 #ifdef HVAC_online
-    if (counter_OC_flag==1)
+    if (counter_OC_flag == 1)
     {
-       counter_OC_time++;
+        counter_OC_time++;
     }
-    if (counter_OC_flag1==1)
+    if (counter_OC_flag1 == 1)
     {
-       counter_OC_time1++;
+        counter_OC_time1++;
     }
-    if (counter_OV_flag==1)
+    if (counter_OV_flag == 1)
     {
-       counter_OV_time++;
+        counter_OV_time++;
     }
 #endif
 }
@@ -249,93 +245,93 @@ void Timer2Isr(void)
  *================================================================*/
 void FPGAIsr(void)
 {
-//  float datemp;
-      GPIOBankIntDisable(SOC_GPIO_0_REGS, 4);
+    //  float datemp;
+    GPIOBankIntDisable(SOC_GPIO_0_REGS, 4);
     IntEventClear(SYS_INT_GPIO_B4INT);
 
-    if(GPIOPinIntStatus(SOC_GPIO_0_REGS, 69) == GPIO_INT_PEND)     // TAD中断：每个采样周期执行一次快速控制
+    if (GPIOPinIntStatus(SOC_GPIO_0_REGS, 69) == GPIO_INT_PEND) // TAD中断：每个采样周期执行一次快速控制
     {
-            GPIOPinIntClear(SOC_GPIO_0_REGS, 69);
-            GPIOPinWrite(SOC_GPIO_0_REGS, 43, 1);
-            GPIOPinWrite(SOC_GPIO_0_REGS, 45, 1);
+        GPIOPinIntClear(SOC_GPIO_0_REGS, 69);
+        GPIOPinWrite(SOC_GPIO_0_REGS, 43, 1);
+        GPIOPinWrite(SOC_GPIO_0_REGS, 45, 1);
 
 #ifdef HVAC_online
-            Port_StateUpdate_Read();               // 读取接触器、故障和端口状态
+        Port_StateUpdate_Read(); // 读取接触器、故障和端口状态
 
-            Port_AD_Sample(0);                     // 采样交流电压、电流及直流电压
-            HVAC_RealTimeParameter();              // 累积200点RMS窗口并更新功率；有效值由后台开方发布
-            SVG_Udc_Average();                     // 计算三相单元直流平均值
-            ChbDabControl_FastStep();              // PLL、开/闭环调制、DAB占空比爬坡
-            /*
+        Port_AD_Sample(0); // 采样交流电压、电流及直流电压
+        HVAC_RealTimeParameter(); // 累积200点RMS窗口并更新功率；有效值由后台开方发布
+        SVG_Udc_Average(); // 计算三相单元直流平均值
+        ChbDabControl_FastStep(); // PLL、开/闭环调制、DAB占空比爬坡
+        /*
              * Udc_check()/OC_OV_LV_faultcheck() 是原 HVAC 闭环保护链路。
              * 开环调试时外部母线和采样值可能不存在，不能用它们决定是否
              * 允许发波；否则 DAB 第一拍后会被误判为欠压/越限而封锁。
              * UNIT/FPGA 硬件 FO/FB 故障仍在下面的独立故障中断中处理。
              */
-            if(g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
-            {
-                Udc_check();
-            }
+        if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
+        {
+            Udc_check();
+        }
 
-            if((FaultTypeFLAG.Bbits.Module_Fault)&&(ModuleFault_DisposeTimes))     // 模块故障立即封波
+        if ((FaultTypeFLAG.Bbits.Module_Fault) && (ModuleFault_DisposeTimes)) // 模块故障立即封波
+        {
+            FaultDispose();
+            ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+        }
+
+        // Source-project software OC/OV can be disabled for low-power debugging.
+        // FPGA/module hardware fault paths remain active outside this switch.
+        /* 软件保护可由仿真器关闭，硬件故障路径不受该变量影响。 */
+        if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
+        {
+            if ((g_chb_dab_protection_enable != 0U) && ((HVAC_OC_Fault == 1) || (HVAC_OV_Fault == 1)) &&
+                (OC_OV_LV_PortLatch_TAD != 1))
             {
-                FaultDispose();
+                OC_OV_LV_FaultDispose();
                 ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
             }
-
-            // Source-project software OC/OV can be disabled for low-power debugging.
-            // FPGA/module hardware fault paths remain active outside this switch.
-            /* 软件保护可由仿真器关闭，硬件故障路径不受该变量影响。 */
-            if(g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
+            else if (g_chb_dab_protection_enable != 0U)
             {
-                if((g_chb_dab_protection_enable != 0U) &&
-                   ((HVAC_OC_Fault == 1)||(HVAC_OV_Fault == 1)) &&
-                   (OC_OV_LV_PortLatch_TAD != 1))
-                {
-                    OC_OV_LV_FaultDispose();
-                    ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-                }
-                else if(g_chb_dab_protection_enable != 0U)
-                {
-                    OC_OV_LV_faultcheck();
-                }
+                OC_OV_LV_faultcheck();
             }
+        }
 
-            //if(SVG_Udc_Ave > OV_allport_shutdown)
-            //{
-            //  FaultDisposeFLAG.Bbits.Port_StopAll=1;
-            //  PortRunFLAG.Bbits.Stop_AllPort=1;
-            //  Port_StateUpdate_Write();
-            //}
+        //if(SVG_Udc_Ave > OV_allport_shutdown)
+        //{
+        //  FaultDisposeFLAG.Bbits.Port_StopAll=1;
+        //  PortRunFLAG.Bbits.Stop_AllPort=1;
+        //  Port_StateUpdate_Write();
+        //}
 
-            //edited by shiqi, end
+        //edited by shiqi, end
 
-            if(((PortRunFLAG.Bbits.PWMState_50Hz==1)&&(PortRunFLAG.Bbits.PWMState_Dab==1))&&(PortRunFLAG.Bbits.Stop_AllPort))  //系统停机成功
-            {
-                PortController_Communication(1);
-                Port_AllStopFlag_RST();
-            }
+        if (((PortRunFLAG.Bbits.PWMState_50Hz == 1) && (PortRunFLAG.Bbits.PWMState_Dab == 1)) &&
+            (PortRunFLAG.Bbits.Stop_AllPort)) //系统停机成功
+        {
+            PortController_Communication(1);
+            Port_AllStopFlag_RST();
+        }
 
-            Port_StateUpdate_Write();                // 写FPGA主控HVAC_STATUS及兼容状态，保持TAD内调用
+        Port_StateUpdate_Write(); // 写FPGA主控HVAC_STATUS及兼容状态，保持TAD内调用
 
-            //edited by shiqi
-            if(Port_RealFault.Bbits.PORT_FAULT_bit15)
-            {
-                ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-            }
-            //edited end
+        //edited by shiqi
+        if (Port_RealFault.Bbits.PORT_FAULT_bit15)
+        {
+            ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+        }
+        //edited end
 
-            //edited by shiqi, start, fault recorder
-            if (dataPackNum < 2)
-            {
-                dataPackNum++;
-            }
-            else
-            {
-                dataPackNum = 1;
-            }
-            FT3_PluginUint_Write(2,dataPackNum);
-            FT3_PluginUint_Read(2);
+        //edited by shiqi, start, fault recorder
+        if (dataPackNum < 2)
+        {
+            dataPackNum++;
+        }
+        else
+        {
+            dataPackNum = 1;
+        }
+        FT3_PluginUint_Write(2, dataPackNum);
+        FT3_PluginUint_Read(2);
 
 #ifdef COM_TEST_PluginUnit
 /*
@@ -536,17 +532,13 @@ void FPGAIsr(void)
 
 #endif
 
+        DAC_Output();
 
-
-
-
-            DAC_Output();
-
-            GPIOPinWrite(SOC_GPIO_0_REGS, 43, 0);
-            GPIOPinWrite(SOC_GPIO_0_REGS, 45, 0);
+        GPIOPinWrite(SOC_GPIO_0_REGS, 43, 0);
+        GPIOPinWrite(SOC_GPIO_0_REGS, 45, 0);
     }
 
-  GPIOBankIntEnable(SOC_GPIO_0_REGS, 4);
+    GPIOBankIntEnable(SOC_GPIO_0_REGS, 4);
 }
 
 /****************************************************************************/
@@ -563,24 +555,24 @@ void FPGAIsr(void)
  *================================================================*/
 void FAULTIsr(void)
 {
-      GPIOBankIntDisable(SOC_GPIO_0_REGS, 8);
+    GPIOBankIntDisable(SOC_GPIO_0_REGS, 8);
     IntEventClear(SYS_INT_GPIO_B8INT);
 
-    if(GPIOPinIntStatus(SOC_GPIO_0_REGS, 142) == GPIO_INT_PEND)    //FAULT  Interrupt routine
+    if (GPIOPinIntStatus(SOC_GPIO_0_REGS, 142) == GPIO_INT_PEND) //FAULT  Interrupt routine
     {
-            GPIOPinIntClear(SOC_GPIO_0_REGS, 142);
-//          TestINT=!TestINT;
-//          FPGA_Interface[MainControl_PluginUnit_4-2].LED.Bbits.led2=TestINT;
+        GPIOPinIntClear(SOC_GPIO_0_REGS, 142);
+        //          TestINT=!TestINT;
+        //          FPGA_Interface[MainControl_PluginUnit_4-2].LED.Bbits.led2=TestINT;
 
-            FaultCheckAndDispose_StepOne();             //第1步
-            if((PortLatch_TAD)||(ModuleFault_DisposeTimes))  //端口或模块故障
-            {
-                FaultDispose();                           //第2步
-                ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-            }
+        FaultCheckAndDispose_StepOne(); //第1步
+        if ((PortLatch_TAD) || (ModuleFault_DisposeTimes)) //端口或模块故障
+        {
+            FaultDispose(); //第2步
+            ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+        }
     }
 
-  GPIOBankIntEnable(SOC_GPIO_0_REGS, 8);
+    GPIOBankIntEnable(SOC_GPIO_0_REGS, 8);
 }
 
 /****************************************************************************/
@@ -597,19 +589,18 @@ void FAULTIsr(void)
  *================================================================*/
 void DPRAMIsr(void)
 {
-      GPIOBankIntDisable(SOC_GPIO_0_REGS, 6);
+    GPIOBankIntDisable(SOC_GPIO_0_REGS, 6);
     IntEventClear(SYS_INT_GPIO_B6INT);
 
-    if(GPIOPinIntStatus(SOC_GPIO_0_REGS, 101) == GPIO_INT_PEND)     //DPRAM  Interrupt routine
+    if (GPIOPinIntStatus(SOC_GPIO_0_REGS, 101) == GPIO_INT_PEND) //DPRAM  Interrupt routine
     {
-            GPIOPinIntClear(SOC_GPIO_0_REGS, 101);
+        GPIOPinIntClear(SOC_GPIO_0_REGS, 101);
 
-            Flag_RemoteControlRegulate=1;
+        Flag_RemoteControlRegulate = 1;
     }
 
-  GPIOBankIntEnable(SOC_GPIO_0_REGS, 6);
+    GPIOBankIntEnable(SOC_GPIO_0_REGS, 6);
 }
-
 
 /*==================================================================
  * 函数功能: 将 Timer2 中断源与原 ISR 及 CPU 向量绑定
@@ -628,7 +619,6 @@ void TimerInterruptInit(void)
     TimerIntEnable(SOC_TMR_2_REGS, TMR_INT_TMR12_NON_CAPT_MODE);
 }
 
-
 /*==================================================================
  * 函数功能: 绑定 FPGA TAD、FAULT 以及可选 DPRAM 通知 GPIO 中断
  * 输入参数: 无
@@ -638,43 +628,42 @@ void TimerInterruptInit(void)
  *================================================================*/
 void GPIOBankPinInterruptInit(void)
 {
-//    GPIOIntTypeSet(SOC_GPIO_0_REGS, 68, GPIO_INT_TYPE_RISEDGE);
-    GPIOIntTypeSet(SOC_GPIO_0_REGS, 69, GPIO_INT_TYPE_RISEDGE);    // TAD采样同步脉冲
+    //    GPIOIntTypeSet(SOC_GPIO_0_REGS, 68, GPIO_INT_TYPE_RISEDGE);
+    GPIOIntTypeSet(SOC_GPIO_0_REGS, 69, GPIO_INT_TYPE_RISEDGE); // TAD采样同步脉冲
 //    GPIOIntTypeSet(SOC_GPIO_0_REGS, 70, GPIO_INT_TYPE_RISEDGE);
 #if SST_ENABLE_DPRAM
-    GPIOIntTypeSet(SOC_GPIO_0_REGS, 101, GPIO_INT_TYPE_FALLEDGE);  //DPRAM
+    GPIOIntTypeSet(SOC_GPIO_0_REGS, 101, GPIO_INT_TYPE_FALLEDGE); //DPRAM
 #endif
 
-    GPIOIntTypeSet(SOC_GPIO_0_REGS, 142, GPIO_INT_TYPE_RISEDGE);   // FPGA故障脉冲
+    GPIOIntTypeSet(SOC_GPIO_0_REGS, 142, GPIO_INT_TYPE_RISEDGE); // FPGA故障脉冲
 
-//????????????????????????????????????????????????????????????????????????????
-    GPIOBankIntEnable(SOC_GPIO_0_REGS, 4);    //????????????????????????????
-//????????????????????????????????????????????????????????????????????????????
+    // 分别使能 TAD、可选 DPRAM 和故障脉冲所在 GPIO Bank 的中断输出。
+    GPIOBankIntEnable(SOC_GPIO_0_REGS, 4); // GPIO69 位于 Bank4，接收 FPGA TAD 同步脉冲。
+// DPRAM 通知使用 Bank6；FPGA 故障脉冲使用 Bank8。
 #if SST_ENABLE_DPRAM
     GPIOBankIntEnable(SOC_GPIO_0_REGS, 6);
 #endif
     GPIOBankIntEnable(SOC_GPIO_0_REGS, 8);
 
-        /* INT5/TAD、INT4/故障始终保留；INT7仅在DPRAM模式启用。 */
-        IntRegister(C674X_MASK_INT5, FPGAIsr);
+    /* INT5/TAD、INT4/故障始终保留；INT7仅在DPRAM模式启用。 */
+    IntRegister(C674X_MASK_INT5, FPGAIsr);
 #if SST_ENABLE_DPRAM
-        IntRegister(C674X_MASK_INT7, DPRAMIsr);
+    IntRegister(C674X_MASK_INT7, DPRAMIsr);
 #endif
-        IntRegister(C674X_MASK_INT4, FAULTIsr);
+    IntRegister(C674X_MASK_INT4, FAULTIsr);
 
-        IntEventMap(C674X_MASK_INT5, SYS_INT_GPIO_B4INT);
+    IntEventMap(C674X_MASK_INT5, SYS_INT_GPIO_B4INT);
 #if SST_ENABLE_DPRAM
-        IntEventMap(C674X_MASK_INT7, SYS_INT_GPIO_B6INT);
+    IntEventMap(C674X_MASK_INT7, SYS_INT_GPIO_B6INT);
 #endif
-        IntEventMap(C674X_MASK_INT4, SYS_INT_GPIO_B8INT);
+    IntEventMap(C674X_MASK_INT4, SYS_INT_GPIO_B8INT);
 
-        IntEnable(C674X_MASK_INT5);
+    IntEnable(C674X_MASK_INT5);
 #if SST_ENABLE_DPRAM
-        IntEnable(C674X_MASK_INT7);
+    IntEnable(C674X_MASK_INT7);
 #endif
-        IntEnable(C674X_MASK_INT4);
+    IntEnable(C674X_MASK_INT4);
 }
-
 
 /*==================================================================
  * 函数功能: 初始化 DSP 中断控制器并使能所需 CPU 中断通道

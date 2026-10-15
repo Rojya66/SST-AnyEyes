@@ -32,12 +32,19 @@ def identifier(node):
     if node.type in ('identifier', 'field_identifier', 'qualified_identifier', 'type_identifier'):
         return node
     child = node.child_by_field_name('declarator')
+    if child is None and node.type == 'parenthesized_declarator':
+        child = next((n for n in node.named_children if n.type != 'comment'), None)
     return identifier(child) if child is not None else None
 
-def collect(path):
-    raw, encoding = decode(path.read_bytes())
+def parse_source(raw, suffix):
+    """Parse without changing source files or the immutable comment baseline.
+
+    Existing start/end fields continue to describe whole declaration nodes.
+    Exact declarator and owner spans bind documentation to an individual item
+    of a comma-separated declaration without breaking older inventory users.
+    """
     data = raw.encode('utf-8')
-    parser = Parser(Language(tree_sitter_cpp.language() if path.suffix.lower() in ('.cpp', '.hpp') else tree_sitter_c.language()))
+    parser = Parser(Language(tree_sitter_cpp.language() if suffix.lower() in ('.cpp', '.hpp') else tree_sitter_c.language()))
     root = parser.parse(data).root_node
     symbols = []
     def txt(n):
@@ -50,7 +57,9 @@ def collect(path):
                 params = [x for x in walk(d) if x.type == 'parameter_declaration']
                 symbols.append(dict(kind='function', name=txt(name), line=data.count(b'\n', 0, n.start_byte) + 1,
                                     start=n.start_byte, end=n.end_byte, declaration=txt(n).split('{')[0].strip(),
-                                    parameters=[txt(x) for x in params]))
+                                    parameters=[txt(x) for x in params],
+                                    return_type=txt(n.child_by_field_name('type')),
+                                    declarator_start=d.start_byte, declarator_end=d.end_byte))
         elif n.type in ('declaration', 'field_declaration', 'parameter_declaration'):
             if n.type == 'parameter_declaration':
                 declarator = n.parent
@@ -65,16 +74,34 @@ def collect(path):
             while scope and scope.type not in ('function_definition', 'struct_specifier', 'class_specifier', 'translation_unit'):
                 scope = scope.parent
             owner = identifier(scope.child_by_field_name('declarator')) if scope and scope.type == 'function_definition' else scope.child_by_field_name('name') if scope else None
-            for d in n.children_by_field_name('declarator'):
+            declarators = n.children_by_field_name('declarator')
+            for index, d in enumerate(declarators):
                 name = identifier(d)
                 if name:
                     isfunc = any(x.type == 'function_declarator' for x in walk(d))
+                    function_owner = n.parent
+                    while function_owner and function_owner.type not in ('function_definition', 'declaration', 'field_declaration', 'type_definition'):
+                        function_owner = function_owner.parent
+                    function_name = identifier(function_owner.child_by_field_name('declarator')) if function_owner else None
                     symbols.append(dict(kind='prototype' if isfunc else 'parameter' if n.type == 'parameter_declaration' else 'field' if n.type == 'field_declaration' else 'variable',
-                                        name=txt(name), owner=txt(owner), line=data.count(b'\n', 0, n.start_byte) + 1,
-                                        start=n.start_byte, end=n.end_byte, declaration=txt(n)))
+                                        name=txt(name), owner=txt(owner), line=data.count(b'\n', 0, d.start_byte) + 1,
+                                        start=n.start_byte, end=n.end_byte, declaration=txt(n),
+                                        return_type=txt(n.child_by_field_name('type')) if isfunc else None,
+                                        declarator_start=d.start_byte, declarator_end=d.end_byte,
+                                        declarator_index=index, declarator_count=len(declarators),
+                                        previous_declarator_end=declarators[index - 1].end_byte if index else n.start_byte,
+                                        next_declarator_start=declarators[index + 1].start_byte if index + 1 < len(declarators) else n.end_byte,
+                                        function_start=function_owner.start_byte if function_owner else None,
+                                        function_name=txt(function_name)))
         elif n.type == 'enumerator':
             name = n.child_by_field_name('name')
             symbols.append(dict(kind='enum', name=txt(name), line=data.count(b'\n', 0, n.start_byte) + 1, start=n.start_byte, end=n.end_byte, declaration=txt(n)))
+    return data, root, symbols
+
+
+def collect(path):
+    raw, encoding = decode(path.read_bytes())
+    data, root, symbols = parse_source(raw, path.suffix)
     return raw, encoding, data, root, symbols
 
 if __name__ == '__main__':

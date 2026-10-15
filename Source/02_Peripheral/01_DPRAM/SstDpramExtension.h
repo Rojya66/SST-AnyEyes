@@ -23,12 +23,17 @@
 /* SST_DPRAM_FRAME_ERROR：格式、CRC或同序号不同载荷错误结果码7。 */
 #define SST_DPRAM_FRAME_ERROR 7U /* 扩展帧格式、CRC或重复序号载荷冲突。 */
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-extern volatile uint16_t DPRAM_SstRequest[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstRequest：主机写请求，DSP只读；0x66002C00。 */
-extern volatile uint16_t DPRAM_SstResponse[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstResponse：DSP回复及54点实际回读；0x66002D00。 */
-extern volatile uint16_t DPRAM_SstTelemetry[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstTelemetry：现代状态、测量、当前故障表；0x66002E00。 */
-extern volatile uint16_t DPRAM_SstHistory[SST_DPRAM_HISTORY_WORDS]; /* DPRAM_SstHistory：32条详细RAM历史；0x66002F00。 */
+    extern volatile uint16_t
+        DPRAM_SstRequest[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstRequest：主机写请求，DSP只读；0x66002C00。 */
+    extern volatile uint16_t
+        DPRAM_SstResponse[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstResponse：DSP回复及54点实际回读；0x66002D00。 */
+    extern volatile uint16_t
+        DPRAM_SstTelemetry[SST_DPRAM_BLOCK_WORDS]; /* DPRAM_SstTelemetry：现代状态、测量、当前故障表；0x66002E00。 */
+    extern volatile uint16_t
+        DPRAM_SstHistory[SST_DPRAM_HISTORY_WORDS]; /* DPRAM_SstHistory：32条详细RAM历史；0x66002F00。 */
 #ifdef __cplusplus
 }
 #endif

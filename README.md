@@ -57,6 +57,7 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 - [构建与验证报告](docs/VALIDATION.md)
 - [板级调试与 10 kHz 验收步骤](docs/BOARD_ACCEPTANCE.md)
 - [自定义源码注释规范及覆盖核对](docs/SOURCE_COMMENTS.md)
+- [DSP 源码排版规范、格式化工具及本次验证](docs/SOURCE_STYLE.md)
 
 本工程没有增加 DAB 副边、移相功率闭环或已删除的 HVDC/LVDC 功能。
 

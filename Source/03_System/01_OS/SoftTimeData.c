@@ -34,7 +34,8 @@ unsigned char Flag_StopWait; /* Flag_StopWait：原停机延时等待标志。 *
 
 unsigned char Flag_StopWaitEnd; /* Flag_StopWaitEnd：原停机等待结束标志。 */
 
-unsigned short countWaitPowerStart10s; /* countWaitPowerStart10s：Timer2 原 主电源等待 10 s计数；实际节拍沿用原判断式。 */
+unsigned short
+    countWaitPowerStart10s; /* countWaitPowerStart10s：Timer2 原 主电源等待 10 s计数；实际节拍沿用原判断式。 */
 
 unsigned short cout_Wait; /* cout_Wait：Timer2 原 原控制等待计数；实际节拍沿用原判断式。 */
 
@@ -63,4 +64,3 @@ unsigned short coutSVG1s; /* coutSVG1s：Timer2 原 SVG 投入等待 1 s计数�
 unsigned short cout20s; /* cout20s：Timer2 原 上电等待 20 s计数；实际节拍沿用原判断式。 */
 
 unsigned char TestINT; /* TestINT：原中断调试观察标志。 */
-

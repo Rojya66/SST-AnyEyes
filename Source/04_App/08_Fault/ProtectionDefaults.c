@@ -15,16 +15,15 @@
  *================================================================*/
 void ProtectionDefaults_ResetIndicators(void)
 {
-    Port_LV2=0;
-    Port_Abnormal=0;
-    Flag_V_L=0;
-    Flag_V_L1_END=0;
-    Flag_V_L2_END=0;
-    Flag_V_L2_MID=0;
-    Flag_SlopeTime=0;
-    SlopeTime_N=0;
-    Cout_V_L=0;
-
+    Port_LV2 = 0;
+    Port_Abnormal = 0;
+    Flag_V_L = 0;
+    Flag_V_L1_END = 0;
+    Flag_V_L2_END = 0;
+    Flag_V_L2_MID = 0;
+    Flag_SlopeTime = 0;
+    SlopeTime_N = 0;
+    Cout_V_L = 0;
 }
 
 #endif /* HVAC_online */

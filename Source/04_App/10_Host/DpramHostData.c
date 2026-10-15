@@ -16,7 +16,8 @@ XXG_DPRAM_RemRegulate PORT_Regulate_DATA_Buf; /* PORT_Regulate_DATA_Buf：旧遥
 
 DPRAM_RemRegulateFloat PORT_Regulate_DATA; /* PORT_Regulate_DATA：旧遥调定点值换算后的浮点给定缓存。 */
 
-unsigned char Flag_RemoteControlRegulate; /* Flag_RemoteControlRegulate：DPRAM 通知 ISR 置位、后台消费的遥控/遥调待处理标志。 */
+unsigned char
+    Flag_RemoteControlRegulate; /* Flag_RemoteControlRegulate：DPRAM 通知 ISR 置位、后台消费的遥控/遥调待处理标志。 */
 
 ushort FLAG_NEW_R; /* FLAG_NEW_R：DPRAM 向对端发布的新数据块标识。 */
 
@@ -25,4 +26,3 @@ ushort FLAG_NEW_L; /* FLAG_NEW_L：DPRAM 从对端读取的新数据块标识。
 unsigned char WriteBlock_Index; /* WriteBlock_Index：后台 DPRAM 插件遥测轮询的当前块号。 */
 
 ushort rtt; /* rtt：DPRAM 收到通知后的插件 LED 翻转状态。 */
-

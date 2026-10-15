@@ -59,9 +59,8 @@ void SystemInit_Hardware(void)
  *================================================================*/
 void SystemInit_WaitPowerOnDelay(void)
 {
-    while(!Flag_20s)
+    while (!Flag_20s)
     {
-
     }
 
     Flag_20s = 0;
@@ -88,7 +87,7 @@ void SystemInit_Runtime(void)
     Port_RunStatus = PortStatusNum_Initial;
     ChbDabControl_Init();
 #if SST_BENCH_INPUT_SIM
-    SstBenchInputs_Init();                 // 测试输入初始化，保持启动命令为0
+    SstBenchInputs_Init(); // 测试输入初始化，保持启动命令为0
 #endif
     SstFault_Init();
     SstDpramMaintenance_Init();

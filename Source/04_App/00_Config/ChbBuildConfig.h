@@ -1,11 +1,11 @@
 #ifndef CHB_BUILD_CONFIG_H_
 #define CHB_BUILD_CONFIG_H_
 
-/* Override these choices with compiler --define, or edit this file. */
+/* 编译器 --define 可覆盖未预先定义的配置项；也可在本文件集中配置。 */
 /* SST_DEBUG_PROTOCOL_ANYEYES：参考 PcDebug/AnyEyes 协议选择值 1。 */
 #define SST_DEBUG_PROTOCOL_ANYEYES 1U
 /* SST_DEBUG_PROTOCOL_VOFA：VOFA JustFloat 协议选择值 2。 */
-#define SST_DEBUG_PROTOCOL_VOFA    2U
+#define SST_DEBUG_PROTOCOL_VOFA 2U
 #ifndef SST_DEBUG_PROTOCOL
 /* SST_DEBUG_PROTOCOL：串口协议二选一配置，只允许 ANYEYES 或 VOFA。 */
 #define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_ANYEYES
@@ -19,7 +19,8 @@
 #define SST_SIMULATOR_MODE 1U
 #endif
 #ifndef SST_BENCH_INPUT_SIM
-/* SST_BENCH_INPUT_SIM：临时无主回路输入注入，默认0；1生成测试采样，不替代功率回路模型。 */
+/* SST_BENCH_INPUT_SIM：临时无主回路输入注入；当前测试版设为 1，生成测试采样。
+ * 恢复真实采样时改为 0 并重新编译；本功能不替代功率回路模型。 */
 #define SST_BENCH_INPUT_SIM 1U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
@@ -39,7 +40,7 @@
 #define SST_TELEMETRY_PERIOD_10MS 2U
 #endif
 
-/* Legacy constants kept for shared source compatibility. */
+/* 保留旧控制模式常量，供公共源码兼容使用。 */
 /* CHB_CONTROL_MODE_SIMULATOR：旧接口的仿真器模式编号。 */
 #define CHB_CONTROL_MODE_SIMULATOR 0U
 /* CHB_CONTROL_MODE_DPRAM：旧接口的 DPRAM 模式编号。 */

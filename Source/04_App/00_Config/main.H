@@ -25,9 +25,10 @@
 #include "TransformData.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-/* 仅供历史代码过渡；活动模块直接包含所属接口。 */
+    /* 仅供历史代码过渡；活动模块直接包含所属接口。 */
 
 #ifdef __cplusplus
 }

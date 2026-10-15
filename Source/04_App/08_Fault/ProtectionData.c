@@ -34,7 +34,7 @@ ushort ModuleFault_DisposeTimes; /* ModuleFault_DisposeTimes：原模块故障�
 
 unsigned char ClearTimes; /* ClearTimes：原故障清除过程的执行次数。 */
 
-float Module_DCbus_Volt; /* Module_DCbus_Volt：当前检查模块的直流母线电压，单位 V。 */   //Module DCbus voltage
+float Module_DCbus_Volt; /* Module_DCbus_Volt：当前检查模块的直流母线电压，单位 V。 */ //Module DCbus voltage
 
 uchar Udc_Check_Index; /* Udc_Check_Index：逐模块直流电压巡检的当前索引。 */
 
@@ -113,7 +113,8 @@ ushort OC_level_SET = OC_level_SET_DEFAULT; /* OC_level_SET：原HVAC一级过�
 #endif
 
 #ifdef HVAC_online
-ushort OC_time_SET = OC_time_SET_DEFAULT; /* OC_time_SET：一级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time>OC_time_SET。 */
+ushort OC_time_SET =
+    OC_time_SET_DEFAULT; /* OC_time_SET：一级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time>OC_time_SET。 */
 #endif
 
 #ifdef HVAC_online
@@ -121,7 +122,8 @@ ushort OC_level_SET_L2 = OC_level_SET_L2_DEFAULT; /* OC_level_SET_L2：原HVAC�
 #endif
 
 #ifdef HVAC_online
-ushort OC_time_SET_L2 = OC_time_SET_L2_DEFAULT; /* OC_time_SET_L2：二级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time1>OC_time_SET_L2。 */
+ushort OC_time_SET_L2 =
+    OC_time_SET_L2_DEFAULT; /* OC_time_SET_L2：二级过流确认Timer2计数阈值，每计数10 ms；使用counter_OC_time1>OC_time_SET_L2。 */
 #endif
 
 #ifdef HVAC_online
@@ -141,7 +143,8 @@ ushort OV_level_SET = OV_level_SET_DEFAULT; /* OV_level_SET：原HVAC过压阈�
 #endif
 
 #ifdef HVAC_online
-ushort OV_time_SET = OV_time_SET_DEFAULT; /* OV_time_SET：过压确认Timer2计数阈值，每计数10 ms；使用counter_OV_time>OV_time_SET。 */
+ushort OV_time_SET =
+    OV_time_SET_DEFAULT; /* OV_time_SET：过压确认Timer2计数阈值，每计数10 ms；使用counter_OV_time>OV_time_SET。 */
 #endif
 
 #ifdef HVAC_online
@@ -151,7 +154,6 @@ ushort Contactor_err; /* Contactor_err：原接触器动作异常标志。 */
 #ifdef HVAC_online
 ushort Breaker_err; /* Breaker_err：原断路器动作异常标志。 */
 #endif
-
 
 /* 本模块拥有的保护量。 */
 ushort Port_AD_PORT_EN; /* Port_AD_PORT_EN：端口各通道 AD 保护使能位图。 */
@@ -170,9 +172,8 @@ unsigned short Flag_DC_FAULTDISPOSE; /* Flag_DC_FAULTDISPOSE：原直流故障�
 
 unsigned char Flag_DC_FAULTport; /* Flag_DC_FAULTport：原直流故障端口标识。 */
 
-unsigned char Flag_Clear_0,Flag_Clear_1; /* Flag_Clear_0：原故障锁存清除第一阶段请求标志。 */
-
-/* Flag_Clear_1：原故障锁存清除第二阶段请求标志。 */
+unsigned char Flag_Clear_0, /* Flag_Clear_0：原故障锁存清除第一阶段请求标志。 */
+    Flag_Clear_1; /* Flag_Clear_1：原故障锁存清除第二阶段请求标志。 */
 
 unsigned char Flag_Clear_zhi; /* Flag_Clear_zhi：原故障清除期间的兼容状态。 */
 
@@ -211,4 +212,3 @@ float HA_H_Voltage; /* HA_H_Voltage：原 HVAC 直流高压判断阈值，单位
 #ifdef HVAC_online
 unsigned char Port_Abnormal; /* Port_Abnormal：旧端口异常状态标志。 */
 #endif
-

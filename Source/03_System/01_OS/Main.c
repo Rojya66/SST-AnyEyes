@@ -15,10 +15,16 @@ int main(void)
     CpuTask_InitBootFlags();
     SystemInit_Hardware();
 #if CHB_OPEN_LOOP_PULSE_TEST
-    for(;;) { TaskSlice_Service(); }
+    for (;;)
+    {
+        TaskSlice_Service();
+    }
 #else
     SystemInit_WaitPowerOnDelay();
     SystemInit_Runtime();
-    for(;;) { TaskSlice_Service(); }
+    for (;;)
+    {
+        TaskSlice_Service();
+    }
 #endif
 }

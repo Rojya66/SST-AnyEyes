@@ -90,27 +90,33 @@ float HA_Grid_Current_C_LATCH; /* HA_Grid_Current_C_LATCH：高压交流端口 C
 #endif
 
 #ifdef HVAC_online
-float HA_PortUanRms_LF_1; /* HA_PortUanRms_LF_1：高压交流端口 PortUanRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUanRms_LF_1; /* HA_PortUanRms_LF_1：高压交流端口 PortUanRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
-float HA_PortUanRms_LF_2; /* HA_PortUanRms_LF_2：高压交流端口 PortUanRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUanRms_LF_2; /* HA_PortUanRms_LF_2：高压交流端口 PortUanRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
-float HA_PortUbnRms_LF_1; /* HA_PortUbnRms_LF_1：高压交流端口 PortUbnRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUbnRms_LF_1; /* HA_PortUbnRms_LF_1：高压交流端口 PortUbnRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
-float HA_PortUbnRms_LF_2; /* HA_PortUbnRms_LF_2：高压交流端口 PortUbnRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUbnRms_LF_2; /* HA_PortUbnRms_LF_2：高压交流端口 PortUbnRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
-float HA_PortUcnRms_LF_1; /* HA_PortUcnRms_LF_1：高压交流端口 PortUcnRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUcnRms_LF_1; /* HA_PortUcnRms_LF_1：高压交流端口 PortUcnRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
-float HA_PortUcnRms_LF_2; /* HA_PortUcnRms_LF_2：高压交流端口 PortUcnRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
+float
+    HA_PortUcnRms_LF_2; /* HA_PortUcnRms_LF_2：高压交流端口 PortUcnRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
 #endif
 
 #ifdef HVAC_online
@@ -162,39 +168,24 @@ float HA_GridIcRms_LF_2; /* HA_GridIcRms_LF_2：高压交流端口 GridIcRms 有
 #endif
 
 #ifdef HVAC_online
-float HA_Port_Volt_A_last, HA_Port_Volt_B_last, HA_Port_Volt_C_last; /* HA_Port_Volt_A_last：高压交流端口 A 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
-/* HA_Port_Volt_B_last：高压交流端口 B 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
-/* HA_Port_Volt_C_last：高压交流端口 C 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
+float HA_Port_Volt_A_last, /* HA_Port_Volt_A_last：高压交流端口 A 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
+    HA_Port_Volt_B_last, /* HA_Port_Volt_B_last：高压交流端口 B 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
+    HA_Port_Volt_C_last; /* HA_Port_Volt_C_last：高压交流端口 C 相/相间原采样电压，单位 V；上一拍噪声比较缓存。 */
 #endif
-
-
-
-
-
 
 /* 本模块拥有的采样、滤波及有效值窗口数据。 */
 #ifdef HVAC_online
-float SVG_Udc_A_Ave,SVG_Udc_B_Ave,SVG_Udc_C_Ave,SVG_Udc_Ave; /* SVG_Udc_A_Ave：A 相在线模块平均直流电压，单位 V。 */
-/* SVG_Udc_B_Ave：B 相在线模块平均直流电压，单位 V。 */
-/* SVG_Udc_C_Ave：C 相在线模块平均直流电压，单位 V。 */
-/* SVG_Udc_Ave：三相单模块直流电压的总平均值，单位 V。 */
+float SVG_Udc_A_Ave, /* SVG_Udc_A_Ave：A 相在线模块平均直流电压，单位 V。 */
+    SVG_Udc_B_Ave, /* SVG_Udc_B_Ave：B 相在线模块平均直流电压，单位 V。 */
+    SVG_Udc_C_Ave, /* SVG_Udc_C_Ave：C 相在线模块平均直流电压，单位 V。 */
+    SVG_Udc_Ave; /* SVG_Udc_Ave：三相单模块直流电压的总平均值，单位 V。 */
 #endif
-
-
-
-
-
-
 
 #ifdef HVAC_online
-float Har_5_RMS,Har_7_RMS,Har_11_RMS; /* Har_5_RMS：5 次谐波电流有效值，单位 A。 */
-/* Har_7_RMS：7 次谐波电流有效值，单位 A。 */
-/* Har_11_RMS：11 次谐波电流有效值，单位 A。 */
+float Har_5_RMS, /* Har_5_RMS：5 次谐波电流有效值，单位 A。 */
+    Har_7_RMS, /* Har_7_RMS：7 次谐波电流有效值，单位 A。 */
+    Har_11_RMS; /* Har_11_RMS：11 次谐波电流有效值，单位 A。 */
 #endif
-
-
-
-
 
 #ifdef HVAC_online
 ushort Samplenoise; /* Samplenoise：原交流电压采样噪声判断状态。 */
@@ -205,11 +196,9 @@ ushort Samplenoise_Idq; /* Samplenoise_Idq：原 dq 电流采样噪声判断状�
 #endif
 
 #ifdef HVAC_online
-float SVG_Udc_Ave_temp, SVG_Udc_Ave_temp_last; /* SVG_Udc_Ave_temp：旧直流平均电压噪声处理的本拍缓存，单位 V。 */
-/* SVG_Udc_Ave_temp_last：旧直流平均电压噪声处理的上一拍缓存，单位 V。 */
+float SVG_Udc_Ave_temp, /* SVG_Udc_Ave_temp：旧直流平均电压噪声处理的本拍缓存，单位 V。 */
+    SVG_Udc_Ave_temp_last; /* SVG_Udc_Ave_temp_last：旧直流平均电压噪声处理的上一拍缓存，单位 V。 */
 #endif
-
-
 
 #ifdef HVAC_online
 ushort Samplenoise_udc; /* Samplenoise_udc：原直流电压采样噪声判断状态。 */
@@ -290,4 +279,3 @@ float HVAC_RealGridCurrent_Sum[3]; /* HVAC_RealGridCurrent_Sum：HVAC 实时量�
 #ifdef HVAC_online
 uchar HVAC_RealParameter_N; /* HVAC_RealParameter_N：HVAC 实时量窗口的采样采样窗口计数。 */
 #endif
-

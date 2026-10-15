@@ -3,22 +3,23 @@
 #define COMMONPROGRAM_H_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-//###########################################################################
-//
-// FILE:   CommonProgram.h
-//
-// AUTHOR: Wen Wusong
-//
-//###########################################################################
-// Tsinghua University PERET Release: DSP_C6748 Function Files V1.0
-// Release Date: 2018.09.24
-//###########################################################################
+    //###########################################################################
+    //
+    // FILE:   CommonProgram.h
+    //
+    // AUTHOR: Wen Wusong
+    //
+    //###########################################################################
+    // Tsinghua University PERET Release: DSP_C6748 Function Files V1.0
+    // Release Date: 2018.09.24
+    //###########################################################################
 
-/***********************Function declaration*********************************/
-/*==================================================================
+    /***********************Function declaration*********************************/
+    /*==================================================================
  * 函数功能: 将三相瞬时量变换为静止坐标系 α、β 分量，保持原幅值不变系数
  * 输入参数: VIa：A 相瞬时输入，与调用者电压/电流量同单位
  *           VIb：B 相瞬时输入，与调用者电压/电流量同单位
@@ -27,8 +28,8 @@ extern "C" {
  * 返回值: 无
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern void Clarke_Transformation(float VIa, float VIb, float VIc);
-/*==================================================================
+    extern void Clarke_Transformation(float VIa, float VIb, float VIc);
+    /*==================================================================
  * 函数功能: 将 α、β 分量逆变换为三相瞬时量
  * 输入参数: VIalpha：α 轴输入，与调用者电压/电流量同单位
  *           VIbeta：β 轴输入，与调用者电压/电流量同单位
@@ -36,8 +37,8 @@ extern void Clarke_Transformation(float VIa, float VIb, float VIc);
  * 返回值: 无
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern void Clarke_InverseTransformation(float VIalpha, float VIbeta);
-/*==================================================================
+    extern void Clarke_InverseTransformation(float VIalpha, float VIbeta);
+    /*==================================================================
  * 函数功能: 按输入角度的正余弦将 α、β 分量变换为 d、q 分量
  * 输入参数: VIalpha：α 轴输入，与调用者电压/电流量同单位
  *           VIbeta：β 轴输入，与调用者电压/电流量同单位
@@ -47,8 +48,8 @@ extern void Clarke_InverseTransformation(float VIalpha, float VIbeta);
  * 返回值: 无
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern void Park_Transformation(float VIalpha, float VIbeta, float Cos_ph, float Sin_ph);
-/*==================================================================
+    extern void Park_Transformation(float VIalpha, float VIbeta, float Cos_ph, float Sin_ph);
+    /*==================================================================
  * 函数功能: 按输入角度的正余弦将 d、q 分量逆变换为 α、β 分量
  * 输入参数: VId：d 轴输入，与调用者电压/电流量同单位
  *           VIq：q 轴输入，与调用者电压/电流量同单位
@@ -58,9 +59,9 @@ extern void Park_Transformation(float VIalpha, float VIbeta, float Cos_ph, float
  * 返回值: 无
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern void Park_InverseTransformation(float VId, float VIq, float Cos_ph, float Sin_ph);
+    extern void Park_InverseTransformation(float VId, float VIq, float Cos_ph, float Sin_ph);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 复制滤波器的四个历史状态浮点数
  * 输入参数: SourceAddr：源地址，连续数据至少覆盖要求的复制长度
  *           DestAddr：输出目标地址，调用者须提供足够容量
@@ -68,18 +69,15 @@ extern void Park_InverseTransformation(float VId, float VIq, float Cos_ph, float
  * 返回值: 无
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern void H_Filter_Memcopy(float *SourceAddr, float *DestAddr);
-/*==================================================================
+    extern void H_Filter_Memcopy(float *SourceAddr, float *DestAddr);
+    /*==================================================================
  * 函数功能: 执行原增量 PI 差分式并更新 PID_Control_buf 的上一拍输入、输出
  * 输入参数: ErrorIn：本拍控制误差，与被控制物理量同单位
  * 输出参数: 更新 PID_Control_buf 中的 IN_n_1、OUT_n_1。
  * 返回值: 本拍控制输出，与 ErrorIn 的量纲及控制器系数对应
  * 执行说明: 控制计算路径；沿用原运算顺序。
  *================================================================*/
-extern float ConstantPID_Controller(float ErrorIn);
-
-
-
+    extern float ConstantPID_Controller(float ErrorIn);
 
 #ifdef __cplusplus
 }

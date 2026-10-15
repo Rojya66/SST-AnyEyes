@@ -3,28 +3,29 @@
 #include "SstParamTypes.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 按唯一命令表读取线上编码
  * 输入参数: index：命令表索引，范围0..7
  * 输出参数: 无。
  * 返回值: 16位线上编码；越界返回0
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_ReadCommand(uint16_t index);
+    uint16_t SstParameterTable_ReadCommand(uint16_t index);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 按唯一参数表读取线上编码
  * 输入参数: index：参数表索引，范围0..36
  * 输出参数: 无。
  * 返回值: 16位线上编码；越界返回0
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_ReadParameter(uint16_t index);
+    uint16_t SstParameterTable_ReadParameter(uint16_t index);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 检查范围后写入命令表对应成员
  * 输入参数: index：命令表索引，范围0..7
  *           value：待写入的16位线上编码
@@ -32,9 +33,9 @@ uint16_t SstParameterTable_ReadParameter(uint16_t index);
  * 返回值: SST_PARAM_*结果码
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_WriteCommand(uint16_t index,uint16_t value);
+    uint16_t SstParameterTable_WriteCommand(uint16_t index, uint16_t value);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 检查范围后写入参数表对应成员
  * 输入参数: index：参数表索引，范围0..36
  *           value：待写入的16位线上编码
@@ -42,35 +43,34 @@ uint16_t SstParameterTable_WriteCommand(uint16_t index,uint16_t value);
  * 返回值: SST_PARAM_*结果码
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_WriteParameter(uint16_t index,uint16_t value);
+    uint16_t SstParameterTable_WriteParameter(uint16_t index, uint16_t value);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 按既有EEPROM顺序读取37参数及5命令给定
  * 输入参数: index：快照字索引，0..36为参数，37..41为命令2/4/5/6/7
  * 输出参数: 无。
  * 返回值: 16位线上编码；越界返回0
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_SnapshotRead(uint16_t index);
+    uint16_t SstParameterTable_SnapshotRead(uint16_t index);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 整体校验42字镜像，不修改任何活动成员
  * 输入参数: snapshot：至少42个有效16位线上字，顺序与既有EEPROM一致
  * 输出参数: 无。
  * 返回值: SST_PARAM_OK或范围/地址错误
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-uint16_t SstParameterTable_SnapshotValidate(const uint16_t *snapshot);
+    uint16_t SstParameterTable_SnapshotValidate(const uint16_t *snapshot);
 
-/*==================================================================
+    /*==================================================================
  * 函数功能: 将已整体校验镜像恢复到活动参数及5个命令给定
  * 输入参数: snapshot：由SnapshotValidate成功校验的42字镜像
  * 输出参数: 恢复参数1..36和命令2/4/5/6/7；硬件采样周期及启停命令不恢复。
  * 返回值: 无
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
-void SstParameterTable_SnapshotApply(const uint16_t *snapshot);
-
+    void SstParameterTable_SnapshotApply(const uint16_t *snapshot);
 
 #ifdef __cplusplus
 }

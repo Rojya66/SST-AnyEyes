@@ -5,15 +5,11 @@
 #include "PortStatusData.h"
 #include "SstControlConfig.h"
 
-XXG_MainStatus MainStatus_HVAC,MainStatus_HVDC,MainStatus_LVDC,MainStatus_LVAC,Port_MainStatus; /* MainStatus_HVAC：HVAC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
-
-/* MainStatus_HVDC：HVDC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
-
-/* MainStatus_LVDC：LVDC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
-
-/* MainStatus_LVAC：LVAC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
-
-/* Port_MainStatus：当前端口主状态、主/子工作模式的位域缓存。 */
+XXG_MainStatus MainStatus_HVAC, /* MainStatus_HVAC：HVAC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
+    MainStatus_HVDC, /* MainStatus_HVDC：HVDC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
+    MainStatus_LVDC, /* MainStatus_LVDC：LVDC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
+    MainStatus_LVAC, /* MainStatus_LVAC：LVAC 端口主状态及模式缓存；仅对应条件编译分支使用。 */
+    Port_MainStatus; /* Port_MainStatus：当前端口主状态、主/子工作模式的位域缓存。 */
 
 XXG_MainStatus Port_MainStatus; /* Port_MainStatus：当前端口主状态、主/子工作模式的位域缓存。 */
 
@@ -46,4 +42,3 @@ unsigned short FourPortComZhi; /* FourPortComZhi：旧四端口通信测试状�
 ushort SWTable_TotalTime; /* SWTable_TotalTime：旧开关动作表的总定时时间。 */
 
 ushort Port_OnState; /* Port_OnState：原端口已投入状态。 */
-

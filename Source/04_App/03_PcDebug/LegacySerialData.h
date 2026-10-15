@@ -1,43 +1,40 @@
-/* 文件职责: 维护兼容符号；旧 UART ISR 不参与启动。数据只在所属 .c 定义，外部通过本头的必要声明访问。 */
+/*======================================================================================*
+ * 文件名  : LegacySerialData.h
+ * 功能说明: 声明旧 UART 兼容变量及 CRC 联合体，数据定义位于 LegacySerialData.c。
+ *=====================================================================================*/
+
 #ifndef LEGACYSERIALDATA_H_
 #define LEGACYSERIALDATA_H_
 #include "SstTypes.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-typedef union _CRC
+extern "C"
 {
-	unsigned short crc16; /* crc16：CRC 计算缓存的 16 位整字视图。 */
-	unsigned char by[2]; /* by：CRC 计算缓存的字节视图，供高低字节访问。 */
-} CRC;
+#endif
 
-extern unsigned char Flag_VofaSend; /* Flag_VofaSend：保留原 VOFA 发送通知变量；迁移发送由后台时基调度。 */
+    /*======================================== 接口类型定义 =====================================*/
+    /* CRC：保留旧通信的 CRC16 整字/字节联合视图，不参与当前协议解析。 */
+    typedef union _CRC
+    {
+        unsigned short crc16; /* CRC 结果的 16 位整字视图。 */
+        unsigned char by[2]; /* CRC 结果的两个字节视图，沿用目标平台字节序。 */
+    } CRC;
 
-extern unsigned char Flag_Uart; /* Flag_Uart：旧 UART 维护帧兼容状态，保留符号供原路径回读。 */
-
-extern unsigned char CommNum; /* CommNum：旧 UART 兼容通信序号。 */
-
-extern unsigned char CommFunc; /* CommFunc：旧 UART 兼容功能码。 */
-
-extern unsigned int StartAddr; /* StartAddr：旧 UART 兼容请求的起始地址。 */
-
-extern unsigned short ReadLength; /* ReadLength：旧 UART 兼容读取长度。 */
-
-extern unsigned char CommLength; /* CommLength：旧 UART 兼容帧有效长度。 */
-
-extern unsigned char CommInNum; /* CommInNum：旧 UART 兼容帧当前接收位置。 */
-
-extern unsigned char CommTotalNum; /* CommTotalNum：旧 UART 兼容帧预期总长度。 */
-
-extern unsigned char WriteOK; /* WriteOK：旧 UART 兼容写入成功标志。 */
-
-extern unsigned char PCuartBUFF[140]; /* PCuartBUFF：旧 PC UART 帧兼容缓存，容量 140 字节。 */
-
-extern unsigned char ReceiveuartBUFF[11]; /* ReceiveuartBUFF：旧 UART 接收帧兼容缓存，容量 11 字节。 */
-
+    /*======================================== 兼容变量声明 =====================================*/
+    extern unsigned char Flag_VofaSend; /* 旧 VOFA 发送通知标志；当前波形周期由后台节拍调度。 */
+    extern unsigned char Flag_Uart; /* 旧 UART 帧状态兼容变量；当前不启用旧维护帧解析器。 */
+    extern unsigned char CommNum; /* 旧 UART 帧通信序号兼容变量。 */
+    extern unsigned char CommFunc; /* 旧 UART 帧功能码兼容变量。 */
+    extern unsigned int StartAddr; /* 旧 UART 请求起始地址兼容变量，不作为当前任意 RAM 访问入口。 */
+    extern unsigned short ReadLength; /* 旧 UART 请求读取长度兼容变量。 */
+    extern unsigned char CommLength; /* 旧 UART 帧有效长度兼容变量，单位为字节。 */
+    extern unsigned char CommInNum; /* 旧 UART 接收位置兼容变量，单位为字节。 */
+    extern unsigned char CommTotalNum; /* 旧 UART 预期帧长兼容变量，单位为字节。 */
+    extern unsigned char WriteOK; /* 旧 UART 写入完成标志兼容变量。 */
+    extern unsigned char PCuartBUFF[140]; /* 旧 PC UART 帧缓存，容量为 140 字节。 */
+    extern unsigned char ReceiveuartBUFF[11]; /* 旧 UART 接收帧缓存，容量为 11 字节。 */
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif /* LEGACYSERIALDATA_H_ */

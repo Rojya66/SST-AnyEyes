@@ -41,56 +41,55 @@ void RuntimeStateInit_ResetObservationAndModes(void)
     ISO_counter_off = 0;
 
 #ifdef COM_TEST_PluginUnit
-    WrongTimes_LEFT=0;
-    WrongTimes_RIGHT=0;
-    LastWrong_LEFT=0.0;
-    LastWrong_RIGHT=0.0;
+    WrongTimes_LEFT = 0;
+    WrongTimes_RIGHT = 0;
+    LastWrong_LEFT = 0.0;
+    LastWrong_RIGHT = 0.0;
 
-    WrongTimes_LEFT_A=0;
-    WrongTimes_RIGHT_A=0;
-    LastWrong_LEFT_A=0.0;
-    LastWrong_RIGHT_A=0.0;
+    WrongTimes_LEFT_A = 0;
+    WrongTimes_RIGHT_A = 0;
+    LastWrong_LEFT_A = 0.0;
+    LastWrong_RIGHT_A = 0.0;
 
-    WrongTimes_Reference_A1=0;
-    WrongTimes_Reference_A2=0;
-    LastWrong_Reference_A1=0.0;
-    LastWrong_Reference_A2=0.0;
+    WrongTimes_Reference_A1 = 0;
+    WrongTimes_Reference_A2 = 0;
+    LastWrong_Reference_A1 = 0.0;
+    LastWrong_Reference_A2 = 0.0;
 
-    WrongTimes_Reference_C1=0;
-    WrongTimes_Reference_C2=0;
-    LastWrong_Reference_C1=0.0;
-    LastWrong_Reference_C2=0.0;
+    WrongTimes_Reference_C1 = 0;
+    WrongTimes_Reference_C2 = 0;
+    LastWrong_Reference_C1 = 0.0;
+    LastWrong_Reference_C2 = 0.0;
 
-    WrongTimes_ControlReference_A=0;
-    WrongTimes_ControlReference_C=0;
-    LastWrong_ControlReference_A=0.0;
-    LastWrong_ControlReference_C=0.0;
+    WrongTimes_ControlReference_A = 0;
+    WrongTimes_ControlReference_C = 0;
+    LastWrong_ControlReference_A = 0.0;
+    LastWrong_ControlReference_C = 0.0;
 
 #endif
 
-    HA_IG_Log_A=0;
-    HA_IG_Log_B=0;
-    HA_IG_Log_C=0;
+    HA_IG_Log_A = 0;
+    HA_IG_Log_B = 0;
+    HA_IG_Log_C = 0;
 
-    DAB_ONLY=0;
-    Phase_PLL_First=0.0;
-    Add_3th=0;
-    Method_3th=1;
-    Ref_ph_test=0.0;
-    Ref_js_test=0.0;
+    DAB_ONLY = 0;
+    Phase_PLL_First = 0.0;
+    Add_3th = 0;
+    Method_3th = 1;
+    Ref_ph_test = 0.0;
+    Ref_js_test = 0.0;
 
-    Flag_PC=0;
-    Flag_FaultOff=0;
-    Flag_DC_VoltSource=0;
-    flag_Standard=1;
-    flag_INV=0;
-    flag_FaultClose=0;
-    flag_SVGOPEN=0;
-    flag_DABOPEN=0;
+    Flag_PC = 0;
+    Flag_FaultOff = 0;
+    Flag_DC_VoltSource = 0;
+    flag_Standard = 1;
+    flag_INV = 0;
+    flag_FaultClose = 0;
+    flag_SVGOPEN = 0;
+    flag_DABOPEN = 0;
 
-    flag_SendDABRef_First=0;
-    flag_SendSVGRef_First=0;
-
+    flag_SendDABRef_First = 0;
+    flag_SendSVGRef_First = 0;
 }
 
 /*==================================================================
@@ -102,28 +101,28 @@ void RuntimeStateInit_ResetObservationAndModes(void)
  *================================================================*/
 void RuntimeStateInit_ResetTimeFlags(void)
 {
-    Flag_Key=0;
-    Flag_temp=0;
-    Flag_RemoteControlRegulate=0;
+    Flag_Key = 0;
+    Flag_temp = 0;
+    Flag_RemoteControlRegulate = 0;
 
-    Flag_1s=0;
-    Flag_50ms=0;
-    Flag_100ms=0;
-    Flag_RemoteMeasure=0;
-    Flag_Clear_0=0;
-    Flag_Clear_1=0;
-    Flag_StopWait=0;
-    Flag_StopWaitEnd=0;
+    Flag_1s = 0;
+    Flag_50ms = 0;
+    Flag_100ms = 0;
+    Flag_RemoteMeasure = 0;
+    Flag_Clear_0 = 0;
+    Flag_Clear_1 = 0;
+    Flag_StopWait = 0;
+    Flag_StopWaitEnd = 0;
 
-    cout200us=0;
-    cout1s=0;
-    cout20s=0;
-    cout50ms=0;
-    cout100ms=0;
-    coutRemoteMeasure=0;
-    coutStopWait=0;
+    cout200us = 0;
+    cout1s = 0;
+    cout20s = 0;
+    cout50ms = 0;
+    cout100ms = 0;
+    coutRemoteMeasure = 0;
+    coutStopWait = 0;
 
-    Flag_20s=0;
+    Flag_20s = 0;
 }
 
 /*==================================================================
@@ -135,8 +134,8 @@ void RuntimeStateInit_ResetTimeFlags(void)
  *================================================================*/
 void RuntimeStateInit_ResetLegacySerial(void)
 {
-    Flag_ComTest=0;
-    FourPortComZhi=0;
+    Flag_ComTest = 0;
+    FourPortComZhi = 0;
 
     /* 旧版上位机通讯变量初始化已废弃 */
     /*
@@ -144,14 +143,13 @@ void RuntimeStateInit_ResetLegacySerial(void)
     CommNum=0;
     CommFunc=0;
     */
-    StartAddr=0;
-    ReadLength=0;
-    CommLength=0;
-    CommInNum=0;
-    CommTotalNum=0;
-    WriteOK=0;
-    ClearTimes=1;
-
+    StartAddr = 0;
+    ReadLength = 0;
+    CommLength = 0;
+    CommInNum = 0;
+    CommTotalNum = 0;
+    WriteOK = 0;
+    ClearTimes = 1;
 }
 
 #endif /* HVAC_online */
