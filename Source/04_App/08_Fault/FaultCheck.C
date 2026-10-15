@@ -21,7 +21,7 @@
 //            2)PWM disable & enable
 //            3)Fault clear
 //
-// AUTHOR: Wen Wusong
+// AUTHOR: Wen Wusong;  Modified by Z.W
 //
 //###########################################################################
 // Tsinghua University PERET Release: DSP_C6748 Function Files V1.0

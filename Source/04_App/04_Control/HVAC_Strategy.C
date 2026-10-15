@@ -16,7 +16,7 @@
 // FUNCTION:
 //
 //
-// AUTHOR: Wen Wusong
+// AUTHOR: Wen Wusong;  Modified by Z.W
 //
 //###########################################################################
 // Tsinghua University PERET Release: DSP_C6748 Function Files V1.0

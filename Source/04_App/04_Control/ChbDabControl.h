@@ -7,17 +7,17 @@
  * derived from the masks by Initial_Variable().
  */
 /* CHB_PM_A1_MASK：A1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A1_MASK 0x0001U //0x007FU
+#define CHB_PM_A1_MASK 0x0007U //0x007FU
 /* CHB_PM_A2_MASK：A2 组在线模块位图，决定模块数及参考尺度。 */
 #define CHB_PM_A2_MASK 0x0000U //0x003FU
 /* CHB_PM_B1_MASK：B1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_B1_MASK 0x007FU
+#define CHB_PM_B1_MASK 0x0000U
 /* CHB_PM_B2_MASK：B2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_B2_MASK 0x003FU
+#define CHB_PM_B2_MASK 0x0000U
 /* CHB_PM_C1_MASK：C1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_C1_MASK 0x007FU
+#define CHB_PM_C1_MASK 0x0000U
 /* CHB_PM_C2_MASK：C2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_C2_MASK 0x003FU
+#define CHB_PM_C2_MASK 0x0000U
 
 /* CHB_AC_MODE_OPEN_LOOP：工频桥开环模式编号 0。 */
 #define CHB_AC_MODE_OPEN_LOOP 0U
