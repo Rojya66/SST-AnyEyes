@@ -1140,9 +1140,11 @@ void SVG_Udc_Average(void)
 #else
     short SampleBuf_short_1; /* SampleBuf_short_1：第一个 FPGA 原始采样/汇总字缓存。 */
     short SampleBuf_short_2; /* SampleBuf_short_2：第二个 FPGA 原始采样/汇总字缓存。 */
-    float tempAve1, /* tempAve1：第一相/第一组模块采样总和与平均值缓存。 */
-        tempAve2, /* tempAve2：第二相/第二组模块采样总和与平均值缓存。 */
-        tempAve3; /* tempAve3：第三相模块采样总和与平均值缓存。 */
+    float tempAve1; /* tempAve1：第一相/第一组模块采样总和与平均值缓存。 */
+#if !SST_PHASE_A_ONLY_TEST
+    float tempAve2; /* tempAve2：第二相模块采样总和与平均值缓存。 */
+    float tempAve3; /* tempAve3：第三相模块采样总和与平均值缓存。 */
+#endif
     //	float temp_0,temp_1;
     uchar PluginUnit_ONNum; /* PluginUnit_ONNum：参与本次平均值计算的在线模块数量。 */
 
@@ -1219,6 +1221,18 @@ void SVG_Udc_Average(void)
 
     //		SVG_Udc_A_Ave=tempAve1;
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相只保留 A 相原 100 Hz 滤波结果；未使用 B/C 测量明确为零，不伪造三相均压。 */
+    SVG_Udc_B_Ave = 0.0F;
+    SVG_Udc_C_Ave = 0.0F;
+    HA_DC_Log_B = 1U;
+    HA_DC_Log_C = 1U;
+    SVG_Udc_Ave_temp = SVG_Udc_A_Ave;
+    SVG_Udc_Ave_temp_last = SVG_Udc_A_Ave;
+    Samplenoise_udc = 1U;
+    /* 供旧保护和遥测读取的总均压直接对应 A 相，不再使用三相除三、500 V 下限或额外总均压滤波。 */
+    SVG_Udc_Ave = SVG_Udc_A_Ave;
+#else
     //Phase B
     PluginUnit_ONNum = 0;
     if (HA_PM_B1)
@@ -1401,10 +1415,16 @@ void SVG_Udc_Average(void)
     H_Filter_Memcopy(&H6_100_Filter.H_Filter_BUF[0], &Ave_H6_100_Filter.H_Filter_BUF[0]);
 
     //		DAC_BUF[0]=SVG_Udc_Ave/150.0;
+#endif
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相母线就绪只比较 A 相模块均压；判据范围及参考仍使用原有参数。 */
+    if ((SVG_Udc_A_Ave > (UstOK_HVAC_Port - Ust_add)) && (SVG_Udc_A_Ave < (UstOK_HVAC_Port + Ust_add)))
+#else
     if (((SVG_Udc_A_Ave > (UstOK_HVAC_Port - Ust_add)) && (SVG_Udc_A_Ave < (UstOK_HVAC_Port + Ust_add))) &&
         ((SVG_Udc_B_Ave > (UstOK_HVAC_Port - Ust_add)) && (SVG_Udc_B_Ave < (UstOK_HVAC_Port + Ust_add))) &&
         ((SVG_Udc_C_Ave > (UstOK_HVAC_Port - Ust_add)) && (SVG_Udc_C_Ave < (UstOK_HVAC_Port + Ust_add))))
+#endif
     {
         PortRunFLAG.Bbits.Port_UdcOK = 1; //start over
     }

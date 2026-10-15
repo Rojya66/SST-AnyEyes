@@ -49,7 +49,7 @@ void SstBenchInputs_Init(void)
 }
 
 /*==================================================================
- * 函数功能: 注入平衡三相虚拟电网、相电流及可独立修改的三相直流电压
+ * 函数功能: 注入测试电网和直流电压；三相生成平衡输入，单相仅生成 AN、IA 及 A 相母线
  * 输入参数: 无；读取g_sst_bench_inputs和sample_period_s
  * 输出参数: HA相/线电压、端口及网侧电流、三相/总均压和注入状态
  * 返回值: 无
@@ -69,10 +69,12 @@ void SstBenchInputs_FastStep(void)
         phase_b; /* phase_b：本拍B相单位幅值余弦，滞后A相120度。 */
     uint16_t valid; /* valid：所有测试参数有限且在规定范围内的整体结果。 */
 
-    valid = (uint16_t)(BenchRangeValid(dc_a, 0.0F, 10000.0F) && BenchRangeValid(dc_b, 0.0F, 10000.0F) &&
-                       BenchRangeValid(dc_c, 0.0F, 10000.0F) && BenchRangeValid(peak_v, 0.0F, 20000.0F) &&
-                       BenchRangeValid(frequency, 0.0F, 100.0F) && BenchRangeValid(peak_a, 0.0F, 10000.0F) &&
-                       BenchRangeValid(period, 0.000001F, 0.01F));
+    valid = (uint16_t)(BenchRangeValid(dc_a, 0.0F, 10000.0F) &&
+#if !SST_PHASE_A_ONLY_TEST
+                       BenchRangeValid(dc_b, 0.0F, 10000.0F) && BenchRangeValid(dc_c, 0.0F, 10000.0F) &&
+#endif
+                       BenchRangeValid(peak_v, 0.0F, 20000.0F) && BenchRangeValid(frequency, 0.0F, 100.0F) &&
+                       BenchRangeValid(peak_a, 0.0F, 10000.0F) && BenchRangeValid(period, 0.000001F, 0.01F));
     g_sst_bench_status.invalid_input = (uint16_t)!valid;
     ++g_sst_bench_status.tad_count;
     g_sst_bench_status.angle_rad = s_grid_angle_rad;
@@ -95,13 +97,29 @@ void SstBenchInputs_FastStep(void)
     HA_Port_Current_A = peak_a * phase_a;
     HA_Port_Current_B = peak_a * phase_b;
     HA_Port_Current_C = -HA_Port_Current_A - HA_Port_Current_B;
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相流程注入同一 AN/IA 输入；首旧线电压槽兼容 AN，B/C 采样及母线均不虚构。 */
+    HA_Port_Volt_B = 0.0F;
+    HA_Port_Volt_C = 0.0F;
+    HA_Port_Volt_AB = HA_Port_Volt_A;
+    HA_Port_Volt_BC = 0.0F;
+    HA_Port_Volt_CA = 0.0F;
+    HA_Port_Current_B = 0.0F;
+    HA_Port_Current_C = 0.0F;
+    dc_b = 0.0F;
+    dc_c = 0.0F;
+#endif
     HA_Grid_Current_A = HA_Port_Current_A;
     HA_Grid_Current_B = HA_Port_Current_B;
     HA_Grid_Current_C = HA_Port_Current_C;
     SVG_Udc_A_Ave = dc_a;
     SVG_Udc_B_Ave = dc_b;
     SVG_Udc_C_Ave = dc_c;
+#if SST_PHASE_A_ONLY_TEST
+    SVG_Udc_Ave = dc_a;
+#else
     SVG_Udc_Ave = (dc_a + dc_b + dc_c) / 3.0F;
+#endif
     if (valid)
     {
         s_grid_angle_rad += SST_BENCH_TWO_PI * frequency * period;

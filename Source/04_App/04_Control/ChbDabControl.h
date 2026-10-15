@@ -83,10 +83,10 @@ typedef struct
 {
     float sample_period_s;
     /* sample_period_s：TAD 计算周期，单位 s，默认 0.0001；通信只读，不改变硬件中断频率。 */ /* TAD control interrupt period */
-    float modulation_max; /* modulation_max：三相调制比绝对值上限，默认 0.98。 */
+    float modulation_max; /* modulation_max：各活动相调制比绝对值上限，默认 0.98。 */
 
     float precharge_voltage_v;
-    /* precharge_voltage_v：三相单模块最低直流电压的预充达标阈值，单位 V。 */ /* Minimum of A/B/C per-module DC */
+    /* precharge_voltage_v：三相时取各相模块均压最小值，单相时取 A 相均压的预充阈值，单位 V。 */
     unsigned short precharge_stable_10ms; /* precharge_stable_10ms：预充电压须持续达标的 10 ms 拍数。 */
     unsigned short precharge_timeout_10ms; /* precharge_timeout_10ms：预充允许的最大等待时间，单位 10 ms。 */
     unsigned short bypass_delay_10ms; /* bypass_delay_10ms：投入预充旁路后的等待时间，单位 10 ms。 */
@@ -127,9 +127,9 @@ typedef struct
     float current_phase_compensation_rad; /* current_phase_compensation_rad：电流坐标变换相位补偿，单位 rad。 */
     float output_phase_compensation_rad; /* output_phase_compensation_rad：输出电压坐标逆变换相位补偿，单位 rad。 */
 
-    float ac_overcurrent_trip_a; /* ac_overcurrent_trip_a：快速过流阈值，比较每TAD标定相电流绝对值最大值，单位A。 */
+    float ac_overcurrent_trip_a; /* ac_overcurrent_trip_a：快速过流阈值，比较每TAD活动相原始标定电流绝对值，单位A。 */
     float
-        dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：快速过压阈值，比较三相各自模块平均直流电压的最大值，单位V。 */
+        dc_overvoltage_trip_v; /* dc_overvoltage_trip_v：快速过压阈值，三相取各相模块均压最大值，单相只取 A 相，单位V。 */
     unsigned short protection_confirm_samples; /* protection_confirm_samples：新增软件保护所需的连续超限 TAD 样本数。 */
 
     unsigned short dab_start_duty_count; /* dab_start_duty_count：DAB 使能时初始占空比计数，默认 350。 */
@@ -149,8 +149,8 @@ typedef struct
     unsigned short pll_locked; /* pll_locked：PLL 连续锁定已确认标志。 */
     unsigned short dab_duty_count; /* dab_duty_count：当前实际下发 DAB 占空比计数。 */
     unsigned long tick_10ms; /* tick_10ms：10 ms 软件节拍；故障记录中为后台观察时刻，不是精确跳闸时间。 */
-    float dc_voltage_average_v; /* dc_voltage_average_v：三相单模块平均直流电压，单位 V。 */
-    float dc_voltage_min_v; /* dc_voltage_min_v：三相单模块平均电压中的最小值，单位 V。 */
+    float dc_voltage_average_v; /* dc_voltage_average_v：三相各相模块均压的平均值，单相直接为 A 相模块均压，单位 V。 */
+    float dc_voltage_min_v; /* dc_voltage_min_v：三相各相模块均压最小值，单相直接为 A 相模块均压，单位 V。 */
     float pll_angle_rad; /* pll_angle_rad：PLL 当前电网相角，单位 rad。 */
     float pll_frequency_hz; /* pll_frequency_hz：PLL 当前估计电网频率，单位 Hz。 */
     float id_feedback_a; /* id_feedback_a：闭环 d 轴电流反馈，单位 A。 */
@@ -161,7 +161,7 @@ typedef struct
     unsigned short startup_phase; /* startup_phase：CHB_STARTUP_* 启动阶段编号。 */
     unsigned long startup_tad_count; /* startup_tad_count：启动斜坡已执行的 TAD 拍数。 */
     unsigned short voltage_loop_active; /* voltage_loop_active：电压外环已接管 Id 给定的标志。 */
-    float modulation_actual; /* modulation_actual：当前三相调制指令的最大绝对值。 */
+    float modulation_actual; /* modulation_actual：当前各活动相调制指令的最大绝对值，单相只计 A 相。 */
 } CHB_DAB_STATUS;
 
 extern volatile CHB_DAB_COMMAND

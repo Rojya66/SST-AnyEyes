@@ -12,6 +12,7 @@
 
 #include "FaultCheck.h"
 #include "ChbDabControl.h"
+#include "SstSinglePhase.h"
 
 /* CHB_PI：π 浮点常量。 */
 #define CHB_PI 3.14159265358979323846F
@@ -103,7 +104,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.16F, /* PhaseComValue */
 
     120.0F, /* ac_overcurrent_trip_a：每TAD相电流绝对值门槛，单位A。 */
-    780.0F, /* dc_overvoltage_trip_v：三相各自模块均压的最大值门槛，单位V。 */
+    780.0F, /* dc_overvoltage_trip_v：三相取各相模块均压最大值，单相只检查 A 相，单位V。 */
     5U, /* protection_confirm_samples：连续超限TAD样本数。 */
 
     350U, /* DAB initial duty (7% of 5000) */
@@ -189,6 +190,7 @@ static float Chb_Abs(float value)
  * 返回值: 三者最小值
  * 执行说明: 控制核心；FastStep 及其计算子函数属于原 100 µs TAD 路径，Service 属于主循环。
  *================================================================*/
+#if !SST_PHASE_A_ONLY_TEST
 static float Chb_Min3(float a, float b, float c)
 {
     float result; /* result：已比较输入中的当前最小值。 */
@@ -196,6 +198,7 @@ static float Chb_Min3(float a, float b, float c)
     result = (a < b) ? a : b;
     return (result < c) ? result : c;
 }
+#endif
 
 /*==================================================================
  * 函数功能: 比较三个浮点量并取最大值
@@ -396,6 +399,11 @@ static void Chb_WriteNormalizedReferences(float phase_a, float phase_b, float ph
      * 同时把 A 相换算到 DAC_BUF[0]，便于示波器观察软件实际输出参考。
      */
     phase_a = Chb_Clamp(phase_a, CHB_REFERENCE_MIN, CHB_REFERENCE_MAX);
+#if SST_PHASE_A_ONLY_TEST
+    /* B/C 只写指令中点；其 CHB/DAB 实际封波由 Module_Control_Write 最终门控保证。 */
+    phase_b = 1.0F;
+    phase_c = 1.0F;
+#endif
     phase_b = Chb_Clamp(phase_b, CHB_REFERENCE_MIN, CHB_REFERENCE_MAX);
     phase_c = Chb_Clamp(phase_c, CHB_REFERENCE_MIN, CHB_REFERENCE_MAX);
 
@@ -726,6 +734,15 @@ static unsigned short Chb_ConfigurationValid(void)
      * DAB 目标占空比越界。预充时间、PLL 锁定时间和闭环 PI 限幅只在闭环
      * 模式检查，保证开环调试不被未使用的闭环参数阻塞。
      */
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相开环/闭环均只允许 A 相；周期固定为原 FPGA 外部中断的 100 µs。 */
+    if ((NHA_module_A == 0U) || (NHA_module_B != 0U) || (NHA_module_C != 0U) ||
+        !(g_chb_dab_params.sample_period_s >= 0.00009999F && g_chb_dab_params.sample_period_s <= 0.00010001F) ||
+        !(g_chb_dab_params.pll_nominal_frequency_hz >= 1.0F && g_chb_dab_params.pll_nominal_frequency_hz <= 200.0F))
+    {
+        return 0U;
+    }
+#else
     if (g_chb_dab_command.ac_mode == CHB_AC_MODE_OPEN_LOOP)
     {
         /* 单板开环验证只要求至少存在一个有效 UNIT。 */
@@ -739,6 +756,7 @@ static unsigned short Chb_ConfigurationValid(void)
         /* 闭环三相控制仍要求 A/B/C 三相均有模块。 */
         return 0U;
     }
+#endif
     if ((g_chb_dab_params.sample_period_s <= 0.0F) || (g_chb_dab_params.modulation_max <= 0.0F) ||
         (g_chb_dab_params.modulation_max > 0.98F) || (g_chb_dab_params.protection_confirm_samples == 0U) ||
         (g_chb_dab_params.dab_ramp_step_count == 0U) || (g_chb_dab_params.dab_target_duty_count > 2500U) ||
@@ -776,6 +794,9 @@ static unsigned short Chb_ConfigurationValid(void)
  *================================================================*/
 void ChbDabControl_Init(void)
 {
+#if SST_PHASE_A_ONLY_TEST
+    SstSinglePhase_Init(); /* 仅上电清零；预充、锁相及停机期间持续构造正交量。 */
+#endif
     /* 初始化运行变量；随后经 Chb_EnterState() 撤销 PWM 使能并设置停止状态。 */
     g_chb_dab_status.state = CHB_STATE_STOPPED;
     g_chb_dab_status.fault_code = CHB_FAULT_NONE;
@@ -1373,13 +1394,19 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float command_d; /* command_d：限幅前/后的 d 轴输出电压指令，单位 V。 */
     float command_q; /* command_q：限幅前/后的 q 轴输出电压指令，单位 V。 */
     float command_alpha; /* command_alpha：输出电压 α 轴指令，单位 V。 */
-    float command_beta; /* command_beta：输出电压 β 轴指令，单位 V。 */
+#if !SST_PHASE_A_ONLY_TEST
+    float command_beta; /* command_beta：三相输出电压 β 轴指令，单位 V。 */
+#endif
     float phase_a; /* phase_a：A 相输出电压指令，单位 V；写入前换算为归一化参考。 */
+#if !SST_PHASE_A_ONLY_TEST
     float phase_b; /* phase_b：B 相输出电压指令，单位 V；写入前换算为归一化参考。 */
     float phase_c; /* phase_c：C 相输出电压指令，单位 V；写入前换算为归一化参考。 */
+#endif
     float phase_dc_a; /* phase_dc_a：A 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
+#if !SST_PHASE_A_ONLY_TEST
     float phase_dc_b; /* phase_dc_b：B 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
     float phase_dc_c; /* phase_dc_c：C 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
+#endif
 
     /*
      * 闭环控制计算顺序：
@@ -1396,9 +1423,15 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     output_sine_angle = sinf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.output_phase_compensation_rad);
     output_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.output_phase_compensation_rad);
     /* 先把采样量变换到同步dq坐标系，电流极性由可调符号统一处理。 */
+#if SST_PHASE_A_ONLY_TEST
+    /* 两轴使用同一 SOGI 的滤波输出，并成对应用既有电流极性；虚拟 beta 不写入物理 B/C 采样。 */
+    current_alpha = g_chb_dab_params.current_feedback_sign * g_sst_single_phase_status.current_alpha_a;
+    current_beta = g_chb_dab_params.current_feedback_sign * g_sst_single_phase_status.current_beta_a;
+#else
     current_alpha = g_chb_dab_params.current_feedback_sign * HA_Port_Current_A;
     current_beta =
         g_chb_dab_params.current_feedback_sign * (HA_Port_Current_A + 2.0F * HA_Port_Current_B) * CHB_ONE_BY_SQRT3;
+#endif
     current_d = current_alpha * current_cosine_angle + current_beta * current_sine_angle;
     current_q = -current_alpha * current_sine_angle + current_beta * current_cosine_angle;
     voltage_d = voltage_alpha * voltage_cosine_angle + voltage_beta * voltage_sine_angle;
@@ -1429,6 +1462,18 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     command_q = voltage_q + vq_correction;
 
     command_alpha = command_d * output_cosine_angle - command_q * output_sine_angle;
+#if SST_PHASE_A_ONLY_TEST
+    /* 虚拟 dq 逆变换后只取真实 alpha=AN 输出，复用上面的电压外环、电流 PI 与电压前馈。 */
+    phase_a = command_alpha;
+    phase_dc_a = (float)NHA_module_A * g_chb_dab_command.dc_voltage_ref_v;
+    if (phase_dc_a > 1.0F)
+    {
+        phase_a = Chb_Clamp(phase_a,
+                            -g_chb_dab_params.closed_loop_voltage_limit_factor * phase_dc_a,
+                            g_chb_dab_params.closed_loop_voltage_limit_factor * phase_dc_a);
+        Chb_WriteNormalizedReferences(1.0F + phase_a / phase_dc_a, 1.0F, 1.0F);
+    }
+#else
     command_beta = command_d * output_sine_angle + command_q * output_cosine_angle;
     phase_a = command_alpha;
     phase_b = -0.5F * command_alpha + CHB_SQRT3_BY_TWO * command_beta;
@@ -1452,6 +1497,7 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
         Chb_WriteNormalizedReferences(
             1.0F + phase_a / phase_dc_a, 1.0F + phase_b / phase_dc_b, 1.0F + phase_c / phase_dc_c);
     }
+#endif
     else
     {
         Chb_WriteNeutralReferences();
@@ -1484,7 +1530,12 @@ static void Chb_CheckSoftwareProtection(void)
         return;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 快速保护直接检查物理 A 相采样，不使用有滤波延迟的 SOGI 电流。 */
+    maximum_current = Chb_Abs(HA_Port_Current_A);
+#else
     maximum_current = Chb_Max3(Chb_Abs(HA_Port_Current_A), Chb_Abs(HA_Port_Current_B), Chb_Abs(HA_Port_Current_C));
+#endif
     if (maximum_current >= g_chb_dab_params.ac_overcurrent_trip_a)
     {
         if (s_ac_overcurrent_count < 0xFFFFU)
@@ -1497,7 +1548,11 @@ static void Chb_CheckSoftwareProtection(void)
         s_ac_overcurrent_count = 0U;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    if (SVG_Udc_A_Ave >= g_chb_dab_params.dc_overvoltage_trip_v)
+#else
     if (Chb_Max3(SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave) >= g_chb_dab_params.dc_overvoltage_trip_v)
+#endif
     {
         if (s_dc_overvoltage_count < 0xFFFFU)
         {
@@ -1539,11 +1594,40 @@ void ChbDabControl_FastStep(void)
      * 通讯或 EEPROM 操作；这里只做浮点控制计算和 FPGA 寄存器/内存映射写入。
      */
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相预充、启动给定和电压外环均只读取 A 相模块均压。 */
+    g_chb_dab_status.dc_voltage_average_v = SVG_Udc_A_Ave;
+    g_chb_dab_status.dc_voltage_min_v = SVG_Udc_A_Ave;
+    SstSinglePhase_FastStep(
+        HA_Port_Volt_A, HA_Port_Current_A, g_chb_dab_status.pll_frequency_hz, g_chb_dab_params.sample_period_s);
+    voltage_alpha = g_sst_single_phase_status.voltage_alpha_v;
+    voltage_beta = g_sst_single_phase_status.voltage_beta_v;
+    if ((g_sst_single_phase_status.valid == 0U) || !(SVG_Udc_A_Ave >= 0.0F && SVG_Udc_A_Ave <= 1000000.0F))
+    {
+        s_pll_integral = 0.0F;
+        s_pll_lock_fast_count = 0U;
+        g_chb_dab_status.pll_locked = 0U;
+        g_chb_dab_status.pll_frequency_hz = g_chb_dab_params.pll_nominal_frequency_hz;
+        if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
+        {
+            if (g_chb_dab_status.state == CHB_STATE_RUNNING)
+            {
+                ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+            }
+            Chb_WriteNeutralReferences();
+            return;
+        }
+        /* 开环脉冲验证仍独立于闭环采样有效性；非法输入不会送入 PLL。 */
+        voltage_alpha = 0.0F;
+        voltage_beta = 0.0F;
+    }
+#else
     g_chb_dab_status.dc_voltage_average_v = (SVG_Udc_A_Ave + SVG_Udc_B_Ave + SVG_Udc_C_Ave) / 3.0F;
     g_chb_dab_status.dc_voltage_min_v = Chb_Min3(SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave);
 
     voltage_alpha = HA_Port_Volt_A;
     voltage_beta = (HA_Port_Volt_A + 2.0F * HA_Port_Volt_B) * CHB_ONE_BY_SQRT3;
+#endif
     /*****临时调试生成三相参考电压使用****/
     //    static float theta_openloop = 0.0f;
     //    if(theta_openloop < 6.283185307)
@@ -1558,6 +1642,14 @@ void ChbDabControl_FastStep(void)
     //    voltage_beta = 200*sinf(theta_openloop);
 
     Chb_UpdatePll(voltage_alpha, voltage_beta);
+#if SST_PHASE_A_ONLY_TEST
+    if (g_sst_single_phase_status.ready == 0U)
+    {
+        /* 滤波建立前禁止累计锁定确认；建立后仍需通过原 PLL 连续锁定及 10 ms 状态机确认。 */
+        s_pll_lock_fast_count = 0U;
+        g_chb_dab_status.pll_locked = 0U;
+    }
+#endif
 
     if (g_chb_dab_status.state != CHB_STATE_RUNNING)
     {

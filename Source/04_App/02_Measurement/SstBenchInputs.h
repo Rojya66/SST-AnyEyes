@@ -1,4 +1,4 @@
-// 文件职责：默认关闭的单UNIT无主回路采样注入接口，测试量只由CCS临时修改。
+// 文件职责：由测试宏选择的单UNIT无主回路采样注入接口，测试量只由CCS临时修改。
 #ifndef SST_BENCH_INPUTS_H_
 #define SST_BENCH_INPUTS_H_
 #include <stdint.h>
@@ -14,9 +14,9 @@ extern "C"
         float dc_a_v; /* dc_a_v：A相虚拟单模块直流电压，单位V，范围0..10000。 */
         float dc_b_v; /* dc_b_v：B相虚拟单模块直流电压，单位V，范围0..10000。 */
         float dc_c_v; /* dc_c_v：C相虚拟单模块直流电压，单位V，范围0..10000。 */
-        float grid_peak_v; /* grid_peak_v：平衡三相虚拟电压峰值，单位V，范围0..20000。 */
+        float grid_peak_v; /* grid_peak_v：虚拟相电压峰值，单相宏下为 AN 峰值，单位V，范围0..20000。 */
         float grid_frequency_hz; /* grid_frequency_hz：独立虚拟电网频率，单位Hz，范围0..100。 */
-        float current_peak_a; /* current_peak_a：与虚拟相电压同相的平衡相电流峰值，单位A，范围0..10000。 */
+        float current_peak_a; /* current_peak_a：与虚拟相电压同相的相电流峰值，单相仅生成 A 相，单位A，范围0..10000。 */
     } SST_BENCH_INPUTS;
 
     typedef struct

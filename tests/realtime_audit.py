@@ -81,7 +81,12 @@ def definitions(text: str) -> dict[str, str]:
 
 
 def select_dpram_branches(text: str, enabled: bool) -> str:
-    """Select DPRAM gates and the fixed HVAC build; retain unrelated branches."""
+    """Select DPRAM gates and the original three-phase compatibility branch.
+
+    A-only behavior is checked independently by single_phase_control.py and
+    single_phase_io.py.  This preservation audit checks that macro=0 keeps
+    the original hardware/control token stream; unrelated branches remain.
+    """
     result = []
     stack: list[tuple[bool, bool | None]] = []
     active = True
@@ -104,6 +109,10 @@ def select_dpram_branches(text: str, enabled: bool) -> str:
                     known = False
                 elif expression == "!SST_BENCH_INPUT_SIM":
                     known = True
+                elif expression == "SST_PHASE_A_ONLY_TEST":
+                    known = False
+                elif expression == "!SST_PHASE_A_ONLY_TEST":
+                    known = True
                 elif expression == "SST_ENABLE_DPRAM":
                     known = enabled
                 elif expression == "!SST_ENABLE_DPRAM":
@@ -125,6 +134,23 @@ def select_dpram_branches(text: str, enabled: bool) -> str:
     if stack:
         raise ValueError("Unbalanced conditional directives")
     return "".join(result)
+
+
+def normalize_udc_local_declarations(text: str) -> str:
+    """Treat the reviewed split of three uninitialized float locals equally.
+
+    This is deliberately limited to SVG_Udc_Average and the exact three names;
+    no statement, initializer, type, order, or other function is normalized.
+    """
+    if not re.search(r'\bSVG_Udc_Average\s*\([^;{}]*\)\s*\{', text):
+        return text
+    old = function(text, "SVG_Udc_Average")
+    new, count = re.subn(r'\bfloat\s+tempAve1\s*;\s*float\s+tempAve2\s*;\s*'
+                         r'float\s+tempAve3\s*;',
+                         'float tempAve1,tempAve2,tempAve3;', old)
+    if count > 1:
+        raise AssertionError("Unexpected repeated SVG_Udc_Average local declarations")
+    return text.replace(old, new, 1)
 
 
 def closure(name: str, functions: dict[str, str]) -> set[str]:
@@ -178,7 +204,8 @@ def main() -> None:
     # Fixed HVAC project: evaluate the same legacy port choice before comparing
     # declaration locations. Unrelated compile-time alternatives remain in text.
     all_entities = [entity for path, contents in source_texts.items()
-                    for entity in inventory(select_dpram_branches(contents, True),
+                    for entity in inventory(normalize_udc_local_declarations(
+                                                select_dpram_branches(contents, True)),
                                             path.relative_to(args.project).as_posix())]
     archived_interfaces = [entity for directory in (args.project / "archive", args.project / "Legacy")
                            if directory.exists() for path in directory.rglob("*")
@@ -204,13 +231,25 @@ def main() -> None:
         "FaultCheck.C": "04_App/08_Fault/FaultCheck.C",
         "main.H": "04_App/00_Config/main.H",
     }
+    expected_module_masks = {
+        "CHB_PM_A1_MASK": "0x0007U", "CHB_PM_A2_MASK": "0x0000U",
+        "CHB_PM_B1_MASK": "0x0000U", "CHB_PM_B2_MASK": "0x0000U",
+        "CHB_PM_C1_MASK": "0x0000U", "CHB_PM_C2_MASK": "0x0000U",
+    }
+    actual_module_masks = dict(re.findall(r'^\s*#\s*define\s+(CHB_PM_[ABC][12]_MASK)\s+(\w+)\s*$',
+                                         uncomment(all_text), re.MULTILINE))
+    check(actual_module_masks == expected_module_masks,
+          "reviewed installed-unit configuration is exactly A1=0x0007 and all other module masks=0")
     for name, relative in unchanged.items():
         original = inventory(select_dpram_branches(read(args.baseline / name), True), name)
+        if name == "ChbDabControl.h" and actual_module_masks == expected_module_masks:
+            original = [entity for entity in original
+                        if entity.key not in {"macro:" + mask for mask in expected_module_masks}]
         # Only declarations of the disabled legacy UART/history APIs may be
         # satisfied by archives. Functions, types, values and MMIO declarations
         # retain current-source requirements and independent call-graph checks.
         missing = missing_entities(original, all_entities + archived_interfaces)
-        check(not missing, f"every original executable entity preserved across module locations: {name} "
+        check(not missing, f"every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))

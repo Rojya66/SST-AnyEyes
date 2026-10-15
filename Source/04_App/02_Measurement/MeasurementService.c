@@ -14,6 +14,7 @@
 #include "ADC_Sample.h"
 #include "hw_types.h"
 #include "FaultCheck.h"
+#include "ChbBuildConfig.h"
 #ifdef HVAC_online
 /*==================================================================
  * 函数功能: 换算当前端口锁存/滤波采样，更新有效值、功率及公共遥测
@@ -25,10 +26,15 @@
 void Port_RealTimeParameter(void)
 {
     float AD_CalTemp; /* AD_CalTemp：采样比例换算、滤波或有效值计算的浮点中间值。 */
+#if !SST_PHASE_A_ONLY_TEST
     float ADSample_buffer[3]; /* ADSample_buffer：本轮读取的 FPGA 原始采样字缓存。 */
+#endif
 
     if (HVAC_RealParameter_N == 200)
     {
+#if SST_PHASE_A_ONLY_TEST
+        /* 点表地址保持原样：PORT_V_A 改为 AN 有效值，B/C 电压和电流表示未使用，保持为零。 */
+#endif
         AD_CalTemp = HVAC_RealVoltage_Sum[0] / 200.0;
         PORT_RealTime_DATA.PORT_V_A = sqrtf(AD_CalTemp);
         AD_CalTemp = HVAC_RealVoltage_Sum[1] / 200.0;
@@ -90,8 +96,13 @@ void Port_RealTimeParameter(void)
         HVAC_RealParameter_N = 0;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相外电源及欠压状态只检查 AN；门槛沿用现有参数，需要按现场 AN 电压等级配置。 */
+    if (PORT_RealTime_DATA.PORT_V_A > Ust_HVAC_Port)
+#else
     if ((PORT_RealTime_DATA.PORT_V_A > Ust_HVAC_Port) && (PORT_RealTime_DATA.PORT_V_B > Ust_HVAC_Port) &&
         (PORT_RealTime_DATA.PORT_V_C > Ust_HVAC_Port))
+#endif
     {
         Port_Outer_Elec = 1;
     }
@@ -100,8 +111,12 @@ void Port_RealTimeParameter(void)
         Port_Outer_Elec = 0;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    if (PORT_RealTime_DATA.PORT_V_A < VoltLevel_2)
+#else
     if ((PORT_RealTime_DATA.PORT_V_A < VoltLevel_2) || (PORT_RealTime_DATA.PORT_V_B < VoltLevel_2) ||
         (PORT_RealTime_DATA.PORT_V_C < VoltLevel_2))
+#endif
     {
         Port_Abnormal = 1;
     }
@@ -110,8 +125,12 @@ void Port_RealTimeParameter(void)
         Port_Abnormal = 0;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    if (PORT_RealTime_DATA.PORT_V_A < VoltLevel_1)
+#else
     if ((PORT_RealTime_DATA.PORT_V_A < VoltLevel_1) || (PORT_RealTime_DATA.PORT_V_B < VoltLevel_1) ||
         (PORT_RealTime_DATA.PORT_V_C < VoltLevel_1))
+#endif
     {
         Port_LV2 = 1;
     }

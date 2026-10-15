@@ -2,6 +2,8 @@
 
 本工程在 C6748 + FPGA 硬件上迁移 `Chb_DabPrim_vofa` 的 HVAC/CHB 和 DAB 原边功能，按 `F28377S_Plat` 的六层结构组织。AnyEyes 使用参考工程 PcDebug 的命令、功能码地址格式、波形通道与状态索引格式；VOFA 是可选构建。
 
+2026-10-15增加默认关闭的 `SST_PHASE_A_ONLY_TEST`：开启后将电压首通道解释为 AN，双 SOGI 构造虚拟 αβ，复用现有 PLL、dq 电流 PI、电压外环和启动状态机，强制封锁 B/C 的 CHB、DAB。配置、采样尺度、单相启动测试与验证边界见 [A 相单相闭环测试说明](docs/PHASE_A_SINGLE_PHASE_TEST.md)。
+
 2026-10-14补齐`00_Version`电子标签模块，当前握手匹配号为`255/43/1/0`，版本为`255.43.1.0.1.0`。标签集中配置、FF/7F握手、FA/7A版本读取、心跳与485连接步骤见[AnyEyes电子标签与握手](docs/ANYEYES_HANDSHAKE.md)。本轮保留用户当前`SST_BENCH_INPUT_SIM=1`；此前输入测试标签中的默认0是固定历史版本，真实主回路恢复必须显式关闭输入测试。
 
 框架整理将入口、启动协调、后台任务、中断、数据定义及外围业务分别放回所属模块。先从 `Main.c`、`SystemInit.c`、`TaskSlice.c` 阅读执行顺序，再按数据域进入控制、采样、保护及通信模块；`main.H` 仅为历史兼容聚合头，活动模块直接包含所属接口。具体目录、调用关系及验证状态见 [框架整理交付说明](docs/FRAMEWORK_REFACTOR_RESULT.md)。
@@ -23,6 +25,7 @@
 | `SST_SIMULATOR_MODE` | 当前默认1 | 0=允许远程控制，1=仿真器直接控制 |
 | `SST_ENABLE_DPRAM` | 当前默认0 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
 | `SST_BENCH_INPUT_SIM` | 当前默认1 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
+| `SST_PHASE_A_ONLY_TEST` | 默认0 | 1=AN 单相虚拟 dq 测试，仅允许 A 相模块；0=原三相算法 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
 | `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
 | `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
@@ -46,6 +49,7 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 - [按 F28377S_Plat 框架整理的实施前方案](docs/FRAMEWORK_REFACTOR_PLAN.md)
 - [框架整理交付说明与调用关系](docs/FRAMEWORK_REFACTOR_RESULT.md)
 - [编译、宏配置及仿真器操作](docs/BUILD_AND_CONFIGURATION.md)
+- [A 相 AN、SOGI 虚拟 dq 双闭环配置与测试](docs/PHASE_A_SINGLE_PHASE_TEST.md)
 - [AnyEyes 参数、波形、状态对应表](docs/ANYEYES_MAPPING.md)
 - [通信协议与串口实现](docs/COMMUNICATION.md)
 - [AnyEyes电子标签、握手与版本查询](docs/ANYEYES_HANDSHAKE.md)

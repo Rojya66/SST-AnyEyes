@@ -23,6 +23,10 @@
  * 恢复真实采样时改为 0 并重新编译；本功能不替代功率回路模型。 */
 #define SST_BENCH_INPUT_SIM 1U
 #endif
+#ifndef SST_PHASE_A_ONLY_TEST
+/* SST_PHASE_A_ONLY_TEST：仅 A 相 AN 采样与虚拟 dq 双闭环测试；1 启用双 SOGI 并封锁 B/C，0 保留三相算法。 */
+#define SST_PHASE_A_ONLY_TEST 0U
+#endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
 /* SST_ALLOW_SERIAL_COMMANDS：由仿真器模式派生的普通串口命令权限。 */
@@ -78,6 +82,9 @@
 #endif
 #if SST_BENCH_INPUT_SIM > 1U
 #error "SST_BENCH_INPUT_SIM must be 0 or 1"
+#endif
+#if SST_PHASE_A_ONLY_TEST > 1U
+#error "SST_PHASE_A_ONLY_TEST must be 0 or 1"
 #endif
 #if SST_BENCH_INPUT_SIM && (!SST_SIMULATOR_MODE || SST_ENABLE_DPRAM || CHB_LOAD_EEPROM_PARAMETERS)
 #error "Bench input simulation requires simulator=1, DPRAM=0 and EEPROM boot load=0"

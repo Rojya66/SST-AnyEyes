@@ -1516,8 +1516,8 @@
       "new_keys": [
         "function:Port_AD_Sample"
       ],
-      "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
-      "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
       "baseline_sha256s": [
         "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
         "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
@@ -1527,8 +1527,8 @@
       "current_sha256s": [
         "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
         "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
-        "66de247a7fe84ac657264fece941da19c2016beb26c76174055cdac09d963628",
-        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba"
+        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba",
+        "e4fe8ebcf9ab8f28d76381faff0f3e67c4af01430ed85d8e0652c8ecb279649a"
       ]
     },
     {
@@ -1536,13 +1536,13 @@
       "new_keys": [
         "function:SVG_Udc_Average"
       ],
-      "reason": "用户授权增加默认关闭的临时输入仿真宏；仅宏开启时常规采样注入或跳过真实均压/48位置巡检，宏关闭后原函数的TI预处理执行token精确一致。锁存采样、硬件FO/FB和ISR正文保留。",
-      "validation": "tests/bench_isolation.py (TI preprocessed TEST=0 exact body equality and ISR assembly equality against 6675a72); tests/bench_inputs.py (real PLL/startup/protection); target TEST=0/1 builds",
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
       "baseline_sha256s": [
         "108d87fe787330d9b5d9f13c9ab0f558bac561cf8f7f55bed532212be047e17d"
       ],
       "current_sha256s": [
-        "842b1d2df7f3c65faf8596a19171ac4ab21249885784141fe892678084eea4e4"
+        "3163040e6cb606de2926bbe29769f26dd4ffa6c2aaf673dc4d3060ea1a6b5538"
       ]
     },
     {
@@ -1613,6 +1613,207 @@
       ],
       "current_sha256s": [
         "cb281775fa628e415733d0395f86e388a2aae1d1ccc6c94c5f9f67c419b46e23"
+      ]
+    },
+    {
+      "key": "function:ChbDabControl_FastStep",
+      "new_keys": [
+        "function:ChbDabControl_FastStep"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "e656bc62165ea3e3acaf8bdbfccac8d3b928834008b3520e0ecadd3fb86d652a"
+      ],
+      "current_sha256s": [
+        "1d83d1977b4443978c956619b9ba98468d117a847ae8e88cf738a106c098f9ed"
+      ]
+    },
+    {
+      "key": "function:ChbDabControl_Init",
+      "new_keys": [
+        "function:ChbDabControl_Init"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "55863ba880bf8fadda0cefe88dacfdc7b12444df6d8379ca46c9305d6192319d"
+      ],
+      "current_sha256s": [
+        "893031cbc018673e779f72a6760d7663fbc5a5f51f3c61936f66d726d3a7bcb6"
+      ]
+    },
+    {
+      "key": "function:Chb_CheckSoftwareProtection",
+      "new_keys": [
+        "function:Chb_CheckSoftwareProtection"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "b306b73a3d065e69978be72496102eede61332fd6272294bb152efebceb77366"
+      ],
+      "current_sha256s": [
+        "2c98e7b5a47fc7fa3fc771132d56ce835297a00c931c05db906e6ea88c314c49"
+      ]
+    },
+    {
+      "key": "function:Chb_ConfigurationValid",
+      "new_keys": [
+        "function:Chb_ConfigurationValid"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "07af2f369682ecc7fd0833e23c1b600cee743de33f8f10c460901982d805667f"
+      ],
+      "current_sha256s": [
+        "61a5b370eb99bc56d26066735ae04aedd4eaabb07bf452f28e2603d62cc70202"
+      ]
+    },
+    {
+      "key": "function:Chb_Min3",
+      "new_keys": [
+        "function:Chb_Min3"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "4e5e554574d51ded4048e74cdb27f18c67072374d3b9889c68e8fcc769a31ff7"
+      ],
+      "current_sha256s": [
+        "74bf99a91fa44378e35eae9284249e58abbbc3a663c93ff546fa6f10d58d000b"
+      ]
+    },
+    {
+      "key": "function:Chb_RunClosedLoop",
+      "new_keys": [
+        "function:Chb_RunClosedLoop"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "9ac30efc10783288f09d031cf7025e6c3a3630d756e89ba1c387845e9eed6fff"
+      ],
+      "current_sha256s": [
+        "cc31536ded6e1fb1ce95395c9d4dc8c2f507b5442275c64852a93721726d2477"
+      ]
+    },
+    {
+      "key": "function:Chb_WriteNormalizedReferences",
+      "new_keys": [
+        "function:Chb_WriteNormalizedReferences"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "15fc50b9c4f1b6753e270b79791ea2ddde4502cce5d947a2f0bd19967038ce09"
+      ],
+      "current_sha256s": [
+        "f86f9ee423cb4b97f46b032b94daa01d8f74149d8a7b76f45ffaa4b82a164550"
+      ]
+    },
+    {
+      "key": "function:HVAC_RealTimeParameter",
+      "new_keys": [
+        "function:HVAC_RealTimeParameter"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "0608e789d09b9048f90bcf69dc94949ac030e245b150e57f14439723de9af91e"
+      ],
+      "current_sha256s": [
+        "9035d45faaa7c62a58a042cd14ba5f3ea5e86c103d8748a161fbdc8463ea55b8"
+      ]
+    },
+    {
+      "key": "function:Port_RealTimeParameter",
+      "new_keys": [
+        "function:Port_RealTimeParameter"
+      ],
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
+      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "baseline_sha256s": [
+        "8af953923b4ae917047ffbb876b7d4fb43bb4bef423fa8eb344e36a9195c507e",
+        "9319d2af32f30aa3fa0d593d7429010ee2d48dc0afbc17f07f4e7e153b42414c",
+        "97cf4eaf1f1753d8ba7b1f82962d32e7478bf4d783e1392e5c086ad0cdfd4f3f",
+        "a9bf26f3f7d74667082992cefcb1f41fc6e313a761317cb70f6a11aca0618c24"
+      ],
+      "current_sha256s": [
+        "8af953923b4ae917047ffbb876b7d4fb43bb4bef423fa8eb344e36a9195c507e",
+        "9319d2af32f30aa3fa0d593d7429010ee2d48dc0afbc17f07f4e7e153b42414c",
+        "a9bf26f3f7d74667082992cefcb1f41fc6e313a761317cb70f6a11aca0618c24"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_A1_MASK",
+      "new_keys": [
+        "macro:CHB_PM_A1_MASK"
+      ],
+      "reason": "保留本次单相修改前 bcd8d1c 已使用的现场模块配置：A1=0x0007（三模块），A2/B1/B2/C1/C2=0。仅模块掩码值变化，不改变 FPGA 地址、模块计数算法、参考尺度计算及 TAD 时序。",
+      "validation": "tests/realtime_audit.py (exact six-mask configuration); tests/single_phase_control.py; tests/single_phase_io.py; TI target build",
+      "baseline_sha256s": [
+        "5ea84d18e60a34e0c5f3c1f1d0d8d7f6a997aca66a9364e41b3c6356f6a5383b"
+      ],
+      "current_sha256s": [
+        "61253e64760d339d6eb18be108ef3e698bb3b4dd76014fe192c9f25caeae1539"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_B1_MASK",
+      "new_keys": [
+        "macro:CHB_PM_B1_MASK"
+      ],
+      "reason": "保留本次单相修改前 bcd8d1c 已使用的现场模块配置：A1=0x0007（三模块），A2/B1/B2/C1/C2=0。仅模块掩码值变化，不改变 FPGA 地址、模块计数算法、参考尺度计算及 TAD 时序。",
+      "validation": "tests/realtime_audit.py (exact six-mask configuration); tests/single_phase_control.py; tests/single_phase_io.py; TI target build",
+      "baseline_sha256s": [
+        "a1a1a45cf7c3b23b9d5fa588e8599723a5e2764055eca3a5bf75511f4aeca677"
+      ],
+      "current_sha256s": [
+        "1bad6ab2e3fb3b378b76d3a1d6023bcc4d1065ca01862b5cdf85add76eb16833"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_B2_MASK",
+      "new_keys": [
+        "macro:CHB_PM_B2_MASK"
+      ],
+      "reason": "保留本次单相修改前 bcd8d1c 已使用的现场模块配置：A1=0x0007（三模块），A2/B1/B2/C1/C2=0。仅模块掩码值变化，不改变 FPGA 地址、模块计数算法、参考尺度计算及 TAD 时序。",
+      "validation": "tests/realtime_audit.py (exact six-mask configuration); tests/single_phase_control.py; tests/single_phase_io.py; TI target build",
+      "baseline_sha256s": [
+        "c6a53f48f523f6ec5c1cd41a11f4a131e603d2e7d2705cf5614d1d2081076778"
+      ],
+      "current_sha256s": [
+        "817698072fcf1354837a49a2fbc767f928b0ed547b88930d4aacb57739e31222"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_C1_MASK",
+      "new_keys": [
+        "macro:CHB_PM_C1_MASK"
+      ],
+      "reason": "保留本次单相修改前 bcd8d1c 已使用的现场模块配置：A1=0x0007（三模块），A2/B1/B2/C1/C2=0。仅模块掩码值变化，不改变 FPGA 地址、模块计数算法、参考尺度计算及 TAD 时序。",
+      "validation": "tests/realtime_audit.py (exact six-mask configuration); tests/single_phase_control.py; tests/single_phase_io.py; TI target build",
+      "baseline_sha256s": [
+        "e493bafa5c9363edbf829dc9ec413ab5fb25852df04a0cb0d51e49b2b3ed73a6"
+      ],
+      "current_sha256s": [
+        "8692a0f66eb4480ae30b33963174d9a7e442b7792b2f1ac3061371ed1d24e168"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_C2_MASK",
+      "new_keys": [
+        "macro:CHB_PM_C2_MASK"
+      ],
+      "reason": "保留本次单相修改前 bcd8d1c 已使用的现场模块配置：A1=0x0007（三模块），A2/B1/B2/C1/C2=0。仅模块掩码值变化，不改变 FPGA 地址、模块计数算法、参考尺度计算及 TAD 时序。",
+      "validation": "tests/realtime_audit.py (exact six-mask configuration); tests/single_phase_control.py; tests/single_phase_io.py; TI target build",
+      "baseline_sha256s": [
+        "e4b2c53bab3a9cff0116fd7d240cf607f5f51fd23968f835fcd934e715c68f91"
+      ],
+      "current_sha256s": [
+        "0ba94daff045e80d3f6ad22961aaa9b469716316214749c951e2f90767c20d8a"
       ]
     }
   ]

@@ -1,0 +1,802 @@
+{
+  "generated_at_utc": "2026-10-15T09:52:05.220488+00:00",
+  "implementation_baseline": "bcd8d1c",
+  "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+  "builds": [
+    {
+      "configuration": "Debug",
+      "variant": "phase_a_bench",
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_a_bench",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=1"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 18.52,
+        "warnings": 16,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_bench\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_a_bench/SST_AnyEyes.out",
+          "sha256": "afbbb381d6ed0f4e7a3972029dbc52bda9ebb958229558f706c0d817e41b0902"
+        },
+        {
+          "path": "build/Debug/phase_a_bench/SST_AnyEyes.map",
+          "sha256": "919e423a601eea0dd6c4c141eedf02520c2769d584338df69057742f3576d8a9"
+        },
+        {
+          "path": "build/Debug/phase_a_bench/build.log",
+          "sha256": "e568794c15bc68d131257ebb795a5a2befedd2ecb7c74c7637d97677795d285e"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "variant": "phase_a_real",
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_a_real",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=1",
+          "SST_BENCH_INPUT_SIM=0"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 19.45,
+        "warnings": 16,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_real\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_a_real/SST_AnyEyes.out",
+          "sha256": "63ef7aff7831860654227178e38a4d9f16a447f9aa7b9a7629be4fcaf4524ca5"
+        },
+        {
+          "path": "build/Debug/phase_a_real/SST_AnyEyes.map",
+          "sha256": "beb3c9bc79bbe8f44e3165c90a8d0891951449c2e0a797ec727d9c46c8972396"
+        },
+        {
+          "path": "build/Debug/phase_a_real/build.log",
+          "sha256": "e568794c15bc68d131257ebb795a5a2befedd2ecb7c74c7637d97677795d285e"
+        }
+      ]
+    },
+    {
+      "configuration": "Release",
+      "variant": "phase_a_real",
+      "result": {
+        "configuration": "Release",
+        "variant": "phase_a_real",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=1",
+          "SST_BENCH_INPUT_SIM=0"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 20.24,
+        "warnings": 16,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Release\\phase_a_real\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Release/phase_a_real/SST_AnyEyes.out",
+          "sha256": "f989e213e359140c429fcf22299e58c3bf9476e427b13b71c20c64dfa817b0b4"
+        },
+        {
+          "path": "build/Release/phase_a_real/SST_AnyEyes.map",
+          "sha256": "49d4881a80f4834dc1e05a6e052159701a4ad26c2ecf2a81e6bb7c0ee5159dca"
+        },
+        {
+          "path": "build/Release/phase_a_real/build.log",
+          "sha256": "e568794c15bc68d131257ebb795a5a2befedd2ecb7c74c7637d97677795d285e"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "variant": "phase_a_vofa_dpram",
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_a_vofa_dpram",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=1",
+          "SST_BENCH_INPUT_SIM=0",
+          "SST_DEBUG_PROTOCOL=2",
+          "SST_SIMULATOR_MODE=0",
+          "SST_ENABLE_DPRAM=1"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 23.26,
+        "warnings": 16,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_vofa_dpram\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_a_vofa_dpram/SST_AnyEyes.out",
+          "sha256": "7cd823aa2f980aef308698492e1e4e148783c80ef51794d044aa209e47254589"
+        },
+        {
+          "path": "build/Debug/phase_a_vofa_dpram/SST_AnyEyes.map",
+          "sha256": "c981d8e65ef5eb78ce5126ac3f92fbeb70a5896073a44ba2f9c8fbc400ff3a8f"
+        },
+        {
+          "path": "build/Debug/phase_a_vofa_dpram/build.log",
+          "sha256": "e568794c15bc68d131257ebb795a5a2befedd2ecb7c74c7637d97677795d285e"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "variant": "phase_abc_real",
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_abc_real",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=0",
+          "SST_BENCH_INPUT_SIM=0"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 21.69,
+        "warnings": 17,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_abc_real\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_abc_real/SST_AnyEyes.out",
+          "sha256": "edc56ab5d00bb5874356609a494c3022f5d133c1d51a1bab7872712f8cb791fc"
+        },
+        {
+          "path": "build/Debug/phase_abc_real/SST_AnyEyes.map",
+          "sha256": "cbe930ad02e48acb01e040b9c5c572567f0b0185a8b79d10e11dfd216b0a47cb"
+        },
+        {
+          "path": "build/Debug/phase_abc_real/build.log",
+          "sha256": "abee3fee4fe694b859ee83e1930e4290741c5a43c69624a01ee5f94c65d27ebb"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "variant": "phase_abc_bench",
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_abc_bench",
+        "defines": [
+          "SST_PHASE_A_ONLY_TEST=0"
+        ],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 21.27,
+        "warnings": 17,
+        "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_abc_bench\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_abc_bench/SST_AnyEyes.out",
+          "sha256": "64247c5576f62e6e6e4661672ae112bbcb962c283e979513b6d5dcd73b24bf81"
+        },
+        {
+          "path": "build/Debug/phase_abc_bench/SST_AnyEyes.map",
+          "sha256": "10f5881cb7cf888834eb246f47e7fd28d92a9dfd29ce02cb7601342a9f378552"
+        },
+        {
+          "path": "build/Debug/phase_abc_bench/build.log",
+          "sha256": "abee3fee4fe694b859ee83e1930e4290741c5a43c69624a01ee5f94c65d27ebb"
+        }
+      ]
+    }
+  ],
+  "host_checks": {
+    "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+    "firmware_unchanged_during_checks": true,
+    "checks": [
+      {
+        "check": "realtime_audit",
+        "exit_code": 0,
+        "log": "build/host_validation/realtime_audit.log",
+        "log_sha256": "373a3ef6facce557e41ee9b9962ec4195fb4d65a4abcbb837d6ca79262856911",
+        "output": "BASELINE: external original SST source D:\\Code\\SST\\Chb_DabPrim_vofa\n\nPASS reviewed installed-unit configuration is exactly A1=0x0007 and all other module masks=0\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): ChbDabControl.c missing=[]\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): ChbDabControl.h missing=[]\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): ADC_Sample.C missing=[]\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): HVAC_Strategy.C missing=[]\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): FaultCheck.C missing=[]\n\nPASS every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): main.H missing=[]\n\nPASS linker preserves every original layout token except NOINIT and the exact four extensions carved from unused tail\n\nPASS DPRAM-enabled HVAC FPGA operations preserve every original token\n\nPASS DPRAM-off FPGA operations differ only in the recorder local fault-word source\n\nPASS all original 19 plus exact four extension objects have explicit linker NOINIT storage\n\nPASS DPRAM reachability analysis uses the configured HVAC port\n\nPASS DPRAM-off startup/runtime/enabled ISRs cannot reach mapped memory: []\n\nPASS DPRAM-off does not register its interrupt handler\n\nPASS initial FPGA/module/TAD configuration unchanged after exact ordered helper expansion\n\nPASS source timing macro ControlTAD preserved\n\nPASS source timing macro TAD_PLL preserved\n\nPASS TAD preserves every source token except VOFA scheduling flag\n\nPASS hardware fault ISR unchanged\n\nPASS fast control remains in FPGA ISR\n\nPASS only FPGA ISR calls FastStep: ['FPGAIsr']\n\nPASS GPIO69 TAD rising edge\n\nPASS INT5 TAD vector\n\nPASS GPIO bank4 -> INT5\n\nPASS INT4 hardware fault vector\n\nPASS GPIO bank8 -> INT4\n\nPASS startup/runtime cannot reach legacy UART2 ISR registration\n\nPASS control/fault/debug state initialized before TAD/FAULT IRQ enable\n\nPASS FPGAIsr cannot reach added communication/reporting: []\n\nPASS FAULTIsr cannot reach added communication/reporting: []\n\nPASS Timer2Isr cannot reach added communication/reporting: []\n\nPASS DPRAMIsr cannot reach added communication/reporting: []\n\nPASS background service entry points found\n\nPASS background has no global interrupt masking call path: []\n\nPASS no direct global masking in migration services: []\n\n\n\n35/35 static invariants passed\n\nLIMIT: call graph is conservative source analysis, not preprocessed binary analysis.\n\nLIMIT: target ISR WCET, latency, cache/EMIF stalls and missed edges require hardware measurement.\n\n"
+      },
+      {
+        "check": "control_regression",
+        "exit_code": 0,
+        "log": "build/host_validation/control_regression.log",
+        "log_sha256": "4242fa87c45e9bdee122d1893a62d46a3f6554b590619bdbff617a160f7c4a9d",
+        "output": "BASELINE: external original SST source D:\\Code\\SST\\Chb_DabPrim_vofa\n\nopen_loop_and_stop_priority steps=3002 hash=ec5ff0ed84b55eff state=0 fault=0 enables=2 disables=2 io=0 resets=0\n\ndab_only_and_independent_gates steps=3003 hash=a0aa924a65a249d8 state=4 fault=0 enables=2 disables=2 io=0 resets=0\n\nclosed_source_compatible_pll steps=4701 hash=55b78af9b99f6620 state=4 fault=0 enables=2 disables=2 io=5 resets=0\n\nclosed_id_ramp_handover steps=4702 hash=b88a5e61e74f18c7 state=4 fault=0 enables=2 disables=2 io=5 resets=0\n\novercurrent_confirmation_first_fault_reset steps=708 hash=e53586c62d3266b7 state=0 fault=0 enables=2 disables=4 io=9 resets=1\n\novervoltage_confirmation steps=706 hash=6d66f5222e95d2ce state=5 fault=4 enables=2 disables=3 io=7 resets=0\n\nhardware_fault_independent_of_software_switch steps=2 hash=27161e7afe61960c state=5 fault=5 enables=1 disables=2 io=0 resets=0\n\nprecharge_timeout steps=501 hash=6b6a038ba7421e9f state=5 fault=1 enables=0 disables=3 io=6 resets=0\n\nPASS: 8 scenarios match original trace exactly; SHA256=c34cd06dda3d78a2ae07e3fc333a5bd67e614b0613b6ccae31967b2eb2c50a40\n\n"
+      },
+      {
+        "check": "fault_reporting",
+        "exit_code": 0,
+        "log": "build/host_validation/fault_reporting.log",
+        "log_sha256": "c43725e3b8cabdd70cae59e5f1a06fda0c33a0eab0a50079c45110d15d9cd8b8",
+        "output": "PASS: control causes, severity, deduplication, reset and timestamps\n\nPASS: legacy OC/OV classification and staged reset\n\nPASS: duplicate sources, raw evidence and stale latch suppression\n\nPASS: aggregate module cause and delayed specific decode\n\nPASS: repeated episodes, 32-record wrap, history severity and bounds\n\n"
+      },
+      {
+        "check": "dpram_commands",
+        "exit_code": 0,
+        "log": "build/host_validation/dpram_commands.log",
+        "log_sha256": "b8fff7aa66224517d0b1a459ea3ab05049ca7ac89dc234f92da892d8e71ce883",
+        "output": "simulator: PASS: non-owner DPRAM commands cannot mutate simulator/serial commands\n\nserial_owner: PASS: non-owner DPRAM commands cannot mutate simulator/serial commands\n\nsimulator_with_dpram: PASS: non-owner DPRAM commands cannot mutate simulator/serial commands\n\ndpram_owner: PASS: DPRAM owner, stop/off priority, storage lock, independent gates, reserved bits, stopped reset\n\n"
+      },
+      {
+        "check": "parameter_precision",
+        "exit_code": 0,
+        "log": "build/host_validation/parameter_precision.log",
+        "log_sha256": "33eae721a1dbb4c259c7d5df0712bf60cf44ac2ffb485ce8fd17f83c6108474c",
+        "output": "entry 10: 62.831852 -> 62.8300018 (delta -0.00185012817, half-LSB 0.00499999989)\n\nentry 15: 0.0993750021 -> 0.0993800014 (delta 4.99933958e-006, half-LSB 4.99999987e-006)\n\nentry 24: -1.24916661 -> -1.24899995 (delta 0.000166654587, half-LSB 0.000500000024)\n\nentry 25: -16.666666 -> -16.6669998 (delta -0.000333786011, half-LSB 0.000500000024)\n\nPASS: 37 parameter + 5 command defaults representable; 4 quantized within half LSB; storage interlocks and stable reload\n\n"
+      },
+      {
+        "check": "protocol_regression",
+        "exit_code": 0,
+        "log": "build/host_validation/protocol_regression.log",
+        "log_sha256": "73e80894b0c32aafd064bcc4166728ee2ac049531dc403092990702a9776c039",
+        "output": "sim_anyeyes: PASS: electronic-tag exact/wildcard/mismatch, six-byte version/FA, session validity/reconnect (63 checks)\n\nPASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA\n\nremote_anyeyes: PASS: electronic-tag exact/wildcard/mismatch, six-byte version/FA, session validity/reconnect (63 checks)\n\nPASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA\n\ndpram_anyeyes: PASS: electronic-tag exact/wildcard/mismatch, six-byte version/FA, session validity/reconnect (63 checks)\n\nPASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA\n\nsim_vofa: PASS: VOFA ignores electronic-tag and software-version requests\n\nPASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA\n\ncustom_tag_anyeyes: PASS: electronic-tag exact/wildcard/mismatch, six-byte version/FA, session validity/reconnect (67 checks)\n\nPASS: mapping/permissions/history/save CRC, framing/CRC/recovery/stream/timeout, bounded RX/nonblocking TX, VOFA\n\nPASS: six tag/version macros reject negative and >255 values (12 configurations)\n\n"
+      },
+      {
+        "check": "refactor_equivalence",
+        "exit_code": 0,
+        "log": "build/host_validation/refactor_equivalence.log",
+        "log_sha256": "93bc395f39b258eb34282dc7192fbcd6cb55eee8ddf56b154674ea9948adfabb",
+        "output": "Framework source equivalence: 2419 original entities; 2329 current entities; {'moved_or_redeclared': 1394, 'preserved_in_noncompiled_archive': 130, 'unchanged': 547, 'reviewed_interface_or_organization_change': 154, 'exact_ordered_initialization_expansion': 2}\n\nPASS Report: D:\\Code\\SST\\AnyEyesVersion\\build\\refactor_equivalence.json\n\n"
+      },
+      {
+        "check": "comment_coverage",
+        "exit_code": 0,
+        "log": "build/host_validation/comment_coverage.log",
+        "log_sha256": "de545a26a1659c72243ca511a224be0a293089408295777531bf9f2b881a6ce6",
+        "output": "Custom comment coverage: 134 files; {'prototype': 330, 'parameter': 553, 'function': 370, 'variable': 1621, 'field': 894, 'enum': 43}\n\nHistorical same-path token equality (informational): 7 / 38\n\nPASS Report: D:\\Code\\SST\\AnyEyesVersion\\build\\comment_inventory\\verification.json\n\n"
+      },
+      {
+        "check": "framework_structure",
+        "exit_code": 0,
+        "log": "build/host_validation/framework_structure.log",
+        "log_sha256": "eb2d783f28bbbea34cb5832a72fe6f86531b48d45156bd53a705ffd94790f5fa",
+        "output": "PASS activity source has no legacy umbrella-header includes: []\n\nPASS Main performs boot flags, hardware, original 20s wait, runtime initialization in order\n\nPASS Main retains pulse-test and normal main-loop branches with the same background service\n\nPASS Main owns no domain data or interrupt implementations\n\nPASS TaskSlice explicit heartbeat/control/fault/DPRAM/parallel maintenance, capture-before-TX, TX/RX/protocol/store/TX/measurement order\n\nPASS SystemInit initializes safe control/fault/debug objects before enabling external interrupts\n\nPASS SystemInit retains Timer2 Flag_20s power-on wait\n\nPASS each external function/object/MMIO assignment has one owning translation unit: []\n\nPASS custom public headers have no include dependency cycle: []\n\nPASS standalone TI C/C++ header compilation (146 units): []\n\nPASS TI Debug build has no implicit function-declaration diagnostics: []\n\n"
+      },
+      {
+        "check": "firmware_trace",
+        "exit_code": 0,
+        "log": "build/host_validation/firmware_trace.log",
+        "log_sha256": "6aae36a96f1832635c67ea3adfeac712a9eb7a96c1b10e2d16850963f6092014",
+        "output": "default: PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries\n\nsimulator: PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries\n\nserial: PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries\n\neeprom: PASS 17 startup/scheduler/ISR scenarios; real production units, fake hardware boundaries\n\n"
+      },
+      {
+        "check": "serial_protocol_scope",
+        "exit_code": 0,
+        "log": "build/host_validation/serial_protocol_scope.log",
+        "log_sha256": "86121583640c79df2a423be5329b6148ac6d7e35d5fde9ec3fa0eab380a3e969",
+        "output": "PASS: production UART/config/build matrix contain only AnyEyes/VOFA, no serial MaintenanceProtocol\n\n"
+      },
+      {
+        "check": "parameter_store_migration",
+        "exit_code": 0,
+        "log": "build/host_validation/parameter_store_migration.log",
+        "log_sha256": "e7eb04eb6537e3eb2b80d1724e2446adb289729803894ad86147678e4b0bd582",
+        "output": "PASS: v1 42-word compatibility; v2 50-word/108-byte modern+legacy persistence; no partial apply; shared busy and one-byte budget; bypass/run/reset excluded\n\n"
+      },
+      {
+        "check": "dpram_maintenance",
+        "exit_code": 0,
+        "log": "build/host_validation/dpram_maintenance.log",
+        "log_sha256": "4d685ee5c73f89f05c31bfb0f5175313d57eec28f33224b025c67cfcbff97259",
+        "output": "disabled: PASS: disabled DPRAM has no MMIO or fixed-array writes; real legacy bounds and stopped interlocks\n\nserial_owner: PASS: disabled DPRAM has no MMIO or fixed-array writes; real legacy bounds and stopped interlocks\n\nsimulator_dpram: PASS: simulator denies parallel mutations but serves reads, telemetry and 32 packed histories; CRC/commit guards and sliced publication budgets\n\nparallel_owner: PASS: real DPRAM CRC/commit/sequence checks, owner permissions, idempotency, stop/off priority, stopped/busy bounds, actual parameter readback, shared EEPROM, sliced epochs and 32 packed fault histories\n\n"
+      },
+      {
+        "check": "bench_inputs",
+        "exit_code": 0,
+        "log": "build/host_validation/bench_inputs.log",
+        "log_sha256": "8ffb8fe02cf03c3f0087d4ca2d46589e5761fdcdfb4dabbe24d2f501b6c8395c",
+        "output": "PASS macro off: Init/FastStep preserve all calibrated input sentinels\n\nPASS generator: defaults, phase/wrap, line voltages, DC, current, live inputs\n\nPASS invalid inputs: NaN/Inf/ranges zero all outputs, count advances, init recovers\n\nPASS strategy 0: precharge/bypass/PLL/run, 2150-sample DAB ramp, live DC, STOP\n\nPASS strategy 1: Id target OR duration takeover; one-sample HANDOVER then voltage PI\n\nPASS protection: live OC/OV inputs trip after five samples, first fault and reset\n\nPASS timeouts: unchanged 300 V fails precharge; zero grid fails PLL after bypass\n\nPASS PLL: captures independent 52 Hz with initial phase error; low amplitude unlocks\n\nPASS: real bench generator and control integration; macro-off inputs unchanged\n\n"
+      },
+      {
+        "check": "single_phase_control",
+        "exit_code": 0,
+        "log": "build/host_validation/single_phase_control.log",
+        "log_sha256": "f493c38755eb40fc051b91819b56fbc96af5dff3daa604588b9c6df3e9b22f1c",
+        "output": "PASS sogi_quadrature frequencies=45,50,55,60\n\nPASS sogi_invalid_recovery cases=14 ready_boundary=999/1000\n\nPASS closed_loop_takeover_and_neutral_phases\n\nPASS b_c_isolation every_step_hash=6b5e11cb2e1ea1d3\n\nPASS physical_protection_and_nan invalid_running_cases=6\n\nPASS current_dq_sign_and_stop_tracking\n\nPASS all_single_phase_control_tests\n\n"
+      },
+      {
+        "check": "single_phase_io",
+        "exit_code": 0,
+        "log": "build/host_validation/single_phase_io.log",
+        "log_sha256": "1148720074d5c08138087b2d8147f03f129fa17cf3a170678b00cd8187d000e4",
+        "output": "macro=1: PASS: single-phase real I/O branches\n\nmacro=0: PASS: single-phase real I/O branches\n\nPASS: AN conversion, A current, single-phase telemetry, B/C PWM isolation, and A-only Udc\n\n"
+      }
+    ]
+  },
+  "style": {
+    "formatter": "clang-format version 20.1.8",
+    "custom_source_files": 134,
+    "after": {
+      "lines": 33186,
+      "multiple_statement_lines": 0,
+      "code_lines_over_120": 0
+    },
+    "failures": []
+  },
+  "dpram_maps": [
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_bench\\SST_AnyEyes.map",
+      "sha256": "919e423a601eea0dd6c4c141eedf02520c2769d584338df69057742f3576d8a9",
+      "retained_sections": 18,
+      "dpram_enabled": false,
+      "retained_extension_sections": [],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_real\\SST_AnyEyes.map",
+      "sha256": "beb3c9bc79bbe8f44e3165c90a8d0891951449c2e0a797ec727d9c46c8972396",
+      "retained_sections": 18,
+      "dpram_enabled": false,
+      "retained_extension_sections": [],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Release\\phase_a_real\\SST_AnyEyes.map",
+      "sha256": "49d4881a80f4834dc1e05a6e052159701a4ad26c2ecf2a81e6bb7c0ee5159dca",
+      "retained_sections": 18,
+      "dpram_enabled": false,
+      "retained_extension_sections": [],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_vofa_dpram\\SST_AnyEyes.map",
+      "sha256": "c981d8e65ef5eb78ce5126ac3f92fbeb70a5896073a44ba2f9c8fbc400ff3a8f",
+      "retained_sections": 22,
+      "dpram_enabled": true,
+      "retained_extension_sections": [
+        "DPRAM_SstHistory",
+        "DPRAM_SstRequest",
+        "DPRAM_SstResponse",
+        "DPRAM_SstTelemetry"
+      ],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_abc_real\\SST_AnyEyes.map",
+      "sha256": "cbe930ad02e48acb01e040b9c5c572567f0b0185a8b79d10e11dfd216b0a47cb",
+      "retained_sections": 18,
+      "dpram_enabled": false,
+      "retained_extension_sections": [],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_abc_bench\\SST_AnyEyes.map",
+      "sha256": "10f5881cb7cf888834eb246f47e7fd28d92a9dfd29ce02cb7601342a9f378552",
+      "retained_sections": 18,
+      "dpram_enabled": false,
+      "retained_extension_sections": [],
+      "fpga_ft3_sections": {
+        "FPGA_InterfaceFile": [
+          1610612736,
+          7680
+        ],
+        "FT3_FaultRecorder_Register": [
+          1610620480,
+          64
+        ]
+      },
+      "errors": [],
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "No power-stage model, board WCET measurement or gate-output measurement.",
+    "Existing PI values and phase compensation retained; single-phase physical stability not established.",
+    "SOGI beta lags alpha by 90 degrees; physical feedback/modulation polarity still needs low-voltage verification."
+  ],
+  "ti_macro_isolation": {
+    "baseline": "bcd8d1c554a3faa3e7010149b868be59f993ffc8",
+    "results": [
+      {
+        "name": "entire TI macro0 control differs only by exact 209-token stdint typedef/pragma insertion",
+        "passed": true,
+        "added_token_sha256": "49049a33791d7acaf781fa90bd7940222c3071370eb153d0c6f92bcf0eddc278"
+      },
+      {
+        "name": "TI macro0 body Chb_WriteNormalizedReferences",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "e530c79d9fa0a7b069bf034fe1d1bf56a92fa7a615ee9d3f1aa269fe12c9b4aa",
+        "current_normalized_sha256": "e530c79d9fa0a7b069bf034fe1d1bf56a92fa7a615ee9d3f1aa269fe12c9b4aa"
+      },
+      {
+        "name": "TI macro0 body Chb_ConfigurationValid",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "1986048139cdb4ab9fe5ca9934eb6cbeb5e7f6fe68a460afb38e92ce8409f64e",
+        "current_normalized_sha256": "1986048139cdb4ab9fe5ca9934eb6cbeb5e7f6fe68a460afb38e92ce8409f64e"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_Init",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "9600c9b1a47a5805abfb83c99c5d0bd6aebd0daf8223e4a6c472c4e67f165e43",
+        "current_normalized_sha256": "9600c9b1a47a5805abfb83c99c5d0bd6aebd0daf8223e4a6c472c4e67f165e43"
+      },
+      {
+        "name": "TI macro0 body Chb_Min3",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "6d411ab17c652971e8bd37f19621d6a2edbbc67090bd007def942bc333638d95",
+        "current_normalized_sha256": "6d411ab17c652971e8bd37f19621d6a2edbbc67090bd007def942bc333638d95"
+      },
+      {
+        "name": "TI macro0 body Chb_RunClosedLoop",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "b997978ef1b4a7d542f85d7360fa2223ecca1b828c1c54e4239a4c5de1a83f1a",
+        "current_normalized_sha256": "b997978ef1b4a7d542f85d7360fa2223ecca1b828c1c54e4239a4c5de1a83f1a"
+      },
+      {
+        "name": "TI macro0 body Chb_CheckSoftwareProtection",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "0b63772dba816b6687e77aeff16404124d21ff5f835d55af028b1233e447aa67",
+        "current_normalized_sha256": "0b63772dba816b6687e77aeff16404124d21ff5f835d55af028b1233e447aa67"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_FastStep",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "8cb1cb812ee53a84b9be2f2e6b63d79503aa89bb4095f554349843aae94bc24c",
+        "current_normalized_sha256": "8cb1cb812ee53a84b9be2f2e6b63d79503aa89bb4095f554349843aae94bc24c"
+      },
+      {
+        "name": "TI macro0 body HVAC_RealTimeParameter",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "617f4044eb847e3c29743563f1ee452d9f5c228aa42c8b9835b776789060a349",
+        "current_normalized_sha256": "617f4044eb847e3c29743563f1ee452d9f5c228aa42c8b9835b776789060a349"
+      },
+      {
+        "name": "TI macro0 body Port_AD_Sample",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "97a914098f17df14f7b6d0bd8442fa8a7cd8f6916f63c5a94eaf0dcd22619375",
+        "current_normalized_sha256": "97a914098f17df14f7b6d0bd8442fa8a7cd8f6916f63c5a94eaf0dcd22619375"
+      },
+      {
+        "name": "TI macro0 body Port_RealTimeParameter",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "6a3b80281fbc404d333d4308831d0060cc081047a9a1f659772e8b98656f4b57",
+        "current_normalized_sha256": "6a3b80281fbc404d333d4308831d0060cc081047a9a1f659772e8b98656f4b57"
+      },
+      {
+        "name": "exact three-local declaration exception occurs once",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 body SVG_Udc_Average",
+        "passed": true,
+        "raw_tokens_equal": false,
+        "baseline_sha256": "095ff504dac0cdf25c7ac1d5ede588269caa29886e575c4d085467bfd28e4a31",
+        "current_normalized_sha256": "095ff504dac0cdf25c7ac1d5ede588269caa29886e575c4d085467bfd28e4a31"
+      },
+      {
+        "name": "TI macro0 body Module_Control_Write",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "ce66173a02a5eb38471757c5405433fc386c0fb74e2fca6de31842fb97366bad",
+        "current_normalized_sha256": "ce66173a02a5eb38471757c5405433fc386c0fb74e2fca6de31842fb97366bad"
+      },
+      {
+        "name": "source timing macro unchanged ControlTAD",
+        "passed": true
+      },
+      {
+        "name": "source timing macro unchanged TAD_PLL",
+        "passed": true
+      },
+      {
+        "name": "TI ISR compile baseline",
+        "passed": true
+      },
+      {
+        "name": "TI ISR compile macro0",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR body FPGAIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack FPGAIsr",
+        "passed": true,
+        "instruction_sha256": "621184cda911851bb67376e117ee6255f8a61cdefec40ea6b78ef30d290fa0d5",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "Port_StateUpdate_Read",
+          "Port_AD_Sample",
+          "HVAC_RealTimeParameter",
+          "SVG_Udc_Average",
+          "ChbDabControl_FastStep",
+          "Udc_check",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_faultcheck",
+          "PortController_Communication",
+          "Port_AllStopFlag_RST",
+          "Port_StateUpdate_Write",
+          "ChbDabControl_ForceFault",
+          "FT3_PluginUint_Write",
+          "FT3_PluginUint_Read",
+          "DAC_Output",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body FAULTIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack FAULTIsr",
+        "passed": true,
+        "instruction_sha256": "6f7b04716ece86f174805812d0a2fb34cad35c472819b98f37d7f4b6144e34a2",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "FaultCheckAndDispose_StepOne",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body Timer2Isr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack Timer2Isr",
+        "passed": true,
+        "instruction_sha256": "fbfc7b54240428778e25b16041b2b9b94960a3ef9bb429d315b940db1e726261",
+        "direct_calls": [
+          "TimerIntDisable",
+          "IntEventClear",
+          "TimerIntStatusClear",
+          "TimerIntEnable",
+          "ChbDabControl_Tick10ms",
+          "FaultLatch_Clear"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body DPRAMIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack DPRAMIsr",
+        "passed": true,
+        "instruction_sha256": "930b4ce76d8b5255a2a39e12949757f6a073610986e4fe4cb60939f9029d5524",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI ISR compile macro1",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR body FPGAIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack FPGAIsr",
+        "passed": true,
+        "instruction_sha256": "621184cda911851bb67376e117ee6255f8a61cdefec40ea6b78ef30d290fa0d5",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "Port_StateUpdate_Read",
+          "Port_AD_Sample",
+          "HVAC_RealTimeParameter",
+          "SVG_Udc_Average",
+          "ChbDabControl_FastStep",
+          "Udc_check",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_faultcheck",
+          "PortController_Communication",
+          "Port_AllStopFlag_RST",
+          "Port_StateUpdate_Write",
+          "ChbDabControl_ForceFault",
+          "FT3_PluginUint_Write",
+          "FT3_PluginUint_Read",
+          "DAC_Output",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body FAULTIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack FAULTIsr",
+        "passed": true,
+        "instruction_sha256": "6f7b04716ece86f174805812d0a2fb34cad35c472819b98f37d7f4b6144e34a2",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "FaultCheckAndDispose_StepOne",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body Timer2Isr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack Timer2Isr",
+        "passed": true,
+        "instruction_sha256": "fbfc7b54240428778e25b16041b2b9b94960a3ef9bb429d315b940db1e726261",
+        "direct_calls": [
+          "TimerIntDisable",
+          "IntEventClear",
+          "TimerIntStatusClear",
+          "TimerIntEnable",
+          "ChbDabControl_Tick10ms",
+          "FaultLatch_Clear"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body DPRAMIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack DPRAMIsr",
+        "passed": true,
+        "instruction_sha256": "930b4ce76d8b5255a2a39e12949757f6a073610986e4fe4cb60939f9029d5524",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "firmware inputs unchanged during audit",
+        "passed": true
+      }
+    ],
+    "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+    "comparison_defines": {
+      "SST_BENCH_INPUT_SIM": 0,
+      "SST_SIMULATOR_MODE": 1,
+      "SST_ENABLE_DPRAM": 0,
+      "CHB_LOAD_EEPROM_PARAMETERS": 0,
+      "SST_PHASE_A_ONLY_TEST": 0
+    },
+    "exceptions": [
+      "SVG_Udc_Average: exactly float tempAve1,tempAve2,tempAve3 becomes three uninitialized float declarations; type/order/statements retained",
+      "SstSinglePhase.h adds stdint typedef/pragma declarations outside executable function bodies when macro=0"
+    ],
+    "limitations": "No complete fast-control WCET, board latency, cache/EMIF stall or physical protection timing measurement.",
+    "firmware_input_sha256": "6930789b678c7d613bac368a963bae1b526349465910707870e8e3aabd1dce84",
+    "baseline_resolved_commit": "bcd8d1c554a3faa3e7010149b868be59f993ffc8",
+    "passed": true
+  },
+  "isolation_report": {
+    "path": "build/single_phase_isolation/result.json",
+    "sha256": "06a2a09ec8d2315767c186628565af67c1bb36671b988c4ca09e5ff33ba9135c"
+  }
+}

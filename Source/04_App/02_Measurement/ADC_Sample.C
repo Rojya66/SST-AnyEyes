@@ -26,6 +26,7 @@
 #include "hw_types.h"
 #include "FaultCheck.h"
 #include "SstBenchInputs.h"
+#include "SstSinglePhase.h"
 /************************Variable definition********************************/
 short Port_AD_Buf[16]; /* Port_AD_Buf：原端口 FPGA AD 采样字缓存。 */
 
@@ -194,9 +195,16 @@ void HVAC_RealTimeParameter(void)
 
     if (HVAC_RealParameter_N < 200)
     {
+#if SST_PHASE_A_ONLY_TEST
+        /* 单相遥测首电压槽为 AN，未安装的 B/C 不生成虚构相电压。 */
+        ADSample_buffer[0] = HA_Port_Volt_A;
+        ADSample_buffer[1] = 0.0F;
+        ADSample_buffer[2] = 0.0F;
+#else
         ADSample_buffer[0] = HA_Port_Volt_AB;
         ADSample_buffer[1] = HA_Port_Volt_BC;
         ADSample_buffer[2] = HA_Port_Volt_CA;
+#endif
         HVAC_RealVoltage_Sum[0] = HVAC_RealVoltage_Sum[0] + ADSample_buffer[0] * ADSample_buffer[0];
         HVAC_RealVoltage_Sum[1] = HVAC_RealVoltage_Sum[1] + ADSample_buffer[1] * ADSample_buffer[1];
         HVAC_RealVoltage_Sum[2] = HVAC_RealVoltage_Sum[2] + ADSample_buffer[2] * ADSample_buffer[2];
@@ -230,6 +238,16 @@ void HVAC_RealTimeParameter(void)
     AD_CalTemp += AD_CalTemp1;
     ADSample_buffer[0] = AD_CalTemp;
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 正交量上拍已更新；单相 Q=0.5*(v_beta*i_alpha-v_alpha*i_beta)，感性滞后为正。 */
+    ADSample_buffer[1] = 0.0F;
+    if (g_sst_single_phase_status.ready != 0U)
+    {
+        ADSample_buffer[1] =
+            0.5F * (g_sst_single_phase_status.voltage_beta_v * g_sst_single_phase_status.current_alpha_a -
+                    g_sst_single_phase_status.voltage_alpha_v * g_sst_single_phase_status.current_beta_a);
+    }
+#else
     AD_CalTemp = HA_Port_Volt_AB;
     AD_CalTemp = AD_CalTemp * HA_Port_Current_C;
     AD_CalTemp1 = HA_Port_Volt_BC;
@@ -240,6 +258,7 @@ void HVAC_RealTimeParameter(void)
     AD_CalTemp1 = AD_CalTemp1 * HA_Port_Current_B;
     AD_CalTemp += AD_CalTemp1;
     ADSample_buffer[1] = AD_CalTemp;
+#endif
 
     AD_CalTemp = HA_PortP_LF_1 * Sample_UP_20kHz + HA_PortP_LF_2 * Sample_DOWN_20kHz;
     HA_PortP_LF_1 = ADSample_buffer[0];
@@ -249,7 +268,11 @@ void HVAC_RealTimeParameter(void)
     AD_CalTemp = HA_PortQ_LF_1 * Sample_UP_20kHz + HA_PortQ_LF_2 * Sample_DOWN_20kHz;
     HA_PortQ_LF_1 = ADSample_buffer[1];
     HA_PortQ_LF_2 = AD_CalTemp;
+#if SST_PHASE_A_ONLY_TEST
+    PORT_RealTime_DATA.PORT_Q = AD_CalTemp / 1000.0F; /* 单相无功单位 kvar，不再除以 sqrt(3)。 */
+#else
     PORT_RealTime_DATA.PORT_Q = AD_CalTemp / 1732.0;
+#endif
 }
 
 /****************************************************************************/
@@ -274,7 +297,9 @@ void Port_AD_Sample(uchar latch)
 
     float HA_Port_Volt_A_Temp; /* HA_Port_Volt_A_Temp：高压交流端口 A 相/相间原采样电压，单位 V。 */
     float HA_Port_Volt_B_Temp; /* HA_Port_Volt_B_Temp：高压交流端口 B 相/相间原采样电压，单位 V。 */
+#if !SST_PHASE_A_ONLY_TEST
     float HA_Port_Volt_C_Temp; /* HA_Port_Volt_C_Temp：高压交流端口 C 相/相间原采样电压，单位 V。 */
+#endif
 
     float HA_Port_Current_A_Temp; /* HA_Port_Current_A_Temp：高压交流端口 A 相/相间端口电流，单位 A。 */
     float HA_Port_Current_B_Temp; /* HA_Port_Current_B_Temp：高压交流端口 B 相/相间端口电流，单位 A。 */
@@ -375,18 +400,28 @@ void Port_AD_Sample(uchar latch)
 
     ADSample_buffer[0] = ADSample_buffer[0] * HA_CT_Ratio;
     ADSample_buffer[1] = ADSample_buffer[1] * HA_CT_Ratio;
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相只接 A 网侧电流，B/C 未安装；锁存和实时样本保持相同物理含义。 */
+    ADSample_buffer[1] = 0.0F;
+#endif
 
     if (latch == 0)
     {
         HA_Grid_Current_A = ADSample_buffer[0];
         HA_Grid_Current_B = ADSample_buffer[1];
         HA_Grid_Current_C = -ADSample_buffer[0] - ADSample_buffer[1];
+#if SST_PHASE_A_ONLY_TEST
+        HA_Grid_Current_C = 0.0F;
+#endif
     }
     else
     {
         HA_Grid_Current_A_LATCH = ADSample_buffer[0];
         HA_Grid_Current_B_LATCH = ADSample_buffer[1];
         HA_Grid_Current_C_LATCH = -ADSample_buffer[0] - ADSample_buffer[1];
+#if SST_PHASE_A_ONLY_TEST
+        HA_Grid_Current_C_LATCH = 0.0F;
+#endif
     }
 
     //port voltage
@@ -433,7 +468,13 @@ void Port_AD_Sample(uchar latch)
 
     ///////////////////////
 
+#if SST_PHASE_A_ONLY_TEST
+    /* AD[6] 接 AN，沿用本通道零偏、比例及低通；AD[7] 不参与控制。 */
+    ADSample_buffer[1] = 0.0F;
+    ADSample_buffer[2] = 0.0F;
+#else
     ADSample_buffer[2] = -ADSample_buffer[0] - ADSample_buffer[1];
+#endif
 
     if (latch == 0)
     {
@@ -448,6 +489,12 @@ void Port_AD_Sample(uchar latch)
         HA_Port_Volt_CA_LATCH = ADSample_buffer[2];
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    /* AN 已经是相对中性线的真实相电压，不做 AB/BC 到相电压转换。旧 AB 缓存首槽兼容存 AN。 */
+    HA_Port_Volt_A = ADSample_buffer[0];
+    HA_Port_Volt_B = 0.0F;
+    HA_Port_Volt_C = 0.0F;
+#else
     AD_CalTemp = ADSample_buffer[0];
     HA_Port_Volt_A_Temp = (AD_CalTemp * 2.0 + ADSample_buffer[1]) / 3.0;
 
@@ -460,6 +507,7 @@ void Port_AD_Sample(uchar latch)
     HA_Port_Volt_A = HA_Port_Volt_A_Temp;
     HA_Port_Volt_B = HA_Port_Volt_B_Temp;
     HA_Port_Volt_C = HA_Port_Volt_C_Temp;
+#endif
 
     //port current from module
 
@@ -500,6 +548,11 @@ void Port_AD_Sample(uchar latch)
     HA_Port_Current_B = ADSample_buffer[1];
 
     HA_Port_Current_C = -ADSample_buffer[0] - ADSample_buffer[1];
+#if SST_PHASE_A_ONLY_TEST
+    /* 保留 A 相 501 Avg_IG/10 的原电流链路；虚拟 beta 仅存在 SOGI 模块内。 */
+    HA_Port_Current_B = 0.0F;
+    HA_Port_Current_C = 0.0F;
+#endif
 
     //	DAC_BUF[1]=HA_Port_Current_A*100.0;
     //	DAC_BUF[2]=HA_Port_Current_B*100.0;

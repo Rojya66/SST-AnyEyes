@@ -70,11 +70,25 @@ void PortController_Communication(uchar RW_fpga)
  *================================================================*/
 void Module_Control_Write(void)
 {
+#if SST_PHASE_A_ONLY_TEST
+    XXG_PM_CTL inactive_phase_control; /* inactive_phase_control：B/C 相强制封波命令，保留分频、复位和协议标识。 */
+#endif
+
     /* 只向实际配置的 UNIT 槽位发送 PM_CTL；mask=0 表示槽位未安装。 */
     if (HA_PM_A1 != 0U)
         FPGA_Interface[Com_A1_PluginUnit_5 - 2].PM_CTL.PM_CTL16 = Module_PM_CTL.PM_CTL16;
     if (HA_PM_A2 != 0U)
         FPGA_Interface[Com_A2_PluginUnit_6 - 2].PM_CTL.PM_CTL16 = Module_PM_CTL.PM_CTL16;
+#if SST_PHASE_A_ONLY_TEST
+    /* 所有正常使能接口最终经过此处；B/C 即使有遗留寄存器值也必须明确撤销 CHB 和 DAB 使能。 */
+    inactive_phase_control.PM_CTL16 = Module_PM_CTL.PM_CTL16;
+    inactive_phase_control.Bbits.SVG_EN = 0U;
+    inactive_phase_control.Bbits.DAB_EN = 0U;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].PM_CTL.PM_CTL16 = inactive_phase_control.PM_CTL16;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].PM_CTL.PM_CTL16 = inactive_phase_control.PM_CTL16;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].PM_CTL.PM_CTL16 = inactive_phase_control.PM_CTL16;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].PM_CTL.PM_CTL16 = inactive_phase_control.PM_CTL16;
+#else
     if (HA_PM_B1 != 0U)
         FPGA_Interface[Com_B1_PluginUnit_9 - 2].PM_CTL.PM_CTL16 = Module_PM_CTL.PM_CTL16;
     if (HA_PM_B2 != 0U)
@@ -83,6 +97,7 @@ void Module_Control_Write(void)
         FPGA_Interface[Com_C1_PluginUnit_13 - 2].PM_CTL.PM_CTL16 = Module_PM_CTL.PM_CTL16;
     if (HA_PM_C2 != 0U)
         FPGA_Interface[Com_C2_PluginUnit_14 - 2].PM_CTL.PM_CTL16 = Module_PM_CTL.PM_CTL16;
+#endif
 }
 #endif /* HVAC_online */
 #ifdef HVAC_online

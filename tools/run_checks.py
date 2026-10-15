@@ -12,7 +12,8 @@ LOGDIR.mkdir(parents=True, exist_ok=True)
 CHECKS = ['realtime_audit', 'control_regression', 'fault_reporting',
           'dpram_commands', 'parameter_precision', 'protocol_regression',
           'refactor_equivalence', 'comment_coverage', 'framework_structure', 'firmware_trace',
-          'serial_protocol_scope', 'parameter_store_migration', 'dpram_maintenance', 'bench_inputs']
+          'serial_protocol_scope', 'parameter_store_migration', 'dpram_maintenance', 'bench_inputs',
+          'single_phase_control', 'single_phase_io']
 
 
 def fingerprint():
