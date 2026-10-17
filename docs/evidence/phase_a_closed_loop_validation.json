@@ -1,0 +1,767 @@
+{
+  "generated_at_utc": "2026-10-17T06:54:05.954859+00:00",
+  "code_and_test_commit": "4bb170a226b16a131304669634f88bcac20f9154",
+  "prechange_commit": "b265bf706c8f2f463e8bde436d9abddb1b6461a6",
+  "firmware_input_sha256": "f739601cd750cd891222d6a4373d3349614d01337be5d0740ca5c6a2b3aa8202",
+  "effective_default_macros": {
+    "SST_PHASE_A_ONLY_TEST": 1,
+    "SST_BENCH_INPUT_SIM": 0,
+    "SST_DEBUG_PROTOCOL": 2,
+    "SST_SIMULATOR_MODE": 1,
+    "SST_ENABLE_DPRAM": 0,
+    "CHB_LOAD_EEPROM_PARAMETERS": 0
+  },
+  "module_masks": {
+    "A1": "0x0007",
+    "A2": "0x0007",
+    "B1": "0x0000",
+    "B2": "0x0000",
+    "C1": "0x0000",
+    "C2": "0x0000"
+  },
+  "cli_builds": [
+    {
+      "result": {
+        "configuration": "Debug",
+        "variant": "phase_a_flow_audit_20261017",
+        "defines": [],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 77.45,
+        "warnings": 17,
+        "firmware_input_sha256": "f739601cd750cd891222d6a4373d3349614d01337be5d0740ca5c6a2b3aa8202",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Debug\\phase_a_flow_audit_20261017\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Debug/phase_a_flow_audit_20261017/SST_AnyEyes.out",
+          "size_bytes": 748616,
+          "sha256": "d7eaa4ab785a8b82b1d2d94e4f035bb6ad6a1ae08d9572bc8971e8bfe781666b"
+        },
+        {
+          "path": "build/Debug/phase_a_flow_audit_20261017/SST_AnyEyes.map",
+          "size_bytes": 174301,
+          "sha256": "669d905d8fbfeb11e160121fe88172bf44904682d0ff8d7b4f3765794fcd737a"
+        },
+        {
+          "path": "build/Debug/phase_a_flow_audit_20261017/build_result.json",
+          "size_bytes": 564,
+          "sha256": "f5d082f02d4f137a1257393e8af0f21e66f4e13f676e02fe80be2a28a13130fa"
+        },
+        {
+          "path": "build/Debug/phase_a_flow_audit_20261017/build.log",
+          "size_bytes": 6430,
+          "sha256": "e361a12d94dcefa49b7390964bb2dd87800a9ed04d22c21d86f5607c6d06f6b2"
+        }
+      ]
+    },
+    {
+      "result": {
+        "configuration": "Release",
+        "variant": "phase_a_flow_audit_20261017",
+        "defines": [],
+        "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+        "source_count": 90,
+        "compile_failures": [],
+        "link_status": 0,
+        "elapsed_s": 77.44,
+        "warnings": 17,
+        "firmware_input_sha256": "f739601cd750cd891222d6a4373d3349614d01337be5d0740ca5c6a2b3aa8202",
+        "firmware_unchanged_during_build": true,
+        "executable": "D:\\Code\\SST\\AnyEyesVersion\\build\\Release\\phase_a_flow_audit_20261017\\SST_AnyEyes.out"
+      },
+      "artifacts": [
+        {
+          "path": "build/Release/phase_a_flow_audit_20261017/SST_AnyEyes.out",
+          "size_bytes": 748616,
+          "sha256": "02df3054d8f7d699d15fdb8e6e703275abd69c30f98343a4f8bf985b4672cf67"
+        },
+        {
+          "path": "build/Release/phase_a_flow_audit_20261017/SST_AnyEyes.map",
+          "size_bytes": 174339,
+          "sha256": "8b0b792e0781292abb47bbe2c7e892d40eb17c502bb42c7410fee81d8cb317fb"
+        },
+        {
+          "path": "build/Release/phase_a_flow_audit_20261017/build_result.json",
+          "size_bytes": 568,
+          "sha256": "14f35ebf5698bbb866860592d00ab8a5d166adff67405b31ac5342439986af64"
+        },
+        {
+          "path": "build/Release/phase_a_flow_audit_20261017/build.log",
+          "size_bytes": 6430,
+          "sha256": "e361a12d94dcefa49b7390964bb2dd87800a9ed04d22c21d86f5607c6d06f6b2"
+        }
+      ]
+    }
+  ],
+  "ccs_validation": {
+    "result": {
+      "workspace": "C:\\Users\\Roj\\AppData\\Local\\Temp\\SST_AnyEyes_ccs_zna0f2s9",
+      "results": [
+        {
+          "action": "import",
+          "exit_code": 0,
+          "clean_exit_code": null
+        },
+        {
+          "action": "Debug",
+          "exit_code": 0,
+          "clean_exit_code": 0
+        },
+        {
+          "action": "Release",
+          "exit_code": 0,
+          "clean_exit_code": 0
+        }
+      ],
+      "firmware_input_sha256": "f739601cd750cd891222d6a4373d3349614d01337be5d0740ca5c6a2b3aa8202",
+      "firmware_unchanged_during_build": true
+    },
+    "logs": [
+      {
+        "path": "build/ccs_validation/import.log",
+        "size_bytes": 375,
+        "sha256": "c0fbe1ccf12ffd283ad02aa439f331d441f7b0045e2d49fc13c6acb0784c6f31"
+      },
+      {
+        "path": "build/ccs_validation/Debug.log",
+        "size_bytes": 267470,
+        "sha256": "59f10afc0bfac6f76fcc980344ee9625b446f9150b9f253f3f6bf5bac5c18f05"
+      },
+      {
+        "path": "build/ccs_validation/Release.log",
+        "size_bytes": 267845,
+        "sha256": "519f39ce9e100eea188bc24dc0a8e3ff68cfe02301eade9bcf4163c0f86cdc69"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "Debug/SST_AnyEyes.out",
+        "size_bytes": 720792,
+        "sha256": "48a683f91c654389b931e87e0adb4c38484dfb7124257bad71233dff4bd68c73"
+      },
+      {
+        "path": "Release/SST_AnyEyes.out",
+        "size_bytes": 721136,
+        "sha256": "1603a66f04e883970dcf1b432d2a138c4a9325db48c9f208f52a3d9833cb035f"
+      }
+    ]
+  },
+  "host_validation": {
+    "firmware_unchanged": true,
+    "checks": [
+      {
+        "check": "realtime_audit",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/realtime_audit.log",
+          "size_bytes": 3390,
+          "sha256": "27524250b58a8617093d263826114b1ee016a181421c21f977e800daa416b07f"
+        }
+      },
+      {
+        "check": "control_regression",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/control_regression.log",
+          "size_bytes": 1118,
+          "sha256": "4242fa87c45e9bdee122d1893a62d46a3f6554b590619bdbff617a160f7c4a9d"
+        }
+      },
+      {
+        "check": "fault_reporting",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/fault_reporting.log",
+          "size_bytes": 321,
+          "sha256": "c43725e3b8cabdd70cae59e5f1a06fda0c33a0eab0a50079c45110d15d9cd8b8"
+        }
+      },
+      {
+        "check": "dpram_commands",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/dpram_commands.log",
+          "size_bytes": 381,
+          "sha256": "b8fff7aa66224517d0b1a459ea3ab05049ca7ac89dc234f92da892d8e71ce883"
+        }
+      },
+      {
+        "check": "parameter_precision",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/parameter_precision.log",
+          "size_bytes": 471,
+          "sha256": "33eae721a1dbb4c259c7d5df0712bf60cf44ac2ffb485ce8fd17f83c6108474c"
+        }
+      },
+      {
+        "check": "protocol_regression",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/protocol_regression.log",
+          "size_bytes": 1062,
+          "sha256": "04cded970da3bea1de45a54fd7bb8281cebef9d05447ce5f33e6d5f7d4420b7b"
+        }
+      },
+      {
+        "check": "refactor_equivalence",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/refactor_equivalence.log",
+          "size_bytes": 458,
+          "sha256": "bdec1831a10b59e2f916f7b27d6701f62b10593cb248ac4c5bb708ad1417b486"
+        }
+      },
+      {
+        "check": "comment_coverage",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/comment_coverage.log",
+          "size_bytes": 285,
+          "sha256": "cf1ed2b59c03871dff881ac0b6d33a92db1c75f8836ab00b30724c8efa1b5a18"
+        }
+      },
+      {
+        "check": "framework_structure",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/framework_structure.log",
+          "size_bytes": 901,
+          "sha256": "eb2d783f28bbbea34cb5832a72fe6f86531b48d45156bd53a705ffd94790f5fa"
+        }
+      },
+      {
+        "check": "firmware_trace",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/firmware_trace.log",
+          "size_bytes": 400,
+          "sha256": "6aae36a96f1832635c67ea3adfeac712a9eb7a96c1b10e2d16850963f6092014"
+        }
+      },
+      {
+        "check": "serial_protocol_scope",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/serial_protocol_scope.log",
+          "size_bytes": 101,
+          "sha256": "86121583640c79df2a423be5329b6148ac6d7e35d5fde9ec3fa0eab380a3e969"
+        }
+      },
+      {
+        "check": "parameter_store_migration",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/parameter_store_migration.log",
+          "size_bytes": 158,
+          "sha256": "e7eb04eb6537e3eb2b80d1724e2446adb289729803894ad86147678e4b0bd582"
+        }
+      },
+      {
+        "check": "dpram_maintenance",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/dpram_maintenance.log",
+          "size_bytes": 608,
+          "sha256": "4d685ee5c73f89f05c31bfb0f5175313d57eec28f33224b025c67cfcbff97259"
+        }
+      },
+      {
+        "check": "bench_inputs",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/bench_inputs.log",
+          "size_bytes": 741,
+          "sha256": "8ffb8fe02cf03c3f0087d4ca2d46589e5761fdcdfb4dabbe24d2f501b6c8395c"
+        }
+      },
+      {
+        "check": "single_phase_control",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/single_phase_control.log",
+          "size_bytes": 771,
+          "sha256": "582ad22fca2cb5ea52c1f689e9f47cabc89828d9548c09cfa6fdb47709736f22"
+        }
+      },
+      {
+        "check": "single_phase_io",
+        "exit_code": 0,
+        "log": {
+          "path": "build/host_validation/single_phase_io.log",
+          "size_bytes": 188,
+          "sha256": "1148720074d5c08138087b2d8147f03f129fa17cf3a170678b00cd8187d000e4"
+        }
+      }
+    ],
+    "core_output": {
+      "single_phase_control": "PASS sogi_quadrature frequencies=45,50,55,60\n\nPASS sogi_invalid_recovery cases=14 ready_boundary=999/1000\n\nPASS closed_loop_takeover_and_neutral_phases\n\nPASS b_c_isolation every_step_hash=eb8d962b368b2c40\n\nPASS physical_protection_and_nan invalid_running_cases=6\n\nPASS current_dq_sign_and_stop_tracking\n\nPASS sorting_direction_writer combinations=4\n\nPASS pll_antiphase_rejection\n\nPASS mode_change_fault startup_and_running_both_directions\n\nPASS running_voltage_loss_and_pll_loss boundary=200TAD\n\nPASS nonfinite_control_parameters floats=28 values=NaN,+Inf,-Inf\n\nPASS measured_bus_normalization_and_dq_vector_limit\n\nPASS pi_saturation_recovery outer_and_inner\n\nPASS atomic_pwm_enable_fault_race startup_and_dab_restart\n\nPASS all_single_phase_control_tests\n\n",
+      "single_phase_io": "macro=1: PASS: single-phase real I/O branches\n\nmacro=0: PASS: single-phase real I/O branches\n\nPASS: AN conversion, A current, single-phase telemetry, B/C PWM isolation, and A-only Udc\n\n",
+      "control_regression": "BASELINE: external original SST source D:\\Code\\SST\\Chb_DabPrim_vofa\n\nopen_loop_and_stop_priority steps=3002 hash=ec5ff0ed84b55eff state=0 fault=0 enables=2 disables=2 io=0 resets=0\n\ndab_only_and_independent_gates steps=3003 hash=a0aa924a65a249d8 state=4 fault=0 enables=2 disables=2 io=0 resets=0\n\nclosed_source_compatible_pll steps=4701 hash=55b78af9b99f6620 state=4 fault=0 enables=2 disables=2 io=5 resets=0\n\nclosed_id_ramp_handover steps=4702 hash=b88a5e61e74f18c7 state=4 fault=0 enables=2 disables=2 io=5 resets=0\n\novercurrent_confirmation_first_fault_reset steps=708 hash=e53586c62d3266b7 state=0 fault=0 enables=2 disables=4 io=9 resets=1\n\novervoltage_confirmation steps=706 hash=6d66f5222e95d2ce state=5 fault=4 enables=2 disables=3 io=7 resets=0\n\nhardware_fault_independent_of_software_switch steps=2 hash=27161e7afe61960c state=5 fault=5 enables=1 disables=2 io=0 resets=0\n\nprecharge_timeout steps=501 hash=6b6a038ba7421e9f state=5 fault=1 enables=0 disables=3 io=6 resets=0\n\nPASS: 8 scenarios match original trace exactly; SHA256=c34cd06dda3d78a2ae07e3fc333a5bd67e614b0613b6ccae31967b2eb2c50a40\n\n",
+      "realtime_audit": "BASELINE: external original SST source D:\\Code\\SST\\Chb_DabPrim_vofa\n\nPASS reviewed installed-unit configuration is exactly A1=A2=0x0007 and all B/C module masks=0\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): ChbDabControl.c missing=[]\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): ChbDabControl.h missing=[]\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): ADC_Sample.C missing=[]\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): HVAC_Strategy.C missing=[]\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): FaultCheck.C missing=[]\n\nPASS every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): main.H missing=[]\n\nPASS linker preserves every original layout token except NOINIT and the exact four extensions carved from unused tail\n\nPASS DPRAM-enabled HVAC FPGA operations preserve every original token\n\nPASS DPRAM-off FPGA operations differ only in the recorder local fault-word source\n\nPASS all original 19 plus exact four extension objects have explicit linker NOINIT storage\n\nPASS DPRAM reachability analysis uses the configured HVAC port\n\nPASS DPRAM-off startup/runtime/enabled ISRs cannot reach mapped memory: []\n\nPASS DPRAM-off does not register its interrupt handler\n\nPASS initial FPGA/module/TAD configuration unchanged after exact ordered helper expansion\n\nPASS source timing macro ControlTAD preserved\n\nPASS source timing macro TAD_PLL preserved\n\nPASS TAD preserves every source token except VOFA scheduling flag\n\nPASS hardware fault ISR unchanged\n\nPASS fast control remains in FPGA ISR\n\nPASS only FPGA ISR calls FastStep: ['FPGAIsr']\n\nPASS GPIO69 TAD rising edge\n\nPASS INT5 TAD vector\n\nPASS GPIO bank4 -> INT5\n\nPASS INT4 hardware fault vector\n\nPASS GPIO bank8 -> INT4\n\nPASS startup/runtime cannot reach legacy UART2 ISR registration\n\nPASS control/fault/debug state initialized before TAD/FAULT IRQ enable\n\nPASS FPGAIsr cannot reach added communication/reporting: []\n\nPASS FAULTIsr cannot reach added communication/reporting: []\n\nPASS Timer2Isr cannot reach added communication/reporting: []\n\nPASS DPRAMIsr cannot reach added communication/reporting: []\n\nPASS background service entry points found\n\nPASS macro=0 background has no global interrupt masking call path: []\n\nPASS macro=1 global masking is confined to exact reviewed control transactions: ['ChbDabControl_ForceFault', 'ChbDabControl_Service', 'Chb_EnterState', 'Chb_SetAcInput', 'Chb_SetLegacyStatus', 'Chb_SetPrechargeBypass', 'Chb_SinglePhaseDisablePwm', 'Chb_SinglePhaseEnablePwm']\n\nPASS macro=1 9 critical regions contain bounded register/state operations only: []\n\nPASS background has no additional masking/cache path: []\n\nPASS no direct global masking in migration services: []\n\n\n\n38/38 static invariants passed\n\nLIMIT: call graph is conservative source analysis, not preprocessed binary analysis.\n\nLIMIT: target ISR WCET, latency, cache/EMIF stalls and missed edges require hardware measurement.\n\n"
+    }
+  },
+  "ti_macro_isolation": {
+    "baseline": "bcd8d1c554a3faa3e7010149b868be59f993ffc8",
+    "results": [
+      {
+        "name": "entire TI macro0 control differs only by exact header insertion after two exact mode alias expansions",
+        "passed": true,
+        "added_token_sha256": "49049a33791d7acaf781fa90bd7940222c3071370eb153d0c6f92bcf0eddc278"
+      },
+      {
+        "name": "TI macro0 body Chb_WriteNormalizedReferences",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "e530c79d9fa0a7b069bf034fe1d1bf56a92fa7a615ee9d3f1aa269fe12c9b4aa",
+        "current_normalized_sha256": "e530c79d9fa0a7b069bf034fe1d1bf56a92fa7a615ee9d3f1aa269fe12c9b4aa"
+      },
+      {
+        "name": "TI macro0 body Chb_ConfigurationValid",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "1986048139cdb4ab9fe5ca9934eb6cbeb5e7f6fe68a460afb38e92ce8409f64e",
+        "current_normalized_sha256": "1986048139cdb4ab9fe5ca9934eb6cbeb5e7f6fe68a460afb38e92ce8409f64e"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_Init",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "9600c9b1a47a5805abfb83c99c5d0bd6aebd0daf8223e4a6c472c4e67f165e43",
+        "current_normalized_sha256": "9600c9b1a47a5805abfb83c99c5d0bd6aebd0daf8223e4a6c472c4e67f165e43"
+      },
+      {
+        "name": "TI macro0 body Chb_Min3",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "6d411ab17c652971e8bd37f19621d6a2edbbc67090bd007def942bc333638d95",
+        "current_normalized_sha256": "6d411ab17c652971e8bd37f19621d6a2edbbc67090bd007def942bc333638d95"
+      },
+      {
+        "name": "TI macro0 body Chb_RunClosedLoop",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "b997978ef1b4a7d542f85d7360fa2223ecca1b828c1c54e4239a4c5de1a83f1a",
+        "current_normalized_sha256": "b997978ef1b4a7d542f85d7360fa2223ecca1b828c1c54e4239a4c5de1a83f1a"
+      },
+      {
+        "name": "TI macro0 body Chb_CheckSoftwareProtection",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "0b63772dba816b6687e77aeff16404124d21ff5f835d55af028b1233e447aa67",
+        "current_normalized_sha256": "0b63772dba816b6687e77aeff16404124d21ff5f835d55af028b1233e447aa67"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_FastStep",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "8cb1cb812ee53a84b9be2f2e6b63d79503aa89bb4095f554349843aae94bc24c",
+        "current_normalized_sha256": "8cb1cb812ee53a84b9be2f2e6b63d79503aa89bb4095f554349843aae94bc24c"
+      },
+      {
+        "name": "TI macro0 body Chb_EnterState",
+        "passed": true,
+        "raw_tokens_equal": false,
+        "baseline_sha256": "419c5e7ae29fe53edcec4188e51635029c8fa44e8ea97bea2896ab3a7f3f6c86",
+        "current_normalized_sha256": "419c5e7ae29fe53edcec4188e51635029c8fa44e8ea97bea2896ab3a7f3f6c86"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_Service",
+        "passed": true,
+        "raw_tokens_equal": false,
+        "baseline_sha256": "ff508815d36d1d303104355d5ca2569b5329da5b9fd7e16065e646d80e0d3840",
+        "current_normalized_sha256": "ff508815d36d1d303104355d5ca2569b5329da5b9fd7e16065e646d80e0d3840"
+      },
+      {
+        "name": "TI macro0 body ChbDabControl_ForceFault",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "0766be67d20d7ff060527e63b372313fa06ffcc5752eaf25d79fc7f3262e183b",
+        "current_normalized_sha256": "0766be67d20d7ff060527e63b372313fa06ffcc5752eaf25d79fc7f3262e183b"
+      },
+      {
+        "name": "TI macro0 body Chb_DisableAllPwm",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "658cc2308bec3b86c412fd54defb67fdec3f5bb7eda94fbbd819d7b3f2a2c872",
+        "current_normalized_sha256": "658cc2308bec3b86c412fd54defb67fdec3f5bb7eda94fbbd819d7b3f2a2c872"
+      },
+      {
+        "name": "TI macro0 body Chb_GetClosedLoopIdReference",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "4e3a1d17060dd463a574aef3300c42707218ddcfdaf75395e8a2d27129536b48",
+        "current_normalized_sha256": "4e3a1d17060dd463a574aef3300c42707218ddcfdaf75395e8a2d27129536b48"
+      },
+      {
+        "name": "TI macro0 body Chb_RunOpenLoop",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "ebe29f38959e1577fcbbc58acf2b7e5bfacb42ceb6bc771ae5ce2ec082686113",
+        "current_normalized_sha256": "ebe29f38959e1577fcbbc58acf2b7e5bfacb42ceb6bc771ae5ce2ec082686113"
+      },
+      {
+        "name": "TI macro0 body Chb_ServiceOpenLoop",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "515b4e76be0594eb81495c47e518e81c78b9272c02b0635f5a8a392381d13357",
+        "current_normalized_sha256": "515b4e76be0594eb81495c47e518e81c78b9272c02b0635f5a8a392381d13357"
+      },
+      {
+        "name": "TI macro0 body Chb_SetAcInput",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "9e002a2af1c933e21dbb009b19a882832fd04ae92692162a156deb2eea3bd7e0",
+        "current_normalized_sha256": "9e002a2af1c933e21dbb009b19a882832fd04ae92692162a156deb2eea3bd7e0"
+      },
+      {
+        "name": "TI macro0 body Chb_SetLegacyStatus",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "d939e46cf3bec86b50a85a4ef91aa98931ab8b98ae6b87f434b9c37aa180de33",
+        "current_normalized_sha256": "d939e46cf3bec86b50a85a4ef91aa98931ab8b98ae6b87f434b9c37aa180de33"
+      },
+      {
+        "name": "TI macro0 body Chb_SetPrechargeBypass",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "314b81a1423c9e52091a418fb016fee34a33e9561c390409148f1f051738075f",
+        "current_normalized_sha256": "314b81a1423c9e52091a418fb016fee34a33e9561c390409148f1f051738075f"
+      },
+      {
+        "name": "TI macro0 body Chb_SourceEquivalentPiStep",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "1e132612da747eacdbf7757558c8c82da0f2499f9219471775ead981723f02ec",
+        "current_normalized_sha256": "1e132612da747eacdbf7757558c8c82da0f2499f9219471775ead981723f02ec"
+      },
+      {
+        "name": "TI macro0 body Chb_UpdatePll",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "e9755575b344c7e178750e16bb3d0aa86dd53640da0badf0ba93697b7989eeda",
+        "current_normalized_sha256": "e9755575b344c7e178750e16bb3d0aa86dd53640da0badf0ba93697b7989eeda"
+      },
+      {
+        "name": "TI macro0 body Chb_WrapAngle",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "29ff2cf99cc14590b88083003cb238dc2a7d78b240bf3a8092e36712262fb638",
+        "current_normalized_sha256": "29ff2cf99cc14590b88083003cb238dc2a7d78b240bf3a8092e36712262fb638"
+      },
+      {
+        "name": "TI macro0 body HVAC_RealTimeParameter",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "617f4044eb847e3c29743563f1ee452d9f5c228aa42c8b9835b776789060a349",
+        "current_normalized_sha256": "617f4044eb847e3c29743563f1ee452d9f5c228aa42c8b9835b776789060a349"
+      },
+      {
+        "name": "TI macro0 body Port_AD_Sample",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "97a914098f17df14f7b6d0bd8442fa8a7cd8f6916f63c5a94eaf0dcd22619375",
+        "current_normalized_sha256": "97a914098f17df14f7b6d0bd8442fa8a7cd8f6916f63c5a94eaf0dcd22619375"
+      },
+      {
+        "name": "TI macro0 body Port_RealTimeParameter",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "6a3b80281fbc404d333d4308831d0060cc081047a9a1f659772e8b98656f4b57",
+        "current_normalized_sha256": "6a3b80281fbc404d333d4308831d0060cc081047a9a1f659772e8b98656f4b57"
+      },
+      {
+        "name": "exact three-local declaration exception occurs once",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 body SVG_Udc_Average",
+        "passed": true,
+        "raw_tokens_equal": false,
+        "baseline_sha256": "095ff504dac0cdf25c7ac1d5ede588269caa29886e575c4d085467bfd28e4a31",
+        "current_normalized_sha256": "095ff504dac0cdf25c7ac1d5ede588269caa29886e575c4d085467bfd28e4a31"
+      },
+      {
+        "name": "TI macro0 body Module_Control_Write",
+        "passed": true,
+        "raw_tokens_equal": true,
+        "baseline_sha256": "ce66173a02a5eb38471757c5405433fc386c0fb74e2fca6de31842fb97366bad",
+        "current_normalized_sha256": "ce66173a02a5eb38471757c5405433fc386c0fb74e2fca6de31842fb97366bad"
+      },
+      {
+        "name": "source timing macro unchanged ControlTAD",
+        "passed": true
+      },
+      {
+        "name": "source timing macro unchanged TAD_PLL",
+        "passed": true
+      },
+      {
+        "name": "TI ISR compile baseline",
+        "passed": true
+      },
+      {
+        "name": "TI ISR compile macro0",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR body FPGAIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack FPGAIsr",
+        "passed": true,
+        "instruction_sha256": "621184cda911851bb67376e117ee6255f8a61cdefec40ea6b78ef30d290fa0d5",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "Port_StateUpdate_Read",
+          "Port_AD_Sample",
+          "HVAC_RealTimeParameter",
+          "SVG_Udc_Average",
+          "ChbDabControl_FastStep",
+          "Udc_check",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_faultcheck",
+          "PortController_Communication",
+          "Port_AllStopFlag_RST",
+          "Port_StateUpdate_Write",
+          "ChbDabControl_ForceFault",
+          "FT3_PluginUint_Write",
+          "FT3_PluginUint_Read",
+          "DAC_Output",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body FAULTIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack FAULTIsr",
+        "passed": true,
+        "instruction_sha256": "6f7b04716ece86f174805812d0a2fb34cad35c472819b98f37d7f4b6144e34a2",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "FaultCheckAndDispose_StepOne",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body Timer2Isr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack Timer2Isr",
+        "passed": true,
+        "instruction_sha256": "fbfc7b54240428778e25b16041b2b9b94960a3ef9bb429d315b940db1e726261",
+        "direct_calls": [
+          "TimerIntDisable",
+          "IntEventClear",
+          "TimerIntStatusClear",
+          "TimerIntEnable",
+          "ChbDabControl_Tick10ms",
+          "FaultLatch_Clear"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro0 ISR body DPRAMIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro0 ISR instructions/calls/stack DPRAMIsr",
+        "passed": true,
+        "instruction_sha256": "930b4ce76d8b5255a2a39e12949757f6a073610986e4fe4cb60939f9029d5524",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI ISR compile macro1",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR body FPGAIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack FPGAIsr",
+        "passed": true,
+        "instruction_sha256": "621184cda911851bb67376e117ee6255f8a61cdefec40ea6b78ef30d290fa0d5",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "Port_StateUpdate_Read",
+          "Port_AD_Sample",
+          "HVAC_RealTimeParameter",
+          "SVG_Udc_Average",
+          "ChbDabControl_FastStep",
+          "Udc_check",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_FaultDispose",
+          "ChbDabControl_ForceFault",
+          "OC_OV_LV_faultcheck",
+          "PortController_Communication",
+          "Port_AllStopFlag_RST",
+          "Port_StateUpdate_Write",
+          "ChbDabControl_ForceFault",
+          "FT3_PluginUint_Write",
+          "FT3_PluginUint_Read",
+          "DAC_Output",
+          "GPIOPinWrite",
+          "GPIOPinWrite",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body FAULTIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack FAULTIsr",
+        "passed": true,
+        "instruction_sha256": "6f7b04716ece86f174805812d0a2fb34cad35c472819b98f37d7f4b6144e34a2",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "FaultCheckAndDispose_StepOne",
+          "FaultDispose",
+          "ChbDabControl_ForceFault",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body Timer2Isr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack Timer2Isr",
+        "passed": true,
+        "instruction_sha256": "fbfc7b54240428778e25b16041b2b9b94960a3ef9bb429d315b940db1e726261",
+        "direct_calls": [
+          "TimerIntDisable",
+          "IntEventClear",
+          "TimerIntStatusClear",
+          "TimerIntEnable",
+          "ChbDabControl_Tick10ms",
+          "FaultLatch_Clear"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "TI macro1 ISR body DPRAMIsr",
+        "passed": true
+      },
+      {
+        "name": "TI macro1 ISR instructions/calls/stack DPRAMIsr",
+        "passed": true,
+        "instruction_sha256": "930b4ce76d8b5255a2a39e12949757f6a073610986e4fe4cb60939f9029d5524",
+        "direct_calls": [
+          "GPIOBankIntDisable",
+          "IntEventClear",
+          "GPIOPinIntStatus",
+          "GPIOPinIntClear",
+          "GPIOBankIntEnable"
+        ],
+        "stack": 8
+      },
+      {
+        "name": "firmware inputs unchanged during audit",
+        "passed": true
+      }
+    ],
+    "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+    "comparison_defines": {
+      "SST_BENCH_INPUT_SIM": 0,
+      "SST_SIMULATOR_MODE": 1,
+      "SST_ENABLE_DPRAM": 0,
+      "CHB_LOAD_EEPROM_PARAMETERS": 0,
+      "SST_PHASE_A_ONLY_TEST": 0
+    },
+    "exceptions": [
+      "SVG_Udc_Average: exactly float tempAve1,tempAve2,tempAve3 becomes three uninitialized float declarations; type/order/statements retained",
+      "Chb_EnterState and ChbDabControl_Service: exact unsigned-short mode alias expanded back to g_chb_dab_command.ac_mode before token comparison",
+      "SstSinglePhase.h adds stdint typedef/pragma declarations outside executable function bodies when macro=0"
+    ],
+    "limitations": "No complete fast-control WCET, board latency, cache/EMIF stall or physical protection timing measurement.",
+    "firmware_input_sha256": "f739601cd750cd891222d6a4373d3349614d01337be5d0740ca5c6a2b3aa8202",
+    "baseline_resolved_commit": "bcd8d1c554a3faa3e7010149b868be59f993ffc8",
+    "passed": true
+  },
+  "source_style": {
+    "formatter": "clang-format version 20.1.8",
+    "custom_source_files": 134,
+    "failures": [],
+    "after": {
+      "lines": 33789,
+      "multiple_statement_lines": 0,
+      "code_lines_over_120": 0
+    }
+  },
+  "comment_coverage": {
+    "custom_source_files": 134,
+    "symbol_counts": {
+      "prototype": 330,
+      "parameter": 563,
+      "function": 375,
+      "variable": 1648,
+      "field": 894,
+      "enum": 43
+    },
+    "failures": []
+  },
+  "refactor_contract_audit": {
+    "baseline_commit": "ddaeb56f21a81a70cdb76085728f91b67dc3c7a0",
+    "original_entities": 2419,
+    "current_entities": 2337,
+    "entity_groups": {
+      "moved_or_redeclared": 1394,
+      "preserved_in_noncompiled_archive": 130,
+      "unchanged": 533,
+      "reviewed_interface_or_organization_change": 168,
+      "exact_ordered_initialization_expansion": 2
+    },
+    "failures": []
+  },
+  "limitations": [
+    "Host stubs do not model the actual L/C power circuit or prove closed-loop stability.",
+    "Unchanged ISR entry instructions/calls/stack do not prove full control-path WCET or EMIF latency below 100 us.",
+    "The 0x800-byte stack allocation is not a measured stack high-water mark.",
+    "Actual phase/polarity, passive precharge voltage, module addressing and UNIT NoInterlock hardware behavior require board acceptance."
+  ]
+}

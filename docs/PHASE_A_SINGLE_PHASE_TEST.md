@@ -94,3 +94,5 @@ python tools/build.py --configuration Debug --variant phase_a_bench --define SST
 ```
 
 主机回归验证算法边界、模式互锁、非有限参数、实测母线归一化、PI抗饱和、反相PLL和PWM使能竞态。TI构建验证源文件和链接布局；仍需在板上用GPIO69及ISR尾部测量最坏执行时间，确认满负载下每次完成时间小于100 µs并留有余量。真实采样极性、L/C参数、501输出方向及硬件保护时序必须用低压功率级继续验收。
+
+本轮最终结果：统一主机检查16/16、单相14组、三相8场景、静态审计38/38及134文件格式/注释检查均通过；TI命令行Debug/Release、CCS导入及Clean Debug/Release全部通过。默认真实AN固件在 `build/Debug/phase_a_flow_audit_20261017/SST_AnyEyes.out` 和对应Release目录。详细修复、预充限制、报告与产物指纹见 [闭环流程审计](PHASE_A_CLOSED_LOOP_AUDIT.md) 和 [验证证据](evidence/phase_a_closed_loop_validation.json)。
