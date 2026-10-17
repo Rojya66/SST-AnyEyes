@@ -441,7 +441,12 @@ void Port_AD_Sample(uchar latch)
     }
     // 	HWREGH(0x60000628)=Port_AD_Buf[0];
     // 	HWREGH(0x6000062a)=Port_AD_Buf[1];
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相试验霍尔标定：AN=0.0305185*有符号 ADC 原码，单位 V；不叠加旧 PT 比及零偏。 */
+    HA_Port_Volt_A_Temp = ADSample_buffer[0];
+    ADSample_buffer[0] = 0.0305185 * HA_Port_Volt_A_Temp;
 
+#else
     HA_Port_Volt_A_Temp = ADSample_buffer[0];
     ADSample_buffer[0] = 0.0079785 * HA_Port_Volt_A_Temp + 0.15957;
     HA_Port_Volt_B_Temp = ADSample_buffer[1];
@@ -449,7 +454,7 @@ void Port_AD_Sample(uchar latch)
 
     ADSample_buffer[0] = ADSample_buffer[0] * HA_PT_Ratio;
     ADSample_buffer[1] = ADSample_buffer[1] * HA_PT_Ratio;
-
+#endif
     //////////////////////
 
     LPF_temp0 = LPF_5KHZ_X_Volt_A_1 * 0.9567;
@@ -469,7 +474,7 @@ void Port_AD_Sample(uchar latch)
     ///////////////////////
 
 #if SST_PHASE_A_ONLY_TEST
-    /* AD[6] 接 AN，沿用本通道零偏、比例及低通；AD[7] 不参与控制。 */
+    /* AD[6] 接 AN，使用上方单相霍尔标定及既有低通；AD[7] 不参与控制。 */
     ADSample_buffer[1] = 0.0F;
     ADSample_buffer[2] = 0.0F;
 #else

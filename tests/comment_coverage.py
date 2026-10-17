@@ -261,7 +261,22 @@ def self_test():
         data, root, symbols = parse_source(text, '.cpp')
         issues, _ = audit(data, root, symbols)
         assert len(issues) == expected, (name, expected, issues)
-    print('Comment audit self-tests: PASS;', len(fixtures), 'positive/negative fixtures')
+    conditional = (banner.replace('x：输入测试值。', '无。') +
+                   'void first(void) {\n#if TEST\n if (left)\n#else\n if (right)\n#endif\n'
+                   ' { int count = 0; /* 中文计数变量。 */ }\n}\n' + banner +
+                   'int last(int x) { int local = x; /* 中文局部值。 */ return local; }')
+    for suffix in ('.c', '.cpp'):
+        data, root, symbols = parse_source(conditional, suffix)
+        assert [s['name'] for s in symbols if s['kind'] == 'function'] == ['first', 'last']
+        last = next(s for s in symbols if s['kind'] == 'function' and s['name'] == 'last')
+        local = next(s for s in symbols if s['kind'] == 'variable' and s['name'] == 'local')
+        assert last['start'] == data.index(b'int last(')
+        assert local['function_start'] == last['start'] and local['owner'] == 'last'
+        assert data[local['declarator_start']:local['declarator_end']] == b'local = x'
+        issues, _ = audit(data, root, symbols)
+        assert not issues, (suffix, issues)
+    print('Comment audit self-tests: PASS;', len(fixtures),
+          'positive/negative fixtures; Chinese conditional-recovery byte spans in C/C++')
 
 
 def main():

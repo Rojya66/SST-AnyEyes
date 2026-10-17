@@ -8,7 +8,7 @@
 #define SST_DEBUG_PROTOCOL_VOFA 2U
 #ifndef SST_DEBUG_PROTOCOL
 /* SST_DEBUG_PROTOCOL：串口协议二选一配置，只允许 ANYEYES 或 VOFA。 */
-#define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_ANYEYES
+#define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_VOFA
 #endif
 #ifndef SST_ENABLE_DPRAM
 /* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；当前单UNIT调试默认0。 */
@@ -19,13 +19,13 @@
 #define SST_SIMULATOR_MODE 1U
 #endif
 #ifndef SST_BENCH_INPUT_SIM
-/* SST_BENCH_INPUT_SIM：临时无主回路输入注入；当前测试版设为 1，生成测试采样。
- * 恢复真实采样时改为 0 并重新编译；本功能不替代功率回路模型。 */
-#define SST_BENCH_INPUT_SIM 1U
+/* SST_BENCH_INPUT_SIM：临时无主回路输入注入；0 使用真实采样，1 生成测试采样。
+ * 修改后需重新编译；本功能不替代功率回路模型。 */
+#define SST_BENCH_INPUT_SIM 0U
 #endif
 #ifndef SST_PHASE_A_ONLY_TEST
 /* SST_PHASE_A_ONLY_TEST：仅 A 相 AN 采样与虚拟 dq 双闭环测试；1 启用双 SOGI 并封锁 B/C，0 保留三相算法。 */
-#define SST_PHASE_A_ONLY_TEST 0U
+#define SST_PHASE_A_ONLY_TEST 1U
 #endif
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)

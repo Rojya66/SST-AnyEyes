@@ -87,6 +87,54 @@ def descendants(node):
         yield from descendants(child)
 
 
+_COMMENT_LITERAL_PATTERN = r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')|/\*[\s\S]*?\*/|//[^\n]*'
+
+
+def recover_function_spans(raw: str, file: str = "<source>") -> list[tuple[int, int, str]]:
+    """Recover complete function spans from one malformed tree-sitter node.
+
+    Conditional compilation may put different ``if`` heads before one shared
+    block.  Tree-sitter then reports one error function containing subsequent
+    definitions.  This lexical recovery keeps all branch text and only accepts
+    a contiguous sequence of complete definitions separated by whitespace,
+    comments, or conditional directives.  Any declaration or non-conditional
+    preprocessor directive in a gap is rejected instead of silently discarded.
+    """
+    clean = re.sub(_COMMENT_LITERAL_PATTERN,
+                   lambda match: ''.join('\n' if char == '\n' else ' ' for char in match[0]), raw)
+    signature = re.compile(
+        r'(?m)^[ \t]*(?:(?:[A-Za-z_]\w*|\*)[ \t]+)+'
+        r'([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)[ \t]*'
+        r'\([^;{}]*\)[ \t\r\n]*\{')
+    matches = [match for match in signature.finditer(clean)
+               if match[1] not in {"if", "for", "while", "switch", "catch"}]
+    if len(matches) <= 1:
+        return []
+    spans = []
+    for match in matches:
+        if spans and match.start() < spans[-1][1]:
+            continue
+        opening = clean.index('{', match.start(), match.end())
+        depth = 1
+        closing = opening + 1
+        while closing < len(clean) and depth:
+            depth += (clean[closing] == '{') - (clean[closing] == '}')
+            closing += 1
+        if depth:
+            raise AssertionError(f"Unbalanced recovered function {match[1]} in {file}")
+        spans.append((match.start(), closing, match[1]))
+    if len(spans) <= 1:
+        return []
+    if spans[0][0] != 0 or clean[spans[-1][1]:].strip():
+        raise AssertionError(f"Incomplete swallowed function coverage in {file}")
+    for left, right in zip(spans, spans[1:]):
+        gap = clean[left[1]:right[0]]
+        allowed = re.sub(r'(?m)^[ \t]*#[ \t]*(?:if|ifdef|ifndef|elif|else|endif)\b[^\n]*', '', gap)
+        if allowed.strip():
+            raise AssertionError(f"Uninventoried tokens between recovered functions in {file}")
+    return spans
+
+
 def inventory(text: str, file: str) -> list[Entity]:
     data = text.encode("utf-8")
     language = tree_sitter_cpp if Path(file).suffix.lower() in (".cpp", ".hpp") else tree_sitter_c
@@ -121,8 +169,20 @@ def inventory(text: str, file: str) -> list[Entity]:
                              txt(node) if contents is None else contents,
                              conditional_lines.get(line, ())))
 
+    def split_swallowed_functions(node) -> bool:
+        raw = txt(node)
+        spans = recover_function_spans(raw, file)
+        base_line = data.count(b"\n", 0, node.start_byte) + 1
+        for start, end, name in spans:
+            line = base_line + raw.count('\n', 0, start)
+            result.append(Entity("function", name, file, line, raw[start:end],
+                                 conditional_lines.get(line, ())))
+        return bool(spans)
+
     def scan(node):
         if node.type == "function_definition":
+            if node.has_error and split_swallowed_functions(node):
+                return
             name = identifier(node.child_by_field_name("declarator"))
             if name is not None:
                 add("function", txt(name), node)

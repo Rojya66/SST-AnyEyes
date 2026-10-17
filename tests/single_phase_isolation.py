@@ -1,7 +1,7 @@
 """Use TI preprocessing/assembly to audit macro=0 isolation against bcd8d1c.
 
 All compared function tokens are exact except the three named, uninitialized
-float locals in SVG_Udc_Average.  Additional stdint typedef/pragma tokens from
+float locals in SVG_Udc_Average and two exact mode aliases.  Additional stdint typedef/pragma tokens from
 the new disabled header are outside executable function bodies.  ISR assembly
 is compared in both macro modes; this does not measure complete ISR WCET.
 """
@@ -20,6 +20,7 @@ import zipfile
 
 from bench_isolation import (compile_unit, digest, function, preprocess, read,
                              run, source_hash, tokens)
+from realtime_audit import normalize_control_mode_alias
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "bcd8d1c554a3faa3e7010149b868be59f993ffc8"
@@ -27,7 +28,11 @@ CONTROL = "Source/04_App/04_Control/ChbDabControl.c"
 ISR = "Source/03_System/02_ISR/Redef_Interrupt.c"
 CHANGED = {
     CONTROL: ["Chb_WriteNormalizedReferences", "Chb_ConfigurationValid", "ChbDabControl_Init",
-              "Chb_Min3", "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep"],
+              "Chb_Min3", "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep",
+              "Chb_EnterState", "ChbDabControl_Service", "ChbDabControl_ForceFault", "Chb_DisableAllPwm",
+              "Chb_GetClosedLoopIdReference", "Chb_RunOpenLoop", "Chb_ServiceOpenLoop", "Chb_SetAcInput",
+              "Chb_SetLegacyStatus", "Chb_SetPrechargeBypass", "Chb_SourceEquivalentPiStep", "Chb_UpdatePll",
+              "Chb_WrapAngle"],
     "Source/04_App/02_Measurement/ADC_Sample.C": ["HVAC_RealTimeParameter", "Port_AD_Sample"],
     "Source/04_App/02_Measurement/MeasurementService.c": ["Port_RealTimeParameter"],
     "Source/04_App/04_Control/HVAC_Strategy.C": ["SVG_Udc_Average"],
@@ -65,6 +70,7 @@ def main() -> None:
     report = {"baseline": args.baseline, "results": [], "compiler": str(cgt / "bin/cl6x.exe"),
               "comparison_defines": switches(0),
               "exceptions": ["SVG_Udc_Average: exactly float tempAve1,tempAve2,tempAve3 becomes three uninitialized float declarations; type/order/statements retained",
+                             "Chb_EnterState and ChbDabControl_Service: exact unsigned-short mode alias expanded back to g_chb_dab_command.ac_mode before token comparison",
                              "SstSinglePhase.h adds stdint typedef/pragma declarations outside executable function bodies when macro=0"],
               "limitations": "No complete fast-control WCET, board latency, cache/EMIF stall or physical protection timing measurement."}
 
@@ -86,7 +92,12 @@ def main() -> None:
                 label = Path(relative).stem
                 old = preprocess(baseline, relative, cgt, switches(0), destination / "baseline" / label)
                 new = preprocess(project, relative, cgt, switches(0), destination / "macro0" / label)
+                raw_new = new
                 if relative == CONTROL:
+                    # Tokenize the preprocessed text again only after the same
+                    # narrow two-function alias expansion used by source audit.
+                    pp = destination / "macro0" / label / (Path(relative).stem + ".pp")
+                    new = tokens(normalize_control_mode_alias(read(pp)))
                     delta = [(kind, old_start, old_end, new[new_start:new_end])
                              for kind, old_start, old_end, new_start, new_end in
                              difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes()
@@ -95,11 +106,11 @@ def main() -> None:
                         delta[0][1] == delta[0][2] and len(delta[0][3]) == 209 and
                         digest(delta[0][3]) == "49049a33791d7acaf781fa90bd7940222c3071370eb153d0c6f92bcf0eddc278")
                     check(exact_header_addition,
-                          "entire TI macro0 control differs only by exact 209-token stdint typedef/pragma insertion",
+                          "entire TI macro0 control differs only by exact header insertion after two exact mode alias expansions",
                           added_token_sha256=digest(delta[0][3]) if len(delta) == 1 else None)
                 for name in names:
                     before, after = function(old, name), function(new, name)
-                    raw_same = before == after
+                    raw_same = before == function(raw_new, name)
                     if name == "SVG_Udc_Average":
                         after, count = normalize_named_declarations(after)
                         check(count == 1, "exact three-local declaration exception occurs once")

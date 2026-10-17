@@ -69,10 +69,15 @@ def extract_function(source: str, name: str, occurrence: int = 0) -> str:
 
 PREFIX = r'''
 #include <assert.h>
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+/* MinGW's default assert may open a Windows dialog and hide the failed check.
+ * Report the exact expression to stderr and exit so automation stays bounded. */
+#undef assert
+#define assert(expression) ((expression) ? (void)0 : (fprintf(stderr, "ASSERT %s:%d: %s\n", __FILE__, __LINE__, #expression), exit(2)))
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef struct { short AD[16]; short AD_LATCH[16]; short Avg_IG; short Avg_DC; struct { unsigned short PM_CTL16; } PM_CTL; } FPGA_SLOT;
@@ -164,7 +169,13 @@ static void check_sample(void) {
         if (i == 5U) HA_PM_A1 = 0U;
         output_a = previous_a * 0.9567F + output_a * 0.04328F;
         output_b = previous_b * 0.9567F + output_b * 0.04328F;
+#if SST_PHASE_A_ONLY_TEST
+        /* Current A-only hardware uses the temporary Hall sensor calibration.
+         * Its direct V/count scale deliberately does not apply HA_PT_Ratio. */
+        previous_a = 0.0305185F * (float)raw_a[i];
+#else
         previous_a = (0.0079785F * (float)raw_a[i] + 0.15957F) * HA_PT_Ratio;
+#endif
         previous_b = (0.0079678F * (float)raw_b[i] + 0.545795F) * HA_PT_Ratio;
         Port_AD_Sample(latch);
         assert(fabsf(HA_Port_Current_A - ((HA_PM_A1 == 0U && HA_PM_A2 != 0U) ? -3.7F : 2.5F)) < 1e-5F);

@@ -80,7 +80,7 @@ def definitions(text: str) -> dict[str, str]:
     return result
 
 
-def select_dpram_branches(text: str, enabled: bool) -> str:
+def select_dpram_branches(text: str, enabled: bool, phase_a: bool = False) -> str:
     """Select DPRAM gates and the original three-phase compatibility branch.
 
     A-only behavior is checked independently by single_phase_control.py and
@@ -110,9 +110,9 @@ def select_dpram_branches(text: str, enabled: bool) -> str:
                 elif expression == "!SST_BENCH_INPUT_SIM":
                     known = True
                 elif expression == "SST_PHASE_A_ONLY_TEST":
-                    known = False
+                    known = phase_a
                 elif expression == "!SST_PHASE_A_ONLY_TEST":
-                    known = True
+                    known = not phase_a
                 elif expression == "SST_ENABLE_DPRAM":
                     known = enabled
                 elif expression == "!SST_ENABLE_DPRAM":
@@ -151,6 +151,28 @@ def normalize_udc_local_declarations(text: str) -> str:
     if count > 1:
         raise AssertionError("Unexpected repeated SVG_Udc_Average local declarations")
     return text.replace(old, new, 1)
+
+
+def normalize_control_mode_alias(text: str) -> str:
+    """Expand only the reviewed macro=0 mode alias in two coordinators.
+
+    The exact declaration and its sole assignment are required.  Every other
+    statement still has to match the original token stream, and macro=0 host
+    traces independently prove the resulting branch behavior.
+    """
+    for name in ("Chb_EnterState", "ChbDabControl_Service"):
+        if not re.search(r'\b' + name + r'\s*\([^;{}]*\)\s*\{', text):
+            continue
+        old = function(text, name)
+        if not re.search(r'\bunsigned\s+short\s+mode\s*;', old):
+            continue
+        new, declarations = re.subn(r'\bunsigned\s+short\s+mode\s*;', '', old)
+        new, assignments = re.subn(r'\bmode\s*=\s*g_chb_dab_command\s*\.\s*ac_mode\s*;', '', new)
+        if declarations != 1 or assignments != 1 or re.search(r'\bmode\s*(?:[+*/-]?=(?!=)|\+\+|--)', new):
+            raise AssertionError(f"Unexpected {name} control mode alias")
+        new = re.sub(r'\bmode\b', 'g_chb_dab_command.ac_mode', new)
+        text = text.replace(old, new, 1)
+    return text
 
 
 def closure(name: str, functions: dict[str, str]) -> set[str]:
@@ -204,8 +226,8 @@ def main() -> None:
     # Fixed HVAC project: evaluate the same legacy port choice before comparing
     # declaration locations. Unrelated compile-time alternatives remain in text.
     all_entities = [entity for path, contents in source_texts.items()
-                    for entity in inventory(normalize_udc_local_declarations(
-                                                select_dpram_branches(contents, True)),
+                    for entity in inventory(normalize_control_mode_alias(normalize_udc_local_declarations(
+                                                select_dpram_branches(contents, True))),
                                             path.relative_to(args.project).as_posix())]
     archived_interfaces = [entity for directory in (args.project / "archive", args.project / "Legacy")
                            if directory.exists() for path in directory.rglob("*")
@@ -232,14 +254,14 @@ def main() -> None:
         "main.H": "04_App/00_Config/main.H",
     }
     expected_module_masks = {
-        "CHB_PM_A1_MASK": "0x0007U", "CHB_PM_A2_MASK": "0x0000U",
+        "CHB_PM_A1_MASK": "0x0007U", "CHB_PM_A2_MASK": "0x0007U",
         "CHB_PM_B1_MASK": "0x0000U", "CHB_PM_B2_MASK": "0x0000U",
         "CHB_PM_C1_MASK": "0x0000U", "CHB_PM_C2_MASK": "0x0000U",
     }
     actual_module_masks = dict(re.findall(r'^\s*#\s*define\s+(CHB_PM_[ABC][12]_MASK)\s+(\w+)\s*$',
                                          uncomment(all_text), re.MULTILINE))
     check(actual_module_masks == expected_module_masks,
-          "reviewed installed-unit configuration is exactly A1=0x0007 and all other module masks=0")
+          "reviewed installed-unit configuration is exactly A1=A2=0x0007 and all B/C module masks=0")
     for name, relative in unchanged.items():
         original = inventory(select_dpram_branches(read(args.baseline / name), True), name)
         if name == "ChbDabControl.h" and actual_module_masks == expected_module_masks:
@@ -249,7 +271,7 @@ def main() -> None:
         # satisfied by archives. Functions, types, values and MMIO declarations
         # retain current-source requirements and independent call-graph checks.
         missing = missing_entities(original, all_entities + archived_interfaces)
-        check(not missing, f"every original executable entity preserved (reviewed module masks and Udc local declaration split checked separately): {name} "
+        check(not missing, f"every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))
@@ -289,6 +311,7 @@ def main() -> None:
 
     all_functions: dict[str, str] = {}
     no_dpram_functions: dict[str, str] = {}
+    single_phase_functions: dict[str, str] = {}
     for path in paths:
         if path.suffix.lower() not in (".c", ".cpp"):
             continue
@@ -298,6 +321,8 @@ def main() -> None:
             all_functions[name] = all_functions.get(name, "") + body
         for name, body in definitions(select_dpram_branches(source_texts[path], False)).items():
             no_dpram_functions[name] = no_dpram_functions.get(name, "") + body
+        for name, body in definitions(select_dpram_branches(source_texts[path], False, phase_a=True)).items():
+            single_phase_functions[name] = single_phase_functions.get(name, "") + body
 
     mapped = set(re.findall(r'#\s*pragma\s+DATA_SECTION\(\s*(DPRAM_\w+)\s*,',
                             uncomment(all_text)))
@@ -390,9 +415,56 @@ def main() -> None:
     forbidden_masking = {"IntGlobalDisable", "_disable_interrupts", "IntGlobalRestore",
                          "_restore_interrupts", "IntDisable", "IntEnable", "IntEventMap",
                          "IntEventCombineAdd", "IntEventCombineRemove"}
-    blocked = sorted(reached & forbidden_masking)
-    blocked += sorted(name for name in reached if re.match(r'^(?:Cache|CACHE)', name))
-    check(not blocked, f"background has no global interrupt masking call path: {blocked}")
+    three_phase_reached = set().union(*(closure(name, no_dpram_functions) for name in runtime_roots))
+    blocked = sorted(three_phase_reached & forbidden_masking)
+    blocked += sorted(name for name in three_phase_reached if re.match(r'^(?:Cache|CACHE)', name))
+    check(not blocked, f"macro=0 background has no global interrupt masking call path: {blocked}")
+
+    # Single-phase state/PWM publication must be atomic against the TAD/FAULT
+    # interrupt.  Permit only these exact reviewed functions and verify the
+    # entire masked regions plus their helpers remain bounded register/state
+    # operations.  Variable_RST is deliberately outside the enable region.
+    critical_functions = {
+        "Chb_SetAcInput", "Chb_SetPrechargeBypass", "Chb_SinglePhaseEnablePwm",
+        "Chb_SinglePhaseDisablePwm", "Chb_SetLegacyStatus", "Chb_EnterState",
+        "ChbDabControl_ForceFault", "ChbDabControl_Service",
+    }
+    actual_critical = {name for name, body in all_functions.items()
+                       if re.search(r'\bIntGlobalDisable\s*\(', body)}
+    check(actual_critical == critical_functions,
+          f"macro=1 global masking is confined to exact reviewed control transactions: {sorted(actual_critical)}")
+    allowed_critical_calls = {
+        "IntGlobalDisable", "IntGlobalRestore", "Chb_SinglePhaseGateBlocked",
+        "Chb_ClearAcInputPulse", "Port_IO_Out", "Module_PWMEN", "Module_50Hz_PWMEN",
+        "Module_ENdab_PWMEN", "Module_Control_Write", "Port_DSPControl_AllShutdown",
+    }
+    critical_failures = []
+    regions_checked = 0
+    for name in sorted(critical_functions):
+        body = single_phase_functions.get(name, "")
+        regions = re.split(r'\binterrupt_state\s*=\s*IntGlobalDisable\s*\(\s*\)\s*;', body)[1:]
+        if not regions:
+            critical_failures.append(name + ": no reviewed critical region")
+        for index, region in enumerate(regions):
+            restores = list(re.finditer(r'\bIntGlobalRestore\s*\(\s*interrupt_state\s*\)\s*;', region))
+            if not restores:
+                critical_failures.append(name + ": missing restore")
+                continue
+            region = region[:restores[-1].end()]
+            calls = set(re.findall(r'\b([A-Za-z_]\w*)\s*\(', region)) - {"if", "switch", "sizeof", "return"}
+            reached_calls = set().union(*(closure(called, single_phase_functions) for called in calls)) if calls else set()
+            reachable_text = region + "\n" + "\n".join(single_phase_functions.get(called, "") for called in reached_calls)
+            forbidden_calls = reached_calls - allowed_critical_calls - {"if", "switch", "sizeof", "return"}
+            if forbidden_calls or re.search(r'\b(?:for|while|do|goto)\b', reachable_text):
+                critical_failures.append(f"{name}[{index}]: unbounded/unreviewed calls {sorted(forbidden_calls)}")
+            if re.search(r'\b(?:Variable_RST|SstDebug_\w*|SstAnyEyes_\w*|SstSerial_\w*|UART\w*|EEPROM\w*|I2C\w*|Cache\w*)\b', reachable_text):
+                critical_failures.append(f"{name}[{index}]: reset/communication/storage/cache in masked region")
+            regions_checked += 1
+    check(not critical_failures,
+          f"macro=1 {regions_checked} critical regions contain bounded register/state operations only: {critical_failures}")
+    other_masking = sorted((reached & forbidden_masking) - {"IntGlobalDisable", "IntGlobalRestore"})
+    other_masking += sorted(name for name in reached if re.match(r'^(?:Cache|CACHE)', name))
+    check(not other_masking, f"background has no additional masking/cache path: {other_masking}")
     direct_masking = [name for name, body in all_functions.items()
                       if name.startswith(("Sst", "ChbApplication_Service", "TaskSlice_", "CpuTask_Service")) and
                       re.search(r'\b(?:IntGlobalDisable|_disable_interrupts|CSR)\b', body)]

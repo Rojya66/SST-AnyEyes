@@ -42,8 +42,10 @@ def run(project: Path, compiler: str, enabled: bool, template: str) -> str:
         command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
                    f"-DSST_BENCH_INPUT_SIM={int(enabled)}",
                    "-DSST_SIMULATOR_MODE=1", "-DSST_ENABLE_DPRAM=0",
+                   "-DSST_PHASE_A_ONLY_TEST=0",
                    str(unit), "-lm", "-o", str(binary)]
-        subprocess.run(command, check=True, capture_output=True, text=True)
+        subprocess.run(command, check=True, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
         return subprocess.run([str(binary)], check=True, capture_output=True,
                               text=True, timeout=20).stdout
 

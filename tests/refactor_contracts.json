@@ -1516,8 +1516,8 @@
       "new_keys": [
         "function:Port_AD_Sample"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相宏1采用AN瞬时采样直接作为A相电压，不做线电压转相电压，用户现场临时霍尔标定保持0.0305185乘原始采样；B/C数据隔离。宏0保留原三相采样转换，既有输入注入路径保持。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
         "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
@@ -1527,8 +1527,8 @@
       "current_sha256s": [
         "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
         "509564b82d2dd9cde719406e1c9ed7553b502dcfd6e90b1628f8a5fb06ca2c66",
-        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba",
-        "e4fe8ebcf9ab8f28d76381faff0f3e67c4af01430ed85d8e0652c8ecb279649a"
+        "6799d832040e3997156dafdaedf8b3fa273668c8d147a7c811c79a6864ae4cf3",
+        "a98313f5ecbbffea58f7d96a216785407a3a92921f9e854c765e5a4a582ec4ba"
       ]
     },
     {
@@ -1620,13 +1620,13 @@
       "new_keys": [
         "function:ChbDabControl_FastStep"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相宏分支接入AN采样与SOGI虚拟dq；每拍拒绝NaN/Inf命令、参数和测量，校验运行模式和实测母线，已建立电压后持续失压/失锁200TAD锁存故障；快速软件保护先于PI与PWM输出。宏0三相路径保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "e656bc62165ea3e3acaf8bdbfccac8d3b928834008b3520e0ecadd3fb86d652a"
       ],
       "current_sha256s": [
-        "1d83d1977b4443978c956619b9ba98468d117a847ae8e88cf738a106c098f9ed"
+        "d2bf778f88ce66ac00da469752f5cff533390fd0cb5e7cab4e4008eacdbd70de"
       ]
     },
     {
@@ -1634,13 +1634,13 @@
       "new_keys": [
         "function:ChbDabControl_Init"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相分支初始化SOGI、锁相、电压建立、故障计数及模式锁存状态，默认参数继续使用SST自身闭环参数；宏0保留原控制器及运行变量初始化。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "55863ba880bf8fadda0cefe88dacfdc7b12444df6d8379ca46c9305d6192319d"
       ],
       "current_sha256s": [
-        "893031cbc018673e779f72a6760d7663fbc5a5f51f3c61936f66d726d3a7bcb6"
+        "fe519d86164ed0f3c6bada019e76aa14f36d987bf700d4b71b5821199af27335"
       ]
     },
     {
@@ -1662,13 +1662,13 @@
       "new_keys": [
         "function:Chb_ConfigurationValid"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相分支对28项运行命令/PI及保护参数显式拒绝NaN/Inf，并校验运行模式、正向比例和必要范围，防止无效输入传播至SOGI、PLL、归一化及PI；宏0原有效性逻辑保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "07af2f369682ecc7fd0833e23c1b600cee743de33f8f10c460901982d805667f"
       ],
       "current_sha256s": [
-        "61a5b370eb99bc56d26066735ae04aedd4eaabb07bf452f28e2603d62cc70202"
+        "aef0105e064bae516ca9137f91e8e08c6cd3caa7b79114f8021d3920f9bb73bd"
       ]
     },
     {
@@ -1690,13 +1690,13 @@
       "new_keys": [
         "function:Chb_RunClosedLoop"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相分支对电压电流各构建SOGI虚拟dq并复用SST调节器参数，按N_A乘实测A相平均母线归一化；内环条件积分和dq矢量限幅共同约束输出，前馈不用目标母线替代实测值，B/C参考保持隔离。宏0三相路径保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "9ac30efc10783288f09d031cf7025e6c3a3630d756e89ba1c387845e9eed6fff"
       ],
       "current_sha256s": [
-        "cc31536ded6e1fb1ce95395c9d4dc8c2f507b5442275c64852a93721726d2477"
+        "235f5a567f3c05c9c3559b2bc68cd8dbb7e4b6382fc1bc8c00dc8f0479c4e5d1"
       ]
     },
     {
@@ -1704,13 +1704,13 @@
       "new_keys": [
         "function:Chb_WriteNormalizedReferences"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "单相只写A1/A2参考，按501兼容固件要求DC_Log排序bit0互补、IG方向bit8一致；参考归一化采用实测A相母线且B/C置零。DC_Log新增写入限定在单相宏内，宏0原三相token保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
       "baseline_sha256s": [
         "15fc50b9c4f1b6753e270b79791ea2ddde4502cce5d947a2f0bd19967038ce09"
       ],
       "current_sha256s": [
-        "f86f9ee423cb4b97f46b032b94daa01d8f74149d8a7b76f45ffaa4b82a164550"
+        "0f8aa19ff6fa3a4c8127331ba8f9915eb642f165f9f94f2c9410a140adee7291"
       ]
     },
     {
@@ -1814,6 +1814,202 @@
       ],
       "current_sha256s": [
         "0ba94daff045e80d3f6ad22961aaa9b469716316214749c951e2f90767c20d8a"
+      ]
+    },
+    {
+      "key": "function:ChbDabControl_ForceFault",
+      "new_keys": [
+        "function:ChbDabControl_ForceFault"
+      ],
+      "reason": "单相分支原子发布首故障与故障状态，并同步关断CHB/DAB和旧状态镜像，防止后台复位覆盖ISR故障；临界区仅含有界寄存器/状态事务，无长复位或通信。宏0原故障流程保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "9f09baab49bb55f6961cbef4f103d5f7e38beff3a5a4dda001dc599768dca2f9"
+      ],
+      "current_sha256s": [
+        "999aab82147e473c4770b3280699c265ceef0b3e2612a69875f6e1f9acd4e71e"
+      ]
+    },
+    {
+      "key": "function:ChbDabControl_Service",
+      "new_keys": [
+        "function:ChbDabControl_Service"
+      ],
+      "reason": "单相启动预充、旁路、等待锁相和运行过程加入模式锁存校验；输入/状态最终提交与PWM使能前复核均在有界临界事务完成，ISR故障抢占后禁止后台重新接触器/PWM或覆盖故障。公共mode只读局部别名经精确展开验证宏0等价。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "8c22099ccd92ecb299ecb151a5019a3536770fb46f8921630b9fa97f0a6db9f5"
+      ],
+      "current_sha256s": [
+        "cae2714d9618b46cf25e6ce7103713cd58da614167d27a169c655dbfd1bab974"
+      ]
+    },
+    {
+      "key": "function:Chb_DisableAllPwm",
+      "new_keys": [
+        "function:Chb_DisableAllPwm"
+      ],
+      "reason": "单相关断通过原子CHB/DAB禁能助手同步维护旧控制镜像，和使能路径形成故障优先的事务；三相宏0沿用原模块使能调用。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "2f912afd5d01bc8e18be3925db8d195b8befc7f52d057b05b87efa63a098a19c"
+      ],
+      "current_sha256s": [
+        "afcfcd75810be0911dd0f0d17d4c0518bdd9e148655772d8c32d6c6580ce3199"
+      ]
+    },
+    {
+      "key": "function:Chb_EnterState",
+      "new_keys": [
+        "function:Chb_EnterState"
+      ],
+      "reason": "单相状态迁移锁存本次启动模式，在接触器/预充旁路/PWM操作后按故障优先原子提交状态，防止后台中断后覆盖FAULT；公共mode只读别名不改宏0执行token。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "f9e31b12262bd908a8451148de6204f527ecce31e0f15f7cd0d182243e461cd2"
+      ],
+      "current_sha256s": [
+        "b8eb74d68d818cee60e620fecfc9e296983c9b4e01d4a0780210a6fdc90372d4"
+      ]
+    },
+    {
+      "key": "function:Chb_GetClosedLoopIdReference",
+      "new_keys": [
+        "function:Chb_GetClosedLoopIdReference"
+      ],
+      "reason": "单相虚拟dq外环复用现有母线目标与启动策略，以有界条件积分PI替代无界积分，保留手动Id/时长接管及平滑交接；三相宏0保留原PI和参考逻辑。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "67bdc41cee2942afeef0d9739ebaee406f0126297a935a9bdf693438478d70a2"
+      ],
+      "current_sha256s": [
+        "2f48ecc436d7aa49dce5f8478f85119656d5975f0e84abbfb9358699fab0ef0d"
+      ]
+    },
+    {
+      "key": "function:Chb_ServiceOpenLoop",
+      "new_keys": [
+        "function:Chb_ServiceOpenLoop"
+      ],
+      "reason": "单相开环后台启停经最终故障复核及原子PWM助手；发生故障时不再发布运行状态/重新使能，停止时同步关断CHB和DAB；宏0开环控制保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "5ec3aa549d779514ac0f1686fdbb446063131e0134e6a7b433fd8e5fde083c84"
+      ],
+      "current_sha256s": [
+        "d9bf0932b781d4dd762144804643dda0023900774234e824b61a2811aff6c114"
+      ]
+    },
+    {
+      "key": "function:Chb_SetAcInput",
+      "new_keys": [
+        "function:Chb_SetAcInput"
+      ],
+      "reason": "单相接触器输入写入在保存/恢复原中断状态的有界临界区内执行，最终检查故障再提交，避免ISR关断后后台重新合闸；宏0直接写入流程保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "df181e736829e234ccdbddef19318b7cd03ec90dbbbae6b070cf755827247888"
+      ],
+      "current_sha256s": [
+        "5ed9dff0ab095df60119e1ad48c168c65fef23563f523cea6a2a4d9f4cfcc76e"
+      ]
+    },
+    {
+      "key": "function:Chb_SetLegacyStatus",
+      "new_keys": [
+        "function:Chb_SetLegacyStatus"
+      ],
+      "reason": "单相旧运行状态镜像通过有界临界区按FAULT优先提交，防止ISR已关断后后台重新标记运行；宏0镜像发布逻辑保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "8be80fce078a45b565c8cf89cba69b8653bc4e4cf52e291c6194339579e989ca"
+      ],
+      "current_sha256s": [
+        "59c9269ed39bc2f5990c78f55c0aaf82ad44faec2468c1a6c76b7ee0dc466852"
+      ]
+    },
+    {
+      "key": "function:Chb_SetPrechargeBypass",
+      "new_keys": [
+        "function:Chb_SetPrechargeBypass"
+      ],
+      "reason": "单相预充旁路输出在最终故障检查与短临界区内提交，故障后保持断开；宏0原IO写入保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "ca60c663e64abae5e46ae775d1777a4c54a76a6b1c4cac16a617c745c1458beb"
+      ],
+      "current_sha256s": [
+        "a4b174682c96922e072d0bfc533c663250d6959e2334268c0bb067961b2d599f"
+      ]
+    },
+    {
+      "key": "function:Chb_SourceEquivalentPiStep",
+      "new_keys": [
+        "function:Chb_SourceEquivalentPiStep"
+      ],
+      "reason": "原三相PI实现完整包在!SST_PHASE_A_ONLY_TEST中供宏0使用；单相由新增有界条件积分PI承担外环与内环，避免把旧无界积分继续用于单相。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "ff4c50d580bbda5c3a385168fde749a3fa84dbabec65eef3b3ca75066ef754fa"
+      ],
+      "current_sha256s": [
+        "93e1b260223f575e3de9527039a0240f6751dd1f2518625fa5f559f152db362a"
+      ]
+    },
+    {
+      "key": "function:Chb_UpdatePll",
+      "new_keys": [
+        "function:Chb_UpdatePll"
+      ],
+      "reason": "单相PLL除q误差外要求电压d轴为正，防止180度反相时q接近零造成假锁；锁相误差、角度与电压建立监视使用SST原参数范围。宏0原PLL公式保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "07c4d711c517057b1fe7c1ac009f6c63ad0821af57352b40bc78fd63985de667"
+      ],
+      "current_sha256s": [
+        "4c255c1ee8fbba94a5879ea8b5d5598e501dd914c93d07f8289d712e4d44349a"
+      ]
+    },
+    {
+      "key": "function:Chb_WrapAngle",
+      "new_keys": [
+        "function:Chb_WrapAngle"
+      ],
+      "reason": "单相数值链显式阻止NaN/Inf进入角度包装，并保持每拍有限执行；宏0原角度包装公式完整保留。",
+      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "baseline_sha256s": [
+        "f1de7eb29690a0833067a37c3bb178962f3358c21397e11c907b475c418a5d33"
+      ],
+      "current_sha256s": [
+        "35796b541f69d4d663a3927837e0237c461e118ffa9574a5c7b24f76eddf9d2c"
+      ]
+    },
+    {
+      "key": "macro:CHB_PM_A2_MASK",
+      "new_keys": [
+        "macro:CHB_PM_A2_MASK"
+      ],
+      "reason": "保留用户现场A2在线子模块掩码0x0007U，与A1一致参与单相测试；B/C在线掩码保持0，未将现场配置覆盖为迁移默认值。",
+      "validation": "tests/realtime_audit.py (A1/A2 exact 0x0007U and B/C zero); tests/single_phase_io.py (actual PM_CTL/enable masks); TI/CCS Debug/Release builds",
+      "baseline_sha256s": [
+        "994a5928e2cf903cb74fae0339c86688876b1caa0a821561ceae166acf2dc281"
+      ],
+      "current_sha256s": [
+        "69e692f431c8cd446dd09f7321ab6f97996964b674af71dcf98a640e4bcd8ff8"
+      ]
+    },
+    {
+      "key": "macro:SST_DEBUG_PROTOCOL",
+      "new_keys": [
+        "macro:SST_DEBUG_PROTOCOL"
+      ],
+      "reason": "保留用户现场选择的VOFA默认协议；AnyEyes/VOFA仍由SST_DEBUG_PROTOCOL二选一，串口不恢复已退役MaintenanceProtocol。",
+      "validation": "tests/protocol_regression.py; tests/serial_protocol_scope.py; TI/CCS Debug/Release builds; explicit user-configured VOFA default retained",
+      "baseline_sha256s": [
+        "6b9bdb77bf4676f552fcaeb6a7511505a14603115e09c31b9461f25ebf70e565"
+      ],
+      "current_sha256s": [
+        "ca979447c31d28c9a393a63455c95401f4d9a706ee07e273bbd1c6ac97f65caa"
       ]
     }
   ]

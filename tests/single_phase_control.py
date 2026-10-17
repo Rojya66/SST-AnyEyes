@@ -16,7 +16,7 @@ import tempfile
 
 
 def strip_local_includes(source: str) -> str:
-    return re.sub(r'^\s*#\s*include\s*"[^"\n]+"\s*$', "", source,
+    return re.sub(r'^[ \t]*#[ \t]*include[ \t]*"[^"\n]+"[ \t]*$', "", source,
                   flags=re.MULTILINE)
 
 
@@ -41,10 +41,19 @@ def run(project: Path, compiler: str) -> str:
         )
         body = (tests / "single_phase_control.c").read_text(encoding="utf-8-sig")
         unit = work / "single_phase_control_test.c"
-        unit.write_text(
-            prefix + "\n#include \"SstSinglePhase.h\"\n" + sogi + "\n" + control + "\n" + body,
-            encoding="utf-8",
-        )
+        # Keep assertion/compile diagnostics attached to their real source
+        # files even though the host runner uses one translation unit.
+        pieces = []
+        for path, source in (
+            (tests / "control_regression.c", prefix),
+            (source_dir / "04_Control/SstSinglePhase.c", sogi),
+            (source_dir / "04_Control/ChbDabControl.c", control),
+            (tests / "single_phase_control.c", body),
+        ):
+            if path.name == "SstSinglePhase.c":
+                pieces.append('#include "SstSinglePhase.h"\n')
+            pieces.append(f'#line 1 "{path.as_posix()}"\n{source}\n')
+        unit.write_text("".join(pieces), encoding="utf-8")
         binary = work / "single_phase_control_test.exe"
         command = [
             compiler,

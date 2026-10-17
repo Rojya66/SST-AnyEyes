@@ -6,13 +6,30 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "ChbBuildConfig.h"
 #include "ChbDabControl.h"
 
+/* A failed host assertion must return diagnostics instead of opening the
+ * Windows CRT assertion dialog and leaving a temporary executable running. */
+#undef assert
+#define assert(expression) ((expression) ? (void)0 : \
+    (fprintf(stderr, "ASSERT %s:%d: %s\n", __FILE__, __LINE__, #expression), exit(2)))
+
+typedef union {
+    unsigned short DC_Log16;
+    struct {
+        unsigned short DC_Order : 1;
+        unsigned short Reserved1 : 7;
+        unsigned short IG_Orient : 1;
+        unsigned short Reserved2 : 7;
+    } Bbits;
+} FAKE_DC_LOG;
 typedef struct {
     unsigned short Reference, DAB_LEFTDuty, DAB_RIGHTDuty, DAB_Start;
+    FAKE_DC_LOG DC_Log;
 } FAKE_FPGA;
 static FAKE_FPGA FPGA_Interface[16];
 #define Com_A1_PluginUnit_5 5
@@ -35,13 +52,16 @@ static unsigned short NHA_module_A, NHA_module_B, NHA_module_C;
 static float HA_Port_Volt_A, HA_Port_Volt_B;
 static float HA_Port_Current_A, HA_Port_Current_B, HA_Port_Current_C;
 static float SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave;
+static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
+static unsigned short HA_IG_Log_A, HA_IG_Log_B, HA_IG_Log_C;
 static unsigned short Port_RunStatus, Port_State;
 static struct { struct { unsigned short Breaker_InnerOn, Breaker_InnerOff,
     Contactor_Inner; } Bbits; } Port_DOUT;
-static struct { struct { unsigned short PWMPulseState; } Bbits; } FaultDisposeFLAG;
-static struct { struct { unsigned short Port_Start, Port_Stop; } Bbits; } ControlFLAG;
+static struct { struct { unsigned short PWMPulseState, PWMEN_FibreOptical; } Bbits; } FaultDisposeFLAG;
+static struct { struct { unsigned short Port_Start, Port_Stop,
+    DAB_StartMethod, SVG_PWMEN, DAB_PWMEN; } Bbits; } ControlFLAG;
 static struct { struct { unsigned short P_Status; } Bbits; } Port_MainStatus;
-static struct { struct { unsigned short PWMState_Dab; } Bbits; } PortRunFLAG;
+static struct { struct { unsigned short PWMState_Dab, PWMState_50Hz; } Bbits; } PortRunFLAG;
 static union { unsigned short PORT_FAULT16; struct {
     unsigned short PORT_FAULT_bit15; } Bbits; } Port_RealFault;
 
@@ -49,6 +69,16 @@ static uint64_t trace_hash;
 static unsigned long trace_steps;
 static unsigned int fake_ac_pwm, fake_dab_pwm;
 static unsigned int disable_calls, enable_calls, io_calls, state_calls, reset_calls;
+static unsigned int module_pwm_enable_calls, module_50hz_enable_calls;
+static unsigned int all_shutdown_calls, variable_reset_calls;
+static unsigned int interrupt_disable_calls, interrupt_restore_calls;
+static unsigned int fake_interrupt_enabled = 1U;
+static unsigned int fault_before_disable;
+static unsigned int fault_before_disable_call;
+static unsigned int fault_before_variable_reset;
+static unsigned int fault_injected_at_disable_call;
+static unsigned int enable_outside_critical;
+static unsigned int hardware_enable_events;
 static void hash_word(uint32_t word) {
     unsigned int i;
     for(i = 0; i < 4; ++i) { trace_hash ^= (word >> (i * 8)) & 0xffU;
@@ -67,9 +97,57 @@ static void PWMPluse_Enable(unsigned short bridge) { ++enable_calls;
 static void PWMPluse_Disable(unsigned short index) { ++disable_calls;
     if(FaultDisposeFLAG.Bbits.PWMPulseState & 1U) fake_ac_pwm = 0U;
     if(FaultDisposeFLAG.Bbits.PWMPulseState & 2U) fake_dab_pwm = 0U;
+    if (FaultDisposeFLAG.Bbits.PWMPulseState == 3U) FaultDisposeFLAG.Bbits.PWMEN_FibreOptical = 0U;
     hash_word(0x400U); hash_word(index); hash_word(FaultDisposeFLAG.Bbits.PWMPulseState); }
 static void Module_ENdab_PWMEN(unsigned short enable) { fake_dab_pwm = enable;
+    if (enable != 0U) ++hardware_enable_events;
+    if (enable != 0U && fake_interrupt_enabled != 0U) ++enable_outside_critical;
     hash_word(0x500U); hash_word(enable); }
+static void Module_PWMEN(unsigned short enable) {
+    ++module_pwm_enable_calls;
+    if (enable != 0U) ++hardware_enable_events;
+    if (enable != 0U && fake_interrupt_enabled != 0U) ++enable_outside_critical;
+    fake_ac_pwm = (enable & 1U) != 0U;
+    fake_dab_pwm = (enable & 2U) != 0U;
+    hash_word(0x510U); hash_word(enable);
+}
+static void Module_50Hz_PWMEN(unsigned short enable) {
+    ++module_50hz_enable_calls;
+    if (enable != 0U) ++hardware_enable_events;
+    if (enable != 0U && fake_interrupt_enabled != 0U) ++enable_outside_critical;
+    fake_ac_pwm = (enable != 0U) ? 1U : 0U;
+    hash_word(0x520U); hash_word(enable);
+}
+static void Port_DSPControl_AllShutdown(unsigned short enable) {
+    ++all_shutdown_calls;
+    hash_word(0x530U); hash_word(enable);
+}
+static void Variable_RST(void) {
+    ++variable_reset_calls;
+    if (fault_before_variable_reset != 0U) {
+        fault_before_variable_reset = 0U;
+        ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+    }
+    hash_word(0x540U);
+}
+static unsigned int IntGlobalDisable(void) {
+    unsigned int previous = fake_interrupt_enabled;
+    ++interrupt_disable_calls;
+    if ((fault_before_disable != 0U) ||
+        ((fault_before_disable_call != 0U) &&
+         (interrupt_disable_calls == fault_before_disable_call))) {
+        fault_before_disable = 0U;
+        fault_before_disable_call = 0U;
+        fault_injected_at_disable_call = interrupt_disable_calls;
+        ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+    }
+    fake_interrupt_enabled = 0U;
+    return previous;
+}
+static void IntGlobalRestore(unsigned int previous) {
+    ++interrupt_restore_calls;
+    fake_interrupt_enabled = previous;
+}
 static void FaultLatch_Clear(unsigned short a, unsigned short b) {
     ++reset_calls; hash_word(0x600U); hash_word(a); hash_word(b); }
 

@@ -95,8 +95,8 @@ void FpgaInit_ConfigureModuleLayout(void)
      * and uses NUM as the total module count of the whole phase for
      * NLM+PWM allocation.
      *
-     * 当前位图：A1=0x0001、A2=0x0000，A相1模块；
-     * B1/C1=0x007F、B2/C2=0x003F，B/C各13模块。
+     * 模块位图集中定义在 ChbDabControl.h 的 CHB_PM_*_MASK；
+     * NUM 是同相两块 501 卡有效位的总数，不是物理桥臂数量。
      * 按置位数量计算各相NUM，保持修改位图后的对应关系。
      * The popcount form is kept so runtime
      * PM changes keep NUM and ReferenceDEF consistent.

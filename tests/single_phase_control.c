@@ -5,7 +5,6 @@
  * the firmware source itself, while the small I/O substitutes above it keep
  * the test independent of TI headers and memory-mapped hardware.
  */
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +35,21 @@ static void reset_test_io(void)
     io_calls = 0U;
     state_calls = 0U;
     reset_calls = 0U;
+    module_pwm_enable_calls = 0U;
+    module_50hz_enable_calls = 0U;
+    all_shutdown_calls = 0U;
+    variable_reset_calls = 0U;
+    interrupt_disable_calls = 0U;
+    interrupt_restore_calls = 0U;
+    fake_interrupt_enabled = 1U;
+    fault_before_disable = 0U;
+    fault_before_disable_call = 0U;
+    fault_before_variable_reset = 0U;
+    fault_injected_at_disable_call = 0U;
+    enable_outside_critical = 0U;
+    hardware_enable_events = 0U;
+    HA_DC_Log_A = HA_DC_Log_B = HA_DC_Log_C = 0U;
+    HA_IG_Log_A = HA_IG_Log_B = HA_IG_Log_C = 0U;
     trace_hash = UINT64_C(14695981039346656037);
 }
 
@@ -242,6 +256,12 @@ static unsigned long start_single_phase_closed_loop(unsigned short startup_strat
     for (sample = 1UL; sample < 30000UL; ++sample)
     {
         control_step(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+        if (g_chb_dab_status.state == CHB_STATE_FAULT)
+        {
+            fprintf(stderr, "startup failed sample=%lu fault=%u mode=%u active_mode=%u\n",
+                    sample, g_chb_dab_status.fault_code,
+                    g_chb_dab_command.ac_mode, s_active_ac_mode);
+        }
         assert(g_chb_dab_status.state != CHB_STATE_FAULT);
         if (sample < 1000UL)
         {
@@ -489,6 +509,379 @@ static void test_current_dq_sign_and_stop_tracking(void)
     printf("PASS current_dq_sign_and_stop_tracking\n");
 }
 
+/* The two 501 cards in a phase share the current-orientation bit but their
+ * DC voltage sorting direction is complementary.  This test exercises all
+ * four input combinations instead of checking only the normal zero case. */
+static void test_sorting_direction_writer(void)
+{
+    unsigned short dc_order;
+    unsigned short ig_orient;
+    unsigned short a1;
+    unsigned short a2;
+
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    for (ig_orient = 0U; ig_orient <= 1U; ++ig_orient)
+    {
+        for (dc_order = 0U; dc_order <= 1U; ++dc_order)
+        {
+            HA_IG_Log_A = ig_orient;
+            HA_DC_Log_A = dc_order;
+            ChbDabControl_FastStep();
+            a1 = FPGA_Interface[Com_A1_PluginUnit_5 - 2].DC_Log.DC_Log16;
+            a2 = FPGA_Interface[Com_A2_PluginUnit_6 - 2].DC_Log.DC_Log16;
+            assert(((a1 >> 8) & 1U) == ig_orient);
+            assert(((a2 >> 8) & 1U) == ig_orient);
+            assert((a1 & 1U) == dc_order);
+            assert((a2 & 1U) == (unsigned short)(dc_order ^ 1U));
+        }
+    }
+    printf("PASS sorting_direction_writer combinations=4\n");
+}
+
+static void test_pll_rejects_antiphase(void)
+{
+    unsigned int sample;
+
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_params.pll_lock_error_pu = 0.02F;
+    g_chb_dab_status.pll_locked = 0U;
+    /* q is approximately zero for both vectors.  The negative d vector must
+     * still be rejected, otherwise a 180-degree phase jump can unlock PWM. */
+    for (sample = 0U; sample < 200U; ++sample)
+    {
+        g_chb_dab_status.pll_angle_rad = 3.14159265358979323846F;
+        Chb_UpdatePll(311.0F, 0.0F);
+    }
+    assert(g_chb_dab_status.pll_locked == 0U);
+
+    for (sample = 0U; sample < 200U; ++sample)
+    {
+        g_chb_dab_status.pll_angle_rad = 0.0F;
+        Chb_UpdatePll(311.0F, 0.0F);
+    }
+    assert(g_chb_dab_status.pll_locked != 0U);
+    printf("PASS pll_antiphase_rejection\n");
+}
+
+static void test_mode_change_fault(void)
+{
+    unsigned long sample;
+    unsigned short state;
+
+    sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+    g_chb_dab_command.ac_mode = CHB_AC_MODE_OPEN_LOOP;
+    control_step(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+
+    for (state = CHB_STATE_PRECHARGE; state <= CHB_STATE_WAIT_PLL; ++state)
+    {
+        setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+        g_chb_dab_command.run_enable = 1U;
+        ChbDabControl_Tick10ms();
+        ChbDabControl_Service();
+        assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE);
+        Chb_EnterState(state);
+        g_chb_dab_command.ac_mode = CHB_AC_MODE_OPEN_LOOP;
+        feed_single_phase(1UL, 50.0F, 311.0F, 7.0F, 600.0F);
+        ChbDabControl_FastStep();
+        assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+        assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+        assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+    }
+
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    g_chb_dab_command.run_enable = 1U;
+    g_chb_dab_command.dab_enable = 0U;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+    g_chb_dab_command.ac_mode = CHB_AC_MODE_CLOSED_LOOP;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+    printf("PASS mode_change_fault startup_and_running_both_directions\n");
+}
+
+static void test_running_voltage_loss_and_pll_loss(void)
+{
+    unsigned long sample;
+    unsigned long end_sample;
+    unsigned long zeros;
+    unsigned int loss_sample;
+
+    sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+    end_sample = sample + 400UL;
+    zeros = 0UL;
+    for (; sample < end_sample; ++sample)
+    {
+        control_step(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+        if (fabsf(HA_Port_Volt_A) < 0.02F)
+        {
+            ++zeros;
+        }
+        assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+        assert(g_chb_dab_status.pll_locked != 0U);
+    }
+    assert(zeros >= 3UL);
+
+    sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+    feed_single_phase(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+    /* Force an already-established orthogonal input to zero.  A single raw
+     * zero sample is a normal sine zero-crossing and must not mean grid loss. */
+    single_phase_history.voltage_alpha_v = 0.0F;
+    single_phase_history.voltage_beta_v = 0.0F;
+    single_phase_history.voltage_previous_v = 0.0F;
+    HA_Port_Volt_A = 0.0F;
+    for (loss_sample = 1U; loss_sample < 200U; ++loss_sample)
+    {
+        ChbDabControl_FastStep();
+        assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+        assert(g_chb_dab_status.pll_locked == 0U);
+    }
+    ChbDabControl_FastStep();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_PLL_TIMEOUT);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+
+    sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+    g_chb_dab_params.pll_kp = 0.0F;
+    g_chb_dab_params.pll_ki = 0.0F;
+    g_chb_dab_params.pll_lock_error_pu = 0.00000001F;
+    s_pll_integral = 0.0F;
+    g_chb_dab_status.pll_angle_rad = Chb_WrapAngle(g_chb_dab_status.pll_angle_rad + 0.5F);
+    end_sample = sample + 199UL;
+    for (; sample < end_sample; ++sample)
+    {
+        control_step(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+        assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+        assert(g_chb_dab_status.fault_code == CHB_FAULT_NONE);
+    }
+    control_step(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_PLL_TIMEOUT);
+    printf("PASS running_voltage_loss_and_pll_loss boundary=200TAD\n");
+}
+
+static void test_nonfinite_control_parameters(void)
+{
+    static const float invalid_values[] = {NAN, INFINITY, -INFINITY};
+    volatile float *const parameters[] = {
+        &g_chb_dab_params.sample_period_s,
+        &g_chb_dab_params.modulation_max,
+        &g_chb_dab_params.precharge_voltage_v,
+        &g_chb_dab_params.pll_nominal_frequency_hz,
+        &g_chb_dab_params.pll_kp,
+        &g_chb_dab_params.pll_ki,
+        &g_chb_dab_params.pll_correction_limit_rad_s,
+        &g_chb_dab_params.pll_lock_error_pu,
+        &g_chb_dab_params.pll_min_grid_peak_v,
+        &g_chb_dab_params.voltage_kp,
+        &g_chb_dab_params.voltage_ki,
+        &g_chb_dab_params.voltage_current_limit_a,
+        &g_chb_dab_params.startup_udc_offset_v,
+        &g_chb_dab_params.startup_udc_step_v,
+        &g_chb_dab_params.startup_id_reference_a,
+        &g_chb_dab_params.startup_id_ramp_step_a,
+        &g_chb_dab_params.current_kp,
+        &g_chb_dab_params.current_ki,
+        &g_chb_dab_params.closed_loop_voltage_limit_factor,
+        &g_chb_dab_params.current_feedback_sign,
+        &g_chb_dab_params.current_phase_compensation_rad,
+        &g_chb_dab_params.output_phase_compensation_rad,
+        &g_chb_dab_params.ac_overcurrent_trip_a,
+        &g_chb_dab_params.dc_overvoltage_trip_v,
+        &g_chb_dab_command.open_loop_modulation,
+        &g_chb_dab_command.open_loop_frequency_hz,
+        &g_chb_dab_command.dc_voltage_ref_v,
+        &g_chb_dab_command.iq_reference_a
+    };
+    unsigned int parameter;
+    unsigned int value;
+    unsigned long sample;
+
+    for (parameter = 0U; parameter < sizeof(parameters) / sizeof(parameters[0]); ++parameter)
+    {
+        for (value = 0U; value < sizeof(invalid_values) / sizeof(invalid_values[0]); ++value)
+        {
+            sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+            *parameters[parameter] = invalid_values[value];
+            feed_single_phase(sample, 50.0F, 311.0F, 7.0F, 600.0F);
+            ChbDabControl_FastStep();
+            if (g_chb_dab_status.fault_code != CHB_FAULT_BAD_CONFIGURATION)
+            {
+                fprintf(stderr, "nonfinite parameter=%u value=%u fault=%u\n",
+                        parameter, value, g_chb_dab_status.fault_code);
+            }
+            assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+            assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+            assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+            assert(FPGA_Interface[3].Reference == 1250U);
+        }
+    }
+    printf("PASS nonfinite_control_parameters floats=28 values=NaN,+Inf,-Inf\n");
+}
+
+/* Remove PI action so the observed reference is the voltage feed-forward.
+ * This isolates the electrical normalization independently of tuning. */
+static void prepare_numerical_control(void)
+{
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_params.voltage_kp = 0.0F;
+    g_chb_dab_params.voltage_ki = 0.0F;
+    g_chb_dab_params.current_kp = 0.0F;
+    g_chb_dab_params.current_ki = 0.0F;
+    g_chb_dab_params.current_phase_compensation_rad = 0.0F;
+    g_chb_dab_params.output_phase_compensation_rad = 0.0F;
+    g_chb_dab_command.dc_voltage_ref_v = 600.0F;
+    g_chb_dab_status.pll_angle_rad = 0.0F;
+    g_chb_dab_status.dc_voltage_average_v = 600.0F;
+    s_startup_voltage_reference = 600.0F;
+    s_startup_phase = CHB_STARTUP_NORMAL;
+    g_sst_single_phase_status.current_alpha_a = 0.0F;
+    g_sst_single_phase_status.current_beta_a = 0.0F;
+}
+
+static float actual_normalized_reference(void)
+{
+    return DAC_BUF[0] / 2.5F - 1.0F;
+}
+
+static void test_measured_bus_normalization_and_vector_limit(void)
+{
+    float normalized_reference;
+
+    prepare_numerical_control();
+    SVG_Udc_A_Ave = 400.0F;
+    Chb_RunClosedLoop(311.0F, 0.0F);
+    assert_near(actual_normalized_reference(), 311.0F / 400.0F, 0.00001F);
+    normalized_reference = actual_normalized_reference();
+    g_chb_dab_command.dc_voltage_ref_v = 800.0F;
+    Chb_RunClosedLoop(311.0F, 0.0F);
+    assert_near(actual_normalized_reference(), normalized_reference, 0.00001F);
+    NHA_module_A = 2U;
+    Chb_RunClosedLoop(311.0F, 0.0F);
+    assert_near(actual_normalized_reference(), 311.0F / 800.0F, 0.00001F);
+
+    prepare_numerical_control();
+    SVG_Udc_A_Ave = 600.0F;
+    g_chb_dab_params.modulation_max = 0.8F;
+    g_chb_dab_params.closed_loop_voltage_limit_factor = 0.6F;
+    Chb_RunClosedLoop(400.0F, 400.0F);
+    assert_near(actual_normalized_reference(), 0.6F / sqrtf(2.0F), 0.00001F);
+    g_chb_dab_params.output_phase_compensation_rad = -0.7853981633974483F;
+    Chb_RunClosedLoop(400.0F, 400.0F);
+    assert_near(actual_normalized_reference(), 0.6F, 0.00001F);
+    /* Swapping which limit is smaller must preserve the same vector bound. */
+    g_chb_dab_params.modulation_max = 0.5F;
+    g_chb_dab_params.closed_loop_voltage_limit_factor = 0.9F;
+    Chb_RunClosedLoop(400.0F, 400.0F);
+    assert_near(actual_normalized_reference(), 0.5F, 0.00001F);
+    printf("PASS measured_bus_normalization_and_dq_vector_limit\n");
+}
+
+static void test_pi_saturation_recovery(void)
+{
+    unsigned int sample;
+    float output;
+    float before_unwind;
+
+    prepare_numerical_control();
+    g_chb_dab_params.voltage_kp = 1.0F;
+    g_chb_dab_params.voltage_ki = 100.0F;
+    g_chb_dab_params.voltage_current_limit_a = 95.0F;
+    for (sample = 0U; sample < 20000U; ++sample)
+    {
+        output = Chb_VoltagePiLimited(1000.0F);
+        assert_near(output, 95.0F, 0.00001F);
+        assert(fabsf(s_voltage_pi.integral) <= 95.0F);
+    }
+    output = Chb_VoltagePiLimited(-10.0F);
+    assert(output < 0.0F);
+    for (sample = 0U; sample < 20000U; ++sample)
+    {
+        output = Chb_VoltagePiLimited(-1000.0F);
+        assert_near(output, -95.0F, 0.00001F);
+        assert(fabsf(s_voltage_pi.integral) <= 95.0F);
+    }
+    output = Chb_VoltagePiLimited(10.0F);
+    assert(output > 0.0F);
+
+    prepare_numerical_control();
+    g_chb_dab_params.current_kp = -10.0F;
+    g_chb_dab_params.current_ki = -100.0F;
+    g_chb_dab_command.iq_reference_a = 95.0F;
+    SVG_Udc_A_Ave = 400.0F;
+    g_chb_dab_params.modulation_max = 0.5F;
+    for (sample = 0U; sample < 10000U; ++sample)
+    {
+        Chb_RunClosedLoop(311.0F, 0.0F);
+    }
+    assert(fabsf(s_iq_pi.integral) < 400.0F);
+    before_unwind = s_iq_pi.integral;
+    g_chb_dab_command.iq_reference_a = -1.0F;
+    Chb_RunClosedLoop(0.0F, 0.0F);
+    assert(s_iq_pi.integral >= before_unwind);
+    assert(fabsf(actual_normalized_reference()) <= 0.5F);
+    printf("PASS pi_saturation_recovery outer_and_inner\n");
+}
+
+static void test_atomic_pwm_enable_fault_race(void)
+{
+    unsigned int enables_before_fault;
+    unsigned int target_disable_call;
+    unsigned long sample;
+
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    g_chb_dab_command.run_enable = 1U;
+    g_chb_dab_command.dab_enable = 1U;
+    fault_before_variable_reset = 1U;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_HARDWARE);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+    assert(g_chb_dab_status.ac_pwm_enabled == 0U && g_chb_dab_status.dab_pwm_enabled == 0U);
+    assert(g_chb_dab_command.run_enable == 0U && g_chb_dab_command.dab_enable == 0U);
+    assert(Port_RunStatus == PortStatusNum_Stop);
+    assert(fault_before_variable_reset == 0U);
+    assert(variable_reset_calls != 0U);
+    assert(ControlFLAG.Bbits.Port_Start == 0U && ControlFLAG.Bbits.Port_Stop == 1U);
+    assert(hardware_enable_events == 0U);
+    assert(interrupt_disable_calls == interrupt_restore_calls);
+    assert(fake_interrupt_enabled == 1U);
+
+    sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+    assert(interrupt_disable_calls != 0U);
+    assert(interrupt_disable_calls == interrupt_restore_calls);
+    assert(enable_outside_critical == 0U);
+    assert(fake_interrupt_enabled == 1U);
+    g_chb_dab_command.dab_enable = 0U;
+    ChbDabControl_Tick10ms();
+    ChbDabControl_Service();
+    assert(fake_dab_pwm == 0U);
+    enables_before_fault = hardware_enable_events;
+    g_chb_dab_command.dab_enable = 1U;
+    target_disable_call = interrupt_disable_calls + 1U;
+    fault_before_disable_call = target_disable_call;
+    fake_interrupt_enabled = 0U;
+    /* Call the production enable helper directly to put the injected FAULT
+     * at its final disable operation, after all slow-service transactions. */
+    assert(Chb_SinglePhaseEnablePwm(2U) == 0U);
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_HARDWARE);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+    assert(g_chb_dab_command.run_enable == 0U && g_chb_dab_command.dab_enable == 0U);
+    assert(Port_RunStatus == PortStatusNum_Stop);
+    assert(fault_before_disable_call == 0U);
+    assert(fault_injected_at_disable_call == target_disable_call);
+    assert(hardware_enable_events == enables_before_fault);
+    assert(interrupt_disable_calls == interrupt_restore_calls);
+    assert(fake_interrupt_enabled == 0U);
+    (void)sample;
+    printf("PASS atomic_pwm_enable_fault_race startup_and_dab_restart\n");
+}
+
 int main(void)
 {
     test_defaults = g_chb_dab_params;
@@ -500,6 +893,14 @@ int main(void)
     test_b_c_isolation();
     test_physical_protection_and_nan();
     test_current_dq_sign_and_stop_tracking();
+    test_sorting_direction_writer();
+    test_pll_rejects_antiphase();
+    test_mode_change_fault();
+    test_running_voltage_loss_and_pll_loss();
+    test_nonfinite_control_parameters();
+    test_measured_bus_normalization_and_vector_limit();
+    test_pi_saturation_recovery();
+    test_atomic_pwm_enable_fault_race();
     printf("PASS all_single_phase_control_tests\n");
     return 0;
 }

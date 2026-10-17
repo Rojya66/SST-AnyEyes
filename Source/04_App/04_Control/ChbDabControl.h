@@ -9,7 +9,7 @@
 /* CHB_PM_A1_MASK：A1 组在线模块位图，决定模块数及参考尺度。 */
 #define CHB_PM_A1_MASK 0x0007U //0x007FU
 /* CHB_PM_A2_MASK：A2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A2_MASK 0x0000U //0x003FU
+#define CHB_PM_A2_MASK 0x0007U //0x003FU
 /* CHB_PM_B1_MASK：B1 组在线模块位图，决定模块数及参考尺度。 */
 #define CHB_PM_B1_MASK 0x0000U
 /* CHB_PM_B2_MASK：B2 组在线模块位图，决定模块数及参考尺度。 */
@@ -54,11 +54,11 @@ typedef enum
 {
     /* 控制核心无故障编号。 */ CHB_FAULT_NONE = 0,
     /* 控制核心预充超时故障编号。 */ CHB_FAULT_PRECHARGE_TIMEOUT = 1,
-    /* 控制核心PLL 超时故障编号。 */ CHB_FAULT_PLL_TIMEOUT = 2,
+    /* PLL 启动超时；单相也用于运行连续失锁/失压 20 ms。 */ CHB_FAULT_PLL_TIMEOUT = 2,
     /* 控制核心交流过流故障编号。 */ CHB_FAULT_AC_OVERCURRENT = 3,
     /* 控制核心直流过压故障编号。 */ CHB_FAULT_DC_OVERVOLTAGE = 4,
     /* 控制核心硬件故障编号。 */ CHB_FAULT_HARDWARE = 5,
-    /* 控制核心配置非法故障编号。 */ CHB_FAULT_BAD_CONFIGURATION = 6
+    /* 配置非法；单相还包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6
 } CHB_DAB_FAULT;
 
 /* Direct debugger/upper-computer commands. All commands are level signals. */
@@ -68,7 +68,7 @@ typedef struct
     /* run_enable：CHB 启动命令，0 停止、1 启动；开环直接解锁，闭环走预充流程。 */ /* 闭环：启动预充/运行；开环：直接解锁CHB PWM */
     unsigned short dab_enable;
     /* dab_enable：DAB 原边使能命令，0 停止、1 启动；开环可独立控制。 */ /* DAB原边使能；开环下可独立于run_enable */
-    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行。 */ /* CHB_AC_MODE_OPEN_LOOP/CLOSED_LOOP */
+    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行；单相须停机后切换。 */
     unsigned short fault_reset;
     /* fault_reset：停机时置 1 请求复位控制故障，控制核心消费后清零。 */ /* Set to 1 while stopped; auto-clears */
     float open_loop_modulation;
@@ -122,7 +122,8 @@ typedef struct
     float current_kp;
     /* current_kp：dq 电流内环比例系数，保留原反馈方向对应的符号。 */ /* Signed gain: source control direction */
     float current_ki; /* current_ki：dq 电流内环积分系数，积分乘 sample_period_s。 */
-    float closed_loop_voltage_limit_factor; /* closed_loop_voltage_limit_factor：dq 电压指令上限相对电网幅值的比例。 */
+    float closed_loop_voltage_limit_factor;
+    /* closed_loop_voltage_limit_factor：电压指令相对总母线的限幅比例；单相与 modulation_max 取小者作 dq 矢量限幅。 */
     float current_feedback_sign; /* current_feedback_sign：电流采样方向系数，只允许 +1 或 -1。 */
     float current_phase_compensation_rad; /* current_phase_compensation_rad：电流坐标变换相位补偿，单位 rad。 */
     float output_phase_compensation_rad; /* output_phase_compensation_rad：输出电压坐标逆变换相位补偿，单位 rad。 */

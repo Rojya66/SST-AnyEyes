@@ -4,6 +4,7 @@ import json
 from tree_sitter import Language, Parser
 import tree_sitter_c
 import tree_sitter_cpp
+from source_equivalence import recover_function_spans
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = ('Source/00_Device/', 'Source/01_Drive/')
@@ -36,7 +37,7 @@ def identifier(node):
         child = next((n for n in node.named_children if n.type != 'comment'), None)
     return identifier(child) if child is not None else None
 
-def parse_source(raw, suffix):
+def parse_source(raw, suffix, _recover=True):
     """Parse without changing source files or the immutable comment baseline.
 
     Existing start/end fields continue to describe whole declaration nodes.
@@ -49,7 +50,23 @@ def parse_source(raw, suffix):
     symbols = []
     def txt(n):
         return data[n.start_byte:n.end_byte].decode() if n else ''
+
+    recovered = []
+    if _recover:
+        for n in walk(root):
+            if n.type != 'function_definition' or not n.has_error:
+                continue
+            spans = recover_function_spans(txt(n), '<comment inventory>')
+            if spans:
+                recovered.append((n.start_byte, n.end_byte, spans))
+
+    def inside_swallowed(node):
+        return any(start <= node.start_byte and node.end_byte <= end
+                   for start, end, _ in recovered)
+
     for n in walk(root):
+        if inside_swallowed(n):
+            continue
         if n.type == 'function_definition':
             d = n.child_by_field_name('declarator')
             name = identifier(d)
@@ -96,6 +113,27 @@ def parse_source(raw, suffix):
         elif n.type == 'enumerator':
             name = n.child_by_field_name('name')
             symbols.append(dict(kind='enum', name=txt(name), line=data.count(b'\n', 0, n.start_byte) + 1, start=n.start_byte, end=n.end_byte, declaration=txt(n)))
+
+    # Parse every recovered whole function independently so parameters and
+    # locals keep their normal owner/declarator contracts.  The original root
+    # remains authoritative for comments; only symbol byte spans are rebased.
+    for node_start, node_end, spans in recovered:
+        node_text = data[node_start:node_end].decode()
+        for start, end, _ in spans:
+            base = node_start + len(node_text[:start].encode('utf-8'))
+            function_end = node_start + len(node_text[:end].encode('utf-8'))
+            function_text = data[base:function_end].decode()
+            _, _, child_symbols = parse_source(function_text, suffix, _recover=False)
+            for child in child_symbols:
+                symbol = dict(child)
+                for key in ('start', 'end', 'declarator_start', 'declarator_end',
+                            'previous_declarator_end', 'next_declarator_start',
+                            'function_start'):
+                    if isinstance(symbol.get(key), int):
+                        symbol[key] += base
+                if isinstance(symbol.get('start'), int):
+                    symbol['line'] = data.count(b'\n', 0, symbol['start']) + 1
+                symbols.append(symbol)
     return data, root, symbols
 
 

@@ -13,6 +13,11 @@
 #include "FaultCheck.h"
 #include "ChbDabControl.h"
 #include "SstSinglePhase.h"
+#if SST_PHASE_A_ONLY_TEST
+#include "ControlInit.h"
+#include "interrupt.h"
+#include <float.h>
+#endif
 
 /* CHB_PI：π 浮点常量。 */
 #define CHB_PI 3.14159265358979323846F
@@ -26,6 +31,10 @@
 #define CHB_REFERENCE_MIN 0.02F
 /* CHB_REFERENCE_MAX：原 FPGA 工频桥归一化参考上限 1.98。 */
 #define CHB_REFERENCE_MAX 1.98F
+#if SST_PHASE_A_ONLY_TEST
+/* CHB_PLL_LOSS_SAMPLES：单相运行连续失锁确认拍数，200 个 TAD = 20 ms。 */
+#define CHB_PLL_LOSS_SAMPLES 200U
+#endif
 
 typedef struct
 {
@@ -145,6 +154,11 @@ static unsigned short s_dc_overvoltage_count; /* s_dc_overvoltage_count：新增
 static unsigned short s_startup_phase; /* s_startup_phase：核心内部闭环启动阶段编号。 */
 static unsigned long s_startup_tad_count; /* s_startup_tad_count：核心内部启动斜坡 TAD 计数。 */
 static float s_startup_voltage_reference; /* s_startup_voltage_reference：核心内部启动电压给定，单位 V。 */
+#if SST_PHASE_A_ONLY_TEST
+static volatile unsigned short
+    s_active_ac_mode; /* s_active_ac_mode：停机启动时锁存的控制模式，启动及运行中禁止切换。 */
+static unsigned short s_pll_loss_count; /* s_pll_loss_count：单相闭环运行连续失锁的 TAD 计数。 */
+#endif
 
 /*==================================================================
  * 函数功能: 把输入值限制在指定上下限之间
@@ -226,6 +240,18 @@ static float Chb_Max3(float a, float b, float c)
  *================================================================*/
 static float Chb_WrapAngle(float angle)
 {
+#if SST_PHASE_A_ONLY_TEST
+    /* 参数及历史值的第二道边界，避免 CCS 写入 Inf 后陷入无界减法循环。
+     * 正常每拍相角只增加不到 0.13 rad，有限异常值也在固定时间内归一化。 */
+    if (!(angle >= -FLT_MAX && angle <= FLT_MAX))
+    {
+        return 0.0F;
+    }
+    if (angle >= 2.0F * CHB_TWO_PI || angle < -CHB_TWO_PI)
+    {
+        angle = fmodf(angle, CHB_TWO_PI);
+    }
+#endif
     /* 将相角限制在 [0, 2*pi)，防止长期运行时浮点数不断增大。 */
     while (angle >= CHB_TWO_PI)
     {
@@ -249,6 +275,7 @@ static float Chb_WrapAngle(float angle)
  * 返回值: kp*error+integral 的本拍 PI 输出，本函数内不额外限幅
  * 执行说明: TAD 快速控制子函数；外环在调用处限幅 Id，内环通过相电压限幅，系数符号保持原方向。
  *================================================================*/
+#if !SST_PHASE_A_ONLY_TEST
 static float Chb_SourceEquivalentPiStep(CHB_PI_STATE *state, float error, float kp, float ki, float period)
 {
     /*
@@ -262,6 +289,82 @@ static float Chb_SourceEquivalentPiStep(CHB_PI_STATE *state, float error, float 
     state->integral += ki * error * period;
     return kp * error + state->integral;
 }
+#endif
+
+#if SST_PHASE_A_ONLY_TEST
+/*==================================================================
+ * 函数功能: 对电压外环执行条件积分，避免 Id 限幅后积分持续累积
+ * 输入参数: error：直流电压给定减实测值，单位 V
+ * 输出参数: s_voltage_pi.integral，限制在允许的 Id 范围内。
+ * 返回值: 已限幅的 d 轴电流给定，单位 A
+ *================================================================*/
+static float Chb_VoltagePiLimited(float error)
+{
+    float increment; /* increment：本拍积分增量，单位 A。 */
+    float candidate; /* candidate：试算积分值，单位 A。 */
+    float output; /* output：试算的 PI 输出，单位 A。 */
+    float limit; /* limit：电压环允许的电流绝对值上限，单位 A。 */
+
+    limit = g_chb_dab_params.voltage_current_limit_a;
+    increment = g_chb_dab_params.voltage_ki * error * g_chb_dab_params.sample_period_s;
+    candidate = Chb_Clamp(s_voltage_pi.integral + increment, -limit, limit);
+    output = g_chb_dab_params.voltage_kp * error + candidate;
+    if (!((output > limit && increment > 0.0F) || (output < -limit && increment < 0.0F)))
+    {
+        s_voltage_pi.integral = candidate;
+    }
+    return Chb_Clamp(g_chb_dab_params.voltage_kp * error + s_voltage_pi.integral, -limit, limit);
+}
+
+/*==================================================================
+ * 函数功能: 计算单相虚拟 dq 电流 PI、叠加前馈并按实际母线作矢量限幅
+ * 输入参数: voltage_d/voltage_q：电网前馈，单位 V
+ *           error_d/error_q：给定减反馈，单位 A
+ *           limit：当前母线及调制上限允许的电压矢量幅值，单位 V
+ *           command_d/command_q：输出指针，接收限幅后的两轴电压指令，单位 V
+ * 输出参数: command_d/command_q：限幅后的电压指令，单位 V；更新两轴积分。
+ * 返回值: 无
+ * 执行说明: TAD 子函数；向饱和方向的积分不提交，保持原电流 PI 系数符号。
+ *================================================================*/
+static void Chb_CurrentPiLimited(
+    float voltage_d, float voltage_q, float error_d, float error_q, float limit, float *command_d, float *command_q)
+{
+    float increment_d; /* increment_d：d 轴积分增量，单位 V。 */
+    float increment_q; /* increment_q：q 轴积分增量，单位 V。 */
+    float integral_d; /* integral_d：d 轴试算积分，单位 V。 */
+    float integral_q; /* integral_q：q 轴试算积分，单位 V。 */
+    float base_d; /* base_d：前馈加比例项的 d 轴电压，单位 V。 */
+    float base_q; /* base_q：前馈加比例项的 q 轴电压，单位 V。 */
+    float magnitude_squared; /* magnitude_squared：试算电压矢量的幅值平方，单位 V²。 */
+    float scale; /* scale：矢量饱和时的同尺度压缩系数。 */
+
+    increment_d = g_chb_dab_params.current_ki * error_d * g_chb_dab_params.sample_period_s;
+    increment_q = g_chb_dab_params.current_ki * error_q * g_chb_dab_params.sample_period_s;
+    integral_d = Chb_Clamp(s_id_pi.integral + increment_d, -2.0F * limit, 2.0F * limit);
+    integral_q = Chb_Clamp(s_iq_pi.integral + increment_q, -2.0F * limit, 2.0F * limit);
+    base_d = voltage_d + g_chb_dab_params.current_kp * error_d;
+    base_q = voltage_q + g_chb_dab_params.current_kp * error_q;
+    *command_d = base_d + integral_d;
+    *command_q = base_q + integral_q;
+    magnitude_squared = *command_d * *command_d + *command_q * *command_q;
+
+    /* 点积为正表示这次积分会继续增加已经饱和的电压矢量。 */
+    if (!((magnitude_squared > limit * limit) && (*command_d * increment_d + *command_q * increment_q > 0.0F)))
+    {
+        s_id_pi.integral = integral_d;
+        s_iq_pi.integral = integral_q;
+    }
+    *command_d = base_d + s_id_pi.integral;
+    *command_q = base_q + s_iq_pi.integral;
+    magnitude_squared = *command_d * *command_d + *command_q * *command_q;
+    if (magnitude_squared > limit * limit)
+    {
+        scale = limit / sqrtf(magnitude_squared);
+        *command_d *= scale;
+        *command_q *= scale;
+    }
+}
+#endif
 
 /*==================================================================
  * 函数功能: 清空电压、电流 PI 及参考状态
@@ -425,6 +528,23 @@ static void Chb_WriteNormalizedReferences(float phase_a, float phase_b, float ph
     FPGA_Interface[Com_C1_PluginUnit_13 - 2].Reference = (unsigned short)reference;
     FPGA_Interface[Com_C2_PluginUnit_14 - 2].Reference = (unsigned short)reference;
 
+#if SST_PHASE_A_ONLY_TEST
+    /* 501 的排序输入也属于每拍调制数据。bit0 为电压排序，bit8 为电流方向；
+     * 同相两卡的排序必须互补，沿用原 Write_ControlParameter_50Hz 的定义。 */
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].DC_Log.DC_Log16 =
+        ((HA_IG_Log_A != 0U) ? 0x0100U : 0U) | ((HA_DC_Log_A != 0U) ? 1U : 0U);
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].DC_Log.DC_Log16 =
+        FPGA_Interface[Com_A1_PluginUnit_5 - 2].DC_Log.DC_Log16 ^ 1U;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].DC_Log.DC_Log16 =
+        ((HA_IG_Log_B != 0U) ? 0x0100U : 0U) | ((HA_DC_Log_B != 0U) ? 1U : 0U);
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].DC_Log.DC_Log16 =
+        FPGA_Interface[Com_B1_PluginUnit_9 - 2].DC_Log.DC_Log16 ^ 1U;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].DC_Log.DC_Log16 =
+        ((HA_IG_Log_C != 0U) ? 0x0100U : 0U) | ((HA_DC_Log_C != 0U) ? 1U : 0U);
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].DC_Log.DC_Log16 =
+        FPGA_Interface[Com_C1_PluginUnit_13 - 2].DC_Log.DC_Log16 ^ 1U;
+#endif
+
     g_chb_dab_status.modulation_actual =
         Chb_Max3(Chb_Abs(phase_a - 1.0F), Chb_Abs(phase_b - 1.0F), Chb_Abs(phase_c - 1.0F));
 }
@@ -509,6 +629,19 @@ static void Chb_WriteDabDuty(unsigned short duty)
  *================================================================*/
 static void Chb_SetAcInput(unsigned short closed)
 {
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：只保护最终开关量提交的原中断状态。 */
+
+    interrupt_state = IntGlobalDisable();
+    if ((closed != 0U) &&
+        ((g_chb_dab_status.state == CHB_STATE_FAULT) || (g_chb_dab_status.fault_code != CHB_FAULT_NONE) ||
+         (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U) || (g_chb_dab_command.ac_mode != s_active_ac_mode) ||
+         (s_active_ac_mode != CHB_AC_MODE_CLOSED_LOOP) || (g_chb_dab_command.run_enable == 0U)))
+    {
+        IntGlobalRestore(interrupt_state);
+        return;
+    }
+#endif
     /*
      * 闭环启动使用两个脉冲量控制交流进线接触器：
      * On/Off 只保持 breaker_pulse_10ms 个 10 ms 节拍，随后由
@@ -528,6 +661,9 @@ static void Chb_SetAcInput(unsigned short closed)
     }
     s_breaker_pulse_end_tick = g_chb_dab_status.tick_10ms + g_chb_dab_params.breaker_pulse_10ms;
     Port_IO_Out();
+#if SST_PHASE_A_ONLY_TEST
+    IntGlobalRestore(interrupt_state);
+#endif
 }
 
 /*==================================================================
@@ -554,11 +690,142 @@ static void Chb_ClearAcInputPulse(void)
  *================================================================*/
 static void Chb_SetPrechargeBypass(unsigned short closed)
 {
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：只保护最终开关量提交的原中断状态。 */
+
+    interrupt_state = IntGlobalDisable();
+    if ((closed != 0U) &&
+        ((g_chb_dab_status.state == CHB_STATE_FAULT) || (g_chb_dab_status.fault_code != CHB_FAULT_NONE) ||
+         (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U) || (g_chb_dab_command.ac_mode != s_active_ac_mode) ||
+         (s_active_ac_mode != CHB_AC_MODE_CLOSED_LOOP) || (g_chb_dab_command.run_enable == 0U)))
+    {
+        IntGlobalRestore(interrupt_state);
+        return;
+    }
+#endif
     /* 软起电阻旁路是保持量，闭环预充达标后置 1，停机/故障时置 0。 */
     Port_DOUT.Bbits.Contactor_Inner = (closed != 0U) ? 1U : 0U;
     g_chb_dab_status.precharge_bypassed = (closed != 0U) ? 1U : 0U;
     Port_IO_Out();
+#if SST_PHASE_A_ONLY_TEST
+    IntGlobalRestore(interrupt_state);
+#endif
 }
+
+#if SST_PHASE_A_ONLY_TEST
+/*==================================================================
+ * 函数功能: 判断单相快速故障和控制状态是否禁止新的硬件动作
+ * 输入参数: 无
+ * 输出参数: 无
+ * 返回值: 1 表示故障已存在或状态已锁存，0 表示允许继续提交动作
+ * 执行说明: 只读取状态；供 PWM 门控及兼容状态镜像在提交前做最后一次检查。
+ *================================================================*/
+static unsigned short Chb_SinglePhaseGateBlocked(void)
+{
+    return ((g_chb_dab_status.state == CHB_STATE_FAULT) || (g_chb_dab_status.fault_code != CHB_FAULT_NONE) ||
+            (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U))
+               ? 1U
+               : 0U;
+}
+
+/*==================================================================
+ * 函数功能: 在极短临界区内提交单相 CHB/DAB PWM 使能
+ * 输入参数: bridge：1 为 CHB 工频桥，2 为 DAB 桥
+ * 输出参数: FPGA PWM 门控寄存器及原有运行标志
+ * 返回值: 1 表示已提交，0 表示故障/请求已撤销而未提交
+ * 执行说明: 只保护 FPGA 门控寄存器写入；Variable_RST 在关中断之前执行，
+ *           防止 10 kHz FPGA 外部中断被较长的调节器清零过程阻塞。
+ *================================================================*/
+static unsigned short Chb_SinglePhaseEnablePwm(unsigned short bridge)
+{
+    unsigned int interrupt_state; /* interrupt_state：进入临界区前的 CPU 全局中断状态。 */
+    unsigned short committed; /* committed：门控已成功提交的返回标志。 */
+
+    committed = 0U;
+    if (bridge == 1U)
+    {
+        Variable_RST(); /* 原 HVAC 的 AC 开锁复位；允许 10 kHz 中断抢占。 */
+    }
+    interrupt_state = IntGlobalDisable();
+    if ((Chb_SinglePhaseGateBlocked() == 0U) && (g_chb_dab_status.state == CHB_STATE_RUNNING) &&
+        (g_chb_dab_command.ac_mode == s_active_ac_mode) &&
+        ((s_active_ac_mode == CHB_AC_MODE_OPEN_LOOP) ||
+         ((g_chb_dab_command.run_enable != 0U) && (g_chb_dab_status.pll_locked != 0U) &&
+          (SVG_Udc_A_Ave >= g_chb_dab_params.precharge_voltage_v))) &&
+        (((bridge == 1U) && (g_chb_dab_command.run_enable != 0U)) ||
+         ((bridge == 2U) && (g_chb_dab_command.dab_enable != 0U))))
+    {
+        if (bridge == 1U)
+        {
+            if (FaultDisposeFLAG.Bbits.PWMEN_FibreOptical != 0U)
+            {
+                Module_50Hz_PWMEN(1U);
+            }
+            else
+            {
+                Module_PWMEN(1U);
+                Port_DSPControl_AllShutdown(0U);
+                FaultDisposeFLAG.Bbits.PWMEN_FibreOptical = 1U;
+            }
+            PortRunFLAG.Bbits.PWMState_50Hz = 0U;
+            g_chb_dab_status.ac_pwm_enabled = 1U;
+            committed = 1U;
+        }
+        else if (bridge == 2U)
+        {
+            if (FaultDisposeFLAG.Bbits.PWMEN_FibreOptical != 0U)
+            {
+                Module_ENdab_PWMEN(1U);
+            }
+            else
+            {
+                Module_PWMEN(2U);
+                Port_DSPControl_AllShutdown(0U);
+                FaultDisposeFLAG.Bbits.PWMEN_FibreOptical = 1U;
+            }
+            PortRunFLAG.Bbits.PWMState_Dab = 0U;
+            g_chb_dab_status.dab_pwm_enabled = 1U;
+            committed = 1U;
+        }
+    }
+    IntGlobalRestore(interrupt_state);
+
+    return committed;
+}
+
+/*==================================================================
+ * 函数功能: 在极短临界区内提交单相 CHB/DAB PWM 封锁
+ * 输入参数: bridge：0 为两桥全部封锁，1 为 CHB，2 为 DAB
+ * 输出参数: FPGA PWM 门控寄存器及原有运行标志
+ * 返回值: 无
+ * 执行说明: 先提交硬件封锁再恢复中断；占空比、控制器和状态镜像由调用者随后清理。
+ *================================================================*/
+static void Chb_SinglePhaseDisablePwm(unsigned short bridge)
+{
+    unsigned int interrupt_state; /* interrupt_state：进入临界区前的 CPU 全局中断状态。 */
+
+    interrupt_state = IntGlobalDisable();
+    if (bridge == 1U)
+    {
+        Module_50Hz_PWMEN(0U);
+        PortRunFLAG.Bbits.PWMState_50Hz = 1U;
+    }
+    else if (bridge == 2U)
+    {
+        Module_ENdab_PWMEN(0U);
+        PortRunFLAG.Bbits.PWMState_Dab = 1U;
+    }
+    else
+    {
+        Module_PWMEN(0U);
+        Port_DSPControl_AllShutdown(1U);
+        FaultDisposeFLAG.Bbits.PWMEN_FibreOptical = 0U;
+        PortRunFLAG.Bbits.PWMState_50Hz = 1U;
+        PortRunFLAG.Bbits.PWMState_Dab = 1U;
+    }
+    IntGlobalRestore(interrupt_state);
+}
+#endif
 
 /*==================================================================
  * 函数功能: 撤销工频桥和 DAB PWM 使能并清空状态镜像
@@ -574,7 +841,12 @@ static void Chb_DisableAllPwm(void)
      * 再清零软件状态、调制参考、DAB 占空比和 PI 积分。
      */
     FaultDisposeFLAG.Bbits.PWMPulseState = 3U;
+#if SST_PHASE_A_ONLY_TEST
+    Chb_SinglePhaseDisablePwm(0U);
+    ControlFLAG.Bbits.DAB_StartMethod = 0U;
+#else
     PWMPluse_Disable(0U);
+#endif
     g_chb_dab_status.ac_pwm_enabled = 0U;
     g_chb_dab_status.dab_pwm_enabled = 0U;
     Chb_WriteNeutralReferences();
@@ -592,10 +864,25 @@ static void Chb_DisableAllPwm(void)
  *================================================================*/
 static void Chb_SetLegacyStatus(unsigned short port_status)
 {
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：兼容状态镜像最后提交前的原中断状态。 */
+
+    interrupt_state = IntGlobalDisable();
+    if (Chb_SinglePhaseGateBlocked() != 0U)
+    {
+        /* 慢任务被 FAULT ISR 抢占后，不允许把故障兼容状态重新写成运行/启动。 */
+        port_status = PortStatusNum_Stop;
+        ControlFLAG.Bbits.Port_Start = 0U;
+        ControlFLAG.Bbits.Port_Stop = 1U;
+    }
+#endif
     /* 同步旧 HVAC 状态变量，保证原有 DPRAM 遥测和故障页面仍能看到状态。 */
     Port_RunStatus = port_status;
     Port_State = port_status;
     Port_MainStatus.Bbits.P_Status = port_status;
+#if SST_PHASE_A_ONLY_TEST
+    IntGlobalRestore(interrupt_state);
+#endif
     Port_StateUpdate_Write();
 }
 
@@ -608,6 +895,44 @@ static void Chb_SetLegacyStatus(unsigned short port_status)
  *================================================================*/
 static void Chb_EnterState(unsigned short state)
 {
+    unsigned short mode; /* mode：本次入口使用的控制模式，单相启动后始终使用锁存值。 */
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：状态发布的原 CPU 中断状态。 */
+
+    mode = s_active_ac_mode;
+    if ((state == CHB_STATE_RUNNING) && (Chb_SinglePhaseGateBlocked() == 0U))
+    {
+        /* 先完成控制器准备，再发布 RUNNING；此过程允许 TAD/FAULT 中断抢占。 */
+        Chb_ResetControllers();
+        Chb_ResetStartupSequence();
+        s_pll_loss_count = 0U;
+        if ((mode == CHB_AC_MODE_CLOSED_LOOP) && (g_chb_dab_params.startup_strategy == CHB_STARTUP_ID_RAMP))
+        {
+            s_startup_phase = CHB_STARTUP_ID_RAMP_PHASE;
+        }
+        else
+        {
+            s_startup_phase = CHB_STARTUP_NORMAL;
+            g_chb_dab_status.voltage_loop_active = (mode == CHB_AC_MODE_CLOSED_LOOP) ? 1U : 0U;
+        }
+        g_chb_dab_status.startup_phase = s_startup_phase;
+    }
+    interrupt_state = IntGlobalDisable();
+    if ((state != CHB_STATE_FAULT) &&
+        ((g_chb_dab_status.fault_code != CHB_FAULT_NONE) || (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U) ||
+         ((g_chb_dab_status.state == CHB_STATE_FAULT) && (state != CHB_STATE_STOPPED)) ||
+         ((state != CHB_STATE_STOPPED) &&
+          ((g_chb_dab_command.ac_mode != mode) ||
+           ((g_chb_dab_command.run_enable == 0U) &&
+            ((mode != CHB_AC_MODE_OPEN_LOOP) || (g_chb_dab_command.dab_enable == 0U)))))))
+    {
+        /* 故障 ISR 已抢占或请求已撤销，后台不能继续覆盖故障状态。 */
+        IntGlobalRestore(interrupt_state);
+        return;
+    }
+#else
+    mode = g_chb_dab_command.ac_mode;
+#endif
     /*
      * 状态入口动作集中在这里，避免状态切换时遗漏硬件动作：
      * STOPPED       -> 全部封波；闭环断开进线/旁路，开环不碰外部开关；
@@ -619,6 +944,9 @@ static void Chb_EnterState(unsigned short state)
      */
     g_chb_dab_status.state = state;
     s_state_enter_tick = g_chb_dab_status.tick_10ms;
+#if SST_PHASE_A_ONLY_TEST
+    IntGlobalRestore(interrupt_state);
+#endif
 
     switch (state)
     {
@@ -626,7 +954,7 @@ static void Chb_EnterState(unsigned short state)
         {
             Chb_DisableAllPwm();
             /* 开环测试不接管外部开关量，避免单板调试时误动作交流接触器。 */
-            if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
+            if (mode != CHB_AC_MODE_OPEN_LOOP)
             {
                 Chb_SetPrechargeBypass(0U);
                 Chb_SetAcInput(0U);
@@ -665,10 +993,10 @@ static void Chb_EnterState(unsigned short state)
 
         case CHB_STATE_RUNNING: // 运行态：AC PWM已解锁，DAB按命令单独使能
         {
+#if !SST_PHASE_A_ONLY_TEST
             Chb_ResetControllers();
             Chb_ResetStartupSequence();
-            if ((g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP) &&
-                (g_chb_dab_params.startup_strategy == CHB_STARTUP_ID_RAMP))
+            if ((mode == CHB_AC_MODE_CLOSED_LOOP) && (g_chb_dab_params.startup_strategy == CHB_STARTUP_ID_RAMP))
             {
                 /* 闭环先固定Idref斜坡，电压外环暂不更新积分器。 */
                 s_startup_phase = CHB_STARTUP_ID_RAMP_PHASE;
@@ -677,14 +1005,27 @@ static void Chb_EnterState(unsigned short state)
             {
                 /* 开环或兼容模式不经过Idref启动阶段。 */
                 s_startup_phase = CHB_STARTUP_NORMAL;
-                g_chb_dab_status.voltage_loop_active = (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP) ? 1U : 0U;
+                g_chb_dab_status.voltage_loop_active = (mode == CHB_AC_MODE_CLOSED_LOOP) ? 1U : 0U;
             }
             g_chb_dab_status.startup_phase = s_startup_phase;
+#endif
             if (g_chb_dab_command.run_enable != 0U)
             {
                 Chb_WriteNeutralReferences(); // 首个载波先使用中性参考
+#if SST_PHASE_A_ONLY_TEST
+                if (Chb_SinglePhaseEnablePwm(1U) == 0U)
+                {
+                    /* PLL/母线在最终提交前失效时重新等待；FAULT 不允许被覆盖。 */
+                    if ((mode == CHB_AC_MODE_CLOSED_LOOP) && (Chb_SinglePhaseGateBlocked() == 0U))
+                    {
+                        Chb_EnterState(CHB_STATE_WAIT_PLL);
+                    }
+                    return;
+                }
+#else
                 PWMPluse_Enable(1U); // 解锁AC侧模块PWM
                 g_chb_dab_status.ac_pwm_enabled = 1U;
+#endif
             }
             else
             {
@@ -694,8 +1035,12 @@ static void Chb_EnterState(unsigned short state)
             if (g_chb_dab_command.dab_enable != 0U)
             {
                 Chb_WriteDabDuty(g_chb_dab_params.dab_start_duty_count);
+#if SST_PHASE_A_ONLY_TEST
+                (void)Chb_SinglePhaseEnablePwm(2U);
+#else
                 PWMPluse_Enable(2U);
                 g_chb_dab_status.dab_pwm_enabled = 1U;
+#endif
             }
             ControlFLAG.Bbits.Port_Start = 2U;
             ControlFLAG.Bbits.Port_Stop = 0U;
@@ -707,7 +1052,7 @@ static void Chb_EnterState(unsigned short state)
         default:
         {
             Chb_DisableAllPwm();
-            if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
+            if (mode != CHB_AC_MODE_OPEN_LOOP)
             {
                 Chb_SetPrechargeBypass(0U);
                 Chb_SetAcInput(0U);
@@ -729,6 +1074,72 @@ static void Chb_EnterState(unsigned short state)
  *================================================================*/
 static unsigned short Chb_ConfigurationValid(void)
 {
+#if SST_PHASE_A_ONLY_TEST
+    /* 单相路径每拍也校验在线可改的控制量；使用有界合取比较拒绝 NaN/Inf。
+     * 这些是计算有效范围，不代替现场功率器件额定值或软件 OC/OV 门槛。 */
+    if (!((NHA_module_A > 0U) && (NHA_module_A <= 14U) && (NHA_module_B == 0U) && (NHA_module_C == 0U) &&
+          (g_chb_dab_command.ac_mode <= CHB_AC_MODE_CLOSED_LOOP) &&
+          (g_chb_dab_params.sample_period_s >= 0.00009999F && g_chb_dab_params.sample_period_s <= 0.00010001F) &&
+          (g_chb_dab_params.modulation_max > 0.0F && g_chb_dab_params.modulation_max <= 0.98F) &&
+          (g_chb_dab_command.open_loop_modulation >= -1.0F && g_chb_dab_command.open_loop_modulation <= 1.0F) &&
+          (g_chb_dab_command.open_loop_frequency_hz >= 0.0F && g_chb_dab_command.open_loop_frequency_hz <= 200.0F) &&
+          (g_chb_dab_params.pll_nominal_frequency_hz >= 1.0F && g_chb_dab_params.pll_nominal_frequency_hz <= 200.0F) &&
+          (g_chb_dab_params.pll_kp >= 0.0F && g_chb_dab_params.pll_kp <= 1000000.0F) &&
+          (g_chb_dab_params.pll_ki >= 0.0F && g_chb_dab_params.pll_ki <= 1000000.0F) &&
+          (g_chb_dab_params.pll_correction_limit_rad_s >= 0.0F &&
+           g_chb_dab_params.pll_correction_limit_rad_s <=
+               CHB_TWO_PI * (g_chb_dab_params.pll_nominal_frequency_hz - 1.0F) &&
+           g_chb_dab_params.pll_correction_limit_rad_s <=
+               CHB_TWO_PI * (200.0F - g_chb_dab_params.pll_nominal_frequency_hz)) &&
+          (g_chb_dab_params.pll_lock_error_pu > 0.0F && g_chb_dab_params.pll_lock_error_pu <= 1.0F) &&
+          (g_chb_dab_params.pll_min_grid_peak_v > 0.0F && g_chb_dab_params.pll_min_grid_peak_v <= 1000000.0F) &&
+          (g_chb_dab_params.dab_ramp_step_count > 0U) && (g_chb_dab_params.dab_start_count < 5000U) &&
+          (g_chb_dab_params.dab_target_duty_count <= 2500U) &&
+          (g_chb_dab_params.dab_start_duty_count <= g_chb_dab_params.dab_target_duty_count)))
+    {
+        return 0U;
+    }
+
+    if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
+    {
+        if (!((g_chb_dab_params.precharge_voltage_v > 1.0F && g_chb_dab_params.precharge_voltage_v <= 1000000.0F) &&
+              (g_chb_dab_command.dc_voltage_ref_v >= g_chb_dab_params.precharge_voltage_v &&
+               g_chb_dab_command.dc_voltage_ref_v <= 1000000.0F) &&
+              (g_chb_dab_params.dc_overvoltage_trip_v > g_chb_dab_command.dc_voltage_ref_v &&
+               g_chb_dab_params.dc_overvoltage_trip_v <= 1000000.0F) &&
+              (g_chb_dab_params.precharge_stable_10ms > 0U) && (g_chb_dab_params.precharge_timeout_10ms > 0U) &&
+              (g_chb_dab_params.pll_lock_10ms > 0U) && (g_chb_dab_params.pll_timeout_10ms > 0U) &&
+              (g_chb_dab_params.voltage_kp >= 0.0F && g_chb_dab_params.voltage_kp <= 1000000.0F) &&
+              (g_chb_dab_params.voltage_ki >= 0.0F && g_chb_dab_params.voltage_ki <= 1000000.0F) &&
+              (g_chb_dab_params.voltage_current_limit_a > 0.0F &&
+               g_chb_dab_params.voltage_current_limit_a <= 1000000.0F) &&
+              (g_chb_dab_command.iq_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
+               g_chb_dab_command.iq_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
+              (g_chb_dab_params.startup_strategy <= CHB_STARTUP_ID_RAMP) &&
+              (g_chb_dab_params.startup_udc_offset_v >= 0.0F && g_chb_dab_params.startup_udc_offset_v <= 1000000.0F) &&
+              (g_chb_dab_params.startup_udc_step_v > 0.0F && g_chb_dab_params.startup_udc_step_v <= 1000000.0F) &&
+              (g_chb_dab_params.startup_id_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
+               g_chb_dab_params.startup_id_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
+              (g_chb_dab_params.startup_id_ramp_step_a > 0.0F &&
+               g_chb_dab_params.startup_id_ramp_step_a <= 1000000.0F) &&
+              (g_chb_dab_params.startup_ramp_tad > 0U) &&
+              (g_chb_dab_params.current_kp >= -1000000.0F && g_chb_dab_params.current_kp <= 1000000.0F) &&
+              (g_chb_dab_params.current_ki >= -1000000.0F && g_chb_dab_params.current_ki <= 1000000.0F) &&
+              (g_chb_dab_params.current_feedback_sign == 1.0F || g_chb_dab_params.current_feedback_sign == -1.0F) &&
+              (g_chb_dab_params.current_phase_compensation_rad >= -CHB_TWO_PI &&
+               g_chb_dab_params.current_phase_compensation_rad <= CHB_TWO_PI) &&
+              (g_chb_dab_params.output_phase_compensation_rad >= -CHB_TWO_PI &&
+               g_chb_dab_params.output_phase_compensation_rad <= CHB_TWO_PI) &&
+              (g_chb_dab_params.closed_loop_voltage_limit_factor > 0.0F &&
+               g_chb_dab_params.closed_loop_voltage_limit_factor <= 2.0F) &&
+              (g_chb_dab_params.ac_overcurrent_trip_a > 0.0F && g_chb_dab_params.ac_overcurrent_trip_a <= 1000000.0F) &&
+              (g_chb_dab_params.protection_confirm_samples > 0U)))
+        {
+            return 0U;
+        }
+    }
+    return 1U;
+#else
     /*
      * 这里只检查软件无法工作的基础配置，例如模块数为 0、采样周期非法、
      * DAB 目标占空比越界。预充时间、PLL 锁定时间和闭环 PI 限幅只在闭环
@@ -783,6 +1194,7 @@ static unsigned short Chb_ConfigurationValid(void)
         }
     }
     return 1U;
+#endif
 }
 
 /*==================================================================
@@ -796,6 +1208,8 @@ void ChbDabControl_Init(void)
 {
 #if SST_PHASE_A_ONLY_TEST
     SstSinglePhase_Init(); /* 仅上电清零；预充、锁相及停机期间持续构造正交量。 */
+    s_active_ac_mode = g_chb_dab_command.ac_mode;
+    s_pll_loss_count = 0U;
 #endif
     /* 初始化运行变量；随后经 Chb_EnterState() 撤销 PWM 使能并设置停止状态。 */
     g_chb_dab_status.state = CHB_STATE_STOPPED;
@@ -889,20 +1303,37 @@ void ChbDabControl_ApplyRemoteCommand(unsigned short start_word, unsigned short 
  *================================================================*/
 void ChbDabControl_ForceFault(unsigned short fault_code)
 {
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：首故障锁存及状态发布的原 CPU 中断状态。 */
+#endif
     /* 软件或 FPGA 故障统一从这里进入 FAULT，禁止重复改写已锁存故障。 */
     if (fault_code == CHB_FAULT_NONE)
     {
         return;
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    interrupt_state = IntGlobalDisable();
+    if ((g_chb_dab_status.state == CHB_STATE_FAULT) || (g_chb_dab_status.fault_code != CHB_FAULT_NONE))
+    {
+        IntGlobalRestore(interrupt_state);
+        return;
+    }
+#else
     if (g_chb_dab_status.state == CHB_STATE_FAULT)
     {
         return;
     }
+#endif
 
     g_chb_dab_status.fault_code = fault_code;
     g_chb_dab_command.run_enable = 0U;
     g_chb_dab_command.dab_enable = 0U;
+#if SST_PHASE_A_ONLY_TEST
+    /* 先发布 FAULT，防止恢复中断后下一拍 TAD 继续执行旧运行态闭环。 */
+    g_chb_dab_status.state = CHB_STATE_FAULT;
+    IntGlobalRestore(interrupt_state);
+#endif
     Chb_EnterState(CHB_STATE_FAULT);
 }
 
@@ -952,13 +1383,21 @@ static void Chb_ServiceOpenLoop(void)
     if ((g_chb_dab_command.run_enable != 0U) && (g_chb_dab_status.ac_pwm_enabled == 0U))
     {
         Chb_WriteNeutralReferences();
+#if SST_PHASE_A_ONLY_TEST
+        (void)Chb_SinglePhaseEnablePwm(1U);
+#else
         PWMPluse_Enable(1U);
         g_chb_dab_status.ac_pwm_enabled = 1U;
+#endif
     }
     else if ((g_chb_dab_command.run_enable == 0U) && (g_chb_dab_status.ac_pwm_enabled != 0U))
     {
         FaultDisposeFLAG.Bbits.PWMPulseState = 1U;
+#if SST_PHASE_A_ONLY_TEST
+        Chb_SinglePhaseDisablePwm(1U);
+#else
         PWMPluse_Disable(0U);
+#endif
         g_chb_dab_status.ac_pwm_enabled = 0U;
         Chb_WriteNeutralReferences();
     }
@@ -967,13 +1406,21 @@ static void Chb_ServiceOpenLoop(void)
     if ((g_chb_dab_command.dab_enable != 0U) && (g_chb_dab_status.dab_pwm_enabled == 0U))
     {
         Chb_WriteDabDuty(g_chb_dab_params.dab_start_duty_count);
+#if SST_PHASE_A_ONLY_TEST
+        (void)Chb_SinglePhaseEnablePwm(2U);
+#else
         PWMPluse_Enable(2U);
         g_chb_dab_status.dab_pwm_enabled = 1U;
+#endif
     }
     else if ((g_chb_dab_command.dab_enable == 0U) && (g_chb_dab_status.dab_pwm_enabled != 0U))
     {
         FaultDisposeFLAG.Bbits.PWMPulseState = 2U;
+#if SST_PHASE_A_ONLY_TEST
+        Chb_SinglePhaseDisablePwm(2U);
+#else
         PWMPluse_Disable(0U);
+#endif
         g_chb_dab_status.dab_pwm_enabled = 0U;
         Chb_WriteDabDuty(g_chb_dab_params.dab_start_duty_count);
     }
@@ -990,22 +1437,49 @@ void ChbDabControl_Service(void)
 {
     unsigned long elapsed; /* elapsed：当前状态已经历的 10 ms 节拍数。 */
     unsigned short state; /* state：CHB_STATE_* 运行状态编号。 */
+    unsigned short mode; /* mode：本轮慢任务使用的模式，单相启动后只读取锁存值。 */
+#if SST_PHASE_A_ONLY_TEST
+    unsigned int interrupt_state; /* interrupt_state：停机模式锁存的原 CPU 中断状态。 */
+
+    interrupt_state = IntGlobalDisable();
+    if ((g_chb_dab_status.state == CHB_STATE_STOPPED) && (g_chb_dab_status.fault_code == CHB_FAULT_NONE))
+    {
+        /* 只有停止态接受模式配置；运行中改模式不能绕过预充/PLL。 */
+        s_active_ac_mode = g_chb_dab_command.ac_mode;
+    }
+    mode = s_active_ac_mode;
+    IntGlobalRestore(interrupt_state);
+    if ((g_chb_dab_status.state != CHB_STATE_STOPPED) && (g_chb_dab_status.state != CHB_STATE_FAULT) &&
+        (g_chb_dab_command.ac_mode != mode))
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return;
+    }
+#else
+    mode = g_chb_dab_command.ac_mode;
+#endif
 
     /*
      * 开环命令不等待 10 ms 慢任务，仿真器写入后主循环下一次即可生效；
      * 闭环仍严格按 10 ms 节拍运行，避免重复执行接触器和超时计数。
      */
-    if ((g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP) && (s_last_service_tick == g_chb_dab_status.tick_10ms))
+    if ((mode != CHB_AC_MODE_OPEN_LOOP) && (s_last_service_tick == g_chb_dab_status.tick_10ms))
     {
         return;
     }
     s_last_service_tick = g_chb_dab_status.tick_10ms;
 
+#if SST_PHASE_A_ONLY_TEST
+    interrupt_state = IntGlobalDisable();
+#endif
     if ((s_breaker_pulse_end_tick != 0UL) && (g_chb_dab_status.tick_10ms >= s_breaker_pulse_end_tick))
     {
         s_breaker_pulse_end_tick = 0UL;
         Chb_ClearAcInputPulse();
     }
+#if SST_PHASE_A_ONLY_TEST
+    IntGlobalRestore(interrupt_state);
+#endif
 
     state = g_chb_dab_status.state;
     elapsed = g_chb_dab_status.tick_10ms - s_state_enter_tick;
@@ -1020,6 +1494,14 @@ void ChbDabControl_Service(void)
     if (state == CHB_STATE_FAULT)
     {
         /* 故障态只接受“停机状态下的故障复位”，不会边发波边清故障。 */
+#if SST_PHASE_A_ONLY_TEST
+        if ((g_chb_dab_command.dab_enable != 0U) || (g_chb_dab_status.ac_pwm_enabled != 0U) ||
+            (g_chb_dab_status.dab_pwm_enabled != 0U))
+        {
+            /* 单相复位前还须撤销 DAB 命令，并确认两桥的使能镜像均已清零。 */
+            return;
+        }
+#endif
         if ((g_chb_dab_command.fault_reset != 0U) && (g_chb_dab_command.run_enable == 0U))
         {
             /* 只有PWM已停、启动命令已撤销时才允许清除故障锁存。 */
@@ -1032,7 +1514,7 @@ void ChbDabControl_Service(void)
         return;
     }
 
-    if (g_chb_dab_command.ac_mode == CHB_AC_MODE_OPEN_LOOP)
+    if (mode == CHB_AC_MODE_OPEN_LOOP)
     {
         Chb_ServiceOpenLoop();
         return;
@@ -1063,11 +1545,12 @@ void ChbDabControl_Service(void)
         }
         break;
 
-        case CHB_STATE_PRECHARGE: // 检查三相最低单元电压是否连续达标
+        case CHB_STATE_PRECHARGE: // 检查配置相的预充电压是否连续达标
         {
             /*
-             * 用三相最低单元电压做预充判据：必须连续达到门槛才旁路；
-             * 超过超时时间仍未达标则进入故障，防止某一相未充电却强行旁路。
+             * 单相取 A 相模块均压，三相取三相模块均压中的最小值；
+             * 必须连续达到门槛才旁路，超时未达标进入故障。
+             * 此字段不是相内最弱单模块电压；单模块保护仍沿用原 FaultCheck。
              */
             if (g_chb_dab_status.dc_voltage_min_v >= g_chb_dab_params.precharge_voltage_v)
             {
@@ -1097,7 +1580,7 @@ void ChbDabControl_Service(void)
             /* 旁路闭合后留出接触器机械稳定时间，再决定开环直达运行还是闭环等 PLL。 */
             if (elapsed >= g_chb_dab_params.bypass_delay_10ms)
             {
-                if (g_chb_dab_command.ac_mode == CHB_AC_MODE_OPEN_LOOP)
+                if (mode == CHB_AC_MODE_OPEN_LOOP)
                 {
                     /* 开环测试不依赖电网相位，旁路稳定后直接进入RUNNING。 */
                     Chb_EnterState(CHB_STATE_RUNNING);
@@ -1115,7 +1598,13 @@ void ChbDabControl_Service(void)
         {
             /* PLL 必须连续保持锁定，短暂丢锁会清零计数而不是立即发波。 */
             /* PLL锁定必须连续保持指定的10 ms周期数。 */
+#if SST_PHASE_A_ONLY_TEST
+            if ((g_chb_dab_status.pll_locked != 0U) &&
+                (g_chb_dab_status.dc_voltage_min_v >= g_chb_dab_params.precharge_voltage_v) &&
+                (g_chb_dab_command.run_enable != 0U))
+#else
             if (g_chb_dab_status.pll_locked != 0U)
+#endif
             {
                 if (s_pll_lock_10ms_count < 0xFFFFU)
                 {
@@ -1145,14 +1634,22 @@ void ChbDabControl_Service(void)
             {
                 /* DAB只启动原边：先给350计数，再在TAD中逐步爬升到50%。 */
                 Chb_WriteDabDuty(g_chb_dab_params.dab_start_duty_count);
+#if SST_PHASE_A_ONLY_TEST
+                (void)Chb_SinglePhaseEnablePwm(2U);
+#else
                 PWMPluse_Enable(2U);
                 g_chb_dab_status.dab_pwm_enabled = 1U;
+#endif
             }
             else if ((g_chb_dab_command.dab_enable == 0U) && (g_chb_dab_status.dab_pwm_enabled != 0U))
             {
                 /* 只撤销DAB PWM，AC侧仍由run_enable决定。 */
+#if SST_PHASE_A_ONLY_TEST
+                Chb_SinglePhaseDisablePwm(2U);
+#else
                 Module_ENdab_PWMEN(0U);
                 PortRunFLAG.Bbits.PWMState_Dab = 1U;
+#endif
                 g_chb_dab_status.dab_pwm_enabled = 0U;
                 Chb_WriteDabDuty(g_chb_dab_params.dab_start_duty_count);
             }
@@ -1181,6 +1678,9 @@ static void Chb_UpdatePll(float voltage_alpha, float voltage_beta)
     float sine_angle; /* sine_angle：当前 PLL 相角的正弦值。 */
     float cosine_angle; /* cosine_angle：当前 PLL 相角的余弦值。 */
     float q_voltage; /* q_voltage：PLL 坐标变换的 q 轴电压，单位 V。 */
+#if SST_PHASE_A_ONLY_TEST
+    float d_voltage; /* d_voltage：正向锁定判据，防止 q=0、相差 180° 时假锁定。 */
+#endif
     float q_error; /* q_error：按电压矢量幅值归一化的 PLL q 轴误差。 */
     float correction; /* correction：PLL PI 输出的角速度修正，单位 rad/s。 */
     float omega; /* omega：电网额定角速度加 PLL 修正量，单位 rad/s。 */
@@ -1218,7 +1718,12 @@ static void Chb_UpdatePll(float voltage_alpha, float voltage_beta)
         {
             lock_samples = 1U;
         }
+#if SST_PHASE_A_ONLY_TEST
+        d_voltage = voltage_alpha * cosine_angle + voltage_beta * sine_angle;
+        if ((d_voltage > 0.0F) && (Chb_Abs(q_error) <= g_chb_dab_params.pll_lock_error_pu))
+#else
         if (Chb_Abs(q_error) <= g_chb_dab_params.pll_lock_error_pu)
+#endif
         {
             if (s_pll_lock_fast_count < lock_samples)
             {
@@ -1351,11 +1856,15 @@ static float Chb_GetClosedLoopIdReference(void)
     {
         Chb_UpdateVoltageReference();
         voltage_error = s_startup_voltage_reference - g_chb_dab_status.dc_voltage_average_v;
+#if SST_PHASE_A_ONLY_TEST
+        id_target = Chb_VoltagePiLimited(voltage_error);
+#else
         id_target = Chb_SourceEquivalentPiStep(&s_voltage_pi,
                                                voltage_error,
                                                g_chb_dab_params.voltage_kp,
                                                g_chb_dab_params.voltage_ki,
                                                g_chb_dab_params.sample_period_s);
+#endif
         s_id_reference =
             Chb_Clamp(id_target, -g_chb_dab_params.voltage_current_limit_a, g_chb_dab_params.voltage_current_limit_a);
         g_chb_dab_status.voltage_loop_active = 1U;
@@ -1389,8 +1898,10 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float current_q; /* current_q：端口电流 q 轴分量，单位 A。 */
     float voltage_d; /* voltage_d：电网电压 d 轴前馈分量，单位 V。 */
     float voltage_q; /* voltage_q：电网电压 q 轴前馈分量，单位 V。 */
+#if !SST_PHASE_A_ONLY_TEST
     float vd_correction; /* vd_correction：d 轴电流 PI 电压修正，单位 V。 */
     float vq_correction; /* vq_correction：q 轴电流 PI 电压修正，单位 V。 */
+#endif
     float command_d; /* command_d：限幅前/后的 d 轴输出电压指令，单位 V。 */
     float command_q; /* command_q：限幅前/后的 q 轴输出电压指令，单位 V。 */
     float command_alpha; /* command_alpha：输出电压 α 轴指令，单位 V。 */
@@ -1402,7 +1913,10 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float phase_b; /* phase_b：B 相输出电压指令，单位 V；写入前换算为归一化参考。 */
     float phase_c; /* phase_c：C 相输出电压指令，单位 V；写入前换算为归一化参考。 */
 #endif
-    float phase_dc_a; /* phase_dc_a：A 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
+    float phase_dc_a; /* phase_dc_a：A 相总直流尺度；单相用模块实测均压，三相保留原给定尺度，单位 V。 */
+#if SST_PHASE_A_ONLY_TEST
+    float voltage_limit; /* voltage_limit：实际母线乘有效调制上限的电压矢量限值，单位 V。 */
+#endif
 #if !SST_PHASE_A_ONLY_TEST
     float phase_dc_b; /* phase_dc_b：B 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
     float phase_dc_c; /* phase_dc_c：C 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
@@ -1445,6 +1959,21 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     g_chb_dab_status.id_reference_a = s_id_reference;
 
     /* d/q电流内环输出交流电压修正量，再叠加电网电压前馈。 */
+#if SST_PHASE_A_ONLY_TEST
+    /* 实际桥输出与实测母线成比例，不能用尚未达到的目标母线作归一化分母。 */
+    phase_dc_a = (float)NHA_module_A * SVG_Udc_A_Ave;
+    voltage_limit = ((g_chb_dab_params.modulation_max < g_chb_dab_params.closed_loop_voltage_limit_factor)
+                         ? g_chb_dab_params.modulation_max
+                         : g_chb_dab_params.closed_loop_voltage_limit_factor) *
+                    phase_dc_a;
+    Chb_CurrentPiLimited(voltage_d,
+                         voltage_q,
+                         s_id_reference - current_d,
+                         g_chb_dab_command.iq_reference_a - current_q,
+                         voltage_limit,
+                         &command_d,
+                         &command_q);
+#else
     vd_correction = Chb_SourceEquivalentPiStep(&s_id_pi,
                                                s_id_reference - current_d,
                                                g_chb_dab_params.current_kp,
@@ -1460,18 +1989,20 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
      * source grid-voltage feed-forward is added. */
     command_d = voltage_d + vd_correction;
     command_q = voltage_q + vq_correction;
+#endif
 
     command_alpha = command_d * output_cosine_angle - command_q * output_sine_angle;
 #if SST_PHASE_A_ONLY_TEST
     /* 虚拟 dq 逆变换后只取真实 alpha=AN 输出，复用上面的电压外环、电流 PI 与电压前馈。 */
     phase_a = command_alpha;
-    phase_dc_a = (float)NHA_module_A * g_chb_dab_command.dc_voltage_ref_v;
     if (phase_dc_a > 1.0F)
     {
-        phase_a = Chb_Clamp(phase_a,
-                            -g_chb_dab_params.closed_loop_voltage_limit_factor * phase_dc_a,
-                            g_chb_dab_params.closed_loop_voltage_limit_factor * phase_dc_a);
+        phase_a = Chb_Clamp(phase_a, -voltage_limit, voltage_limit);
         Chb_WriteNormalizedReferences(1.0F + phase_a / phase_dc_a, 1.0F, 1.0F);
+    }
+    else
+    {
+        Chb_WriteNeutralReferences();
     }
 #else
     command_beta = command_d * output_sine_angle + command_q * output_cosine_angle;
@@ -1497,11 +2028,11 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
         Chb_WriteNormalizedReferences(
             1.0F + phase_a / phase_dc_a, 1.0F + phase_b / phase_dc_b, 1.0F + phase_c / phase_dc_c);
     }
-#endif
     else
     {
         Chb_WriteNeutralReferences();
     }
+#endif
 }
 
 /*==================================================================
@@ -1595,6 +2126,41 @@ void ChbDabControl_FastStep(void)
      */
 
 #if SST_PHASE_A_ONLY_TEST
+    /* 先校验再做 SOGI/PLL，阻止在线 NaN/Inf 进入积分及角度归一化。 */
+    if (Chb_ConfigurationValid() == 0U)
+    {
+        s_pll_integral = 0.0F;
+        s_pll_lock_fast_count = 0U;
+        g_chb_dab_status.pll_locked = 0U;
+        if ((g_chb_dab_status.state != CHB_STATE_STOPPED) || (g_chb_dab_command.run_enable != 0U) ||
+            (g_chb_dab_command.dab_enable != 0U))
+        {
+            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        }
+        Chb_WriteNeutralReferences();
+        return;
+    }
+    if (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U)
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
+        return;
+    }
+    if ((g_chb_dab_status.state != CHB_STATE_STOPPED) && (g_chb_dab_status.state != CHB_STATE_FAULT) &&
+        (g_chb_dab_command.ac_mode != s_active_ac_mode))
+    {
+        /* 模式只在停止态重新锁存，不能从开环直接跳入闭环计算。 */
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return;
+    }
+    if (!(g_chb_dab_status.pll_angle_rad >= 0.0F && g_chb_dab_status.pll_angle_rad < CHB_TWO_PI))
+    {
+        g_chb_dab_status.pll_angle_rad = 0.0F;
+        if (g_chb_dab_status.state != CHB_STATE_STOPPED)
+        {
+            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+            return;
+        }
+    }
     /* 单相预充、启动给定和电压外环均只读取 A 相模块均压。 */
     g_chb_dab_status.dc_voltage_average_v = SVG_Udc_A_Ave;
     g_chb_dab_status.dc_voltage_min_v = SVG_Udc_A_Ave;
@@ -1628,19 +2194,6 @@ void ChbDabControl_FastStep(void)
     voltage_alpha = HA_Port_Volt_A;
     voltage_beta = (HA_Port_Volt_A + 2.0F * HA_Port_Volt_B) * CHB_ONE_BY_SQRT3;
 #endif
-    /*****临时调试生成三相参考电压使用****/
-    //    static float theta_openloop = 0.0f;
-    //    if(theta_openloop < 6.283185307)
-    //    {
-    //        theta_openloop = theta_openloop + 6.283185307*0.005;
-    //    }
-    //    else
-    //    {
-    //        theta_openloop = 0;
-    //    }
-    //    voltage_alpha = 200*cosf(theta_openloop);
-    //    voltage_beta = 200*sinf(theta_openloop);
-
     Chb_UpdatePll(voltage_alpha, voltage_beta);
 #if SST_PHASE_A_ONLY_TEST
     if (g_sst_single_phase_status.ready == 0U)
@@ -1653,10 +2206,48 @@ void ChbDabControl_FastStep(void)
 
     if (g_chb_dab_status.state != CHB_STATE_RUNNING)
     {
+#if SST_PHASE_A_ONLY_TEST
+        s_pll_loss_count = 0U;
+#endif
         /* 非运行态写入指令中点；PWM 撤销使能由状态入口动作处理。 */
         Chb_WriteNeutralReferences();
         return;
     }
+
+#if SST_PHASE_A_ONLY_TEST
+    if (s_active_ac_mode == CHB_AC_MODE_CLOSED_LOOP)
+    {
+        /* 母线跌破已校验的预充门槛时立即封波，禁止低母线继续归一化输出。 */
+        if (SVG_Udc_A_Ave < g_chb_dab_params.precharge_voltage_v)
+        {
+            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+            return;
+        }
+        if (g_chb_dab_status.pll_locked == 0U)
+        {
+            if (s_pll_loss_count < CHB_PLL_LOSS_SAMPLES)
+            {
+                s_pll_loss_count++;
+            }
+            if (s_pll_loss_count >= CHB_PLL_LOSS_SAMPLES)
+            {
+                /* 幅值不足或相位误差连续不合格共 20 ms，复用 PLL 故障及其上报机制。 */
+                ChbDabControl_ForceFault(CHB_FAULT_PLL_TIMEOUT);
+                return;
+            }
+        }
+        else
+        {
+            s_pll_loss_count = 0U;
+        }
+        /* 原始物理采样先执行快速 OC/OV，故障拍不再更新电流 PI 和调制。 */
+        Chb_CheckSoftwareProtection();
+        if (g_chb_dab_status.state != CHB_STATE_RUNNING)
+        {
+            return;
+        }
+    }
+#endif
 
     if (g_chb_dab_status.ac_pwm_enabled == 0U)
     {
@@ -1672,7 +2263,11 @@ void ChbDabControl_FastStep(void)
         Chb_RunClosedLoop(voltage_alpha, voltage_beta);
     }
 
+#if SST_PHASE_A_ONLY_TEST
+    if ((g_chb_dab_status.state == CHB_STATE_RUNNING) && (g_chb_dab_status.dab_pwm_enabled != 0U))
+#else
     if (g_chb_dab_status.dab_pwm_enabled != 0U)
+#endif
     {
         /* DAB 每个 TAD 只增加固定步长，避免启动瞬间占空比跳到 50%。 */
         duty = g_chb_dab_status.dab_duty_count;
@@ -1692,8 +2287,10 @@ void ChbDabControl_FastStep(void)
     }
 
     /* 开环不让闭环软件保护决定是否发波；闭环检查软件保护逻辑。 */
+#if !SST_PHASE_A_ONLY_TEST
     if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
     {
         Chb_CheckSoftwareProtection();
     }
+#endif
 }

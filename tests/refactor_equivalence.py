@@ -15,10 +15,86 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from tree_sitter import Language, Parser
+import tree_sitter_c
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from source_equivalence import decode, inventory, source_inventory, source_paths, file_inventory
+from source_equivalence import (decode, inventory, source_inventory, source_paths,
+                                file_inventory, lexical_hash, recover_function_spans,
+                                tokens)
+
+
+def inventory_preflight(root: Path) -> None:
+    """Prove conditional shared-block recovery is complete and lossless."""
+    fixture = '''void first(void)
+{
+#if LEFT_BRANCH
+    if (left)
+#else
+    if (right)
+#endif
+    {
+        const char *signature = "void fake(void) { }"; /* } void fake2(){} */
+        consume(signature);
+    }
+}
+void second(void) { consume("{"); }
+void third(void) { /* } */ }
+'''
+    spans = recover_function_spans(fixture, "inventory-fixture.c")
+    assert [name for _, _, name in spans] == ["first", "second", "third"]
+    for start, end, name in spans:
+        body = fixture[start:end]
+        parsed = [item for item in inventory(body, "inventory-fixture.c")
+                  if item.kind == "function" and item.name == name]
+        assert len(parsed) == 1 and tokens(parsed[0].text) == tokens(body)
+    first = fixture[spans[0][0]:spans[0][1]]
+    assert all(directive in first for directive in ("#if LEFT_BRANCH", "#else", "#endif"))
+    for name in ("left", "right"):
+        changed = first.replace("(" + name + ")", "(" + name + "_changed)")
+        assert lexical_hash(changed) != lexical_hash(first), "A conditional branch was omitted from hashing"
+    for bad_gap in ("#define HIDDEN_GLOBAL 1", "#pragma once", "int hidden_global;"):
+        bad = "void first(void) {}\n" + bad_gap + "\nvoid second(void) {}"
+        try:
+            recover_function_spans(bad, "inventory-gap-fixture.c")
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("Function recovery silently discarded gap entity: " + bad_gap)
+
+    control = root / "Source/04_App/04_Control/ChbDabControl.c"
+    text = decode(control.read_bytes())
+    entities = [item for item in inventory(text, control.as_posix()) if item.kind == "function"]
+    by_name = {item.name: item for item in entities}
+    assert len(entities) == len(by_name) == 37, "Control module function inventory is incomplete or duplicated"
+    tail = ("Chb_UpdatePll", "Chb_RunOpenLoop", "Chb_GetClosedLoopIdReference",
+            "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep")
+    assert all(name in by_name for name in tail), "A function following the service boundary was swallowed"
+
+    data = text.encode("utf-8")
+    parser = Parser(Language(tree_sitter_c.language()))
+    syntax = parser.parse(data).root_node
+    stack = [syntax]
+    malformed = None
+    while stack:
+        node = stack.pop()
+        if node.type == "function_definition" and node.has_error:
+            node_text = data[node.start_byte:node.end_byte].decode("utf-8")
+            recovered = recover_function_spans(node_text, str(control))
+            if recovered:
+                malformed = (node_text, recovered)
+                break
+        stack.extend(node.named_children)
+    assert malformed is not None, "Regression fixture no longer exercises parser recovery"
+    node_text, recovered = malformed
+    recovered_by_name = {name: node_text[start:end] for start, end, name in recovered}
+    for name in ("ChbDabControl_Service",) + tail:
+        assert name in recovered_by_name
+        assert tokens(by_name[name].text) == tokens(recovered_by_name[name]), (
+            "Recovered function lost or rewrote source branch tokens: " + name)
+    assert len(recovered_by_name) == len(recovered), "Recovered function spans overlap or duplicate"
+    print("Source inventory preflight: PASS; conditional branches retained; all 6 tail functions recovered; invalid gaps rejected")
 
 LOCKED = {"function:FPGAIsr", "function:FAULTIsr", "function:Timer2Isr", "function:DPRAMIsr",
           "macro:ControlTAD", "macro:TAD_PLL"}
@@ -58,6 +134,7 @@ def main() -> None:
     parser.add_argument("--report", type=Path, default=ROOT / "build/refactor_equivalence.json")
     args = parser.parse_args()
     root = args.project.resolve()
+    inventory_preflight(root)
     revision, baseline_files, old = baseline_inventory(root, args.baseline)
     current = source_inventory(root)
     archives = [path for directory in (root / "archive", root / "Legacy") if directory.exists()
