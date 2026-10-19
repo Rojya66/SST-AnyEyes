@@ -204,7 +204,7 @@ def main() -> None:
                 failures.append(key + ': ordered initialization helper expansion differs')
             entry.update(status="exact_ordered_initialization_expansion", proof=proof,
                          validation="tools/control_init_equivalence.py verify() executed against Git baseline in this run; complete original statement/directive stream and local types checked")
-        elif key not in LOCKED and not key.startswith("section:") and not (missing - Counter(
+        elif key != "function:Port_IO_Out" and key not in LOCKED and not key.startswith("section:") and not (missing - Counter(
                 entity.sha256 for entity in archived if entity.key == key)):
             entry.update(status="preserved_in_noncompiled_archive",
                          archive=[entity.location() for entity in archived if entity.key == key],

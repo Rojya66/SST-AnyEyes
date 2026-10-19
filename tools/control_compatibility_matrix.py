@@ -1,7 +1,8 @@
 """Build Debug/Release for three control profiles and both communication owners.
 
 Retain per-build logs and one firmware fingerprint in build/control_compatibility_matrix.json.
-The last case proves disabling only the phase-A macro selects the high-voltage profile.
+Also build the current default and physical switch feedback variants.
+All power-control cases explicitly disable temporary input injection.
 """
 from pathlib import Path
 import concurrent.futures
@@ -24,12 +25,19 @@ for configuration in ('Debug', 'Release'):
             variant = 'audit_' + profile + '_' + protocol
             defines = [f'SST_PHASE_A_ONLY_TEST={phase}', f'SST_LOW_VOLTAGE_100V_TEST={low}',
                        f'SST_DEBUG_PROTOCOL={protocol_id}', f'SST_ENABLE_DPRAM={dpram}',
-                       f'SST_SIMULATOR_MODE={simulator}']
+                       f'SST_SIMULATOR_MODE={simulator}', 'SST_BENCH_INPUT_SIM=0']
             cases.append(dict(configuration=configuration, variant=variant, profile=profile,
                               protocol=protocol, defines=defines))
 cases.append(dict(configuration='Debug', variant='audit_three_phase_default',
                   profile='three_phase_default', protocol='default',
-                  defines=['SST_PHASE_A_ONLY_TEST=0']))
+                  defines=['SST_PHASE_A_ONLY_TEST=0', 'SST_BENCH_INPUT_SIM=0']))
+for configuration in ('Debug', 'Release'):
+    for profile, phase, low in (profiles[0], profiles[2]):
+        cases.append(dict(configuration=configuration, variant='audit_switch_' + profile,
+                          profile=profile, protocol='vofa',
+                          defines=[f'SST_PHASE_A_ONLY_TEST={phase}', f'SST_LOW_VOLTAGE_100V_TEST={low}',
+                                   'SST_BENCH_INPUT_SIM=0', 'SST_ENABLE_SWITCH_OUTPUT=1',
+                                   'SST_ENABLE_SWITCH_FEEDBACK=1']))
 
 
 def execute(case):
@@ -64,7 +72,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
 fingerprints = sorted(set(r['result'].get('firmware_input_sha256', 'MISSING') for r in results))
 summary = dict(started_utc=started,
                finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-               requested_matrix_count=12, additional_default_case_count=1, case_count=len(results),
+               requested_matrix_count=12, additional_default_case_count=1, additional_switch_case_count=4, case_count=len(results),
                passed=sum(r['exit_code'] == 0 and not r['result'].get('compile_failures') and
                           r['result'].get('link_status') == 0 for r in results),
                failed=sum(r['exit_code'] != 0 for r in results), fingerprints=fingerprints,

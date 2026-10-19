@@ -58,7 +58,8 @@ typedef enum
     /* 控制核心交流过流故障编号。 */ CHB_FAULT_AC_OVERCURRENT = 3,
     /* 控制核心直流过压故障编号。 */ CHB_FAULT_DC_OVERVOLTAGE = 4,
     /* 控制核心硬件故障编号。 */ CHB_FAULT_HARDWARE = 5,
-    /* 配置非法；包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6
+    /* 配置非法；包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6,
+    /* 开关反馈超时或运行反馈丢失；仅开启开关反馈联锁时使用。 */ CHB_FAULT_SWITCH_FEEDBACK = 7
 } CHB_DAB_FAULT;
 
 /* Direct debugger/upper-computer commands. All commands are level signals. */
@@ -104,7 +105,7 @@ typedef struct
     float voltage_kp;
     /* voltage_kp：直流电压外环比例系数，沿用原增量 PI 等效值。 */ /* Converted from source incremental PI */
     float voltage_ki; /* voltage_ki：直流电压外环积分系数，积分乘 sample_period_s。 */
-    float voltage_current_limit_a; /* voltage_current_limit_a：电压外环输出 Id 的绝对值上限，单位 A。 */
+    float voltage_current_limit_a; /* voltage_current_limit_a：运行电流给定上限，单位 A峰值；低压启动动态收紧且约束dq矢量。 */
 
     unsigned short startup_strategy;
     /* startup_strategy：闭环启动策略，0 原版兼容、1 固定 Id 斜坡后移交电压环。 */ /* 0：兼容原版；1：Idref斜坡后接管 */
@@ -163,6 +164,14 @@ typedef struct
     unsigned long startup_tad_count; /* startup_tad_count：启动斜坡已执行的 TAD 拍数。 */
     unsigned short voltage_loop_active; /* voltage_loop_active：电压外环已接管 Id 给定的标志。 */
     float modulation_actual; /* modulation_actual：当前各活动相调制指令的最大绝对值，单相只计 A 相。 */
+    float current_limit_active_a; /* current_limit_active_a：本拍实际采用的电流给定幅值上限，单位 A峰值。 */
+    unsigned short load_ready; /* load_ready：低压母线连续达到目标且启动完成后置1，本次运行锁存至停机。 */
+    unsigned short load_ready_count; /* load_ready_count：低压母线与最终给定连续达标的TAD计数。 */
+    unsigned short switch_din_raw; /* switch_din_raw：开关板实时DIN原始字；反馈宏关闭时为0。 */
+    unsigned short ac_input_feedback; /* ac_input_feedback：按配置极性译码的实际进线已合反馈，非命令镜像。 */
+    unsigned short bypass_feedback; /* bypass_feedback：实际旁路已合反馈，非命令镜像。 */
+    unsigned short switch_stable_count; /* switch_stable_count：当前命令的反馈连续一致10ms拍数。 */
+    unsigned short switch_mismatch_count; /* switch_mismatch_count：命令与反馈连续不一致10ms拍数。 */
 } CHB_DAB_STATUS;
 
 extern volatile CHB_DAB_COMMAND

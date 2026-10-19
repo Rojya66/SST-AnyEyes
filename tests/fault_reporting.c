@@ -36,7 +36,7 @@ int main(void)
     static const unsigned short control_codes[] = {
         0U, SST_FAULT_PRECHARGE_TIMEOUT, SST_FAULT_PLL_TIMEOUT,
         SST_FAULT_SW_AC_OC, SST_FAULT_SW_DC_OV,
-        SST_FAULT_HW_UNCLASSIFIED, SST_FAULT_BAD_CONFIGURATION
+        SST_FAULT_HW_UNCLASSIFIED, SST_FAULT_BAD_CONFIGURATION, SST_FAULT_SWITCH_FEEDBACK
     };
     SstFault_Init();
     stopped_reset();
@@ -45,7 +45,7 @@ int main(void)
     assert(SstFault_GetHistoryLevel() == SST_FAULT_LEVEL_NONE);
     assert(!SstFault_GetHistory(0, &record));
     assert(SstFault_GetLegacyHistoryWord(0) == 1);
-    for(i = 1; i < 7; ++i)
+    for(i = 1; i < 8; ++i)
     {
         g_chb_dab_status.state = CHB_STATE_FAULT;
         g_chb_dab_status.fault_code = i;

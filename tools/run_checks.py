@@ -21,7 +21,7 @@ CHECKS = ['realtime_audit', 'control_regression', 'pi_regression', 'fault_report
           'refactor_equivalence', 'comment_coverage', 'framework_structure', 'firmware_trace',
           'serial_protocol_scope', 'parameter_store_migration', 'dpram_maintenance', 'bench_inputs',
           'single_phase_control', 'single_phase_io', 'single_phase_isolation', 'vofa_telemetry',
-          'common_control_safety']
+          'common_control_safety', 'switch_io']
 
 
 def fingerprint():

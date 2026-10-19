@@ -16,6 +16,7 @@
 #include "SstPi.h"
 #include "ControlInit.h"
 #include "interrupt.h"
+#include "vofa.h"
 #include <float.h>
 
 /* CHB_PI：π 浮点常量。 */
@@ -81,7 +82,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
 #if SST_LOW_VOLTAGE_100V_TEST
     20.0F, /* precharge_voltage_v: 低压试验预充门槛，单位 V/模块。 */
 #else
-    350.0F, /* precharge_voltage_v */
+    280.0F, /* precharge_voltage_v */
 #endif
     20U, /* precharge_stable_10ms: 200 ms */
     1000U, /* precharge_timeout_10ms: 10 s */
@@ -100,7 +101,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
 #if SST_LOW_VOLTAGE_100V_TEST
     0.05F, /* voltage_kp: 100 V 低压试验保守外环比例系数。 */
     0.10F, /* voltage_ki: 100 V 低压试验外环积分系数。 */
-    1.0F, /* voltage_current_limit_a: 外环 Id 输出限幅，单位 A。 */
+    SST_LV100_RUN_CURRENT_LIMIT_A, /* voltage_current_limit_a：带载给定上限，单位A峰值；启动时动态收紧。 */
 #else
     0.099375F, /* voltage_kp = -Volt_PID_Num_0_def */
     12.5F, /* voltage_ki = (Num_1 + Num_0) / 0.0001 */
@@ -133,7 +134,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.16F, /* PhaseComValue */
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    3.0F, /* ac_overcurrent_trip_a：低压试验快速过流门槛，单位 A。 */
+    SST_LV100_FAST_OC_A, /* ac_overcurrent_trip_a：50 A峰值带载对应的快速过流门槛，单位 A。 */
     42.0F, /* dc_overvoltage_trip_v：低压试验 A 相模块均压过压门槛，非逐模块最大值，单位 V/模块。 */
 #else
     120.0F, /* ac_overcurrent_trip_a：每TAD相电流绝对值门槛，单位A。 */
@@ -298,6 +299,15 @@ static float Chb_VoltagePiLimited(float reference, float feedback)
     float limit; /* limit：外环输出电流及积分的绝对值边界，单位 A。 */
 
     limit = g_chb_dab_params.voltage_current_limit_a;
+#if SST_LOW_VOLTAGE_100V_TEST
+    limit = g_chb_dab_status.current_limit_active_a;
+    /* Iq 优先占用同一峰值预算，避免Id=50 A且Iq非零时实际合成电流超过50 A。 */
+    {
+        float iq; /* iq：本拍限幅后的无功电流给定，单位A。 */
+        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
+        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
+    }
+#endif
     if (!SstPi_Configure(&s_voltage_pi,
                          g_chb_dab_params.voltage_kp,
                          g_chb_dab_params.voltage_ki,
@@ -374,6 +384,15 @@ static void Chb_ResetControllers(void)
     }
     s_id_reference = 0.0F;
     g_chb_dab_status.id_reference_a = 0.0F;
+    g_chb_dab_status.load_ready = 0U;
+    g_chb_dab_status.load_ready_count = 0U;
+#if SST_LOW_VOLTAGE_100V_TEST
+    g_chb_dab_status.current_limit_active_a =
+        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
+            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
+#else
+    g_chb_dab_status.current_limit_active_a = g_chb_dab_params.voltage_current_limit_a;
+#endif
 }
 
 /*
@@ -409,6 +428,15 @@ static void Chb_ResetStartupSequence(void)
     g_chb_dab_status.startup_phase = CHB_STARTUP_IDLE;
     g_chb_dab_status.startup_tad_count = 0UL;
     g_chb_dab_status.voltage_loop_active = 0U;
+    g_chb_dab_status.load_ready = 0U;
+    g_chb_dab_status.load_ready_count = 0U;
+#if SST_LOW_VOLTAGE_100V_TEST
+    g_chb_dab_status.current_limit_active_a =
+        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
+            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
+#else
+    g_chb_dab_status.current_limit_active_a = g_chb_dab_params.voltage_current_limit_a;
+#endif
 }
 
 /* 将电压PI积分器预置到当前Idref，避免电压环接管时发生Idref跳变。 */
@@ -425,6 +453,14 @@ static void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_refere
     float limit; /* limit：电压外环允许的电流输出边界，单位 A。 */
 
     limit = g_chb_dab_params.voltage_current_limit_a;
+#if SST_LOW_VOLTAGE_100V_TEST
+    limit = g_chb_dab_status.current_limit_active_a;
+    {
+        float iq; /* iq：与电流内环一致的限幅后 q 轴给定，单位 A。 */
+        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
+        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
+    }
+#endif
     if (!SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
                          g_chb_dab_params.sample_period_s, -limit, limit, -limit, limit, 1U))
     {
@@ -1016,6 +1052,8 @@ static void Chb_EnterState(unsigned short state)
     s_running_entry_pending = (state == CHB_STATE_RUNNING) ? 1U : 0U;
     g_chb_dab_status.state = state;
     s_state_enter_tick = g_chb_dab_status.tick_10ms;
+    g_chb_dab_status.switch_stable_count = 0U;
+    g_chb_dab_status.switch_mismatch_count = 0U;
     IntGlobalRestore(interrupt_state);
 
     switch (state)
@@ -1171,6 +1209,16 @@ static unsigned short Chb_ConfigurationValid(void)
 
     if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
     {
+#if SST_LOW_VOLTAGE_100V_TEST
+        /* 低压试验的运行给定不超过已约定的 50 A 峰值；NaN 同样被范围比较拒绝。 */
+        if (!(g_chb_dab_params.voltage_current_limit_a > 0.0F &&
+              g_chb_dab_params.voltage_current_limit_a <= SST_LV100_RUN_CURRENT_LIMIT_A &&
+              g_chb_dab_params.ac_overcurrent_trip_a > g_chb_dab_params.voltage_current_limit_a &&
+              g_chb_dab_params.ac_overcurrent_trip_a <= SST_LV100_FAST_OC_A))
+        {
+            return 0U;
+        }
+#endif
         if (!((g_chb_dab_params.precharge_voltage_v > 1.0F && g_chb_dab_params.precharge_voltage_v <= 1000000.0F) &&
               (g_chb_dab_command.dc_voltage_ref_v >= g_chb_dab_params.precharge_voltage_v &&
                g_chb_dab_command.dc_voltage_ref_v <= 1000000.0F) &&
@@ -1247,6 +1295,11 @@ void ChbDabControl_Init(void)
     g_chb_dab_status.startup_tad_count = 0UL;
     g_chb_dab_status.voltage_loop_active = 0U;
     g_chb_dab_status.modulation_actual = 0.0F;
+    g_chb_dab_status.switch_din_raw = 0U;
+    g_chb_dab_status.ac_input_feedback = 0U;
+    g_chb_dab_status.bypass_feedback = 0U;
+    g_chb_dab_status.switch_stable_count = 0U;
+    g_chb_dab_status.switch_mismatch_count = 0U;
 
     s_pll_integral = 0.0F;
     s_open_loop_angle = 0.0F;
@@ -1464,6 +1517,37 @@ void ChbDabControl_Service(void)
     state = g_chb_dab_status.state;
     elapsed = g_chb_dab_status.tick_10ms - s_state_enter_tick;
 
+#if SST_ENABLE_SWITCH_FEEDBACK
+    if (mode == CHB_AC_MODE_CLOSED_LOOP)
+    {
+        /* 每个后台 10 ms 节拍只读一次实时 DIN，不在 TAD 中等待机械动作。 */
+        g_chb_dab_status.switch_din_raw = Port_DINRead(0U);
+        g_chb_dab_status.ac_input_feedback =
+            ((g_chb_dab_status.switch_din_raw & SST_SWITCH_AC_CLOSED_MASK) != 0U) ==
+            SST_SWITCH_AC_CLOSED_HIGH;
+        g_chb_dab_status.bypass_feedback =
+            ((g_chb_dab_status.switch_din_raw & SST_SWITCH_BYPASS_CLOSED_MASK) != 0U) ==
+            SST_SWITCH_BYPASS_CLOSED_HIGH;
+        if ((g_chb_dab_status.ac_input_feedback == g_chb_dab_status.ac_input_closed) &&
+            (g_chb_dab_status.bypass_feedback == g_chb_dab_status.precharge_bypassed))
+        {
+            if (g_chb_dab_status.switch_stable_count < 0xFFFFU)
+            {
+                g_chb_dab_status.switch_stable_count++;
+            }
+            g_chb_dab_status.switch_mismatch_count = 0U;
+        }
+        else
+        {
+            g_chb_dab_status.switch_stable_count = 0U;
+            if (g_chb_dab_status.switch_mismatch_count < 0xFFFFU)
+            {
+                g_chb_dab_status.switch_mismatch_count++;
+            }
+        }
+    }
+#endif
+
     if ((Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U) && (state != CHB_STATE_FAULT))
     {
         /* FPGA端口故障不等待软件计数，立即进入故障态。 */
@@ -1482,6 +1566,14 @@ void ChbDabControl_Service(void)
         }
         if ((g_chb_dab_command.fault_reset != 0U) && (g_chb_dab_command.run_enable == 0U))
         {
+#if SST_ENABLE_SWITCH_FEEDBACK
+            /* 闭环故障复位前须实际断开进线和旁路，且反馈连续稳定。 */
+            if ((mode == CHB_AC_MODE_CLOSED_LOOP) &&
+                (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS))
+            {
+                return;
+            }
+#endif
             /* 只有PWM已停、启动命令已撤销时才允许清除故障锁存。 */
             g_chb_dab_command.fault_reset = 0U;
             g_chb_dab_status.fault_code = CHB_FAULT_NONE;
@@ -1503,6 +1595,23 @@ void ChbDabControl_Service(void)
         Chb_EnterState(CHB_STATE_STOPPED);
         return;
     }
+
+#if SST_ENABLE_SWITCH_FEEDBACK
+    /* 运行中连续丢失反馈 30 ms 停机；机械动作及停机反馈允许等待 1 s。 */
+    if (g_chb_dab_status.switch_mismatch_count >=
+        ((state == CHB_STATE_RUNNING) ? SST_SWITCH_FEEDBACK_STABLE_10MS : SST_SWITCH_ACTION_TIMEOUT_10MS) ||
+        ((state != CHB_STATE_RUNNING) && (elapsed >= SST_SWITCH_ACTION_TIMEOUT_10MS) &&
+         (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS)))
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_SWITCH_FEEDBACK);
+        return;
+    }
+    /* 未经真实反馈确认，不进入下一个启动步骤；上面的超时检查始终执行。 */
+    if (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS)
+    {
+        return;
+    }
+#endif
 
     switch (state)
     {
@@ -1766,6 +1875,12 @@ static float Chb_GetClosedLoopIdReference(void)
     startup_target = Chb_Clamp(g_chb_dab_params.startup_id_reference_a,
                                -g_chb_dab_params.voltage_current_limit_a,
                                g_chb_dab_params.voltage_current_limit_a);
+#if SST_LOW_VOLTAGE_100V_TEST
+    g_chb_dab_status.current_limit_active_a =
+        Chb_Clamp(g_chb_dab_status.current_limit_active_a, 0.0F, g_chb_dab_params.voltage_current_limit_a);
+    startup_target = Chb_Clamp(startup_target, -g_chb_dab_status.current_limit_active_a,
+                               g_chb_dab_status.current_limit_active_a);
+#endif
     ramp_step = Chb_Abs(g_chb_dab_params.startup_id_ramp_step_a);
 
     if (s_startup_phase == CHB_STARTUP_ID_RAMP_PHASE)
@@ -1817,6 +1932,38 @@ static float Chb_GetClosedLoopIdReference(void)
     if (s_startup_phase == CHB_STARTUP_NORMAL)
     {
         Chb_UpdateVoltageReference();
+#if SST_LOW_VOLTAGE_100V_TEST
+        /* 最终给定已到位且实测母线连续达标 200 ms，才允许逐步放宽电流预算。
+         * 本次运行锁存达标状态；带载后的母线暂降不会把限流突然收回 1 A。 */
+        if (g_chb_dab_status.load_ready == 0U)
+        {
+            if ((s_startup_voltage_reference == g_chb_dab_command.dc_voltage_ref_v) &&
+                (Chb_Abs(g_chb_dab_status.dc_voltage_average_v - g_chb_dab_command.dc_voltage_ref_v) <=
+                 SST_LV100_READY_ERROR_V))
+            {
+                if (g_chb_dab_status.load_ready_count < SST_LV100_READY_TAD)
+                {
+                    g_chb_dab_status.load_ready_count++;
+                }
+                if (g_chb_dab_status.load_ready_count >= SST_LV100_READY_TAD)
+                {
+                    g_chb_dab_status.load_ready = 1U;
+                }
+            }
+            else
+            {
+                g_chb_dab_status.load_ready_count = 0U;
+            }
+        }
+        if (g_chb_dab_status.load_ready != 0U)
+        {
+            g_chb_dab_status.current_limit_active_a +=
+                SST_LV100_CURRENT_LIMIT_SLEW_A_S * g_chb_dab_params.sample_period_s;
+        }
+        /* 在线降低运行上限时立即收紧；提高上限仍走斜坡。 */
+        g_chb_dab_status.current_limit_active_a =
+            Chb_Clamp(g_chb_dab_status.current_limit_active_a, 0.0F, g_chb_dab_params.voltage_current_limit_a);
+#endif
         voltage_error = s_startup_voltage_reference - g_chb_dab_status.dc_voltage_average_v;
         id_target = Chb_VoltagePiLimited(s_startup_voltage_reference, g_chb_dab_status.dc_voltage_average_v);
         if (g_chb_dab_status.state == CHB_STATE_FAULT)
@@ -1829,6 +1976,19 @@ static float Chb_GetClosedLoopIdReference(void)
     }
 
     g_chb_dab_status.startup_id_reference_a = s_id_reference;
+#if SST_LOW_VOLTAGE_100V_TEST
+    if (s_startup_phase != CHB_STARTUP_NORMAL)
+    {
+        float iq; /* iq：占用本拍峰值预算的 q 轴电流给定，单位 A。 */
+        float id_limit; /* id_limit：扣除 Iq 后剩余的 Id 幅值预算，单位 A。 */
+        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -g_chb_dab_status.current_limit_active_a,
+                       g_chb_dab_status.current_limit_active_a);
+        id_limit = sqrtf((g_chb_dab_status.current_limit_active_a > Chb_Abs(iq)) ?
+            (g_chb_dab_status.current_limit_active_a * g_chb_dab_status.current_limit_active_a - iq * iq) : 0.0F);
+        s_id_reference = Chb_Clamp(s_id_reference, -id_limit, id_limit);
+        g_chb_dab_status.startup_id_reference_a = s_id_reference;
+    }
+#endif
     g_chb_dab_status.startup_phase = s_startup_phase;
     g_chb_dab_status.startup_tad_count = s_startup_tad_count;
     return s_id_reference;
@@ -1854,6 +2014,7 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float current_beta; /* current_beta：端口电流 β 轴分量，单位 A。 */
     float current_d; /* current_d：端口电流 d 轴分量，单位 A。 */
     float current_q; /* current_q：端口电流 q 轴分量，单位 A。 */
+    float iq_reference; /* iq_reference：本拍实际 q 轴给定；低压时与 Id 共用电流矢量预算，单位 A。 */
     float voltage_d; /* voltage_d：电网电压 d 轴前馈分量，单位 V。 */
     float voltage_q; /* voltage_q：电网电压 q 轴前馈分量，单位 V。 */
     float command_d; /* command_d：限幅前/后的 d 轴输出电压指令，单位 V。 */
@@ -1925,8 +2086,13 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
 #endif
     voltage_limit *= (g_chb_dab_params.modulation_max < g_chb_dab_params.closed_loop_voltage_limit_factor)
                          ? g_chb_dab_params.modulation_max : g_chb_dab_params.closed_loop_voltage_limit_factor;
+    iq_reference = g_chb_dab_command.iq_reference_a;
+#if SST_LOW_VOLTAGE_100V_TEST
+    iq_reference = Chb_Clamp(iq_reference, -g_chb_dab_status.current_limit_active_a,
+                             g_chb_dab_status.current_limit_active_a);
+#endif
     if (!Chb_CurrentPiLimited(voltage_d, voltage_q, s_id_reference - current_d,
-                              g_chb_dab_command.iq_reference_a - current_q, voltage_limit, &command_d, &command_q))
+                              iq_reference - current_q, voltage_limit, &command_d, &command_q))
     {
         return;
     }

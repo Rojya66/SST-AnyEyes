@@ -9,7 +9,7 @@ extern "C"
 /* OC_level_SET_DEFAULT：原HVAC一级过流默认阈值，比较三相电流有效值，单位A。 */
 #if SST_LOW_VOLTAGE_100V_TEST
 /* OC_level_SET_DEFAULT：低压试验原 HVAC 一级过流默认阈值，单位 A。 */
-#define OC_level_SET_DEFAULT 3 /* OC_level_SET_DEFAULT：低压试验原 HVAC 一级过流默认阈值，单位 A。 */
+#define OC_level_SET_DEFAULT 40 /* OC_level_SET_DEFAULT：50 A峰值试验的一级RMS过流门槛，单位 A有效值。 */
 #else
 #define OC_level_SET_DEFAULT 70 /* OC_level_SET_DEFAULT：原 HVAC 一级过流默认阈值，单位 A。 */
 #endif
@@ -18,7 +18,7 @@ extern "C"
 /* OC_level_SET_L2_DEFAULT：原HVAC二级过流默认阈值，比较三相电流有效值，单位A。 */
 #if SST_LOW_VOLTAGE_100V_TEST
 /* OC_level_SET_L2_DEFAULT：低压试验原 HVAC 二级过流默认阈值，单位 A。 */
-#define OC_level_SET_L2_DEFAULT 4 /* OC_level_SET_L2_DEFAULT：低压试验原 HVAC 二级过流默认阈值，单位 A。 */
+#define OC_level_SET_L2_DEFAULT 45 /* OC_level_SET_L2_DEFAULT：50 A峰值试验的二级RMS过流门槛，单位 A有效值。 */
 #else
 #define OC_level_SET_L2_DEFAULT 75 /* OC_level_SET_L2_DEFAULT：原 HVAC 二级过流默认阈值，单位 A。 */
 #endif

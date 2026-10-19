@@ -17,21 +17,21 @@
 3. 构建 Debug 或 Release；上电默认停机，初始化保持原 20 秒等待。
 4. 仿真器查看或修改 `g_chb_dab_command`、`g_chb_dab_params`、`g_chb_dab_status`。开环/闭环由 `ac_mode` 选择。
 
-当前配置为 **100 Vac AN单相 + 真实采样 + VOFA + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_LOW_VOLTAGE_100V_TEST` 随单相宏、`SST_BENCH_INPUT_SIM=0`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。A1/A2位图各为`0x0007`，共6个逻辑模块，单UNIT台架需按现场修改位图。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
+当前现场配置为 **AN单相 + 高压参数 + 临时输入注入 + VOFA + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_LOW_VOLTAGE_100V_TEST=0`、`SST_BENCH_INPUT_SIM=1`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。A1/A2位图各为`0x0007`，共6个逻辑模块，单UNIT台架需按现场修改位图。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
 
-无主回路验证需显式开启临时输入注入（`SST_BENCH_INPUT_SIM=1`）。每个实际TAD生成测试电网及可调直流反馈，保留真实PLL和启动控制；单相步骤见 [A 相单相闭环测试说明](docs/PHASE_A_SINGLE_PHASE_TEST.md)，通用CCS变量及断点见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。此前固定标签`bench-input-simulation-2026-10-14`默认关闭注入，其测试前版本为`bench-input-baseline-2026-10-14`、提交`6675a72`；历史证据见[bench_input_validation.json](docs/evidence/bench_input_validation.json)及[anyeyes_identity_validation.json](docs/evidence/anyeyes_identity_validation.json)。
+100 Vac实物带载须设置 `SST_LOW_VOLTAGE_100V_TEST=1`、`SST_BENCH_INPUT_SIM=0`；50 A峰值运行限流及开关量配置见 [本轮修改记录](docs/LOAD_CURRENT_AND_SWITCH_IO.md)。无主回路验证使用临时输入注入（`SST_BENCH_INPUT_SIM=1`）。每个实际TAD生成测试电网及可调直流反馈，保留真实PLL和启动控制；单相步骤见 [A 相单相闭环测试说明](docs/PHASE_A_SINGLE_PHASE_TEST.md)，通用CCS变量及断点见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。此前固定标签`bench-input-simulation-2026-10-14`默认关闭注入，其测试前版本为`bench-input-baseline-2026-10-14`、提交`6675a72`；历史证据见[bench_input_validation.json](docs/evidence/bench_input_validation.json)及[anyeyes_identity_validation.json](docs/evidence/anyeyes_identity_validation.json)。
 
 | 宏 | 值 | 行为 |
 |---|---|---|
 | `SST_DEBUG_PROTOCOL` | 1 / 2 | AnyEyes / VOFA，必须二选一 |
 | `SST_SIMULATOR_MODE` | 当前默认1 | 0=允许远程控制，1=仿真器直接控制 |
 | `SST_ENABLE_DPRAM` | 当前默认0 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
-| `SST_BENCH_INPUT_SIM` | 当前默认0 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
+| `SST_BENCH_INPUT_SIM` | 当前默认1 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
 | `SST_PHASE_A_ONLY_TEST` | 当前默认1 | 1=AN 单相虚拟 dq 测试，仅允许 A 相模块；0=原三相算法 |
-| `SST_LOW_VOLTAGE_100V_TEST` | 随单相宏 | 1=100 Vac 参数；单相可显式设0保留高压参数；LOW=1/PHASE=0编译拒绝 |
+| `SST_LOW_VOLTAGE_100V_TEST` | 当前显式0 | 1=100 Vac 参数；单相可显式设0保留高压参数；LOW=1/PHASE=0编译拒绝 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
-| `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
-| `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
+| `SST_UART_BAUD` | 默认 460800 | UART2 波特率 |
+| `SST_TELEMETRY_PERIOD_10MS` | 默认 1 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
 
 仿真器模式允许通信观测及AnyEyes停机参数访问，远程启动及普通运行控制被拒绝。非仿真器且DPRAM开启时，DPRAM是运行命令来源，AnyEyes仍提供参数与观测；AnyEyes紧急停机仅请求停机。DPRAM关闭时可由AnyEyes提供运行命令，VOFA仅提供观测。切换VOFA不影响已启用的DPRAM维护。
 
@@ -47,6 +47,8 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 脚本自动枚举工程源码并调用 TI 原生 C6000 编译器，可通过 `--tool-root` 或环境变量 `SST_CGT_ROOT` 指定位置。产物在 `build/<配置>/<变体>/`，包含 `.out`、`.map`、链接 XML、完整日志和 `build_result.json`。
 
 ## 文档
+
+- [50 A峰值启动/运行限流、开关量地址、宏及测试步骤](docs/LOAD_CURRENT_AND_SWITCH_IO.md)
 
 - [迁移与架构说明](docs/MIGRATION_GUIDE.md)
 - [按 F28377S_Plat 框架整理的实施前方案](docs/FRAMEWORK_REFACTOR_PLAN.md)

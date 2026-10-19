@@ -41,7 +41,7 @@ def main() -> None:
                    if (args.overlay / p.relative_to(args.project)).exists() else p
                    for p in sources]
     defines = ["SST_DEBUG_PROTOCOL=2", "SST_SIMULATOR_MODE=1", "SST_ENABLE_DPRAM=0",
-               "SST_BENCH_INPUT_SIM=0"]
+               "SST_BENCH_INPUT_SIM=0", "SST_PHASE_A_ONLY_TEST=1", "SST_LOW_VOLTAGE_100V_TEST=1"]
     with tempfile.TemporaryDirectory(prefix="sst_vofa_telemetry_") as directory:
         work = Path(directory)
         prepare_headers(args.project, work)

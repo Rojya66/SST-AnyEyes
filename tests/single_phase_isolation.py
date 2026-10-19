@@ -127,6 +127,24 @@ def main() -> None:
                     check(before == after, "TI macro0 body " + name, raw_tokens_equal=raw_same,
                           baseline_sha256=digest(before), current_normalized_sha256=digest(after))
 
+            # Macro0 no longer implies the old switch-output write: the new
+            # output macro defaults off. Check both TI-preprocessed branches,
+            # while switch_io.py exercises values/coil polarity exhaustively.
+            relative = "Source/02_Peripheral/00_FPGA/FpgaIo.c"
+            current_io = inventory(read(project / relative), relative)
+            contract = json.loads((project / "tests/refactor_contracts.json").read_text(encoding="utf-8"))
+            output_contract = next(item for item in contract["changes"] if item["key"] == "function:Port_IO_Out")
+            check(output_contract["current_sha256s"] == sorted(e.sha256 for e in current_io
+                  if e.key == "function:Port_IO_Out") and "switch_io.py" in output_contract["validation"],
+                  "Port_IO_Out exact active implementation contract (intentional switch-output change)")
+            for enabled in (0, 1):
+                defines = {**switches(0), "SST_ENABLE_SWITCH_OUTPUT": enabled}
+                selected = preprocess(project, relative, cgt, defines, destination / f"switch_output_{enabled}")
+                body = function(selected, "Port_IO_Out")
+                check((body == tokens("{}")) if enabled == 0 else
+                      ("physical_output" in body and "FPGA_Interface" in body),
+                      f"TI switch output macro={enabled} {'empty body' if not enabled else 'physical writer retained'}")
+
             timing_header = "Source/04_App/00_Config/SstControlConfig.h"
             for name in ("ControlTAD", "TAD_PLL"):
                 expression = r'^\s*#\s*define\s+' + name + r'\s+([^\n]+)'

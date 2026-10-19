@@ -543,13 +543,30 @@ void Module_TestMode(uchar TestMode)
 /*==================================================================
  * 函数功能: 将 Port_DOUT 开关控制字写入端口 FPGA 数字输出寄存器
  * 输入参数: 无
- * 输出参数: 写函数修改对应 FPGA 寄存器或控制字缓存；读函数通过返回值提供原始数据。
+ * 输出参数: 输出宏启用时写 DOUT；仅三路线圈按极性转换，其余位原样保留；逻辑 Port_DOUT 不变。
  * 返回值: 无
  * 执行说明: 底层 FPGA 寄存器访问；插件编号沿用原工程，不能改变地址或结构体布局。
  *================================================================*/
 void Port_IO_Out(void)
 {
-    FPGA_Interface[IO_PluginUnit_2 - 2].DOUT.SwitchINOUT16 = Port_DOUT.SwitchINOUT16;
+#if SST_ENABLE_SWITCH_OUTPUT
+    XXG_SwitchINOUT physical_output; /* physical_output：按现场线圈极性转换的输出字，不改变逻辑命令缓存。 */
+
+    physical_output = Port_DOUT;
+    if (SST_SWITCH_CLOSE_ACTIVE_HIGH == 0U)
+    {
+        physical_output.Bbits.Breaker_InnerOn = !Port_DOUT.Bbits.Breaker_InnerOn;
+    }
+    if (SST_SWITCH_OPEN_ACTIVE_HIGH == 0U)
+    {
+        physical_output.Bbits.Breaker_InnerOff = !Port_DOUT.Bbits.Breaker_InnerOff;
+    }
+    if (SST_SWITCH_BYPASS_ACTIVE_HIGH == 0U)
+    {
+        physical_output.Bbits.Contactor_Inner = !Port_DOUT.Bbits.Contactor_Inner;
+    }
+    FPGA_Interface[IO_PluginUnit_2 - 2].DOUT.SwitchINOUT16 = physical_output.SwitchINOUT16;
+#endif
 }
 
 /*==================================================================

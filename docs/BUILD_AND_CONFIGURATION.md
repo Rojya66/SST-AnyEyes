@@ -133,3 +133,7 @@ git clone --branch framework-refactored-2026-10-12 https://github.com/Rojya66/SS
 该命令取得固定发布标签并处于detached HEAD；继续开发时使用 `--branch refactor/f28377s-framework`。重构前版本为 `main` 及标签 `baseline-pre-framework-2026-10-12`，提交 `ddaeb56f21a81a70cdb76085728f91b67dc3c7a0`。重构后分支为 `refactor/f28377s-framework`，标签为 `framework-refactored-2026-10-12`。基线标签不移动、不覆盖；切换版本前保持工作区干净。
 
 `build/`、`Debug/`、`Release/` 不纳入源码 Git 提交；它们由当前版本的构建和回归命令重新生成。框架源等价审计从固定 Git 标签读取基线，克隆后保留该标签；无需把旧固件的中间文件当作基线源码。
+
+## 2026-10-19 带载限流与开关量配置
+
+当前现场默认 LOW=0、BENCH=1，并非100 Vac实物带载配置。低压实物须 LOW=1、BENCH=0。新增开关输出/反馈使能默认均为0，现场核对极性后启用。50 A峰值限流、完整宏表、DSP IO字节地址、CCS步骤及构建组合见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。

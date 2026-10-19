@@ -187,7 +187,7 @@ void SstDebug_ProtocolService(uint32_t now)
         waveform[6] = (float)g_chb_dab_status.startup_phase; /* CH6：闭环启动阶段，CHB_STARTUP_*。 */
         waveform[7] = g_chb_dab_status.startup_voltage_reference_v; /* CH7：实际电压环给定，V/模块。 */
         waveform[8] = g_chb_dab_status.modulation_actual; /* CH8：A 相实际归一化调制比。 */
-        waveform[9] = (float)g_chb_dab_status.pll_locked; /* CH9：PLL 锁定标志，0/1。 */
+        waveform[9] = g_chb_dab_status.pll_angle_rad; /* CH9：PLL 相角，单位 rad；保留现场调试选择。 */
         waveform[10] = HA_Port_Volt_A; /* CH10：标定后的 AN 瞬时采样，V。 */
         waveform[11] = HA_Port_Current_A; /* CH11：标定后的 A 相瞬时电流，A。 */
         VOFA_Send12Float(waveform[0], waveform[1], waveform[2], waveform[3],

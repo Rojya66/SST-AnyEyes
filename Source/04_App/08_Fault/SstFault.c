@@ -223,6 +223,9 @@ void SstFault_Service(void)
         case CHB_FAULT_BAD_CONFIGURATION:
             code = SST_FAULT_BAD_CONFIGURATION;
             break;
+        case CHB_FAULT_SWITCH_FEEDBACK:
+            code = SST_FAULT_SWITCH_FEEDBACK;
+            break;
         default:
             break;
     }

@@ -308,12 +308,57 @@ static void test_low_voltage_startup(void)
         assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
     }
     assert(fabsf(s_startup_voltage_reference - 35.0F) < 0.001F);
+    assert(g_chb_dab_status.load_ready == 0U);
+    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
+    SVG_Udc_A_Ave = 35.0F;
+    for (i = 0U; i < SST_LV100_READY_TAD - 1U; ++i)
+    {
+        tick();
+        assert(g_chb_dab_status.load_ready == 0U);
+    }
+    tick();
+    assert(g_chb_dab_status.load_ready == 1U);
+    for (i = 0U; i < 50000U; ++i)
+    {
+        previous = g_chb_dab_status.current_limit_active_a;
+        tick();
+        assert(g_chb_dab_status.current_limit_active_a >= previous);
+        assert(g_chb_dab_status.current_limit_active_a - previous <= 0.00101F);
+        assert(g_chb_dab_status.current_limit_active_a <= 50.0F);
+    }
+    assert(g_chb_dab_status.current_limit_active_a == 50.0F);
+    /* A load dip retains permission. Iq shares the same circular budget. */
+    SVG_Udc_A_Ave = 33.0F;
+    g_chb_dab_command.iq_reference_a = 30.0F;
+    s_voltage_pi.integral = 50.0F;
+    tick();
+    assert(g_chb_dab_status.load_ready == 1U);
+    assert(g_chb_dab_status.current_limit_active_a == 50.0F);
+    assert(fabsf(s_id_reference) <= 40.0001F);
+    assert(fabsf(s_iq_pi.reference - 30.0F) < 0.001F);
+    g_chb_dab_command.iq_reference_a = 0.0F;
+    g_chb_dab_params.voltage_current_limit_a = 5.0F;
+    tick();
+    assert(g_chb_dab_status.current_limit_active_a == 5.0F);
+    assert(fabsf(s_id_reference) <= 5.0F);
     g_chb_dab_command.run_enable = 0U;
     for (i = 0U; i < 100U && g_chb_dab_status.state != CHB_STATE_STOPPED; ++i)
     {
         tick();
     }
     assert(g_chb_dab_status.state == CHB_STATE_STOPPED && fake_ac_pwm == 0U);
+    assert(g_chb_dab_status.load_ready == 0U);
+    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
+    start_closed();
+    g_chb_dab_command.iq_reference_a = 30.0F;
+    tick();
+    assert(fabsf(s_iq_pi.reference) <= 1.00001F);
+    assert(s_id_reference * s_id_reference + s_iq_pi.reference * s_iq_pi.reference <= 1.0001F);
+    start_closed();
+    g_chb_dab_params.voltage_current_limit_a = 50.1F;
+    tick();
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+    puts("PASS load-ready debounce, 1-to-50A slew, dq budget, live derating and restart reset");
     puts("PASS actual 100Vac defaults, insufficient precharge, 100ms Id ramp, voltage slew and stop");
 #endif
 }

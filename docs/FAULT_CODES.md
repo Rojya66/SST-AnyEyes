@@ -26,6 +26,7 @@
 | 29102 | 二级 | `CHB_FAULT_PLL_TIMEOUT` | 闭环 PLL 等待超时；单相、三相均包括运行中连续200TAD（20 ms）失锁/失压 |
 | 29103 | 二级 | `CHB_FAULT_AC_OVERCURRENT` 或 `HVAC_OC_Fault` | 快速 AC 过流/旧 HVAC 软件过流；旧一级、二级过流共用一标志，不能事后区分 |
 | 29104 | 二级 | `CHB_FAULT_DC_OVERVOLTAGE` 或 `HVAC_OV_Fault` | 快速直流过压/旧 HVAC 软件过压；原始 `control_fault` 随历史保存以区分来源 |
+| 29108 | 二级 | `CHB_FAULT_SWITCH_FEEDBACK=7` | 开关反馈联锁启用时，动作超时或运行中连续反馈不符；复位须实际开关断开稳定 |
 | 29105 | 二级 | `CHB_FAULT_BAD_CONFIGURATION` | 模块数量/参考量等配置检查失败；单相、三相均包括启动/运行中切模式、非法数值/采样及有效相母线低于预充门槛 |
 | 19101 | 一级 | `CHB_FAULT_HARDWARE` 或端口总故障，但无可辨识分类 | 未分类汇总；不能解释为某个具体器件损坏 |
 | 19102 | 一级 | `FaultTypeFLAG.Port_OverCurrent` 或端口 bit10 | 模拟插件/端口硬件过流；具体通道仍需原寄存器证据 |
@@ -43,7 +44,7 @@
 
 ### 两套软件保护的阈值与计时
 
-下表列出高压参数组（`SST_LOW_VOLTAGE_100V_TEST=0`）。当前默认 100 Vac 单相参数将原一级/二级过流改为 3/4 A、原过压改为 42 V，快速过流/过压改为 3 A/42 V；确认时间沿用原设置。42 V 检查相模块均压或其合成滤波值，均不是逐模块最大电压保护。低压参数及恢复三相的方法见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
+下表列出高压参数组（`SST_LOW_VOLTAGE_100V_TEST=0`）。当前配置显式 LOW=0；启用 LOW=1 的 100 Vac 参数组时，原一级/二级过流为 40/45 A RMS、原过压为 42 V，快速过流/过压为 60 A/42 V；确认时间沿用原设置。50 A峰值为运行给定上限，启动限流仍为1 A，详见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。42 V 检查相模块均压或其合成滤波值，均不是逐模块最大电压保护。低压参数及恢复三相的方法见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
 
 | 保护来源 | 默认阈值及比较对象 | 确认规则 | 设置位置 |
 |---|---|---|---|

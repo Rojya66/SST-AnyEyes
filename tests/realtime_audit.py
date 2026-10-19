@@ -200,7 +200,7 @@ INTENTIONAL_CONTROL_FUNCTIONS = {
     "Chb_UpdatePll", "ChbDabControl_FastStep", "Chb_WriteNormalizedReferences",
 }
 INTENTIONAL_CONTROL_OBJECTS = {"g_chb_dab_command", "g_chb_dab_params"}
-INTENTIONAL_CONTROL_TYPES = {"CHB_PI_STATE"}
+INTENTIONAL_CONTROL_TYPES = {"CHB_PI_STATE", "CHB_DAB_FAULT", "CHB_DAB_STATUS"}
 INTENTIONAL_CONTROL_OBJECTS.update({"s_voltage_pi", "s_id_pi", "s_iq_pi"})
 
 
@@ -270,6 +270,11 @@ def main() -> None:
         # Only declarations of the disabled legacy UART/history APIs may be
         # satisfied by archives. Functions, types, values and MMIO declarations
         # retain current-source requirements and independent call-graph checks.
+        # Reviewed appended status fields / fault7 retain the old member prefix;
+        # exact old/current contracts and behavioral checks cover this change.
+        if name == "ChbDabControl.h":
+            original = [entity for entity in original
+                        if entity.name not in {"CHB_DAB_FAULT", "CHB_DAB_STATUS"}]
         missing = missing_entities(original, all_entities + archived_interfaces)
         check(not missing, f"every original executable entity preserved (module masks and Udc declarations checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
@@ -357,18 +362,29 @@ def main() -> None:
           noinit_count == 19 and tokens(baseline_linker) == tokens(canonical_linker),
           "linker preserves every original layout token except NOINIT and the exact four extensions carved from unused tail")
     original_plugin = select_dpram_branches(read(args.baseline / "PluginUnit.C"), True)
+    # Port_IO_Out deliberately gains the output macro/polarity gate. Pin the
+    # active implementation rather than accepting its copy in Legacy archives.
+    output_key = "function:Port_IO_Out"
+    original_output = [e.sha256 for e in inventory(original_plugin, "PluginUnit.C") if e.key == output_key]
+    active_output = [e.sha256 for e in inventory(read(args.project / "Source/02_Peripheral/00_FPGA/FpgaIo.c"),
+                                                "FpgaIo.c") if e.key == output_key]
+    output_contract = contracts.get(output_key, {})
+    check(sorted(original_output) == output_contract.get("baseline_sha256s") and
+          sorted(active_output) == output_contract.get("current_sha256s") and
+          "switch_io.py" in output_contract.get("validation", ""),
+          "Port_IO_Out exact baseline/current contract plus independent switch I/O behavior checks")
     selected_entities = {
         enabled: [entity for path, contents in source_texts.items()
                   for entity in inventory(select_dpram_branches(contents, enabled),
                                           path.relative_to(args.project).as_posix())]
         for enabled in (True, False)}
-    check(not missing_entities(inventory(original_plugin, "PluginUnit.C"), selected_entities[True]),
-          "DPRAM-enabled HVAC FPGA operations preserve every original token")
+    check(not missing_entities([e for e in inventory(original_plugin, "PluginUnit.C") if e.key != "function:Port_IO_Out"], selected_entities[True]),
+          "DPRAM-enabled FPGA tokens retained except reviewed Port_IO_Out macro/polarity gate (switch_io.py)")
     fault_source = "DPRAM_Block3_remMeaSig.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16"
     check(original_plugin.count(fault_source) == 1 and
-          not missing_entities(inventory(original_plugin.replace(fault_source, "Port_RealFault.PORT_FAULT16"),
-                                         "PluginUnit.C"), selected_entities[False]),
-          "DPRAM-off FPGA operations differ only in the recorder local fault-word source")
+          not missing_entities([e for e in inventory(original_plugin.replace(fault_source, "Port_RealFault.PORT_FAULT16"),
+                                         "PluginUnit.C") if e.key != "function:Port_IO_Out"], selected_entities[False]),
+          "DPRAM-off FPGA tokens retained except recorder source and reviewed Port_IO_Out (switch_io.py)")
 
     all_functions: dict[str, str] = {}
     no_dpram_functions: dict[str, str] = {}

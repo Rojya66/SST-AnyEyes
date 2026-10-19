@@ -30,7 +30,7 @@ void TaskSlice_Service(void)
     SstDpramHost_ServiceTelemetry();
     SstDpramMaintenance_Service();
 #endif
-    now = SstDebug_GetTick10ms();
+    now = SstDebug_GetTick10ms(); /* 与协议初始化及周期参数保持同一时基。 */
     SstSerial_TxService();
     SstDebug_ReceiveService();
     SstDebug_ProtocolService(now);

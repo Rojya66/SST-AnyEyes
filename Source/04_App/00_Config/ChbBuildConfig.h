@@ -21,16 +21,16 @@
 #ifndef SST_BENCH_INPUT_SIM
 /* SST_BENCH_INPUT_SIM：临时无主回路输入注入；0 使用真实采样，1 生成测试采样。
  * 修改后需重新编译；本功能不替代功率回路模型。 */
-#define SST_BENCH_INPUT_SIM 0U
+#define SST_BENCH_INPUT_SIM 1U
 #endif
 #ifndef SST_PHASE_A_ONLY_TEST
 /* SST_PHASE_A_ONLY_TEST：仅 A 相 AN 采样与虚拟 dq 双闭环测试；1 启用双 SOGI 并封锁 B/C，0 保留三相算法。 */
 #define SST_PHASE_A_ONLY_TEST 1U
 #endif
 #ifndef SST_LOW_VOLTAGE_100V_TEST
-/* SST_LOW_VOLTAGE_100V_TEST：默认随单相宏选择 100 Vac 参数；单相宏为 0 时默认恢复高压三相参数。
- * 可显式指定 0 选择高压单相；显式指定 1 只允许用于单相试验。 */
-#define SST_LOW_VOLTAGE_100V_TEST SST_PHASE_A_ONLY_TEST
+/* SST_LOW_VOLTAGE_100V_TEST：当前显式选择0，保留现场高压参数配置。
+ * 100 Vac带载试验必须改为1；1只允许用于单相，0可用于高压单相或三相。 */
+#define SST_LOW_VOLTAGE_100V_TEST 0U
 #endif
 
 /* 100 Vac/6 模块低压台架参数。数值单位为物理量单位，供初始化和 DPRAM 边界校验共用。 */
@@ -55,8 +55,61 @@
 #define SST_LV100_INPUT_LEVEL2_V 90.0
 /* SST_LV100_CURRENT_MIN_A：低压试验通信参数允许的电流给定下限，单位 A。 */
 #define SST_LV100_CURRENT_MIN_A 1.0
-/* SST_LV100_CURRENT_MAX_A：低压试验快速过流及电流给定上限，单位 A。 */
-#define SST_LV100_CURRENT_MAX_A 3.0
+/* SST_LV100_CURRENT_MAX_A：低压旧DPRAM Idst_Max参数的上限，单位 A峰值；不是快速过流阈值。 */
+#define SST_LV100_CURRENT_MAX_A 50.0
+/* SST_LV100_START_CURRENT_LIMIT_A：母线建立前的 dq 电流给定幅值上限，单位 A 峰值。 */
+#define SST_LV100_START_CURRENT_LIMIT_A 1.0F
+/* SST_LV100_RUN_CURRENT_LIMIT_A：带载运行 dq 电流给定幅值上限，单位 A 峰值。 */
+#define SST_LV100_RUN_CURRENT_LIMIT_A 50.0F
+/* SST_LV100_CURRENT_LIMIT_SLEW_A_S：启动完成后限幅放宽速率，单位 A/s。 */
+#define SST_LV100_CURRENT_LIMIT_SLEW_A_S 10.0F
+/* SST_LV100_READY_ERROR_V：各模块均压与最终目标的允许偏差，单位 V/模块。 */
+#define SST_LV100_READY_ERROR_V 1.0F
+/* SST_LV100_READY_TAD：母线及给定连续稳定后允许放宽限流，2000 TAD=200 ms。 */
+#define SST_LV100_READY_TAD 2000U
+/* SST_LV100_FAST_OC_A：运行瞬时快速过流门槛，单位 A；给50 A峰值留20%裕量。 */
+#define SST_LV100_FAST_OC_A 60.0F
+
+#ifndef SST_ENABLE_SWITCH_OUTPUT
+/* SST_ENABLE_SWITCH_OUTPUT：1 允许开关量板数字输出；当前外部电平未确认，默认0不写DOUT。 */
+#define SST_ENABLE_SWITCH_OUTPUT 0U
+#endif
+#ifndef SST_ENABLE_SWITCH_FEEDBACK
+/* SST_ENABLE_SWITCH_FEEDBACK：1 使用实际开关反馈联锁；0 仅按电压/延时推进调试流程。 */
+#define SST_ENABLE_SWITCH_FEEDBACK 0U
+#endif
+#ifndef SST_SWITCH_CLOSE_ACTIVE_HIGH
+/* SST_SWITCH_CLOSE_ACTIVE_HIGH：进线合闸线圈有效电平，默认沿用旧工程高有效；现场必须核对。 */
+#define SST_SWITCH_CLOSE_ACTIVE_HIGH 1U
+#endif
+#ifndef SST_SWITCH_OPEN_ACTIVE_HIGH
+/* SST_SWITCH_OPEN_ACTIVE_HIGH：进线分闸线圈有效电平，默认沿用旧工程高有效；现场必须核对。 */
+#define SST_SWITCH_OPEN_ACTIVE_HIGH 1U
+#endif
+#ifndef SST_SWITCH_BYPASS_ACTIVE_HIGH
+/* SST_SWITCH_BYPASS_ACTIVE_HIGH：预充旁路线圈有效电平，默认沿用旧工程高有效。 */
+#define SST_SWITCH_BYPASS_ACTIVE_HIGH 1U
+#endif
+#ifndef SST_SWITCH_AC_CLOSED_MASK
+/* SST_SWITCH_AC_CLOSED_MASK：进线已合反馈原始DIN掩码，旧HVAC为bit3低有效；不代表现场接线。 */
+#define SST_SWITCH_AC_CLOSED_MASK 0x0008U
+#endif
+#ifndef SST_SWITCH_AC_CLOSED_HIGH
+/* SST_SWITCH_AC_CLOSED_HIGH：进线已合反馈为1时原始位电平，旧HVAC为0。 */
+#define SST_SWITCH_AC_CLOSED_HIGH 0U
+#endif
+#ifndef SST_SWITCH_BYPASS_CLOSED_MASK
+/* SST_SWITCH_BYPASS_CLOSED_MASK：旁路已合反馈原始DIN掩码，旧HVAC为bit6高有效。 */
+#define SST_SWITCH_BYPASS_CLOSED_MASK 0x0040U
+#endif
+#ifndef SST_SWITCH_BYPASS_CLOSED_HIGH
+/* SST_SWITCH_BYPASS_CLOSED_HIGH：旁路已合反馈的原始电平，旧HVAC为1。 */
+#define SST_SWITCH_BYPASS_CLOSED_HIGH 1U
+#endif
+/* SST_SWITCH_FEEDBACK_STABLE_10MS：反馈连续确认拍数，3拍=30ms。 */
+#define SST_SWITCH_FEEDBACK_STABLE_10MS 3U
+/* SST_SWITCH_ACTION_TIMEOUT_10MS：开关动作最大等待时间，100拍=1s。 */
+#define SST_SWITCH_ACTION_TIMEOUT_10MS 100U
 /* SST_LV100_CURRENT_DIRECTION_HYST_A：低压 A 相的 501 排序电流方向滞环，单位 A；不是过流保护阈值。
  * Avg_IG/10 的分辨率为 0.1 A；严格越过 ±0.1 A（即达到 ±0.2 A）才切换，边界及区间内保持原方向。
  * 此阈值用于小电流试验，需在现场核验采样噪声后再确定。高压及 B/C 相仍沿用 ±1 A 判据。 */
@@ -69,7 +122,7 @@
 #define SST_ALLOW_SERIAL_COMMANDS (SST_ALLOW_REMOTE_COMMANDS && !SST_ENABLE_DPRAM)
 #ifndef SST_UART_BAUD
 /* SST_UART_BAUD：UART2 调试通信波特率，单位 bit/s。 */
-#define SST_UART_BAUD 115200U
+#define SST_UART_BAUD 460800U
 #endif
 #ifndef SST_UART_INPUT_CLOCK_HZ
 /* SST_UART_INPUT_CLOCK_HZ：UART2 输入时钟，单位 Hz，需与板级 SYSCLK 一致。 */
@@ -77,7 +130,7 @@
 #endif
 #ifndef SST_TELEMETRY_PERIOD_10MS
 /* SST_TELEMETRY_PERIOD_10MS：VOFA 周期上报间隔，单位 10 ms。 */
-#define SST_TELEMETRY_PERIOD_10MS 2U
+#define SST_TELEMETRY_PERIOD_10MS 1U
 #endif
 
 /* 保留旧控制模式常量，供公共源码兼容使用。 */
@@ -133,5 +186,17 @@
 #endif
 #if SST_TELEMETRY_PERIOD_10MS < 1U
 #error "Telemetry period must be at least 10ms"
+#endif
+#if SST_ENABLE_SWITCH_OUTPUT > 1U || SST_ENABLE_SWITCH_FEEDBACK > 1U
+#error "Switch I/O enables must be 0 or 1"
+#endif
+#if SST_ENABLE_SWITCH_FEEDBACK && !SST_ENABLE_SWITCH_OUTPUT
+#error "Switch feedback interlock requires switch output enabled"
+#endif
+#if SST_SWITCH_CLOSE_ACTIVE_HIGH > 1U || SST_SWITCH_OPEN_ACTIVE_HIGH > 1U || SST_SWITCH_BYPASS_ACTIVE_HIGH > 1U || SST_SWITCH_AC_CLOSED_HIGH > 1U || SST_SWITCH_BYPASS_CLOSED_HIGH > 1U
+#error "Switch active levels must be 0 or 1"
+#endif
+#if SST_SWITCH_AC_CLOSED_MASK == 0U || SST_SWITCH_BYPASS_CLOSED_MASK == 0U || (SST_SWITCH_AC_CLOSED_MASK & (SST_SWITCH_AC_CLOSED_MASK - 1U)) || (SST_SWITCH_BYPASS_CLOSED_MASK & (SST_SWITCH_BYPASS_CLOSED_MASK - 1U)) || (SST_SWITCH_AC_CLOSED_MASK & SST_SWITCH_BYPASS_CLOSED_MASK) || SST_SWITCH_AC_CLOSED_MASK > 0xFFFFU || SST_SWITCH_BYPASS_CLOSED_MASK > 0xFFFFU
+#error "Switch feedback masks must be distinct single bits of DIN16"
 #endif
 #endif

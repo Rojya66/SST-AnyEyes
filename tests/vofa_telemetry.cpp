@@ -29,11 +29,12 @@ int main(void)
     g_chb_dab_status.startup_voltage_reference_v = 34.5F;
     g_chb_dab_status.modulation_actual = 0.675F;
     g_chb_dab_status.pll_locked = 1U;
+    g_chb_dab_status.pll_angle_rad = 2.125F;
     HA_Port_Volt_A = -123.5F;
     HA_Port_Current_A = -0.625F;
     PORT_RealTime_DATA.PORT_V_A = 100.0F; /* Distinct RMS value detects wrong voltage map. */
     const float values[12] = {4, 0, 34.75F, 0.375F, 0.25F, -0.125F,
-                             2, 34.5F, 0.675F, 1, -123.5F, -0.625F};
+                             2, 34.5F, 0.675F, 2.125F, -123.5F, -0.625F};
     SstDebug_ProtocolService(SST_TELEMETRY_PERIOD_10MS - 1U);
     Drain();
     assert(hwTx.empty());
