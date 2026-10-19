@@ -27,6 +27,42 @@
 /* SST_PHASE_A_ONLY_TEST：仅 A 相 AN 采样与虚拟 dq 双闭环测试；1 启用双 SOGI 并封锁 B/C，0 保留三相算法。 */
 #define SST_PHASE_A_ONLY_TEST 1U
 #endif
+#ifndef SST_LOW_VOLTAGE_100V_TEST
+/* SST_LOW_VOLTAGE_100V_TEST：默认随单相宏选择 100 Vac 参数；单相宏为 0 时默认恢复高压三相参数。
+ * 可显式指定 0 选择高压单相；显式指定 1 只允许用于单相试验。 */
+#define SST_LOW_VOLTAGE_100V_TEST SST_PHASE_A_ONLY_TEST
+#endif
+
+/* 100 Vac/6 模块低压台架参数。数值单位为物理量单位，供初始化和 DPRAM 边界校验共用。 */
+/* SST_LV100_MODULE_REF_UDC_V：低压试验每个 CHB 模块的直流电压目标，单位 V。 */
+#define SST_LV100_MODULE_REF_UDC_V 35.0
+/* SST_LV100_PRECHARGE_V：低压试验每个模块允许进入旁路的最低预充电压，单位 V。 */
+#define SST_LV100_PRECHARGE_V 20.0
+/* SST_LV100_MODULE_OV_V：低压试验相模块均压的快速过压阈值，单位 V/模块；
+ * 不是逐模块最大电压保护，不能据此判断每个子模块均未过压。 */
+#define SST_LV100_MODULE_OV_V 42.0
+/* SST_LV100_PORT_V_MIN：低压试验上位机可写单模块电压给定下限，单位 V。 */
+#define SST_LV100_PORT_V_MIN 20.0
+/* SST_LV100_PORT_V_MAX：低压试验上位机可写模块均压给定上限，单位 V；距 42 V 保护留有裕量。 */
+#define SST_LV100_PORT_V_MAX 38.0
+/* SST_LV100_PORT_V_DEFAULT：低压试验通信/仿真命令的默认单模块电压给定，单位 V。 */
+#define SST_LV100_PORT_V_DEFAULT 35.0
+/* SST_LV100_INPUT_PRESENT_V：低压试验判定 AN 交流输入已建立的有效值门槛，单位 V RMS。 */
+#define SST_LV100_INPUT_PRESENT_V 50.0
+/* SST_LV100_INPUT_LEVEL1_V：低压试验交流输入一级状态判断门槛，单位 V。 */
+#define SST_LV100_INPUT_LEVEL1_V 30.0
+/* SST_LV100_INPUT_LEVEL2_V：低压试验交流输入二级状态判断门槛，单位 V。 */
+#define SST_LV100_INPUT_LEVEL2_V 90.0
+/* SST_LV100_CURRENT_MIN_A：低压试验通信参数允许的电流给定下限，单位 A。 */
+#define SST_LV100_CURRENT_MIN_A 1.0
+/* SST_LV100_CURRENT_MAX_A：低压试验快速过流及电流给定上限，单位 A。 */
+#define SST_LV100_CURRENT_MAX_A 3.0
+/* SST_LV100_CURRENT_DIRECTION_HYST_A：低压 A 相的 501 排序电流方向滞环，单位 A；不是过流保护阈值。
+ * Avg_IG/10 的分辨率为 0.1 A；严格越过 ±0.1 A（即达到 ±0.2 A）才切换，边界及区间内保持原方向。
+ * 此阈值用于小电流试验，需在现场核验采样噪声后再确定。高压及 B/C 相仍沿用 ±1 A 判据。 */
+#define SST_LV100_CURRENT_DIRECTION_HYST_A 0.1F
+/* SST_LV100_UST_ADD_V：低压启动阶段电压给定的附加步进，单位 V。 */
+#define SST_LV100_UST_ADD_V 3.0
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
 #define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
 /* SST_ALLOW_SERIAL_COMMANDS：由仿真器模式派生的普通串口命令权限。 */
@@ -85,6 +121,12 @@
 #endif
 #if SST_PHASE_A_ONLY_TEST > 1U
 #error "SST_PHASE_A_ONLY_TEST must be 0 or 1"
+#endif
+#if SST_LOW_VOLTAGE_100V_TEST > 1U
+#error "SST_LOW_VOLTAGE_100V_TEST must be 0 or 1"
+#endif
+#if SST_LOW_VOLTAGE_100V_TEST && !SST_PHASE_A_ONLY_TEST
+#error "100Vac low-voltage profile requires SST_PHASE_A_ONLY_TEST=1"
 #endif
 #if SST_BENCH_INPUT_SIM && (!SST_SIMULATOR_MODE || SST_ENABLE_DPRAM || CHB_LOAD_EEPROM_PARAMETERS)
 #error "Bench input simulation requires simulator=1, DPRAM=0 and EEPROM boot load=0"

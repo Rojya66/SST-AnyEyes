@@ -8,17 +8,17 @@ AnyEyes 的 1 ms 时基沿用 `SstBoard_GetTick1ms` 接口，组合实现位于 
 
 | 宏 | 默认 | 效果 |
 |---|---:|---|
-| SST_DEBUG_PROTOCOL | 1 | 1 AnyEyes，2 VOFA，互斥 |
+| SST_DEBUG_PROTOCOL | 2 | 当前 VOFA；1 AnyEyes，2 VOFA，互斥 |
 | SST_ENABLE_DPRAM | 0 | 当前用户配置关闭；置1独立启用原固定块与现代并口维护扩展 |
 | SST_SIMULATOR_MODE | 1 | 当前由仿真器直接控制；置0允许所选远控源接管 |
-| SST_BENCH_INPUT_SIM | 1 | 当前用户配置开启临时输入注入；要求SIMULATOR=1、DPRAM=0、EEPROM加载=0 |
+| SST_BENCH_INPUT_SIM | 0 | 当前真实采样；开启临时输入注入要求SIMULATOR=1、DPRAM=0、EEPROM加载=0 |
 | SST_ALLOW_SERIAL_COMMANDS | 派生 | !SIMULATOR && !DPRAM；DPRAM启用时为其保留控制权 |
 | SST_UART_BAUD | 115200 | UART与波形限频使用同一值 |
 | SST_UART_INPUT_CLOCK_HZ | 228000000 | 保留原PLL实际UART2输入时钟 |
 | SST_TELEMETRY_PERIOD_10MS | 2 | VOFA默认50Hz |
 | CHB_LOAD_EEPROM_PARAMETERS | 0 | 可显式启用上电载入已保存SST参数 |
 
-默认输出 AnyEyes 协议，不能同时在同一串口连续输出VOFA JustFloat。VOFA模式保留原4通道顺序与语义：`PORT_RealTime_DATA.PORT_V_A`、`g_chb_dab_status.dc_voltage_average_v`、`(float)Port_State`、`g_chb_dab_status.pll_angle_rad`；每通道IEEE float32小端，尾00 00 80 7F，总20字节。原VOFA_Init/Process保留空兼容接口，不再直接访问UART。
+当前默认输出 VOFA；切换 AnyEyes 使用 `SST_DEBUG_PROTOCOL=1`，不能同时在同一串口连续输出两种协议。VOFA模式使用12通道运行遥测：状态、故障、Udc均压、Idref、Id、Iq、启动阶段、启动电压参考、调制比、PLL锁定、AN瞬时电压和A相瞬时电流；每通道IEEE float32小端，尾00 00 80 7F，总52字节。完整通道定义见 `docs/VOFA_LOW_VOLTAGE.md`。原VOFA_Init/Process保留空兼容接口，不再直接访问UART。
 
 ## 调度与帧仲裁
 

@@ -6,6 +6,13 @@ from pathlib import Path
 import subprocess
 import sys
 
+# GCC diagnostics can contain replacement characters or source comments that
+# the inherited Windows console code page cannot encode. Keep full UTF-8 logs
+# on disk and make console rendering lossy instead of aborting the test report.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, 'reconfigure'):
+        stream.reconfigure(errors='replace')
+
 ROOT = Path(__file__).resolve().parents[1]
 LOGDIR = ROOT / 'build/host_validation'
 LOGDIR.mkdir(parents=True, exist_ok=True)
@@ -13,7 +20,8 @@ CHECKS = ['realtime_audit', 'control_regression', 'pi_regression', 'fault_report
           'dpram_commands', 'parameter_precision', 'protocol_regression',
           'refactor_equivalence', 'comment_coverage', 'framework_structure', 'firmware_trace',
           'serial_protocol_scope', 'parameter_store_migration', 'dpram_maintenance', 'bench_inputs',
-          'single_phase_control', 'single_phase_io']
+          'single_phase_control', 'single_phase_io', 'single_phase_isolation', 'vofa_telemetry',
+          'common_control_safety']
 
 
 def fingerprint():

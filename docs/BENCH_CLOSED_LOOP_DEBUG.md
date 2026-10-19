@@ -1,5 +1,7 @@
 # 单UNIT、无主回路的闭环输入模拟与CCS操作指南
 
+> 2026-10-19 更新：下文的 300→680 V 和默认模式描述保留为历史高压流程。当前源码默认是 100 Vac 单相试验，输入发生器仍默认 300 V/module、325 V peak，不能直接启动。低压注入需先设 `dc_a_v=19`、`grid_peak_v=141.42136`、`current_peak_a=0`，预充时手动升至 23～25 V，运行后逐步升至 35 V；具体按 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 5 节。复现本文原高压三相流程须显式 LOW=0、PHASE=0，并按实际硬件核对三相模块位图。
+
 2026-10-14握手完善后的工作区保留用户手动设置`SST_BENCH_INPUT_SIM=1`，最新默认AnyEyes测试固件位于`build/Debug/anyeyes_identity/SST_AnyEyes.out`，电子标签见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。下述默认关闭说明及`bench_inputs`产物对应此前固定标签`bench-input-simulation-2026-10-14`；当前测试输入字段和启动操作仍相同。恢复真实采样应明确设置测试宏为0并重新构建。
 
 核对日期：2026-10-14。适用工程：`D:/Code/SST/AnyEyesVersion`。本次已经实现独立的测试输入模块，不需要照旧建议向控制核心或ISR粘贴代码。本次实现前的用户工作区保存在提交`6675a72`及标签`bench-input-baseline-2026-10-14`；构建和软件回归的最终结果以当次交付验证记录为准，本文的操作预期不代表已经完成板级测试。

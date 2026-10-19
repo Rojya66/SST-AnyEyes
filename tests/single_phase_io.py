@@ -124,7 +124,7 @@ static XXG_PM_CTL Module_PM_CTL;
 '''
 
 
-def c_source(project: Path, phase_a_only: bool) -> str:
+def c_source(project: Path, phase_a_only: bool, low_voltage: bool) -> str:
     adc = (project / "Source/04_App/02_Measurement/ADC_Sample.C").read_text(encoding="utf-8-sig")
     fpga = (project / "Source/02_Peripheral/00_FPGA/FpgaIo.c").read_text(encoding="utf-8-sig")
     hvac = (project / "Source/04_App/04_Control/HVAC_Strategy.C").read_text(encoding="utf-8-sig")
@@ -134,7 +134,9 @@ def c_source(project: Path, phase_a_only: bool) -> str:
         raise ValueError("missing real XXG_PM_CTL register layout")
     selected = "1" if phase_a_only else "0"
     parts = [PREFIX.replace("__PM_CTL_TYPE__", pm_type.group(0)),
-             f"#define HVAC_online 1\n#define SST_BENCH_INPUT_SIM 0\n#define SST_PHASE_A_ONLY_TEST {selected}\n"]
+             f"#define HVAC_online 1\n#define SST_BENCH_INPUT_SIM 0\n#define SST_PHASE_A_ONLY_TEST {selected}\n"
+             f"#define SST_LOW_VOLTAGE_100V_TEST {int(low_voltage)}\n"
+             '#include "ChbBuildConfig.h"\n']
     parts.append(extract_function(adc, "HVAC_RealTimeParameter"))
     parts.append(extract_function(adc, "Port_AD_Sample"))
     measurement = (project / "Source/04_App/02_Measurement/MeasurementService.c").read_text(encoding="utf-8-sig")
@@ -142,6 +144,45 @@ def c_source(project: Path, phase_a_only: bool) -> str:
     parts.append(extract_function(fpga, "Module_Control_Write"))
     parts.append(extract_function(hvac, "SVG_Udc_Average"))
     parts.append(r'''
+static void check_current_direction_sample(short raw_current,
+                                          unsigned short previous_direction,
+                                          unsigned short expected_direction) {
+    /* Exercise the real A1 Avg_IG -> current /10 -> direction path.
+     * Both capture choices must use the same direction hysteresis. */
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].Avg_IG = raw_current;
+    for (unsigned char latch = 0U; latch < 2U; ++latch) {
+        HA_IG_Log_A = previous_direction;
+        Port_AD_Sample(latch);
+        assert(fabsf(HA_Port_Current_A - (float)raw_current / 10.0F) < 1e-6F);
+        assert(HA_IG_Log_A == expected_direction);
+    }
+}
+static void check_current_direction(void) {
+    memset(FPGA_Interface, 0, sizeof(FPGA_Interface));
+    memset(Port_AD_Buf, 0, sizeof(Port_AD_Buf));
+    HA_PM_A1 = 1U;
+    HA_PM_A2 = HA_PM_B1 = HA_PM_B2 = HA_PM_C1 = HA_PM_C2 = 0U;
+#if SST_LOW_VOLTAGE_100V_TEST
+    /* Actual 0.1 A FPGA quantization: strict comparisons preserve both
+     * previous directions at -1/0/+1 counts; +/-2 counts must reverse. */
+    assert(fabsf(SST_LV100_CURRENT_DIRECTION_HYST_A - 0.1F) < 1e-6F);
+    check_current_direction_sample(2, 0U, 1U);
+    check_current_direction_sample(-2, 1U, 0U);
+    for (short raw = -1; raw <= 1; ++raw) {
+        check_current_direction_sample(raw, 0U, 0U);
+        check_current_direction_sample(raw, 1U, 1U);
+    }
+#else
+    /* High-voltage single/three-phase builds retain the historical
+     * strict +/-1 A boundary: +/-10 counts hold, +/-11 counts reverse. */
+    check_current_direction_sample(11, 0U, 1U);
+    check_current_direction_sample(-11, 1U, 0U);
+    for (short raw = -10; raw <= 10; ++raw) {
+        check_current_direction_sample(raw, 0U, 0U);
+        check_current_direction_sample(raw, 1U, 1U);
+    }
+#endif
+}
 static void check_sample(void) {
     const short raw_a[] = {10000, 10000, -20000, 3000, -1000, 15000};
     const short raw_b[] = {-3000, 23000, -10000, 7000, 1000, -20000};
@@ -317,6 +358,7 @@ static void check_control_and_udc(void) {
 #endif
 }
 int main(void) {
+    check_current_direction();
     check_sample();
     check_telemetry(0.5235987756F);
     check_telemetry(-0.5235987756F);
@@ -328,22 +370,23 @@ int main(void) {
     return "\n".join(parts)
 
 
-def run(project: Path, compiler: str, phase_a_only: bool) -> None:
+def run(project: Path, compiler: str, phase_a_only: bool, low_voltage: bool) -> None:
     with tempfile.TemporaryDirectory(prefix="sst_single_phase_io_") as folder:
         root = Path(folder)
         source = root / "single_phase_io.c"
         binary = root / "single_phase_io.exe"
-        source.write_text(c_source(project, phase_a_only), encoding="utf-8")
+        source.write_text(c_source(project, phase_a_only, low_voltage), encoding="utf-8")
         command = [compiler, "-std=c99", "-O0", "-Wall", "-Wextra", "-Werror",
                    "-Wno-unused-variable", "-Wno-unused-function",
+                   "-I", str(project / "Source/04_App/00_Config"),
                    str(source), "-lm", "-o", str(binary)]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode:
-            raise SystemExit(f"single-phase macro={int(phase_a_only)} compile failed:\n{result.stdout}{result.stderr}")
+            raise SystemExit(f"phase={int(phase_a_only)} low={int(low_voltage)} compile failed:\n{result.stdout}{result.stderr}")
         result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
         if result.returncode:
-            raise SystemExit(f"single-phase macro={int(phase_a_only)} test failed:\n{result.stdout}{result.stderr}")
-        print(f"macro={int(phase_a_only)}: {result.stdout.strip()}")
+            raise SystemExit(f"phase={int(phase_a_only)} low={int(low_voltage)} test failed:\n{result.stdout}{result.stderr}")
+        print(f"phase={int(phase_a_only)} low={int(low_voltage)}: {result.stdout.strip()}")
 
 
 def main() -> None:
@@ -353,8 +396,9 @@ def main() -> None:
     args = parser.parse_args()
     if not args.cc:
         raise SystemExit("GCC not found; pass --cc")
-    run(args.project, args.cc, True)
-    run(args.project, args.cc, False)
+    run(args.project, args.cc, True, True)
+    run(args.project, args.cc, True, False)
+    run(args.project, args.cc, False, False)
     print("PASS: AN conversion, A current, single-phase telemetry, B/C PWM isolation, and A-only Udc")
 
 

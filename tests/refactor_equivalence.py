@@ -67,20 +67,33 @@ void third(void) { /* } */ }
     text = decode(control.read_bytes())
     entities = [item for item in inventory(text, control.as_posix()) if item.kind == "function"]
     by_name = {item.name: item for item in entities}
-    # The only removed local control function is the former integral-only PI
-    # executor.  Pin the complete predecessor inventory instead of adjusting a
-    # count blindly, so an unrelated missing/swallowed function still fails.
+    # Enumerate the reviewed PI replacement and common-safety helper promotion.
+    # Pin the complete predecessor set, so an unrelated missing/swallowed
+    # function fails even when the overall function count happens to match.
     predecessor = git("show", "238879f:Source/04_App/04_Control/ChbDabControl.c", root=root)
     expected_names = {item.name for item in inventory(decode(predecessor), control.as_posix())
                       if item.kind == "function"} - {"Chb_SourceEquivalentPiStep"}
+    safety_renames = {
+        "Chb_SinglePhaseGateBlocked": "Chb_GateBlocked",
+        "Chb_SinglePhaseEnablePwm": "Chb_EnablePwm",
+        "Chb_SinglePhaseDisablePwm": "Chb_DisablePwm",
+    }
+    assert safety_renames.keys() <= expected_names, "Reviewed predecessor helper missing"
+    expected_names = (expected_names - safety_renames.keys()) | set(safety_renames.values()) | {"Chb_DcBusReady"}
     assert len(entities) == len(by_name) and set(by_name) == expected_names, (
-        "Control function inventory differs from the reviewed PI-only replacement: "
+        "Control function inventory differs from the reviewed PI/common-safety mapping: "
         + str(sorted(set(by_name) ^ expected_names)))
     tail = ("Chb_UpdatePll", "Chb_RunOpenLoop", "Chb_GetClosedLoopIdReference",
             "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep")
     assert all(name in by_name for name in tail), "A function following the service boundary was swallowed"
 
-    data = text.encode("utf-8")
+    # The former coordinator triggered tree-sitter's shared-branch error.
+    # Keep that immutable recovery fixture after the current source becomes
+    # syntactically simpler; current completeness is pinned by the set above.
+    predecessor_text = decode(predecessor)
+    predecessor_by_name = {item.name: item for item in inventory(predecessor_text, control.as_posix())
+                           if item.kind == "function"}
+    data = predecessor_text.encode("utf-8")
     parser = Parser(Language(tree_sitter_c.language()))
     syntax = parser.parse(data).root_node
     stack = [syntax]
@@ -99,7 +112,7 @@ void third(void) { /* } */ }
     recovered_by_name = {name: node_text[start:end] for start, end, name in recovered}
     for name in ("ChbDabControl_Service",) + tail:
         assert name in recovered_by_name
-        assert tokens(by_name[name].text) == tokens(recovered_by_name[name]), (
+        assert tokens(predecessor_by_name[name].text) == tokens(recovered_by_name[name]), (
             "Recovered function lost or rewrote source branch tokens: " + name)
     assert len(recovered_by_name) == len(recovered), "Recovered function spans overlap or duplicate"
     print("Source inventory preflight: PASS; conditional branches retained; all 6 tail functions recovered; invalid gaps rejected")
@@ -156,12 +169,24 @@ def main() -> None:
     contracts = {item["key"]: item for item in contract_doc["changes"]}
     if len(contracts) != len(contract_doc["changes"]):
         raise SystemExit("Duplicate refactor contract key")
+    added_reviews = contract_doc.get("added_reviews", [])
+    expected_added = {"function:" + name for name in (
+        "Chb_GateBlocked", "Chb_EnablePwm", "Chb_DisablePwm", "Chb_DcBusReady")}
+    if len(added_reviews) != len(expected_added) or {item["key"] for item in added_reviews} != expected_added:
+        raise SystemExit("Added common-safety helper contracts differ from the exact reviewed set")
     consumed = set()
     expanded_initialization = None
     if (root / "tools/control_init_equivalence.py").exists():
         from control_init_equivalence import verify
         expanded_initialization = verify()
     rows, failures = [], []
+    for review in added_reviews:
+        key = review["key"]
+        if (key in old_groups or review.get("current_sha256s") !=
+                sorted(entity.sha256 for entity in new_groups.get(key, [])) or
+                not review.get("reason") or
+                "common_control_safety.py" not in review.get("validation", "")):
+            failures.append(key + ": added common-safety helper contract differs")
     for key, originals in sorted(old_groups.items()):
         replacements = new_groups.get(key, [])
         declaration = key.startswith(("prototype:", "extern:"))

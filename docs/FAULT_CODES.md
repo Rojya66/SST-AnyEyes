@@ -23,10 +23,10 @@
 | 编码 | 级别 | 真实输入/保护来源 | 可辨识程度 |
 |---:|---|---|---|
 | 20103 | 二级 | `CHB_FAULT_PRECHARGE_TIMEOUT` | 闭环预充超时 |
-| 29102 | 二级 | `CHB_FAULT_PLL_TIMEOUT` | 闭环 PLL 等待超时；单相还包括运行中连续200TAD（20 ms）失锁/失压 |
+| 29102 | 二级 | `CHB_FAULT_PLL_TIMEOUT` | 闭环 PLL 等待超时；单相、三相均包括运行中连续200TAD（20 ms）失锁/失压 |
 | 29103 | 二级 | `CHB_FAULT_AC_OVERCURRENT` 或 `HVAC_OC_Fault` | 快速 AC 过流/旧 HVAC 软件过流；旧一级、二级过流共用一标志，不能事后区分 |
 | 29104 | 二级 | `CHB_FAULT_DC_OVERVOLTAGE` 或 `HVAC_OV_Fault` | 快速直流过压/旧 HVAC 软件过压；原始 `control_fault` 随历史保存以区分来源 |
-| 29105 | 二级 | `CHB_FAULT_BAD_CONFIGURATION` | 模块数量/参考量等配置检查失败；单相还包括启动/运行中切模式、非法数值/采样及运行母线低于预充门槛 |
+| 29105 | 二级 | `CHB_FAULT_BAD_CONFIGURATION` | 模块数量/参考量等配置检查失败；单相、三相均包括启动/运行中切模式、非法数值/采样及有效相母线低于预充门槛 |
 | 19101 | 一级 | `CHB_FAULT_HARDWARE` 或端口总故障，但无可辨识分类 | 未分类汇总；不能解释为某个具体器件损坏 |
 | 19102 | 一级 | `FaultTypeFLAG.Port_OverCurrent` 或端口 bit10 | 模拟插件/端口硬件过流；具体通道仍需原寄存器证据 |
 | 19103 | 一级 | `FaultTypeFLAG.Port_OverVolt` 或端口 bit12 | 端口硬件过压兼容报告；当前 HVAC 的 AD 保护分支主要归类为过流 |
@@ -42,6 +42,8 @@
 快速软件 OC/OV 原有 `g_chb_dab_protection_enable` 开关和开环绕过条件保持不变。原 `OC_OV_LV_faultcheck()` 的运行状态条件、计时和门槛保持不变。FPGA FAULT/FO/FB 独立硬件故障不受上述软件开关屏蔽。新报告层不重新比较电流/电压，也不把关闭的软件保护变相恢复。
 
 ### 两套软件保护的阈值与计时
+
+下表列出高压参数组（`SST_LOW_VOLTAGE_100V_TEST=0`）。当前默认 100 Vac 单相参数将原一级/二级过流改为 3/4 A、原过压改为 42 V，快速过流/过压改为 3 A/42 V；确认时间沿用原设置。42 V 检查相模块均压或其合成滤波值，均不是逐模块最大电压保护。低压参数及恢复三相的方法见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
 
 | 保护来源 | 默认阈值及比较对象 | 确认规则 | 设置位置 |
 |---|---|---|---|
@@ -59,7 +61,7 @@ CCS可修改上述运行变量；修改默认值需改相应宏或初始化表�
 
 `Udc_check()` 的逐模块低压/高压扫描仍保留原功能；其中欠压是预充状态信息，高压分支中的直接封波代码在源工程已注释。报告层不把这些信息变成新增欠压或过压停机。`dc_voltage_min_v` 在三相时是三相均压中的最小值，单相时等于A相均压，并非所有模块电压的最小值。
 
-单相闭环的快速OC/OV检查在PI计算及参考写入之前执行，确认故障的当拍不再更新调制。上述运行失锁、数值/模式/母线检查是单相控制运行约束，独立于快速OC/OV总使能，不会因关闭该软件保护开关而绕过；它们复用既有故障编号及上报地址，详见 [PHASE_A_CLOSED_LOOP_AUDIT.md](PHASE_A_CLOSED_LOOP_AUDIT.md)。
+单相、三相闭环的快速 OC/OV 检查均在 PI 计算及参考写入之前执行，确认故障的当拍不再更新调制。运行失锁、数值/模式/逐相母线检查是公共控制运行约束，独立于快速 OC/OV 总使能，不会因关闭该软件保护开关而绕过；它们复用既有故障编号及上报地址。早期单相审查保留在 [PHASE_A_CLOSED_LOOP_AUDIT.md](PHASE_A_CLOSED_LOOP_AUDIT.md)，公共路径修正见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
 
 ## 兼容状态码，不新增检测器
 

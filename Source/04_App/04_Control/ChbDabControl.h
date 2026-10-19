@@ -54,11 +54,11 @@ typedef enum
 {
     /* 控制核心无故障编号。 */ CHB_FAULT_NONE = 0,
     /* 控制核心预充超时故障编号。 */ CHB_FAULT_PRECHARGE_TIMEOUT = 1,
-    /* PLL 启动超时；单相也用于运行连续失锁/失压 20 ms。 */ CHB_FAULT_PLL_TIMEOUT = 2,
+    /* PLL 启动超时；单相、三相均用于闭环运行连续失锁/失压 20 ms。 */ CHB_FAULT_PLL_TIMEOUT = 2,
     /* 控制核心交流过流故障编号。 */ CHB_FAULT_AC_OVERCURRENT = 3,
     /* 控制核心直流过压故障编号。 */ CHB_FAULT_DC_OVERVOLTAGE = 4,
     /* 控制核心硬件故障编号。 */ CHB_FAULT_HARDWARE = 5,
-    /* 配置非法；单相还包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6
+    /* 配置非法；包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6
 } CHB_DAB_FAULT;
 
 /* Direct debugger/upper-computer commands. All commands are level signals. */
@@ -68,7 +68,7 @@ typedef struct
     /* run_enable：CHB 启动命令，0 停止、1 启动；开环直接解锁，闭环走预充流程。 */ /* 闭环：启动预充/运行；开环：直接解锁CHB PWM */
     unsigned short dab_enable;
     /* dab_enable：DAB 原边使能命令，0 停止、1 启动；开环可独立控制。 */ /* DAB原边使能；开环下可独立于run_enable */
-    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行；单相须停机后切换。 */
+    unsigned short ac_mode; /* ac_mode：工频桥模式，0 开环逆变、1 闭环运行；单相、三相均须停机后切换。 */
     unsigned short fault_reset;
     /* fault_reset：停机时置 1 请求复位控制故障，控制核心消费后清零。 */ /* Set to 1 while stopped; auto-clears */
     float open_loop_modulation;

@@ -1,6 +1,10 @@
 # SST 框架重构验证报告
 
-## 当前电子标签与握手完善（2026-10-14）
+## 当前 PI、100 Vac 参数及三相兼容修复（2026-10-19）
+
+当前默认是 100 Vac 单相低压参数、真实采样、VOFA、仿真器控制、DPRAM 关闭。公共 PI、三相 DC_Log 及安全路径修复、低压启动参数和最终验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 9 节；持久软件证据见 [low_voltage_100vac_validation.json](evidence/low_voltage_100vac_validation.json)。以下各节对应各自固定历史版本，不能用于证明当前固件已经通过同样检查。
+
+## 历史电子标签与握手完善（2026-10-14）
 
 本轮集中四标签`255/43/1/0`及六段版本`255.43.1.0.1.0`，保留FF/7F布局及参数、波形、状态地址，补齐FA/7A并统一重连/失联会话清理。当前用户配置为AnyEyes、`SST_BENCH_INPUT_SIM=1`、仿真器控制、DPRAM关闭、EEPROM上电加载关闭。修改前用户配置已保存于提交`fc3c917`；最终标签为`anyeyes-identity-2026-10-14`，本轮证据为[anyeyes_identity_validation.json](evidence/anyeyes_identity_validation.json)，握手及实板复验步骤见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。
 

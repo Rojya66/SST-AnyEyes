@@ -43,12 +43,27 @@ void ControlDefaults_InitLimits(void)
 #ifdef SVG_380V
     Ust_HVAC_Port = 200.0; //端口母线有电
     HA_L_Voltage_Precharge = 80.0; //预充直流母线平均电压
-    HA_H_Voltage = 780.0
+    HA_H_Voltage = 780.0;
 
-        OverVolt_AlarmLevel2 = 900.0;
+    OverVolt_AlarmLevel2 = 900.0;
     VoltLevel_1 = 114.0; //0.3Urated
     VoltLevel_2 = 342.0; //0.9Urated
 
+    StandardValue = 1.0;
+#endif
+
+#if SST_LOW_VOLTAGE_100V_TEST
+    /*
+     * 100 Vac 单相台架覆盖现场高压默认值：
+     * PORT_V_A 是 AN 输入有效值，6 个 A 相模块每个以 35 V 为目标，
+     * 预充和快速过压均检查相模块均压，非逐模块最大电压。
+     */
+    Ust_HVAC_Port = SST_LV100_INPUT_PRESENT_V;
+    HA_L_Voltage_Precharge = SST_LV100_PRECHARGE_V;
+    HA_H_Voltage = SST_LV100_MODULE_OV_V;
+    OverVolt_AlarmLevel2 = SST_LV100_MODULE_OV_V;
+    VoltLevel_1 = SST_LV100_INPUT_LEVEL1_V;
+    VoltLevel_2 = SST_LV100_INPUT_LEVEL2_V;
     StandardValue = 1.0;
 #endif
     Udc_Check_Index = 0;
@@ -66,6 +81,14 @@ void ControlDefaults_InitLimits(void)
     HA_Module_RefUdc = 680.0;
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET = 680;
     UstOK_HVAC_Port = HA_Module_RefUdc;
+
+#if SST_LOW_VOLTAGE_100V_TEST
+    Ust_add = SST_LV100_UST_ADD_V;
+    HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
+        (ushort)SST_LV100_PORT_V_DEFAULT;
+    UstOK_HVAC_Port = HA_Module_RefUdc;
+#endif
 
     if (NHA_module_A == 0)
     {
@@ -88,6 +111,11 @@ void ControlDefaults_InitLimits(void)
 
     Idst_Max = 95.0;
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] = 95;
+#if SST_LOW_VOLTAGE_100V_TEST
+    Idst_Max = SST_LV100_CURRENT_MAX_A;
+    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
+        (ushort)SST_LV100_CURRENT_MAX_A;
+#endif
     Idst_Min = (-1.0) * Idst_Max;
     Iqst_Max = Idst_Max;
     Iqst_Min = Idst_Min;

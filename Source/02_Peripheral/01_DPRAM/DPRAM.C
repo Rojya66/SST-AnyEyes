@@ -12,6 +12,7 @@
 #include "SstBoardConfig.h"
 #include "SstControlConfig.h"
 #include "SstTypes.h"
+#include "ChbBuildConfig.h"
 //###########################################################################
 //
 // FILE:   DPRAM.c
@@ -1133,6 +1134,20 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     HWREGH(0x6000062c) = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.STATCOM_Q_SET / 200;
 
     /**************************电压参考**********************/
+#if SST_LOW_VOLTAGE_100V_TEST
+    if ((PORT_Regulate_DATA.PORT_V_SET > SST_LV100_PORT_V_MAX) ||
+        (PORT_Regulate_DATA.PORT_V_SET < SST_LV100_PORT_V_MIN))
+    {
+        PORT_Regulate_DATA.PORT_V_SET = SST_LV100_PORT_V_DEFAULT;
+        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
+            (ushort)SST_LV100_PORT_V_DEFAULT;
+        HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
+    }
+    else
+    {
+        HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
+    }
+#else
     if (PORT_Regulate_DATA.PORT_V_SET > 750.0)
     {
         PORT_Regulate_DATA.PORT_V_SET = 700.0;
@@ -1149,6 +1164,7 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     {
         HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
     }
+#endif
 
     HWREGH(0x6000062A) = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET;
 
@@ -1181,6 +1197,26 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
 
     /**************************电流范围**********************/
 
+#if SST_LOW_VOLTAGE_100V_TEST
+    if (PORT_Regulate_DATA.Reserved_1[3] > SST_LV100_CURRENT_MAX_A)
+    {
+        PORT_Regulate_DATA.Reserved_1[3] = SST_LV100_CURRENT_MAX_A;
+        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
+            (ushort)SST_LV100_CURRENT_MAX_A;
+        Idst_Max = SST_LV100_CURRENT_MAX_A;
+    }
+    else if (PORT_Regulate_DATA.Reserved_1[3] < SST_LV100_CURRENT_MIN_A)
+    {
+        PORT_Regulate_DATA.Reserved_1[3] = SST_LV100_CURRENT_MIN_A;
+        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
+            (ushort)SST_LV100_CURRENT_MIN_A;
+        Idst_Max = SST_LV100_CURRENT_MIN_A;
+    }
+    else
+    {
+        Idst_Max = PORT_Regulate_DATA.Reserved_1[3];
+    }
+#else
     if (PORT_Regulate_DATA.Reserved_1[3] > 95.0)
     {
         PORT_Regulate_DATA.Reserved_1[3] = 95.0;
@@ -1197,6 +1233,7 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     {
         Idst_Max = PORT_Regulate_DATA.Reserved_1[3];
     }
+#endif
 
     Idst_Min = (-1.0) * Idst_Max;
     Iqst_Max = Idst_Max;
@@ -1572,6 +1609,20 @@ void RemoteRegulate_Dispose_2(uchar Inital_Y)
 
     /**************************电压参考**********************/
 
+#if SST_LOW_VOLTAGE_100V_TEST
+    if ((PORT_Regulate_DATA.PORT_V_SET > SST_LV100_PORT_V_MAX) ||
+        (PORT_Regulate_DATA.PORT_V_SET < SST_LV100_PORT_V_MIN))
+    {
+        PORT_Regulate_DATA.PORT_V_SET = SST_LV100_PORT_V_DEFAULT;
+        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
+            (ushort)SST_LV100_PORT_V_DEFAULT;
+        HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
+    }
+    else
+    {
+        HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
+    }
+#else
     if (PORT_Regulate_DATA.PORT_V_SET > 750.0)
     {
         PORT_Regulate_DATA.PORT_V_SET = 700.0;
@@ -1588,6 +1639,7 @@ void RemoteRegulate_Dispose_2(uchar Inital_Y)
     {
         HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
     }
+#endif
 
     UstOK_HVAC_Port = HA_Module_RefUdc;
     Udc_Ref = HA_Module_RefUdc;

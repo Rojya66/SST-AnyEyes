@@ -71,6 +71,7 @@ def run(project: Path, compiler: str) -> str:
             "-DSST_ENABLE_DPRAM=0",
             "-DSST_BENCH_INPUT_SIM=0",
             "-DSST_PHASE_A_ONLY_TEST=1",
+            "-DSST_LOW_VOLTAGE_100V_TEST=0",
             str(unit),
             "-lm",
             "-o",

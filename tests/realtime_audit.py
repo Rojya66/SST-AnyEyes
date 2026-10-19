@@ -1,16 +1,15 @@
 """Static migration invariants, not a schedulability or hardware timing proof."""
 from __future__ import annotations
 import argparse
-import hashlib
+import json
 from pathlib import Path
 import re
-import subprocess
 import sys
 import tempfile
 from git_baseline import materialize
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from source_equivalence import file_inventory, inventory, missing_entities
+from source_equivalence import inventory, missing_entities
 
 
 def read(path: Path) -> str:
@@ -82,11 +81,11 @@ def definitions(text: str) -> dict[str, str]:
 
 
 def select_dpram_branches(text: str, enabled: bool, phase_a: bool = False) -> str:
-    """Select DPRAM gates and the original three-phase compatibility branch.
+    """Select DPRAM gates and the requested phase algorithm.
 
     A-only behavior is checked independently by single_phase_control.py and
-    single_phase_io.py.  This preservation audit checks that macro=0 keeps
-    the original hardware/control token stream; unrelated branches remain.
+    single_phase_io.py. Common safety changes in macro=0 are separately pinned
+    by reviewed before/after hashes; unrelated conditional branches remain.
     """
     result = []
     stack: list[tuple[bool, bool | None]] = []
@@ -114,6 +113,10 @@ def select_dpram_branches(text: str, enabled: bool, phase_a: bool = False) -> st
                     known = phase_a
                 elif expression == "!SST_PHASE_A_ONLY_TEST":
                     known = not phase_a
+                elif expression == "SST_LOW_VOLTAGE_100V_TEST":
+                    known = False
+                elif expression == "!SST_LOW_VOLTAGE_100V_TEST":
+                    known = True
                 elif expression == "SST_ENABLE_DPRAM":
                     known = enabled
                 elif expression == "!SST_ENABLE_DPRAM":
@@ -154,28 +157,6 @@ def normalize_udc_local_declarations(text: str) -> str:
     return text.replace(old, new, 1)
 
 
-def normalize_control_mode_alias(text: str) -> str:
-    """Expand only the reviewed macro=0 mode alias in two coordinators.
-
-    The exact declaration and its sole assignment are required.  Every other
-    statement still has to match the original token stream, and macro=0 host
-    traces independently prove the resulting branch behavior.
-    """
-    for name in ("Chb_EnterState", "ChbDabControl_Service"):
-        if not re.search(r'\b' + name + r'\s*\([^;{}]*\)\s*\{', text):
-            continue
-        old = function(text, name)
-        if not re.search(r'\bunsigned\s+short\s+mode\s*;', old):
-            continue
-        new, declarations = re.subn(r'\bunsigned\s+short\s+mode\s*;', '', old)
-        new, assignments = re.subn(r'\bmode\s*=\s*g_chb_dab_command\s*\.\s*ac_mode\s*;', '', new)
-        if declarations != 1 or assignments != 1 or re.search(r'\bmode\s*(?:[+*/-]?=(?!=)|\+\+|--)', new):
-            raise AssertionError(f"Unexpected {name} control mode alias")
-        new = re.sub(r'\bmode\b', 'g_chb_dab_command.ac_mode', new)
-        text = text.replace(old, new, 1)
-    return text
-
-
 def closure(name: str, functions: dict[str, str]) -> set[str]:
     seen: set[str] = set()
     pending = [name]
@@ -206,20 +187,19 @@ def ordered_calls(name: str, functions: dict[str, str], ancestors=()) -> list[st
 
 # The shared PI module is intentionally replacing the old source-equivalent
 # integral step.  Keep this list narrow: realtime/hardware entities outside
-# these control calculations must still retain their exact lexical inventory.
+# these reviewed calculations/transactions retain their exact lexical inventory.
 INTENTIONAL_CONTROL_FUNCTIONS = {
     "Chb_SourceEquivalentPiStep", "Chb_VoltagePiLimited", "Chb_CurrentPiLimited",
     "Chb_ResetControllers", "Chb_ResetStartupSequence",
     "Chb_AlignVoltagePiToIdReference", "Chb_UpdateVoltageReference",
     "Chb_GetClosedLoopIdReference", "Chb_RunClosedLoop",
     "Chb_ConfigurationValid", "ChbDabControl_Init",
-    # The mode alias is intentionally expanded in both coordinators so the
-    # active command is read at the transaction point (and remains race-safe
-    # with the background service).  The two bodies are checked by the
-    # preprocessed single-phase isolation test.
-    "Chb_EnterState", "ChbDabControl_Service",
+    "Chb_EnterState", "ChbDabControl_Service", "ChbDabControl_ForceFault",
+    "Chb_WrapAngle", "Chb_SetAcInput", "Chb_SetPrechargeBypass",
+    "Chb_DisableAllPwm", "Chb_SetLegacyStatus", "Chb_ServiceOpenLoop",
+    "Chb_UpdatePll", "ChbDabControl_FastStep", "Chb_WriteNormalizedReferences",
 }
-INTENTIONAL_CONTROL_OBJECTS = {"g_chb_dab_params"}
+INTENTIONAL_CONTROL_OBJECTS = {"g_chb_dab_command", "g_chb_dab_params"}
 INTENTIONAL_CONTROL_TYPES = {"CHB_PI_STATE"}
 INTENTIONAL_CONTROL_OBJECTS.update({"s_voltage_pi", "s_id_pi", "s_iq_pi"})
 
@@ -247,8 +227,8 @@ def main() -> None:
     # Fixed HVAC project: evaluate the same legacy port choice before comparing
     # declaration locations. Unrelated compile-time alternatives remain in text.
     all_entities = [entity for path, contents in source_texts.items()
-                    for entity in inventory(normalize_control_mode_alias(normalize_udc_local_declarations(
-                                                select_dpram_branches(contents, True))),
+                    for entity in inventory(normalize_udc_local_declarations(
+                                                select_dpram_branches(contents, True)),
                                             path.relative_to(args.project).as_posix())]
     archived_interfaces = [entity for directory in (args.project / "archive", args.project / "Legacy")
                            if directory.exists() for path in directory.rglob("*")
@@ -291,7 +271,7 @@ def main() -> None:
         # satisfied by archives. Functions, types, values and MMIO declarations
         # retain current-source requirements and independent call-graph checks.
         missing = missing_entities(original, all_entities + archived_interfaces)
-        check(not missing, f"every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): {name} "
+        check(not missing, f"every original executable entity preserved (module masks and Udc declarations checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
 
     # Control PI/startup changes are checked by the host PI and closed-loop
@@ -309,23 +289,44 @@ def main() -> None:
                         (entity.kind == "type" and entity.name in INTENTIONAL_CONTROL_TYPES))]
     missing_control = missing_entities(retained, current_control)
     check(not missing_control,
-          "ChbDabControl preserves all non-PI executable entities exactly: "
+          "ChbDabControl preserves all entities outside reviewed PI/common-safety changes exactly: "
           f"missing={[entity.key for entity in missing_control]}")
     current_names = {(entity.kind, entity.name) for entity in current_control}
     missing_reviewed = [name for name in INTENTIONAL_CONTROL_FUNCTIONS
                         if ("function", name) not in current_names and name != "Chb_SourceEquivalentPiStep"]
     check(not missing_reviewed,
-          "reviewed PI/startup control functions remain present: " + str(sorted(missing_reviewed)))
-    # A coordinator may differ from the pre-framework original only through
-    # the already-reviewed single-phase transactions.  This PI change must not
-    # silently waive a fresh change to either hardware coordinator.
-    pre_pi_control = subprocess.run(
-        ["git", "show", "238879f:Source/04_App/04_Control/ChbDabControl.c"],
-        cwd=args.project, check=True, capture_output=True).stdout.decode("utf-8-sig")
+          "reviewed PI/startup/common-safety control functions remain present: " + str(sorted(missing_reviewed)))
+    # Common safety deliberately changes both coordinators. Pin the entire
+    # reviewed original/current entities; macro=0 token equality is not claimed.
     current_control_text = read(args.project / "Source/04_App/04_Control/ChbDabControl.c")
-    for name in ("Chb_EnterState", "ChbDabControl_Service"):
-        check(tokens(function(pre_pi_control, name)) == tokens(function(current_control_text, name)),
-              "PI refactor preserves pre-PI hardware coordinator in all branches: " + name)
+    current_enter_state = function(current_control_text, "Chb_EnterState")
+    check(current_enter_state.count("s_running_entry_pending = (state == CHB_STATE_RUNNING) ? 1U : 0U;") == 1 and
+          current_enter_state.count("s_running_entry_pending = 0U;") == 1 and
+          "Chb_WriteNeutralReferences();" in current_enter_state,
+          "RUNNING entry publishes a neutral first-TAD reference barrier")
+    contract_doc = json.loads((args.project / "tests/refactor_contracts.json").read_text(encoding="utf-8"))
+    contracts = {item["key"]: item for item in contract_doc["changes"]}
+    original_raw = inventory(read(args.baseline / "ChbDabControl.c"), "ChbDabControl.c")
+    current_raw = inventory(current_control_text, "ChbDabControl.c")
+    for name in sorted(INTENTIONAL_CONTROL_FUNCTIONS - {"Chb_SourceEquivalentPiStep", "Chb_VoltagePiLimited", "Chb_CurrentPiLimited"}):
+        key = "function:" + name
+        before = sorted(entity.sha256 for entity in original_raw if entity.key == key)
+        after = sorted(entity.sha256 for entity in current_raw if entity.key == key)
+        contract = contracts.get(key, {})
+        check(bool(before and after) and contract.get("baseline_sha256s") == before and
+              contract.get("current_sha256s") == after and bool(contract.get("reason")) and
+              "common_control_safety.py" in contract.get("validation", ""),
+              "reviewed PI/common-safety before/after contract matches all branches: " + name)
+    added_reviews = {item["key"]: item for item in contract_doc.get("added_reviews", [])}
+    helper_keys = {"function:" + name for name in (
+        "Chb_GateBlocked", "Chb_EnablePwm", "Chb_DisablePwm", "Chb_DcBusReady")}
+    check(set(added_reviews) == helper_keys, "exact four added common-safety helper contracts present")
+    for key in sorted(helper_keys):
+        contract = added_reviews.get(key, {})
+        after = sorted(entity.sha256 for entity in current_raw if entity.key == key)
+        check(bool(after) and contract.get("current_sha256s") == after and
+              bool(contract.get("reason")) and "common_control_safety.py" in contract.get("validation", ""),
+              "added common-safety helper all-branch contract matches: " + key)
     state_entities = {entity.name: entity for entity in current_control
                       if entity.kind == "object" and entity.name in
                       ("s_voltage_pi", "s_id_pi", "s_iq_pi")}
@@ -475,53 +476,53 @@ def main() -> None:
     forbidden_masking = {"IntGlobalDisable", "_disable_interrupts", "IntGlobalRestore",
                          "_restore_interrupts", "IntDisable", "IntEnable", "IntEventMap",
                          "IntEventCombineAdd", "IntEventCombineRemove"}
-    three_phase_reached = set().union(*(closure(name, no_dpram_functions) for name in runtime_roots))
-    blocked = sorted(three_phase_reached & forbidden_masking)
-    blocked += sorted(name for name in three_phase_reached if re.match(r'^(?:Cache|CACHE)', name))
-    check(not blocked, f"macro=0 background has no global interrupt masking call path: {blocked}")
-
-    # Single-phase state/PWM publication must be atomic against the TAD/FAULT
+    # Both phase modes share state/PWM publication atomic against TAD/FAULT.
     # interrupt.  Permit only these exact reviewed functions and verify the
     # entire masked regions plus their helpers remain bounded register/state
     # operations.  Variable_RST is deliberately outside the enable region.
     critical_functions = {
-        "Chb_SetAcInput", "Chb_SetPrechargeBypass", "Chb_SinglePhaseEnablePwm",
-        "Chb_SinglePhaseDisablePwm", "Chb_SetLegacyStatus", "Chb_EnterState",
+        "Chb_SetAcInput", "Chb_SetPrechargeBypass", "Chb_EnablePwm",
+        "Chb_DisablePwm", "Chb_SetLegacyStatus", "Chb_EnterState",
         "ChbDabControl_ForceFault", "ChbDabControl_Service",
     }
     actual_critical = {name for name, body in all_functions.items()
                        if re.search(r'\bIntGlobalDisable\s*\(', body)}
     check(actual_critical == critical_functions,
-          f"macro=1 global masking is confined to exact reviewed control transactions: {sorted(actual_critical)}")
+          f"global masking is confined to exact reviewed control transactions: {sorted(actual_critical)}")
     allowed_critical_calls = {
-        "IntGlobalDisable", "IntGlobalRestore", "Chb_SinglePhaseGateBlocked",
+        "IntGlobalDisable", "IntGlobalRestore", "Chb_GateBlocked", "Chb_DcBusReady",
         "Chb_ClearAcInputPulse", "Port_IO_Out", "Module_PWMEN", "Module_50Hz_PWMEN",
         "Module_ENdab_PWMEN", "Module_Control_Write", "Port_DSPControl_AllShutdown",
     }
     critical_failures = []
     regions_checked = 0
-    for name in sorted(critical_functions):
-        body = single_phase_functions.get(name, "")
-        regions = re.split(r'\binterrupt_state\s*=\s*IntGlobalDisable\s*\(\s*\)\s*;', body)[1:]
-        if not regions:
-            critical_failures.append(name + ": no reviewed critical region")
-        for index, region in enumerate(regions):
-            restores = list(re.finditer(r'\bIntGlobalRestore\s*\(\s*interrupt_state\s*\)\s*;', region))
-            if not restores:
-                critical_failures.append(name + ": missing restore")
-                continue
-            region = region[:restores[-1].end()]
-            calls = set(re.findall(r'\b([A-Za-z_]\w*)\s*\(', region)) - {"if", "switch", "sizeof", "return"}
-            reached_calls = set().union(*(closure(called, single_phase_functions) for called in calls)) if calls else set()
-            reachable_text = region + "\n" + "\n".join(single_phase_functions.get(called, "") for called in reached_calls)
-            forbidden_calls = reached_calls - allowed_critical_calls - {"if", "switch", "sizeof", "return"}
-            if forbidden_calls or re.search(r'\b(?:for|while|do|goto)\b', reachable_text):
-                critical_failures.append(f"{name}[{index}]: unbounded/unreviewed calls {sorted(forbidden_calls)}")
-            if re.search(r'\b(?:Variable_RST|SstDebug_\w*|SstAnyEyes_\w*|SstSerial_\w*|UART\w*|EEPROM\w*|I2C\w*|Cache\w*)\b', reachable_text):
-                critical_failures.append(f"{name}[{index}]: reset/communication/storage/cache in masked region")
-            regions_checked += 1
+    for phase, functions in ((0, no_dpram_functions), (1, single_phase_functions)):
+        selected_critical = {name for name, body in functions.items()
+                             if re.search(r'\bIntGlobalDisable\s*\(', body)}
+        check(selected_critical == critical_functions,
+              f"macro={phase} uses exactly the reviewed critical functions: {sorted(selected_critical)}")
+        for name in sorted(critical_functions):
+            body = functions.get(name, "")
+            regions = re.split(r'\binterrupt_state\s*=\s*IntGlobalDisable\s*\(\s*\)\s*;', body)[1:]
+            if not regions:
+                critical_failures.append(f"macro={phase} {name}: no reviewed critical region")
+            for index, region in enumerate(regions):
+                restores = list(re.finditer(r'\bIntGlobalRestore\s*\(\s*interrupt_state\s*\)\s*;', region))
+                if not restores:
+                    critical_failures.append(f"macro={phase} {name}: missing restore")
+                    continue
+                region = region[:restores[-1].end()]
+                calls = set(re.findall(r'\b([A-Za-z_]\w*)\s*\(', region)) - {"if", "switch", "sizeof", "return"}
+                reached_calls = set().union(*(closure(called, functions) for called in calls)) if calls else set()
+                reachable_text = region + "\n" + "\n".join(functions.get(called, "") for called in reached_calls)
+                forbidden_calls = reached_calls - allowed_critical_calls - {"if", "switch", "sizeof", "return"}
+                if forbidden_calls or re.search(r'\b(?:for|while|do|goto)\b', reachable_text):
+                    critical_failures.append(f"macro={phase} {name}[{index}]: unbounded/unreviewed calls {sorted(forbidden_calls)}")
+                if re.search(r'\b(?:Variable_RST|SstDebug_\w*|SstAnyEyes_\w*|SstSerial_\w*|UART\w*|EEPROM\w*|I2C\w*|Cache\w*)\b', reachable_text):
+                    critical_failures.append(f"macro={phase} {name}[{index}]: reset/communication/storage/cache in masked region")
+                regions_checked += 1
     check(not critical_failures,
-          f"macro=1 {regions_checked} critical regions contain bounded register/state operations only: {critical_failures}")
+          f"macro=0/1 {regions_checked} critical regions contain bounded register/state operations only: {critical_failures}")
     other_masking = sorted((reached & forbidden_masking) - {"IntGlobalDisable", "IntGlobalRestore"})
     other_masking += sorted(name for name in reached if re.match(r'^(?:Cache|CACHE)', name))
     check(not other_masking, f"background has no additional masking/cache path: {other_masking}")

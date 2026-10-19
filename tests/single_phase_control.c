@@ -509,33 +509,18 @@ static void test_current_dq_sign_and_stop_tracking(void)
     printf("PASS current_dq_sign_and_stop_tracking\n");
 }
 
-/* The two 501 cards in a phase share the current-orientation bit but their
- * DC voltage sorting direction is complementary.  This test exercises all
- * four input combinations instead of checking only the normal zero case. */
+/* DC_Log is shared modulation data even when B/C PWM is disabled.  Run the
+ * common six-card FastStep assertions in both neutral and active paths; the
+ * helper covers all four phase inputs, per-TAD changes and reserved bits. */
 static void test_sorting_direction_writer(void)
 {
-    unsigned short dc_order;
-    unsigned short ig_orient;
-    unsigned short a1;
-    unsigned short a2;
-
     setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
-    for (ig_orient = 0U; ig_orient <= 1U; ++ig_orient)
-    {
-        for (dc_order = 0U; dc_order <= 1U; ++dc_order)
-        {
-            HA_IG_Log_A = ig_orient;
-            HA_DC_Log_A = dc_order;
-            ChbDabControl_FastStep();
-            a1 = FPGA_Interface[Com_A1_PluginUnit_5 - 2].DC_Log.DC_Log16;
-            a2 = FPGA_Interface[Com_A2_PluginUnit_6 - 2].DC_Log.DC_Log16;
-            assert(((a1 >> 8) & 1U) == ig_orient);
-            assert(((a2 >> 8) & 1U) == ig_orient);
-            assert((a1 & 1U) == dc_order);
-            assert((a2 & 1U) == (unsigned short)(dc_order ^ 1U));
-        }
-    }
-    printf("PASS sorting_direction_writer combinations=4\n");
+    assert_dc_log_faststep_updates();
+    g_chb_dab_command.run_enable = 1U;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+    assert_dc_log_faststep_updates();
+    printf("PASS sorting_direction_writer phases=3 cards=6 combinations=4 cycles=2 states=stopped/running reserved=preserved\n");
 }
 
 static void test_pll_rejects_antiphase(void)
@@ -918,7 +903,7 @@ static void test_atomic_pwm_enable_fault_race(void)
     fake_interrupt_enabled = 0U;
     /* Call the production enable helper directly to put the injected FAULT
      * at its final disable operation, after all slow-service transactions. */
-    assert(Chb_SinglePhaseEnablePwm(2U) == 0U);
+    assert(Chb_EnablePwm(2U) == 0U);
     assert(g_chb_dab_status.state == CHB_STATE_FAULT);
     assert(g_chb_dab_status.fault_code == CHB_FAULT_HARDWARE);
     assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);

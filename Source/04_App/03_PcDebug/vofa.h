@@ -38,7 +38,7 @@ extern "C"
  * 输入参数: 无
  * 输出参数: 无
  * 返回值  : 无
- * 调用说明: 当前四通道遥测由 SstDebug_ProtocolService 在后台按周期提交。
+ * 调用说明: 当前十二通道遥测由 SstDebug_ProtocolService 在后台按周期提交。
  *================================================================*/
     extern void VOFA_Process(void);
 

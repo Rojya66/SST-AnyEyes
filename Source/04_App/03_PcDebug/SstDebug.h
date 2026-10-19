@@ -113,11 +113,11 @@ extern "C"
 
     /*==================================================================
  * 函数名称: SstDebug_ProtocolService
- * 函数功能: 执行 AnyEyes 状态机或按周期提交 VOFA 四通道波形。
+ * 函数功能: 执行 AnyEyes 状态机或按周期提交 VOFA 十二通道运行波形。
  * 输入参数: now：本轮 UART 发送前采集的 10 ms 节拍。
  * 输出参数: 协议状态更新；应答帧或 VOFA 波形帧加入 SstSerial 发送队列。
  * 返回值  : 无
- * 调用说明: VOFA 四通道依次为 A 相电压(V)、直流平均电压(V)、端口状态码和 PLL 角度(rad)。
+ * 调用说明: VOFA 通道定义见 docs/VOFA_LOW_VOLTAGE.md；采样和编码均在后台完成。
  *================================================================*/
     void SstDebug_ProtocolService(uint32_t now);
 #ifdef __cplusplus

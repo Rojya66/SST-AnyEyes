@@ -49,7 +49,7 @@ static float DAC_BUF[8];
 static float HA_ReferenceDEF_A, HA_ReferenceDEF_B, HA_ReferenceDEF_C;
 static unsigned short HA_PM_A1, HA_PM_A2, HA_PM_B1, HA_PM_B2, HA_PM_C1, HA_PM_C2;
 static unsigned short NHA_module_A, NHA_module_B, NHA_module_C;
-static float HA_Port_Volt_A, HA_Port_Volt_B;
+static float HA_Port_Volt_A, HA_Port_Volt_B, HA_Port_Volt_C;
 static float HA_Port_Current_A, HA_Port_Current_B, HA_Port_Current_C;
 static float SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave;
 static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
@@ -66,6 +66,7 @@ static union { unsigned short PORT_FAULT16; struct {
     unsigned short PORT_FAULT_bit15; } Bbits; } Port_RealFault;
 
 static uint64_t trace_hash;
+static uint64_t snapshot_hash;
 static unsigned long trace_steps;
 static unsigned int fake_ac_pwm, fake_dab_pwm;
 static unsigned int disable_calls, enable_calls, io_calls, state_calls, reset_calls;
@@ -151,6 +152,83 @@ static void IntGlobalRestore(unsigned int previous) {
 static void FaultLatch_Clear(unsigned short a, unsigned short b) {
     ++reset_calls; hash_word(0x600U); hash_word(a); hash_word(b); }
 
+/* Exercise the production FastStep through this harness's real fake-I/O
+ * objects.  All three phases use different input combinations on each TAD,
+ * preventing a copy/paste error that incorrectly reads A's flags for B/C.
+ * The second cycle uses noncanonical nonzero values, matching the original
+ * writer's zero/nonzero contract.  Only bit 0 and bit 8 may change. */
+static void assert_dc_log_faststep_updates(void)
+{
+    static const unsigned short cards[3][2] = {
+        {Com_A1_PluginUnit_5 - 2, Com_A2_PluginUnit_6 - 2},
+        {Com_B1_PluginUnit_9 - 2, Com_B2_PluginUnit_10 - 2},
+        {Com_C1_PluginUnit_13 - 2, Com_C2_PluginUnit_14 - 2}
+    };
+    unsigned short initial[16];
+    unsigned short expected_ig[3];
+    unsigned short expected_dc[3];
+    unsigned short selected[16] = {0U};
+    unsigned int slot;
+    unsigned int sample;
+    unsigned int phase;
+    unsigned int card;
+    unsigned short combination;
+    unsigned short ig_nonzero;
+    unsigned short dc_nonzero;
+    unsigned short original_state = g_chb_dab_status.state;
+
+    for (slot = 0U; slot < 16U; ++slot)
+    {
+        initial[slot] = (unsigned short)(0xA55AU ^ (slot * 0x0111U));
+        FPGA_Interface[slot].DC_Log.DC_Log16 = initial[slot];
+    }
+    for (phase = 0U; phase < 3U; ++phase)
+    {
+        selected[cards[phase][0]] = 1U;
+        selected[cards[phase][1]] = 1U;
+    }
+    for (sample = 0U; sample < 8U; ++sample)
+    {
+        for (phase = 0U; phase < 3U; ++phase)
+        {
+            combination = (unsigned short)((sample + phase) % 4U);
+            expected_ig[phase] = (unsigned short)((combination >> 1) & 1U);
+            expected_dc[phase] = (unsigned short)(combination & 1U);
+        }
+        ig_nonzero = (sample < 4U) ? 1U : 0x0101U;
+        dc_nonzero = (sample < 4U) ? 1U : 2U;
+        HA_IG_Log_A = (expected_ig[0] != 0U) ? ig_nonzero : 0U;
+        HA_IG_Log_B = (expected_ig[1] != 0U) ? ig_nonzero : 0U;
+        HA_IG_Log_C = (expected_ig[2] != 0U) ? ig_nonzero : 0U;
+        HA_DC_Log_A = (expected_dc[0] != 0U) ? dc_nonzero : 0U;
+        HA_DC_Log_B = (expected_dc[1] != 0U) ? dc_nonzero : 0U;
+        HA_DC_Log_C = (expected_dc[2] != 0U) ? dc_nonzero : 0U;
+
+        ChbDabControl_FastStep();
+        assert(g_chb_dab_status.state == original_state);
+        assert(g_chb_dab_status.fault_code == CHB_FAULT_NONE);
+        for (phase = 0U; phase < 3U; ++phase)
+        {
+            for (card = 0U; card < 2U; ++card)
+            {
+                slot = cards[phase][card];
+                assert(FPGA_Interface[slot].DC_Log.Bbits.IG_Orient == expected_ig[phase]);
+                assert(FPGA_Interface[slot].DC_Log.Bbits.DC_Order ==
+                       (unsigned short)((expected_dc[phase] + card) % 2U));
+                assert((FPGA_Interface[slot].DC_Log.DC_Log16 & 0xFEFEU) ==
+                       (initial[slot] & 0xFEFEU));
+            }
+        }
+        for (slot = 0U; slot < 16U; ++slot)
+        {
+            if (selected[slot] == 0U)
+            {
+                assert(FPGA_Interface[slot].DC_Log.DC_Log16 == initial[slot]);
+            }
+        }
+    }
+}
+
 /* INSERT_CONTROL_IMPLEMENTATION */
 
 static CHB_DAB_PARAMETERS defaults;
@@ -161,7 +239,7 @@ static void hash_float(float value) {
     memcpy(&bits, &value, sizeof(bits));
     hash_word(bits);
 }
-static void snapshot(void) {
+static void hash_snapshot_fields(void) {
     unsigned int i;
 #define H(member) hash_word((uint32_t)g_chb_dab_status.member)
 #define F(member) hash_float(g_chb_dab_status.member)
@@ -174,6 +252,11 @@ static void snapshot(void) {
 #undef H
 #undef F
     for(i = 0; i < 16U; ++i) {
+        /* Compatibility projection: these are exactly the four FPGA fields
+         * present in the original trace. DC_Log was never in that trace and
+         * now has independent per-TAD, six-card assertions above; adding its
+         * repaired behavior to the old hash would compare against an omitted
+         * writer, rather than test the existing modulation/DAB contract. */
         hash_word(FPGA_Interface[i].Reference);
         hash_word(FPGA_Interface[i].DAB_LEFTDuty);
         hash_word(FPGA_Interface[i].DAB_RIGHTDuty);
@@ -181,17 +264,51 @@ static void snapshot(void) {
     }
     hash_float(DAC_BUF[0]); hash_word(fake_ac_pwm); hash_word(fake_dab_pwm);
     hash_word(g_chb_dab_command.run_enable); hash_word(g_chb_dab_command.dab_enable);
+}
+static void snapshot(void) {
+    uint64_t events_and_snapshots;
+
+#ifdef SST_HOST_EXPECT_DC_LOG_UPDATES
+    /* The repaired gate transaction changes the concrete helper calls while
+     * preserving the physical outputs. Check those outputs and inverse legacy
+     * running flags directly at every observation, outside the old hash. */
+    assert(fake_ac_pwm == g_chb_dab_status.ac_pwm_enabled);
+    assert(fake_dab_pwm == g_chb_dab_status.dab_pwm_enabled);
+    assert(PortRunFLAG.Bbits.PWMState_50Hz == (unsigned short)(fake_ac_pwm == 0U));
+    assert(PortRunFLAG.Bbits.PWMState_Dab == (unsigned short)(fake_dab_pwm == 0U));
+    if ((fake_ac_pwm != 0U) || (fake_dab_pwm != 0U))
+    {
+        assert(FaultDisposeFLAG.Bbits.PWMEN_FibreOptical != 0U);
+    }
+    else if ((g_chb_dab_status.state == CHB_STATE_STOPPED) ||
+             (g_chb_dab_status.state == CHB_STATE_FAULT))
+    {
+        assert(FaultDisposeFLAG.Bbits.PWMEN_FibreOptical == 0U);
+    }
+    assert(enable_outside_critical == 0U);
+    assert(interrupt_disable_calls == interrupt_restore_calls);
+#endif
+    hash_snapshot_fields();
+    events_and_snapshots = trace_hash;
+    trace_hash = snapshot_hash;
+    hash_snapshot_fields();
+    snapshot_hash = trace_hash;
+    trace_hash = events_and_snapshots;
     ++trace_steps;
 }
 static void finish(const char *scenario) {
-    printf("%s steps=%lu hash=%016llx state=%u fault=%u enables=%u disables=%u io=%u resets=%u\n",
-        scenario, trace_steps, (unsigned long long)trace_hash,
+    printf("%s steps=%lu hash=%016llx snapshot=%016llx state=%u fault=%u enables=%u disables=%u io=%u resets=%u\n",
+        scenario, trace_steps, (unsigned long long)trace_hash, (unsigned long long)snapshot_hash,
         g_chb_dab_status.state, g_chb_dab_status.fault_code,
         enable_calls, disable_calls, io_calls, reset_calls);
 }
 static void setup(unsigned short mode) {
     trace_hash = UINT64_C(14695981039346656037); trace_steps = 0;
+    snapshot_hash = UINT64_C(14695981039346656037);
     disable_calls = enable_calls = io_calls = state_calls = reset_calls = 0;
+    interrupt_disable_calls = interrupt_restore_calls = 0U;
+    enable_outside_critical = 0U;
+    fake_interrupt_enabled = 1U;
     fake_ac_pwm = fake_dab_pwm = 0;
     memset(FPGA_Interface, 0, sizeof(FPGA_Interface));
     memset(&Port_DOUT, 0, sizeof(Port_DOUT));
@@ -202,7 +319,7 @@ static void setup(unsigned short mode) {
     NHA_module_A = NHA_module_B = NHA_module_C = 1U;
     HA_ReferenceDEF_A = HA_ReferenceDEF_B = HA_ReferenceDEF_C = 1000.0F;
     SVG_Udc_A_Ave = SVG_Udc_B_Ave = SVG_Udc_C_Ave = 600.0F;
-    HA_Port_Volt_A = HA_Port_Volt_B = 0.0F;
+    HA_Port_Volt_A = HA_Port_Volt_B = HA_Port_Volt_C = 0.0F;
     HA_Port_Current_A = HA_Port_Current_B = HA_Port_Current_C = 0.0F;
     g_chb_dab_params = defaults; g_chb_dab_command = command_defaults;
     g_chb_dab_command.ac_mode = mode;
@@ -215,6 +332,7 @@ static void input(unsigned long n, float grid_peak, float current_peak) {
     float theta = CHB_TWO_PI * 50.0F * 0.0001F * (float)n;
     HA_Port_Volt_A = grid_peak * cosf(theta);
     HA_Port_Volt_B = grid_peak * cosf(theta - CHB_TWO_PI / 3.0F);
+    HA_Port_Volt_C = -HA_Port_Volt_A - HA_Port_Volt_B;
     HA_Port_Current_A = current_peak * cosf(theta - 0.20F);
     HA_Port_Current_B = current_peak * cosf(theta - CHB_TWO_PI / 3.0F - 0.20F);
     HA_Port_Current_C = -HA_Port_Current_A - HA_Port_Current_B;
@@ -319,5 +437,18 @@ int main(void) {
     for(n = 1; n <= 500UL; ++n) step(n, 0.0F, 0.0F);
     assert(g_chb_dab_status.fault_code == CHB_FAULT_PRECHARGE_TIMEOUT);
     assert(!fake_ac_pwm && !fake_dab_pwm); finish("precharge_timeout");
+
+#ifdef SST_HOST_EXPECT_DC_LOG_UPDATES
+    /* The original isolated control source omitted this writer.  Compile
+     * these repair assertions only for the migrated implementation; keep the
+     * historical compatibility traces unchanged and compare them separately. */
+    setup(CHB_AC_MODE_OPEN_LOOP);
+    assert_dc_log_faststep_updates();
+    g_chb_dab_command.run_enable = 1U;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+    assert_dc_log_faststep_updates();
+    printf("dc_log_faststep phases=3 cards=6 combinations=4 cycles=2 states=stopped/running reserved=preserved\n");
+#endif
     return 0;
 }

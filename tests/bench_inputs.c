@@ -5,11 +5,18 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "ChbBuildConfig.h"
 #include "ChbDabControl.h"
 #include "SstBenchInputs.h"
+
+/* Host failures must report a nonzero exit rather than open a Windows CRT
+ * assertion dialog, which would leave the regression executable hanging. */
+#undef assert
+#define assert(expression) ((expression) ? (void)0 : \
+    (fprintf(stderr, "ASSERT %s:%d: %s\n", __FILE__, __LINE__, #expression), exit(2)))
 
 /* Calibrated measurement boundaries written by the real bench generator. */
 static float HA_Port_Volt_A, HA_Port_Volt_B, HA_Port_Volt_C;
@@ -20,8 +27,18 @@ static float SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave, SVG_Udc_Ave;
 
 #if SST_BENCH_INPUT_SIM
 /* FPGA and port boundaries used by the unmodified real control functions. */
+typedef union {
+    unsigned short DC_Log16;
+    struct {
+        unsigned short DC_Order : 1;
+        unsigned short Reserved1 : 7;
+        unsigned short IG_Orient : 1;
+        unsigned short Reserved2 : 7;
+    } Bbits;
+} FAKE_DC_LOG;
 typedef struct {
     unsigned short Reference, DAB_LEFTDuty, DAB_RIGHTDuty, DAB_Start;
+    FAKE_DC_LOG DC_Log;
 } FAKE_FPGA;
 static FAKE_FPGA FPGA_Interface[16];
 #define Com_A1_PluginUnit_5 5
@@ -42,13 +59,15 @@ static float DAC_BUF[8];
 static float HA_ReferenceDEF_A, HA_ReferenceDEF_B, HA_ReferenceDEF_C;
 static unsigned short HA_PM_A1, HA_PM_A2, HA_PM_B1, HA_PM_B2, HA_PM_C1, HA_PM_C2;
 static unsigned short NHA_module_A, NHA_module_B, NHA_module_C;
+static unsigned short HA_IG_Log_A, HA_IG_Log_B, HA_IG_Log_C;
+static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
 static unsigned short Port_RunStatus, Port_State;
 static struct { struct { unsigned short Breaker_InnerOn, Breaker_InnerOff,
     Contactor_Inner; } Bbits; } Port_DOUT;
-static struct { struct { unsigned short PWMPulseState; } Bbits; } FaultDisposeFLAG;
-static struct { struct { unsigned short Port_Start, Port_Stop; } Bbits; } ControlFLAG;
+static struct { struct { unsigned short PWMPulseState, PWMEN_FibreOptical; } Bbits; } FaultDisposeFLAG;
+static struct { struct { unsigned short Port_Start, Port_Stop, DAB_StartMethod; } Bbits; } ControlFLAG;
 static struct { struct { unsigned short P_Status; } Bbits; } Port_MainStatus;
-static struct { struct { unsigned short PWMState_Dab; } Bbits; } PortRunFLAG;
+static struct { struct { unsigned short PWMState_Dab, PWMState_50Hz; } Bbits; } PortRunFLAG;
 static union { unsigned short PORT_FAULT16; struct {
     unsigned short reserved:15, PORT_FAULT_bit15:1; } Bbits; } Port_RealFault;
 
@@ -66,6 +85,20 @@ static void PWMPluse_Disable(unsigned short index) {
     if(FaultDisposeFLAG.Bbits.PWMPulseState & 2U) fake_dab_pwm = 0U;
 }
 static void Module_ENdab_PWMEN(unsigned short enable) { fake_dab_pwm = enable; }
+static void Module_50Hz_PWMEN(unsigned short enable) { fake_ac_pwm = enable; }
+static void Module_PWMEN(unsigned short enable) {
+    fake_ac_pwm = (enable & 1U) != 0U;
+    fake_dab_pwm = (enable & 2U) != 0U;
+}
+static void Port_DSPControl_AllShutdown(unsigned short enable) { (void)enable; }
+static void Variable_RST(void) { }
+static unsigned int fake_interrupt_enabled = 1U;
+static unsigned int IntGlobalDisable(void) {
+    unsigned int previous = fake_interrupt_enabled;
+    fake_interrupt_enabled = 0U;
+    return previous;
+}
+static void IntGlobalRestore(unsigned int previous) { fake_interrupt_enabled = previous; }
 static void FaultLatch_Clear(unsigned short a, unsigned short b) {
     (void)a; (void)b;
 }
@@ -464,9 +497,17 @@ static void test_pll_capture(void) {
     step();
     assert(g_chb_dab_status.pll_locked == 0U);
     near_value(g_chb_dab_status.pll_frequency_hz, 50.0F, 0.0F);
-    /* Runtime loss of lock is observation, not an implemented running-state trip. */
+    /* One low-amplitude sample clears the lock immediately; the running-state
+     * trip must wait for the configured 200 consecutive invalid TAD samples. */
     assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
-    puts("PASS PLL: captures independent 52 Hz with initial phase error; low amplitude unlocks");
+    for (n = 1U; n < 200U; ++n) {
+        step();
+        if (n < 199U) assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
+    }
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_PLL_TIMEOUT);
+    assert(!fake_ac_pwm && !fake_dab_pwm);
+    puts("PASS PLL: captures independent 52 Hz; low amplitude unlocks then trips at 200 TAD");
 }
 
 int main(void) {

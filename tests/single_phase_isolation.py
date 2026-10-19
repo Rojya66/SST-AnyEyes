@@ -1,7 +1,8 @@
-"""Use TI preprocessing/assembly to audit macro=0 isolation against bcd8d1c.
+"""Audit phase boundaries with TI preprocessing/assembly and exact contracts.
 
 All compared function tokens are exact except the three named, uninitialized
-float locals in SVG_Udc_Average and two exact mode aliases.  Additional stdint typedef/pragma tokens from
+float locals in SVG_Udc_Average. Reviewed common PI/safety changes have exact
+before/after contracts instead of claiming macro=0 equivalence. Additional stdint tokens from
 the new disabled header are outside executable function bodies.  ISR assembly
 is compared in both macro modes; this does not measure complete ISR WCET.
 """
@@ -20,7 +21,8 @@ import zipfile
 
 from bench_isolation import (compile_unit, digest, function, preprocess, read,
                              run, source_hash, tokens)
-from realtime_audit import normalize_control_mode_alias
+from realtime_audit import INTENTIONAL_CONTROL_FUNCTIONS
+from source_equivalence import inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "bcd8d1c554a3faa3e7010149b868be59f993ffc8"
@@ -38,23 +40,13 @@ CHANGED = {
     "Source/04_App/04_Control/HVAC_Strategy.C": ["SVG_Udc_Average"],
     "Source/02_Peripheral/00_FPGA/FpgaIo.c": ["Module_Control_Write"],
 }
-# Macro=0 now uses the same bounded PI implementation as the phase-A path.
-# These exact functions are intentionally different from bcd8d1c; all other
-# realtime/control functions continue to require token-for-token equality.
-INTENTIONAL_CONTROL_FUNCTIONS = {
-    "Chb_SourceEquivalentPiStep", "Chb_VoltagePiLimited", "Chb_CurrentPiLimited",
-    "Chb_ResetControllers", "Chb_ResetStartupSequence",
-    "Chb_AlignVoltagePiToIdReference", "Chb_UpdateVoltageReference",
-    "Chb_GetClosedLoopIdReference", "Chb_RunClosedLoop",
-    "Chb_ConfigurationValid", "ChbDabControl_Init",
-}
 ISR_NAMES = ("FPGAIsr", "FAULTIsr", "Timer2Isr", "DPRAMIsr")
 
 
 def switches(phase_a: int) -> dict[str, int]:
     return {"SST_BENCH_INPUT_SIM": 0, "SST_SIMULATOR_MODE": 1,
             "SST_ENABLE_DPRAM": 0, "CHB_LOAD_EEPROM_PARAMETERS": 0,
-            "SST_PHASE_A_ONLY_TEST": phase_a}
+            "SST_PHASE_A_ONLY_TEST": phase_a, "SST_LOW_VOLTAGE_100V_TEST": 0}
 
 
 def normalize_named_declarations(items: list[str]) -> tuple[list[str], int]:
@@ -80,7 +72,7 @@ def main() -> None:
     report = {"baseline": args.baseline, "results": [], "compiler": str(cgt / "bin/cl6x.exe"),
               "comparison_defines": switches(0),
               "exceptions": ["SVG_Udc_Average: exactly float tempAve1,tempAve2,tempAve3 becomes three uninitialized float declarations; type/order/statements retained",
-                             "Chb_EnterState and ChbDabControl_Service: exact unsigned-short mode alias expanded back to g_chb_dab_command.ac_mode before token comparison",
+                             "Reviewed common PI/safety functions: exact all-branch Git-baseline/current contract plus TI macro0 preprocessed hashes; control_regression/common_control_safety validate intended behavior",
                              "SstSinglePhase.h adds stdint typedef/pragma declarations outside executable function bodies when macro=0"],
               "limitations": "No complete fast-control WCET, board latency, cache/EMIF stall or physical protection timing measurement."}
 
@@ -104,30 +96,30 @@ def main() -> None:
                 new = preprocess(project, relative, cgt, switches(0), destination / "macro0" / label)
                 raw_new = new
                 if relative == CONTROL:
-                    # Tokenize the preprocessed text again only after the same
-                    # narrow two-function alias expansion used by source audit.
-                    pp = destination / "macro0" / label / (Path(relative).stem + ".pp")
-                    new = tokens(normalize_control_mode_alias(read(pp)))
-                    # The common PI module is deliberately included in this
-                    # translation unit.  Its public type/prototypes and the
-                    # moved implementation therefore appear before the old
-                    # control body; the function checks below compare every
-                    # unchanged body token-by-token and the PI regression
-                    # compiles/exercises the inserted implementation.
-                    check(True,
-                          "TI macro0 PI header/module insertion is covered by per-function and SstPi regression checks")
+                    contracts = {item["key"]: item for item in json.loads(
+                        (project / "tests/refactor_contracts.json").read_text(encoding="utf-8"))["changes"]}
+                    contract_revision = "ddaeb56f21a81a70cdb76085728f91b67dc3c7a0"
+                    original_control = run(["git", "show", contract_revision + ":" + CONTROL], project).stdout.decode("utf-8-sig")
+                    original_entities = inventory(original_control, CONTROL)
+                    current_entities = inventory(read(project / CONTROL), CONTROL)
                 for name in names:
                     before, after = function(old, name), function(new, name)
                     raw_same = before == function(raw_new, name)
                     if name in INTENTIONAL_CONTROL_FUNCTIONS:
-                        try:
-                            function(raw_new, name)
-                            present = True
-                        except ValueError:
-                            present = False
-                        check(present,
-                              "TI macro0 reviewed PI/control replacement present " + name,
-                              reason="shared bounded PI and measured-bus startup behavior is validated by control_regression")
+                        key = "function:" + name
+                        contract = contracts.get(key, {})
+                        before_hashes = sorted(entity.sha256 for entity in original_entities if entity.key == key)
+                        after_hashes = sorted(entity.sha256 for entity in current_entities if entity.key == key)
+                        check(bool(before_hashes and after_hashes) and
+                              contract.get("baseline_sha256s") == before_hashes and
+                              contract.get("current_sha256s") == after_hashes and
+                              "common_control_safety.py" in contract.get("validation", ""),
+                              "TI macro0 reviewed PI/common-safety exact contract " + name,
+                              baseline_preprocessed_sha256=digest(before),
+                              current_preprocessed_sha256=digest(after),
+                              contract_baseline=contract_revision,
+                              baseline_sha256s=before_hashes, current_sha256s=after_hashes,
+                              reason=contract.get("reason"), validation=contract.get("validation"))
                         continue
                     if name == "SVG_Udc_Average":
                         after, count = normalize_named_declarations(after)

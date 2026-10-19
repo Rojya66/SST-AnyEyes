@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "SstDebug.h"
 #include "ChbDabControl.h"
-#include "PcDebugDispData.h"
+#include "MeasurementData.h"
 #include "SstParameterStore.h"
 #include "CpuTask.h"
 #include "ChbBuildConfig.h"
@@ -161,11 +161,12 @@ void SstDebug_ReceiveService(void)
 
 /*==================================================================
  * 函数名称: SstDebug_ProtocolService
- * 函数功能: 执行 AnyEyes 状态机或按周期提交 VOFA 四通道波形。
+ * 函数功能: 执行 AnyEyes 状态机或按周期提交 VOFA 十二通道运行波形。
  * 输入参数: now：本轮 UART 发送前采集的 10 ms 节拍。
  * 输出参数: 协议状态更新；应答帧或 VOFA 波形帧加入 SstSerial 发送队列。
  * 返回值  : 无
- * 调用说明: VOFA 四通道依次为 A 相电压(V)、直流平均电压(V)、端口状态码和 PLL 角度(rad)。
+ * 调用说明: VOFA 通道定义见 docs/VOFA_LOW_VOLTAGE.md；所有采样和编码均在后台完成。
+ *           本地数组只保证入队后帧内容不再变化；各通道可能来自相邻 TAD，未屏蔽中断。
  *================================================================*/
 void SstDebug_ProtocolService(uint32_t now)
 {
@@ -174,8 +175,24 @@ void SstDebug_ProtocolService(uint32_t now)
 #elif SST_DEBUG_PROTOCOL == SST_DEBUG_PROTOCOL_VOFA
     if ((uint32_t)(now - lastVofaTick) >= SST_TELEMETRY_PERIOD_10MS && SstSerial_TxFreeFrames() > 1)
     {
-        VOFA_Send4Float(
-            SstTelemetry_ReadFloat(0), SstTelemetry_ReadFloat(6), SstTelemetry_ReadFloat(7), SstTelemetry_ReadFloat(8));
+        /* 本轮后台采集的运行观察量；数值保持物理单位，不做整数缩放。 */
+        float waveform[12];
+
+        waveform[0] = (float)g_chb_dab_status.state; /* CH0：控制状态，CHB_STATE_*。 */
+        waveform[1] = (float)g_chb_dab_status.fault_code; /* CH1：控制故障，CHB_FAULT_*。 */
+        waveform[2] = g_chb_dab_status.dc_voltage_average_v; /* CH2：A 相模块均压，V。 */
+        waveform[3] = g_chb_dab_status.id_reference_a; /* CH3：当前 d 轴电流给定，A。 */
+        waveform[4] = g_chb_dab_status.id_feedback_a; /* CH4：d 轴电流反馈，A。 */
+        waveform[5] = g_chb_dab_status.iq_feedback_a; /* CH5：q 轴电流反馈，A。 */
+        waveform[6] = (float)g_chb_dab_status.startup_phase; /* CH6：闭环启动阶段，CHB_STARTUP_*。 */
+        waveform[7] = g_chb_dab_status.startup_voltage_reference_v; /* CH7：实际电压环给定，V/模块。 */
+        waveform[8] = g_chb_dab_status.modulation_actual; /* CH8：A 相实际归一化调制比。 */
+        waveform[9] = (float)g_chb_dab_status.pll_locked; /* CH9：PLL 锁定标志，0/1。 */
+        waveform[10] = HA_Port_Volt_A; /* CH10：标定后的 AN 瞬时采样，V。 */
+        waveform[11] = HA_Port_Current_A; /* CH11：标定后的 A 相瞬时电流，A。 */
+        VOFA_Send12Float(waveform[0], waveform[1], waveform[2], waveform[3],
+                         waveform[4], waveform[5], waveform[6], waveform[7],
+                         waveform[8], waveform[9], waveform[10], waveform[11]);
         lastVofaTick = now;
     }
 #endif

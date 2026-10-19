@@ -18,6 +18,7 @@ static unsigned short SstPi_IsFinite(float value)
 {
     return (unsigned short)((value == value) && (value <= FLT_MAX) && (value >= -FLT_MAX));
 }
+
 /*==================================================================
  * 函数功能: 对浮点值执行上下限约束。
  * 输入参数: value：待限幅的浮点值；minimum：下限；maximum：上限。

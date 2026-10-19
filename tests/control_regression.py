@@ -3,7 +3,10 @@
 Only local include directives are replaced in temporary translation units; the
 control function bodies and constants are compiled unmodified. Every observable
 status field, FPGA write value and fake output action contributes to each trace.
-No target files are modified. Host results do not prove embedded ISR timing.
+The historical trace projects the four original reference/DAB FPGA fields;
+the repaired DC_Log writer is verified independently on every TAD instead of
+comparing it with the original isolated source's omitted writer. No target
+files are modified. Host results do not prove embedded ISR timing.
 """
 from __future__ import annotations
 import argparse
@@ -57,8 +60,11 @@ def run(source: Path, header: Path, config: Path, compiler: str, template: str,
         binary = work / "control_test.exe"
         command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
                    "-DSST_SIMULATOR_MODE=1", "-DSST_ENABLE_DPRAM=0",
-                   "-DSST_BENCH_INPUT_SIM=0", "-DSST_PHASE_A_ONLY_TEST=0", str(unit),
+                   "-DSST_BENCH_INPUT_SIM=0", "-DSST_PHASE_A_ONLY_TEST=0",
+                   "-DSST_LOW_VOLTAGE_100V_TEST=0", str(unit),
                    "-lm", "-o", str(binary)]
+        if support_project is not None:
+            command.insert(1, "-DSST_HOST_EXPECT_DC_LOG_UPDATES=1")
         subprocess.run(command, check=True, capture_output=True, text=True)
         return subprocess.run([str(binary)], check=True, capture_output=True, text=True,
                               timeout=20).stdout
@@ -97,7 +103,12 @@ def main() -> None:
     except subprocess.CalledProcessError as error:
         raise SystemExit(f"Regression compile/run failed:\n{error.stdout}\n{error.stderr}")
     # The first two scenarios exercise only open-loop and independent DAB gate
-    # behavior.  Their traces remain a strict compatibility contract.  Closed
+    # behavior. Their per-step observed state/reference/duty/output snapshots
+    # remain a strict compatibility contract. The event-inclusive hash remains
+    # diagnostic: the repaired atomic gate transaction deliberately replaces
+    # legacy PWMPluse calls with bounded Module_* commits. The C harness checks
+    # gate effects, inverse legacy flags and critical-region use independently.
+    # Closed
     # loop scenarios intentionally change with the shared anti-windup PI,
     # measured-bus limit, and low-voltage startup defaults; they retain their
     # assertions in control_regression.c and are reported for review below.
@@ -112,17 +123,30 @@ def main() -> None:
 
     before = scenario_lines(results[0])
     after = scenario_lines(results[1])
-    mismatches = [name for name in scenario_names if before.get(name) != after.get(name)]
+    def compatibility_projection(line: str | None) -> dict[str, str]:
+        if not line:
+            return {}
+        fields = dict(part.split("=", 1) for part in line.split()[1:] if "=" in part)
+        return {field: fields.get(field, "missing") for field in ("steps", "snapshot", "state", "fault")}
+
+    mismatches = [name for name in scenario_names
+                  if compatibility_projection(before.get(name)) != compatibility_projection(after.get(name))]
     if mismatches:
         import difflib
         print("".join(difflib.unified_diff(results[0].splitlines(True),
               results[1].splitlines(True), fromfile="baseline", tofile="migrated")))
-        raise SystemExit("FAIL: unchanged open-loop/DAB traces differ: " + ", ".join(mismatches))
-    changed = [name for name in after if name not in scenario_names]
+        raise SystemExit("FAIL: unchanged open-loop/DAB observation snapshots differ: " + ", ".join(mismatches))
+    sorting_name = "dc_log_faststep"
+    sorting_expected = ("dc_log_faststep phases=3 cards=6 combinations=4 cycles=2 "
+                        "states=stopped/running reserved=preserved")
+    if after.get(sorting_name) != sorting_expected:
+        raise SystemExit("FAIL: migrated three-phase FastStep DC_Log repair assertions did not run")
+    changed = [name for name in after if name not in scenario_names and name != sorting_name]
     print("INTENTIONAL CONTROL TRACE CHANGES: " + (", ".join(changed) if changed else "none"))
     print(results[1], end="")
-    print(f"PASS: {len(scenario_names)} open-loop/DAB compatibility traces match exactly; "
+    print(f"PASS: {len(scenario_names)} open-loop/DAB per-step observation snapshots match exactly; "
           f"{len(changed)} closed-loop/protection scenarios pass assertions; "
+          "six-card DC_Log repair passes independent per-TAD assertions; "
           f"SHA256={hashlib.sha256(results[1].encode()).hexdigest()}")
 
 

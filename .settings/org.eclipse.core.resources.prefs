@@ -1,6 +1,8 @@
 eclipse.preferences.version=1
 encoding//Debug/Source/00_Device/system_config/c674x/subdir_rules.mk=UTF-8
 encoding//Debug/Source/00_Device/system_config/c674x/subdir_vars.mk=UTF-8
+encoding//Debug/Source/01_ComLib/04_Pi/subdir_rules.mk=UTF-8
+encoding//Debug/Source/01_ComLib/04_Pi/subdir_vars.mk=UTF-8
 encoding//Debug/Source/01_ComLib/subdir_rules.mk=UTF-8
 encoding//Debug/Source/01_ComLib/subdir_vars.mk=UTF-8
 encoding//Debug/Source/01_Drive/drivers/subdir_rules.mk=UTF-8
@@ -40,6 +42,8 @@ encoding//Debug/objects.mk=UTF-8
 encoding//Debug/sources.mk=UTF-8
 encoding//Release/Source/00_Device/system_config/c674x/subdir_rules.mk=UTF-8
 encoding//Release/Source/00_Device/system_config/c674x/subdir_vars.mk=UTF-8
+encoding//Release/Source/01_ComLib/04_Pi/subdir_rules.mk=UTF-8
+encoding//Release/Source/01_ComLib/04_Pi/subdir_vars.mk=UTF-8
 encoding//Release/Source/01_ComLib/subdir_rules.mk=UTF-8
 encoding//Release/Source/01_ComLib/subdir_vars.mk=UTF-8
 encoding//Release/Source/01_Drive/drivers/subdir_rules.mk=UTF-8

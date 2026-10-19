@@ -4,6 +4,8 @@
 
 2026-10-15增加 `SST_PHASE_A_ONLY_TEST`：开启后将电压首通道解释为 AN，双 SOGI 构造虚拟 αβ，复用现有 PLL、dq 电流 PI、电压外环和启动状态机，强制封锁 B/C 的 CHB、DAB。2026-10-17当前配置已开启单相、关闭输入注入；新增正向锁相、运行失锁封波、模式互锁、参数有限性校验、实测母线归一化和PI抗饱和。配置与CCS步骤见 [A 相单相闭环测试说明](docs/PHASE_A_SINGLE_PHASE_TEST.md)，流程与验证边界见 [闭环启动审计](docs/PHASE_A_CLOSED_LOOP_AUDIT.md)。
 
+2026-10-19 使用可观察完整状态的公共 PI，新增 100 Vac / A 相 6 模块低压参数组，修复 DC_Log 排序和公共安全逻辑被单相宏误限定的问题。当前目标为每模块 35 V，低压默认随单相宏启用；操作与验证以 [PI 重构和低压试验修改记录](docs/PI_REFACTOR_AND_LOW_VOLTAGE.md) 为准。关闭单相宏默认恢复高压三相参数，但三相闭环仍需按实际安装配置 B/C 模块位图。
+
 2026-10-14补齐`00_Version`电子标签模块，当前握手匹配号为`255/43/1/0`，版本为`255.43.1.0.1.0`。标签集中配置、FF/7F握手、FA/7A版本读取、心跳与485连接步骤见[AnyEyes电子标签与握手](docs/ANYEYES_HANDSHAKE.md)。历史输入注入版本与当前真实采样版本须按宏及构建记录区分。
 
 框架整理将入口、启动协调、后台任务、中断、数据定义及外围业务分别放回所属模块。先从 `Main.c`、`SystemInit.c`、`TaskSlice.c` 阅读执行顺序，再按数据域进入控制、采样、保护及通信模块；`main.H` 仅为历史兼容聚合头，活动模块直接包含所属接口。具体目录、调用关系及验证状态见 [框架整理交付说明](docs/FRAMEWORK_REFACTOR_RESULT.md)。
@@ -15,7 +17,7 @@
 3. 构建 Debug 或 Release；上电默认停机，初始化保持原 20 秒等待。
 4. 仿真器查看或修改 `g_chb_dab_command`、`g_chb_dab_params`、`g_chb_dab_status`。开环/闭环由 `ac_mode` 选择。
 
-当前配置为 **AN单相 + 真实采样 + VOFA + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_BENCH_INPUT_SIM=0`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。A1/A2位图各为`0x0007`，共6个逻辑模块，单UNIT台架需按现场修改位图。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
+当前配置为 **100 Vac AN单相 + 真实采样 + VOFA + 仿真器控制 + DPRAM关闭 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_LOW_VOLTAGE_100V_TEST` 随单相宏、`SST_BENCH_INPUT_SIM=0`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=1`、`SST_ENABLE_DPRAM=0`）。A1/A2位图各为`0x0007`，共6个逻辑模块，单UNIT台架需按现场修改位图。UART2/485只使用AnyEyes或VOFA；A5 5A MaintenanceProtocol及其使能宏已移除。恢复并口控制时设仿真器为0、DPRAM为1。
 
 无主回路验证需显式开启临时输入注入（`SST_BENCH_INPUT_SIM=1`）。每个实际TAD生成测试电网及可调直流反馈，保留真实PLL和启动控制；单相步骤见 [A 相单相闭环测试说明](docs/PHASE_A_SINGLE_PHASE_TEST.md)，通用CCS变量及断点见 [单UNIT闭环模拟指南](docs/BENCH_CLOSED_LOOP_DEBUG.md)。此前固定标签`bench-input-simulation-2026-10-14`默认关闭注入，其测试前版本为`bench-input-baseline-2026-10-14`、提交`6675a72`；历史证据见[bench_input_validation.json](docs/evidence/bench_input_validation.json)及[anyeyes_identity_validation.json](docs/evidence/anyeyes_identity_validation.json)。
 
@@ -26,6 +28,7 @@
 | `SST_ENABLE_DPRAM` | 当前默认0 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
 | `SST_BENCH_INPUT_SIM` | 当前默认0 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
 | `SST_PHASE_A_ONLY_TEST` | 当前默认1 | 1=AN 单相虚拟 dq 测试，仅允许 A 相模块；0=原三相算法 |
+| `SST_LOW_VOLTAGE_100V_TEST` | 随单相宏 | 1=100 Vac 参数；单相可显式设0保留高压参数；LOW=1/PHASE=0编译拒绝 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |
 | `SST_UART_BAUD` | 默认 115200 | UART2 波特率 |
 | `SST_TELEMETRY_PERIOD_10MS` | 默认 2 | VOFA周期遥测间隔，单位10 ms；AnyEyes周期由请求设置 |
@@ -49,6 +52,8 @@ python tools/build.py --configuration Debug --variant simulator --define SST_SIM
 - [按 F28377S_Plat 框架整理的实施前方案](docs/FRAMEWORK_REFACTOR_PLAN.md)
 - [框架整理交付说明与调用关系](docs/FRAMEWORK_REFACTOR_RESULT.md)
 - [编译、宏配置及仿真器操作](docs/BUILD_AND_CONFIGURATION.md)
+- [公共 PI 重构、100 Vac 参数与三相兼容修复记录](docs/PI_REFACTOR_AND_LOW_VOLTAGE.md)
+- [100 Vac 试验的 VOFA 十二通道定义](docs/VOFA_LOW_VOLTAGE.md)
 - [A 相 AN、SOGI 虚拟 dq 双闭环配置与测试](docs/PHASE_A_SINGLE_PHASE_TEST.md)
 - [A 相闭环启动、持续运行修复与审计](docs/PHASE_A_CLOSED_LOOP_AUDIT.md)
 - [AnyEyes 参数、波形、状态对应表](docs/ANYEYES_MAPPING.md)
