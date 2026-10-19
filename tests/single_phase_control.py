@@ -29,6 +29,7 @@ def run(project: Path, compiler: str) -> str:
             ("ChbBuildConfig.h", source_dir / "00_Config/ChbBuildConfig.h"),
             ("ChbDabControl.h", source_dir / "04_Control/ChbDabControl.h"),
             ("SstSinglePhase.h", source_dir / "04_Control/SstSinglePhase.h"),
+            ("SstPi.h", project / "Source/01_ComLib/04_Pi/SstPi.h"),
         ):
             shutil.copy2(path, work / name)
         prefix = (tests / "control_regression.c").read_text(encoding="utf-8-sig")
@@ -36,6 +37,8 @@ def run(project: Path, compiler: str) -> str:
         sogi = strip_local_includes(
             (source_dir / "04_Control/SstSinglePhase.c").read_text(encoding="utf-8-sig")
         )
+        pi_path = project / "Source/01_ComLib/04_Pi/SstPi.c"
+        pi = strip_local_includes(pi_path.read_text(encoding="utf-8-sig"))
         control = strip_local_includes(
             (source_dir / "04_Control/ChbDabControl.c").read_text(encoding="utf-8-sig")
         )
@@ -46,12 +49,15 @@ def run(project: Path, compiler: str) -> str:
         pieces = []
         for path, source in (
             (tests / "control_regression.c", prefix),
+            (pi_path, pi),
             (source_dir / "04_Control/SstSinglePhase.c", sogi),
             (source_dir / "04_Control/ChbDabControl.c", control),
             (tests / "single_phase_control.c", body),
         ):
             if path.name == "SstSinglePhase.c":
                 pieces.append('#include "SstSinglePhase.h"\n')
+            if path.name == "SstPi.c":
+                pieces.append('#include "SstPi.h"\n')
             pieces.append(f'#line 1 "{path.as_posix()}"\n{source}\n')
         unit.write_text("".join(pieces), encoding="utf-8")
         binary = work / "single_phase_control_test.exe"

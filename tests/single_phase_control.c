@@ -793,19 +793,19 @@ static void test_pi_saturation_recovery(void)
     g_chb_dab_params.voltage_current_limit_a = 95.0F;
     for (sample = 0U; sample < 20000U; ++sample)
     {
-        output = Chb_VoltagePiLimited(1000.0F);
+        output = Chb_VoltagePiLimited(1000.0F, 0.0F);
         assert_near(output, 95.0F, 0.00001F);
         assert(fabsf(s_voltage_pi.integral) <= 95.0F);
     }
-    output = Chb_VoltagePiLimited(-10.0F);
+    output = Chb_VoltagePiLimited(-10.0F, 0.0F);
     assert(output < 0.0F);
     for (sample = 0U; sample < 20000U; ++sample)
     {
-        output = Chb_VoltagePiLimited(-1000.0F);
+        output = Chb_VoltagePiLimited(-1000.0F, 0.0F);
         assert_near(output, -95.0F, 0.00001F);
         assert(fabsf(s_voltage_pi.integral) <= 95.0F);
     }
-    output = Chb_VoltagePiLimited(10.0F);
+    output = Chb_VoltagePiLimited(10.0F, 0.0F);
     assert(output > 0.0F);
 
     prepare_numerical_control();
@@ -825,6 +825,57 @@ static void test_pi_saturation_recovery(void)
     assert(s_iq_pi.integral >= before_unwind);
     assert(fabsf(actual_normalized_reference()) <= 0.5F);
     printf("PASS pi_saturation_recovery outer_and_inner\n");
+}
+
+/* Exercise the same reference code at the high-voltage checkpoint and the
+ * 100 Vrms low-voltage target.  Sampling changes must never bypass the
+ * configured per-TAD slew, even inside the former fixed-voltage window. */
+static void test_voltage_reference_continuity(void)
+{
+    unsigned int profile;
+    unsigned int sample;
+    float previous;
+    float target;
+    float step;
+    const float measured[2] = {600.0F, 23.570226F};
+    const float targets[2] = {680.0F, 35.0F};
+    const float steps[2] = {2.0F, 0.001F};
+
+    for (profile = 0U; profile < 2U; ++profile)
+    {
+        prepare_numerical_control();
+        g_chb_dab_status.dc_voltage_average_v = measured[profile];
+        g_chb_dab_command.dc_voltage_ref_v = targets[profile];
+        g_chb_dab_params.startup_udc_offset_v = 0.0F;
+        g_chb_dab_params.startup_udc_step_v = steps[profile];
+        Chb_ResetStartupSequence();
+        assert_near(s_startup_voltage_reference, measured[profile], 0.0001F);
+        target = targets[profile];
+        step = steps[profile];
+        for (sample = 0U; sample < 20000U; ++sample)
+        {
+            previous = s_startup_voltage_reference;
+            /* Emulate the measured voltage catching up with the target. */
+            g_chb_dab_status.dc_voltage_average_v = target - 0.1F;
+            Chb_UpdateVoltageReference();
+            assert(s_startup_voltage_reference >= previous);
+            assert(s_startup_voltage_reference <= target);
+            assert(s_startup_voltage_reference - previous <= step + 0.0001F);
+        }
+        assert_near(s_startup_voltage_reference, target, 0.0001F);
+        target -= 5.0F;
+        g_chb_dab_command.dc_voltage_ref_v = target;
+        for (sample = 0U; sample < 20000U; ++sample)
+        {
+            previous = s_startup_voltage_reference;
+            Chb_UpdateVoltageReference();
+            assert(s_startup_voltage_reference <= previous);
+            assert(s_startup_voltage_reference >= target);
+            assert(previous - s_startup_voltage_reference <= step + 0.0001F);
+        }
+        assert_near(s_startup_voltage_reference, target, 0.0001F);
+    }
+    printf("PASS continuous_voltage_reference high_and_100Vrms_profiles\n");
 }
 
 static void test_atomic_pwm_enable_fault_race(void)
@@ -900,6 +951,7 @@ int main(void)
     test_nonfinite_control_parameters();
     test_measured_bus_normalization_and_vector_limit();
     test_pi_saturation_recovery();
+    test_voltage_reference_continuity();
     test_atomic_pwm_enable_fault_race();
     printf("PASS all_single_phase_control_tests\n");
     return 0;

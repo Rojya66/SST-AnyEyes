@@ -330,7 +330,9 @@ static void test_compatible_start(void) {
     }
     step();
     assert(g_chb_dab_status.dab_duty_count == 2500U);
-    near_value(g_chb_dab_status.startup_voltage_reference_v, 678.0F, 0.01F);
+    /* The refactored startup reference advances by 2 V/TAD and clamps at the
+     * 680 V target; after the DAB ramp it must already have reached target. */
+    near_value(g_chb_dab_status.startup_voltage_reference_v, 680.0F, 0.01F);
     g_sst_bench_inputs.dc_a_v = g_sst_bench_inputs.dc_b_v =
         g_sst_bench_inputs.dc_c_v = 680.0F;
     step();

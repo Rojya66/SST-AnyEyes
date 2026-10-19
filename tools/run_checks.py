@@ -9,7 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 LOGDIR = ROOT / 'build/host_validation'
 LOGDIR.mkdir(parents=True, exist_ok=True)
-CHECKS = ['realtime_audit', 'control_regression', 'fault_reporting',
+CHECKS = ['realtime_audit', 'control_regression', 'pi_regression', 'fault_reporting',
           'dpram_commands', 'parameter_precision', 'protocol_regression',
           'refactor_equivalence', 'comment_coverage', 'framework_structure', 'firmware_trace',
           'serial_protocol_scope', 'parameter_store_migration', 'dpram_maintenance', 'bench_inputs',

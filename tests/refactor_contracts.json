@@ -1634,13 +1634,13 @@
       "new_keys": [
         "function:ChbDabControl_Init"
       ],
-      "reason": "单相分支初始化SOGI、锁相、电压建立、故障计数及模式锁存状态，默认参数继续使用SST自身闭环参数；宏0保留原控制器及运行变量初始化。",
-      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "reason": "初始化三个显式 SST_PI_CONTROLLER 对象，确保启动前配置、积分和运行观察量确定；单相与三相共用同一 PI 生命周期。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
       "baseline_sha256s": [
         "55863ba880bf8fadda0cefe88dacfdc7b12444df6d8379ca46c9305d6192319d"
       ],
       "current_sha256s": [
-        "fe519d86164ed0f3c6bada019e76aa14f36d987bf700d4b71b5821199af27335"
+        "5ba28c35390e3f78ff338c8565bc25e3b13a1c39819958a0e5a2297014dba9f0"
       ]
     },
     {
@@ -1690,13 +1690,13 @@
       "new_keys": [
         "function:Chb_RunClosedLoop"
       ],
-      "reason": "单相分支对电压电流各构建SOGI虚拟dq并复用SST调节器参数，按N_A乘实测A相平均母线归一化；内环条件积分和dq矢量限幅共同约束输出，前馈不用目标母线替代实测值，B/C参考保持隔离。宏0三相路径保留。",
-      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "reason": "闭环电流调节统一调用 d/q 双轴 PI，使用实测活动相母线、条件积分和动态圆限幅；单相 SOGI 路径与三相宏0路径保持隔离。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
       "baseline_sha256s": [
         "9ac30efc10783288f09d031cf7025e6c3a3630d756e89ba1c387845e9eed6fff"
       ],
       "current_sha256s": [
-        "235f5a567f3c05c9c3559b2bc68cd8dbb7e4b6382fc1bc8c00dc8f0479c4e5d1"
+        "3381010123ea004049a0318ba99691d27cc19d3ea6eef661efaebdeaaf5c4a56"
       ]
     },
     {
@@ -1877,13 +1877,13 @@
       "new_keys": [
         "function:Chb_GetClosedLoopIdReference"
       ],
-      "reason": "单相虚拟dq外环复用现有母线目标与启动策略，以有界条件积分PI替代无界积分，保留手动Id/时长接管及平滑交接；三相宏0保留原PI和参考逻辑。",
-      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "reason": "启动斜坡、单拍接管和正常电压外环统一调用有界 PI；接管失败立即返回零并保持故障优先。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
       "baseline_sha256s": [
         "67bdc41cee2942afeef0d9739ebaee406f0126297a935a9bdf693438478d70a2"
       ],
       "current_sha256s": [
-        "2f48ecc436d7aa49dce5f8478f85119656d5975f0e84abbfb9358699fab0ef0d"
+        "25de9733c7319a670e5101e2e6e76c617a9823866df324d6c91ed026b0f8b4a9"
       ]
     },
     {
@@ -1944,17 +1944,13 @@
     },
     {
       "key": "function:Chb_SourceEquivalentPiStep",
-      "new_keys": [
-        "function:Chb_SourceEquivalentPiStep"
-      ],
-      "reason": "原三相PI实现完整包在!SST_PHASE_A_ONLY_TEST中供宏0使用；单相由新增有界条件积分PI承担外环与内环，避免把旧无界积分继续用于单相。",
-      "validation": "tests/single_phase_control.py (14 groups: 28 float NaN/Inf table, PLL polarity, startup/mode/holdoff, bounded PI and final-enable ISR fault injection); tests/single_phase_io.py; tests/control_regression.py (macro0 eight exact traces); tests/realtime_audit.py (38 invariants, 9 bounded critical sections); tests/single_phase_isolation.py (macro0 control bodies and macro0/1 ISR instructions/calls/stack); TI CLI Debug/Release and CCS import+Clean Debug/Release 0 errors; hardware WCET not measured",
+      "new_keys": [],
+      "reason": "旧仅保存积分状态的 PI 执行函数由 SstPi 公共模块取代；原有三个独立积分实例升级为三个完整控制器对象，显式集中参数、输入、输出和限幅状态。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
       "baseline_sha256s": [
         "ff4c50d580bbda5c3a385168fde749a3fa84dbabec65eef3b3ca75066ef754fa"
       ],
-      "current_sha256s": [
-        "93e1b260223f575e3de9527039a0240f6751dd1f2518625fa5f559f152db362a"
-      ]
+      "current_sha256s": []
     },
     {
       "key": "function:Chb_UpdatePll",
@@ -2011,6 +2007,114 @@
       "current_sha256s": [
         "ca979447c31d28c9a393a63455c95401f4d9a706ee07e273bbd1c6ac97f65caa"
       ]
+    },
+    {
+      "key": "function:Chb_AlignVoltagePiToIdReference",
+      "reason": "在电压环接管前按当前 Idref 反算完整电压 PI 的积分状态，使用 SstPi_Track 避免接管阶跃，并在配置异常时进入故障。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "a81b4bc65be6f322e852fde1ccefa98a40940267903c2ed4ae8f198f01891142"
+      ],
+      "current_sha256s": [
+        "b67e4c123131f0a14116fc26bba79b3e06ed5a187dc7d5d44705b64d9d5bbe07"
+      ],
+      "new_keys": [
+        "function:Chb_AlignVoltagePiToIdReference"
+      ]
+    },
+    {
+      "key": "function:Chb_ResetControllers",
+      "reason": "停机/故障时复位三个完整 PI 对象，清除积分和输出，同时保留数值异常标志供调试。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "a505d82bf00d68973d8f4aa57afef64fee158a0b78a01f4a866aa21f5ea8ad99"
+      ],
+      "current_sha256s": [
+        "1210ea10c15acb76f6dfe076f6fc406f5997d206ba9a4f6d6416a96457254ad7"
+      ],
+      "new_keys": [
+        "function:Chb_ResetControllers"
+      ]
+    },
+    {
+      "key": "function:Chb_ResetStartupSequence",
+      "reason": "启动重新建立时对临时电压参考按实测值和目标值做边界约束，避免低压试验启动给定越界。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "ea4a35dd4b02f25db36d5cc0fb703c190a876f772eb21a5f570058f79849bcb7"
+      ],
+      "current_sha256s": [
+        "c2c4660a3f23843e459568e4ade3eaa77af68c64b45fa772057a4a75c3139700"
+      ],
+      "new_keys": [
+        "function:Chb_ResetStartupSequence"
+      ]
+    },
+    {
+      "key": "function:Chb_UpdateVoltageReference",
+      "reason": "启动给定改为按配置步长连续逼近目标，支持100 V低压试验及在线改目标，消除固定电压窗口造成的跳变。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "4a68faccb5ca87890667f6faef595a4da305a82b2cd903407e21b939caf3f3c3"
+      ],
+      "current_sha256s": [
+        "e016a72ccf72829ea633531b9454ac7c037393414447a0d8e573a0dbb11d4f8f"
+      ],
+      "new_keys": [
+        "function:Chb_UpdateVoltageReference"
+      ]
+    },
+    {
+      "key": "object:s_id_pi",
+      "reason": "d轴 PI 状态由单积分对象升级为完整 SST_PI_CONTROLLER，显式保存参数、限幅、抗饱和和运行观测量。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "d699553014cdbd8ff9dc9431b375155af86b3a31be23fd8003f96e8c15521de6"
+      ],
+      "current_sha256s": [
+        "f62cc61ed903c0f3f24e5b588bc641defa52a03be969c70e0c8e48367dc00f25"
+      ],
+      "new_keys": [
+        "object:s_id_pi"
+      ]
+    },
+    {
+      "key": "object:s_iq_pi",
+      "reason": "q轴 PI 状态由单积分对象升级为完整 SST_PI_CONTROLLER，保留独立积分并支持 dq 矢量限幅。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "7425960972cddf2722a95e739939c7f4247d7b8e50ca9336cc123b33b1627591"
+      ],
+      "current_sha256s": [
+        "91adf7a824ac750a292ddb138b8bf403b37bc471db0b0f146bf5dbc40b361143"
+      ],
+      "new_keys": [
+        "object:s_iq_pi"
+      ]
+    },
+    {
+      "key": "object:s_voltage_pi",
+      "reason": "电压外环状态由单积分对象升级为完整 SST_PI_CONTROLLER，显式保存给定、反馈、输出限幅和故障标志。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "7306da02c350bb7a0fa0e2da637a62cc1a27f2f5602c59fead648a65054d4f96"
+      ],
+      "current_sha256s": [
+        "4c315ef276062d18decbb9caf79e0cc4b0d8348f56375c7adffb54b3070f05ce"
+      ],
+      "new_keys": [
+        "object:s_voltage_pi"
+      ]
+    },
+    {
+      "key": "type:CHB_PI_STATE",
+      "reason": "旧仅含 integral 的 CHB_PI_STATE 被 SST_PI_CONTROLLER 公共结构替代，d/q/电压环各自拥有独立完整状态。",
+      "validation": "tests/pi_regression.py; tests/single_phase_control.py (startup/handover, PI saturation recovery, measured-bus normalization); tests/control_regression.py (macro0 compatibility traces); tests/realtime_audit.py; TI CLI/CCS Debug and Release builds",
+      "baseline_sha256s": [
+        "cfa323431e25e0959f9b816aef8f1c21671a8fc56dea8d22498c4b2333c3430f"
+      ],
+      "current_sha256s": [],
+      "new_keys": []
     }
   ]
 }

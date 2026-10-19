@@ -4,6 +4,7 @@ import argparse
 import hashlib
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 from git_baseline import materialize
@@ -203,6 +204,26 @@ def ordered_calls(name: str, functions: dict[str, str], ancestors=()) -> list[st
     return result
 
 
+# The shared PI module is intentionally replacing the old source-equivalent
+# integral step.  Keep this list narrow: realtime/hardware entities outside
+# these control calculations must still retain their exact lexical inventory.
+INTENTIONAL_CONTROL_FUNCTIONS = {
+    "Chb_SourceEquivalentPiStep", "Chb_VoltagePiLimited", "Chb_CurrentPiLimited",
+    "Chb_ResetControllers", "Chb_ResetStartupSequence",
+    "Chb_AlignVoltagePiToIdReference", "Chb_UpdateVoltageReference",
+    "Chb_GetClosedLoopIdReference", "Chb_RunClosedLoop",
+    "Chb_ConfigurationValid", "ChbDabControl_Init",
+    # The mode alias is intentionally expanded in both coordinators so the
+    # active command is read at the transaction point (and remains race-safe
+    # with the background service).  The two bodies are checked by the
+    # preprocessed single-phase isolation test.
+    "Chb_EnterState", "ChbDabControl_Service",
+}
+INTENTIONAL_CONTROL_OBJECTS = {"g_chb_dab_params"}
+INTENTIONAL_CONTROL_TYPES = {"CHB_PI_STATE"}
+INTENTIONAL_CONTROL_OBJECTS.update({"s_voltage_pi", "s_id_pi", "s_iq_pi"})
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path,
@@ -246,7 +267,6 @@ def main() -> None:
             failures.append(label)
 
     unchanged = {
-        "ChbDabControl.c": "04_App/04_Control/ChbDabControl.c",
         "ChbDabControl.h": "04_App/04_Control/ChbDabControl.h",
         "ADC_Sample.C": "04_App/02_Measurement/ADC_Sample.C",
         "HVAC_Strategy.C": "04_App/04_Control/HVAC_Strategy.C",
@@ -273,6 +293,46 @@ def main() -> None:
         missing = missing_entities(original, all_entities + archived_interfaces)
         check(not missing, f"every original executable entity preserved (exact module masks, Udc declarations and two mode aliases checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
+
+    # Control PI/startup changes are checked by the host PI and closed-loop
+    # regressions.  Preserve every other ChbDabControl entity exactly and
+    # require each reviewed replacement to remain present.
+    baseline_control = inventory(select_dpram_branches(read(args.baseline / "ChbDabControl.c"), True),
+                                 "ChbDabControl.c")
+    current_control = [entity for path, contents in source_texts.items()
+                       for entity in inventory(select_dpram_branches(contents, True),
+                                               path.relative_to(args.project).as_posix())
+                       if path.name == "ChbDabControl.c"]
+    retained = [entity for entity in baseline_control
+                if not ((entity.kind == "function" and entity.name in INTENTIONAL_CONTROL_FUNCTIONS) or
+                        (entity.kind == "object" and entity.name in INTENTIONAL_CONTROL_OBJECTS) or
+                        (entity.kind == "type" and entity.name in INTENTIONAL_CONTROL_TYPES))]
+    missing_control = missing_entities(retained, current_control)
+    check(not missing_control,
+          "ChbDabControl preserves all non-PI executable entities exactly: "
+          f"missing={[entity.key for entity in missing_control]}")
+    current_names = {(entity.kind, entity.name) for entity in current_control}
+    missing_reviewed = [name for name in INTENTIONAL_CONTROL_FUNCTIONS
+                        if ("function", name) not in current_names and name != "Chb_SourceEquivalentPiStep"]
+    check(not missing_reviewed,
+          "reviewed PI/startup control functions remain present: " + str(sorted(missing_reviewed)))
+    # A coordinator may differ from the pre-framework original only through
+    # the already-reviewed single-phase transactions.  This PI change must not
+    # silently waive a fresh change to either hardware coordinator.
+    pre_pi_control = subprocess.run(
+        ["git", "show", "238879f:Source/04_App/04_Control/ChbDabControl.c"],
+        cwd=args.project, check=True, capture_output=True).stdout.decode("utf-8-sig")
+    current_control_text = read(args.project / "Source/04_App/04_Control/ChbDabControl.c")
+    for name in ("Chb_EnterState", "ChbDabControl_Service"):
+        check(tokens(function(pre_pi_control, name)) == tokens(function(current_control_text, name)),
+              "PI refactor preserves pre-PI hardware coordinator in all branches: " + name)
+    state_entities = {entity.name: entity for entity in current_control
+                      if entity.kind == "object" and entity.name in
+                      ("s_voltage_pi", "s_id_pi", "s_iq_pi")}
+    check(len(state_entities) == 3 and all(
+        tokens(entity.text) == tokens("static SST_PI_CONTROLLER " + name + ";")
+        for name, entity in state_entities.items()),
+        "three former integral-only objects are independent SST_PI_CONTROLLER instances")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))
     extension_memory = {

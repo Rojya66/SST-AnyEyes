@@ -13,6 +13,7 @@
 #include "FaultCheck.h"
 #include "ChbDabControl.h"
 #include "SstSinglePhase.h"
+#include "SstPi.h"
 #if SST_PHASE_A_ONLY_TEST
 #include "ControlInit.h"
 #include "interrupt.h"
@@ -35,11 +36,6 @@
 /* CHB_PLL_LOSS_SAMPLES：单相运行连续失锁确认拍数，200 个 TAD = 20 ms。 */
 #define CHB_PLL_LOSS_SAMPLES 200U
 #endif
-
-typedef struct
-{
-    float integral; /* integral：PI 积分状态，按 Ki*Ts*error 累加；输出及积分限幅由对应调用者执行。 */
-} CHB_PI_STATE;
 
 /*
  * 本文件是简化后的 CHB/DAB 控制核心，执行上下文分为两部分：
@@ -137,9 +133,9 @@ volatile CHB_DAB_STATUS g_chb_dab_status; /* g_chb_dab_status：控制核心维�
 volatile unsigned short g_chb_dab_protection_enable =
     1U; /* g_chb_dab_protection_enable：新增软件过流/过压检查使能，0 关闭、1 开启；硬件保护能力取决于现场 FPGA 位流。 */
 
-static CHB_PI_STATE s_voltage_pi; /* s_voltage_pi：直流电压外环的历史积分状态。 */
-static CHB_PI_STATE s_id_pi; /* s_id_pi：d 轴电流内环的历史积分状态。 */
-static CHB_PI_STATE s_iq_pi; /* s_iq_pi：q 轴电流内环的历史积分状态。 */
+static SST_PI_CONTROLLER s_voltage_pi; /* s_voltage_pi：直流电压外环对象，保存给定、反馈、P/I项和限幅状态。 */
+static SST_PI_CONTROLLER s_id_pi; /* s_id_pi：d 轴电流内环对象，保存给定、反馈、P/I项和限幅状态。 */
+static SST_PI_CONTROLLER s_iq_pi; /* s_iq_pi：q 轴电流内环对象，保存给定、反馈、P/I项和限幅状态。 */
 static float s_pll_integral; /* s_pll_integral：PLL 角速度修正的积分状态，单位 rad/s。 */
 static float s_open_loop_angle; /* s_open_loop_angle：开环输出当前相角，单位 rad。 */
 static float s_id_reference; /* s_id_reference：控制核心当前 Id 给定，单位 A。 */
@@ -265,106 +261,64 @@ static float Chb_WrapAngle(float angle)
 }
 
 /*==================================================================
- * 函数功能: 按原增量 PI 等效的位置式更新积分项并计算本拍输出；限幅由调用者执行
- * 输入参数: state：输入/输出 PI 状态指针，保存积分项 integral
- *           error：本拍给定减反馈的控制误差，单位取决于电压环或电流环
- *           kp：PI 比例系数
- *           ki：PI 积分系数，计算时乘参数 period
- *           period：控制采样周期，单位 s
- * 输出参数: 更新 state->integral；本函数不执行输出限幅。
- * 返回值: kp*error+integral 的本拍 PI 输出，本函数内不额外限幅
- * 执行说明: TAD 快速控制子函数；外环在调用处限幅 Id，内环通过相电压限幅，系数符号保持原方向。
+ * 函数功能: 配置并执行直流电压 PI，单相与三相共用输出限幅和条件积分
+ * 输入参数: reference/feedback：单模块电压给定/反馈，单位 V
+ * 输出参数: s_voltage_pi：完整 PI 对象；失败时锁存配置故障并封波。
+ * 返回值: 已限幅 Idref，单位 A；计算失败返回 0。
  *================================================================*/
-#if !SST_PHASE_A_ONLY_TEST
-static float Chb_SourceEquivalentPiStep(CHB_PI_STATE *state, float error, float kp, float ki, float period)
+static float Chb_VoltagePiLimited(float reference, float feedback)
 {
-    /*
-     * 标准位置式 PI：
-     *   integral(k) = integral(k-1) + Ki * Ts * error(k)
-     *   output(k)   = Kp * error(k) + integral(k)
-     *
-     * 这里没有额外输出限幅；外环在调用处限幅 Idref，内环通过相电压限幅。
-     * Kp/Ki 的符号已经按 C6748Test 原程序方向换算，不能随意改成正值。
-     */
-    state->integral += ki * error * period;
-    return kp * error + state->integral;
-}
-#endif
-
-#if SST_PHASE_A_ONLY_TEST
-/*==================================================================
- * 函数功能: 对电压外环执行条件积分，避免 Id 限幅后积分持续累积
- * 输入参数: error：直流电压给定减实测值，单位 V
- * 输出参数: s_voltage_pi.integral，限制在允许的 Id 范围内。
- * 返回值: 已限幅的 d 轴电流给定，单位 A
- *================================================================*/
-static float Chb_VoltagePiLimited(float error)
-{
-    float increment; /* increment：本拍积分增量，单位 A。 */
-    float candidate; /* candidate：试算积分值，单位 A。 */
-    float output; /* output：试算的 PI 输出，单位 A。 */
-    float limit; /* limit：电压环允许的电流绝对值上限，单位 A。 */
+    float limit; /* limit：外环输出电流及积分的绝对值边界，单位 A。 */
 
     limit = g_chb_dab_params.voltage_current_limit_a;
-    increment = g_chb_dab_params.voltage_ki * error * g_chb_dab_params.sample_period_s;
-    candidate = Chb_Clamp(s_voltage_pi.integral + increment, -limit, limit);
-    output = g_chb_dab_params.voltage_kp * error + candidate;
-    if (!((output > limit && increment > 0.0F) || (output < -limit && increment < 0.0F)))
+    if (!SstPi_Configure(&s_voltage_pi,
+                         g_chb_dab_params.voltage_kp,
+                         g_chb_dab_params.voltage_ki,
+                         g_chb_dab_params.sample_period_s,
+                         -limit, limit, -limit, limit, 1U) ||
+        !SstPi_Run(&s_voltage_pi, reference, feedback, 0.0F))
     {
-        s_voltage_pi.integral = candidate;
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return 0.0F;
     }
-    return Chb_Clamp(g_chb_dab_params.voltage_kp * error + s_voltage_pi.integral, -limit, limit);
+    return s_voltage_pi.output;
 }
 
 /*==================================================================
- * 函数功能: 计算单相虚拟 dq 电流 PI、叠加前馈并按实际母线作矢量限幅
- * 输入参数: voltage_d/voltage_q：电网前馈，单位 V
- *           error_d/error_q：给定减反馈，单位 A
- *           limit：当前母线及调制上限允许的电压矢量幅值，单位 V
- *           command_d/command_q：输出指针，接收限幅后的两轴电压指令，单位 V
- * 输出参数: command_d/command_q：限幅后的电压指令，单位 V；更新两轴积分。
- * 返回值: 无
- * 执行说明: TAD 子函数；向饱和方向的积分不提交，保持原电流 PI 系数符号。
+ * 函数功能: 配置并执行 dq 电流 PI，电网前馈一同参与矢量限幅及抗饱和
+ * 输入参数: voltage_d/voltage_q：d、q 轴电网前馈，单位 V
+ *           error_d/error_q：d、q 轴给定减反馈误差，单位 A
+ *           limit：实际母线允许的电压矢量幅值，单位 V
+ *           command_d：输出 d 轴电压指令的存储指针，单位 V
+ *           command_q：输出 q 轴电压指令的存储指针，单位 V
+ * 输出参数: command_d/command_q：限幅后的 d、q 轴电压指令，单位 V；更新完整两轴 PI 对象。
+ * 返回值: 1 成功，0 失败且已封波；单相和三相复用相同调节器。
  *================================================================*/
-static void Chb_CurrentPiLimited(
+static unsigned short Chb_CurrentPiLimited(
     float voltage_d, float voltage_q, float error_d, float error_q, float limit, float *command_d, float *command_q)
 {
-    float increment_d; /* increment_d：d 轴积分增量，单位 V。 */
-    float increment_q; /* increment_q：q 轴积分增量，单位 V。 */
-    float integral_d; /* integral_d：d 轴试算积分，单位 V。 */
-    float integral_q; /* integral_q：q 轴试算积分，单位 V。 */
-    float base_d; /* base_d：前馈加比例项的 d 轴电压，单位 V。 */
-    float base_q; /* base_q：前馈加比例项的 q 轴电压，单位 V。 */
-    float magnitude_squared; /* magnitude_squared：试算电压矢量的幅值平方，单位 V²。 */
-    float scale; /* scale：矢量饱和时的同尺度压缩系数。 */
+    unsigned short valid_d; /* valid_d：d 轴参数及动态边界校验结果。 */
+    unsigned short valid_q; /* valid_q：q 轴参数及动态边界校验结果。 */
 
-    increment_d = g_chb_dab_params.current_ki * error_d * g_chb_dab_params.sample_period_s;
-    increment_q = g_chb_dab_params.current_ki * error_q * g_chb_dab_params.sample_period_s;
-    integral_d = Chb_Clamp(s_id_pi.integral + increment_d, -2.0F * limit, 2.0F * limit);
-    integral_q = Chb_Clamp(s_iq_pi.integral + increment_q, -2.0F * limit, 2.0F * limit);
-    base_d = voltage_d + g_chb_dab_params.current_kp * error_d;
-    base_q = voltage_q + g_chb_dab_params.current_kp * error_q;
-    *command_d = base_d + integral_d;
-    *command_q = base_q + integral_q;
-    magnitude_squared = *command_d * *command_d + *command_q * *command_q;
-
-    /* 点积为正表示这次积分会继续增加已经饱和的电压矢量。 */
-    if (!((magnitude_squared > limit * limit) && (*command_d * increment_d + *command_q * increment_q > 0.0F)))
+    /* 允许积分补偿最多两倍母线电压；最终输出仍严格受实际母线圆边界约束。 */
+    valid_d = SstPi_Configure(&s_id_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
+                              g_chb_dab_params.sample_period_s, -limit, limit, -2.0F * limit, 2.0F * limit, 1U);
+    valid_q = SstPi_Configure(&s_iq_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
+                              g_chb_dab_params.sample_period_s, -limit, limit, -2.0F * limit, 2.0F * limit, 1U);
+    if (!valid_d || !valid_q ||
+        !SstPi_RunDq(&s_id_pi, &s_iq_pi,
+                      g_chb_dab_status.id_feedback_a + error_d, g_chb_dab_status.id_feedback_a, voltage_d,
+                      g_chb_dab_status.iq_feedback_a + error_q, g_chb_dab_status.iq_feedback_a, voltage_q, limit))
     {
-        s_id_pi.integral = integral_d;
-        s_iq_pi.integral = integral_q;
+        *command_d = 0.0F;
+        *command_q = 0.0F;
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return 0U;
     }
-    *command_d = base_d + s_id_pi.integral;
-    *command_q = base_q + s_iq_pi.integral;
-    magnitude_squared = *command_d * *command_d + *command_q * *command_q;
-    if (magnitude_squared > limit * limit)
-    {
-        scale = limit / sqrtf(magnitude_squared);
-        *command_d *= scale;
-        *command_q *= scale;
-    }
+    *command_d = s_id_pi.output;
+    *command_q = s_iq_pi.output;
+    return 1U;
 }
-#endif
 
 /*==================================================================
  * 函数功能: 清空电压、电流 PI 及参考状态
@@ -375,10 +329,23 @@ static void Chb_CurrentPiLimited(
  *================================================================*/
 static void Chb_ResetControllers(void)
 {
-    /* 停机或重新投运时清空 PI 积分，避免上一次运行的积分造成第一拍跳变。 */
-    s_voltage_pi.integral = 0.0F;
-    s_id_pi.integral = 0.0F;
-    s_iq_pi.integral = 0.0F;
+    unsigned short voltage_error_flags; /* voltage_error_flags：故障前外环的数值异常证据。 */
+    unsigned short id_error_flags; /* id_error_flags：故障前 d 轴的数值异常证据。 */
+    unsigned short iq_error_flags; /* iq_error_flags：故障前 q 轴的数值异常证据。 */
+
+    voltage_error_flags = s_voltage_pi.flags & 0x0700U;
+    id_error_flags = s_id_pi.flags & 0x0700U;
+    iq_error_flags = s_iq_pi.flags & 0x0700U;
+    SstPi_Reset(&s_voltage_pi);
+    SstPi_Reset(&s_id_pi);
+    SstPi_Reset(&s_iq_pi);
+    /* 故障时清积分和输出，保留异常标志供 CCS 排查；重新配置后自动清除。 */
+    if (g_chb_dab_status.state == CHB_STATE_FAULT)
+    {
+        if (voltage_error_flags != 0U) s_voltage_pi.flags = voltage_error_flags;
+        if (id_error_flags != 0U) s_id_pi.flags = id_error_flags;
+        if (iq_error_flags != 0U) s_iq_pi.flags = iq_error_flags;
+    }
     s_id_reference = 0.0F;
     g_chb_dab_status.id_reference_a = 0.0F;
 }
@@ -399,7 +366,17 @@ static void Chb_ResetStartupSequence(void)
     /* 闭环 PWM 解锁时重新建立启动阶段观察量和临时电压参考。 */
     s_startup_phase = CHB_STARTUP_IDLE;
     s_startup_tad_count = 0UL;
-    s_startup_voltage_reference = g_chb_dab_status.dc_voltage_average_v + g_chb_dab_params.startup_udc_offset_v;
+    /* 初值不跨过最终目标；已高于目标时从实测值向下平滑收敛。 */
+    if (g_chb_dab_status.dc_voltage_average_v < g_chb_dab_command.dc_voltage_ref_v)
+    {
+        s_startup_voltage_reference = Chb_Clamp(
+            g_chb_dab_status.dc_voltage_average_v + g_chb_dab_params.startup_udc_offset_v,
+            g_chb_dab_status.dc_voltage_average_v, g_chb_dab_command.dc_voltage_ref_v);
+    }
+    else
+    {
+        s_startup_voltage_reference = g_chb_dab_status.dc_voltage_average_v;
+    }
 
     g_chb_dab_status.startup_id_reference_a = 0.0F;
     g_chb_dab_status.startup_voltage_reference_v = s_startup_voltage_reference;
@@ -419,17 +396,28 @@ static void Chb_ResetStartupSequence(void)
  *================================================================*/
 static void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_reference)
 {
-    /*
-     * 电压环接管前预置积分项，使 PI 当前输出恰好等于现有 Idref：
-     *   integral = Idref - Kp * error
-     * 这样从固定 Idref 切换到电压外环时不会产生给定阶跃。
-     */
-    s_voltage_pi.integral = id_reference - g_chb_dab_params.voltage_kp * voltage_error;
-    s_voltage_pi.integral = Chb_Clamp(
-        s_voltage_pi.integral, -g_chb_dab_params.voltage_current_limit_a, g_chb_dab_params.voltage_current_limit_a);
+    float limit; /* limit：电压外环允许的电流输出边界，单位 A。 */
+
+    limit = g_chb_dab_params.voltage_current_limit_a;
+    if (!SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
+                         g_chb_dab_params.sample_period_s, -limit, limit, -limit, limit, 1U))
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return;
+    }
+    /* 显式建立本拍输入，再反算积分，使电压环输出跟踪现有 Idref。 */
+    s_voltage_pi.reference = s_startup_voltage_reference;
+    s_voltage_pi.feedback = g_chb_dab_status.dc_voltage_average_v;
+    s_voltage_pi.error = voltage_error;
+    s_voltage_pi.proportional = s_voltage_pi.kp * voltage_error;
+    s_voltage_pi.feedforward = 0.0F;
+    if (!SstPi_Track(&s_voltage_pi, id_reference))
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+    }
 }
 
-/* 参照C6748Test：启动后先用当前电压+20V，再以2V步长靠近最终给定。 */
+/* 启动给定按可配置步长收敛，避免固定电压窗口在低压试验中产生阶跃。 */
 /*==================================================================
  * 函数功能: 按启动策略更新直流电压外环给定及状态镜像
  * 输入参数: 无
@@ -439,45 +427,28 @@ static void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_refere
  *================================================================*/
 static void Chb_UpdateVoltageReference(void)
 {
-    float target_voltage; /* target_voltage：最终直流电压目标，单位 V。 */
-    float measured_voltage; /* measured_voltage：当前单模块平均实测直流电压，单位 V。 */
+    float target_voltage; /* target_voltage：最终单模块直流目标，单位 V。 */
+    float step; /* step：每个 TAD 的给定最大变化量，单位 V。 */
 
     target_voltage = g_chb_dab_command.dc_voltage_ref_v;
-    measured_voltage = g_chb_dab_status.dc_voltage_average_v;
-
-    /*
-     * 启动阶段的电压给定不是一步跳到最终值：
-     * - 实测值比目标低 10 V 以上时，参考每个 TAD 增加 startup_udc_step_v；
-     * - 实测值比目标高 10 V 以上时，参考逐步下降；
-     * - 进入目标附近的 20 V 窗口后，直接对齐最终给定。
-     */
-    if (measured_voltage < (target_voltage - 10.0F))
+    step = g_chb_dab_params.startup_udc_step_v;
+    /* 不再使用固定的 ±10 V/±2 V 窗口，低压启动及在线改目标同样连续。 */
+    if (s_startup_voltage_reference < target_voltage)
     {
-        if (s_startup_voltage_reference < (target_voltage - 2.0F))
+        s_startup_voltage_reference += step;
+        if (s_startup_voltage_reference > target_voltage)
         {
-            s_startup_voltage_reference += g_chb_dab_params.startup_udc_step_v;
-            if (s_startup_voltage_reference > (target_voltage - 2.0F))
-            {
-                s_startup_voltage_reference = target_voltage - 2.0F;
-            }
+            s_startup_voltage_reference = target_voltage;
         }
     }
-    else if (measured_voltage > (target_voltage + 10.0F))
+    else if (s_startup_voltage_reference > target_voltage)
     {
-        if (s_startup_voltage_reference > (target_voltage + 2.0F))
+        s_startup_voltage_reference -= step;
+        if (s_startup_voltage_reference < target_voltage)
         {
-            s_startup_voltage_reference -= g_chb_dab_params.startup_udc_step_v;
-            if (s_startup_voltage_reference < (target_voltage + 2.0F))
-            {
-                s_startup_voltage_reference = target_voltage + 2.0F;
-            }
+            s_startup_voltage_reference = target_voltage;
         }
     }
-    else
-    {
-        s_startup_voltage_reference = target_voltage;
-    }
-
     g_chb_dab_status.startup_voltage_reference_v = s_startup_voltage_reference;
 }
 
@@ -1245,6 +1216,9 @@ void ChbDabControl_Init(void)
     s_pll_lock_10ms_count = 0U;
     s_ac_overcurrent_count = 0U;
     s_dc_overvoltage_count = 0U;
+    SstPi_Init(&s_voltage_pi);
+    SstPi_Init(&s_id_pi);
+    SstPi_Init(&s_iq_pi);
     Chb_ResetControllers();
 
     g_chb_dab_command.run_enable = 0U;
@@ -1836,6 +1810,10 @@ static float Chb_GetClosedLoopIdReference(void)
             /* 让电压PI当前输出等于斜坡末值，避免接管时Idref跳变。 */
             voltage_error = s_startup_voltage_reference - g_chb_dab_status.dc_voltage_average_v;
             Chb_AlignVoltagePiToIdReference(voltage_error, s_id_reference);
+            if (g_chb_dab_status.state == CHB_STATE_FAULT)
+            {
+                return 0.0F;
+            }
             s_startup_phase = CHB_STARTUP_VOLTAGE_HANDOVER;
             g_chb_dab_status.voltage_loop_active = 0U;
             handover_now = 1U;
@@ -1856,15 +1834,11 @@ static float Chb_GetClosedLoopIdReference(void)
     {
         Chb_UpdateVoltageReference();
         voltage_error = s_startup_voltage_reference - g_chb_dab_status.dc_voltage_average_v;
-#if SST_PHASE_A_ONLY_TEST
-        id_target = Chb_VoltagePiLimited(voltage_error);
-#else
-        id_target = Chb_SourceEquivalentPiStep(&s_voltage_pi,
-                                               voltage_error,
-                                               g_chb_dab_params.voltage_kp,
-                                               g_chb_dab_params.voltage_ki,
-                                               g_chb_dab_params.sample_period_s);
-#endif
+        id_target = Chb_VoltagePiLimited(s_startup_voltage_reference, g_chb_dab_status.dc_voltage_average_v);
+        if (g_chb_dab_status.state == CHB_STATE_FAULT)
+        {
+            return 0.0F;
+        }
         s_id_reference =
             Chb_Clamp(id_target, -g_chb_dab_params.voltage_current_limit_a, g_chb_dab_params.voltage_current_limit_a);
         g_chb_dab_status.voltage_loop_active = 1U;
@@ -1898,10 +1872,6 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float current_q; /* current_q：端口电流 q 轴分量，单位 A。 */
     float voltage_d; /* voltage_d：电网电压 d 轴前馈分量，单位 V。 */
     float voltage_q; /* voltage_q：电网电压 q 轴前馈分量，单位 V。 */
-#if !SST_PHASE_A_ONLY_TEST
-    float vd_correction; /* vd_correction：d 轴电流 PI 电压修正，单位 V。 */
-    float vq_correction; /* vq_correction：q 轴电流 PI 电压修正，单位 V。 */
-#endif
     float command_d; /* command_d：限幅前/后的 d 轴输出电压指令，单位 V。 */
     float command_q; /* command_q：限幅前/后的 q 轴输出电压指令，单位 V。 */
     float command_alpha; /* command_alpha：输出电压 α 轴指令，单位 V。 */
@@ -1913,13 +1883,11 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     float phase_b; /* phase_b：B 相输出电压指令，单位 V；写入前换算为归一化参考。 */
     float phase_c; /* phase_c：C 相输出电压指令，单位 V；写入前换算为归一化参考。 */
 #endif
-    float phase_dc_a; /* phase_dc_a：A 相总直流尺度；单相用模块实测均压，三相保留原给定尺度，单位 V。 */
-#if SST_PHASE_A_ONLY_TEST
-    float voltage_limit; /* voltage_limit：实际母线乘有效调制上限的电压矢量限值，单位 V。 */
-#endif
+    float phase_dc_a; /* phase_dc_a：A 相模块数乘实测模块均压，单位 V。 */
+    float voltage_limit; /* voltage_limit：活动相最小实际母线乘有效调制上限，单位 V。 */
 #if !SST_PHASE_A_ONLY_TEST
-    float phase_dc_b; /* phase_dc_b：B 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
-    float phase_dc_c; /* phase_dc_c：C 相模块数乘单模块直流电压给定的总电压尺度，单位 V。 */
+    float phase_dc_b; /* phase_dc_b：B 相模块数乘实测模块均压的总电压尺度，单位 V。 */
+    float phase_dc_c; /* phase_dc_c：C 相模块数乘实测模块均压的总电压尺度，单位 V。 */
 #endif
 
     /*
@@ -1958,38 +1926,26 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     s_id_reference = Chb_GetClosedLoopIdReference();
     g_chb_dab_status.id_reference_a = s_id_reference;
 
-    /* d/q电流内环输出交流电压修正量，再叠加电网电压前馈。 */
-#if SST_PHASE_A_ONLY_TEST
-    /* 实际桥输出与实测母线成比例，不能用尚未达到的目标母线作归一化分母。 */
+    if (g_chb_dab_status.state == CHB_STATE_FAULT)
+    {
+        return;
+    }
+    /* 单相与三相均按实测母线归一化；三相取最弱相总母线作为保守矢量边界。 */
     phase_dc_a = (float)NHA_module_A * SVG_Udc_A_Ave;
-    voltage_limit = ((g_chb_dab_params.modulation_max < g_chb_dab_params.closed_loop_voltage_limit_factor)
-                         ? g_chb_dab_params.modulation_max
-                         : g_chb_dab_params.closed_loop_voltage_limit_factor) *
-                    phase_dc_a;
-    Chb_CurrentPiLimited(voltage_d,
-                         voltage_q,
-                         s_id_reference - current_d,
-                         g_chb_dab_command.iq_reference_a - current_q,
-                         voltage_limit,
-                         &command_d,
-                         &command_q);
+#if !SST_PHASE_A_ONLY_TEST
+    phase_dc_b = (float)NHA_module_B * SVG_Udc_B_Ave;
+    phase_dc_c = (float)NHA_module_C * SVG_Udc_C_Ave;
+    voltage_limit = Chb_Min3(phase_dc_a, phase_dc_b, phase_dc_c);
 #else
-    vd_correction = Chb_SourceEquivalentPiStep(&s_id_pi,
-                                               s_id_reference - current_d,
-                                               g_chb_dab_params.current_kp,
-                                               g_chb_dab_params.current_ki,
-                                               g_chb_dab_params.sample_period_s);
-    vq_correction = Chb_SourceEquivalentPiStep(&s_iq_pi,
-                                               g_chb_dab_command.iq_reference_a - current_q,
-                                               g_chb_dab_params.current_kp,
-                                               g_chb_dab_params.current_ki,
-                                               g_chb_dab_params.sample_period_s);
-
-    /* Signed Kp/Ki preserve the source incremental PI direction, then the
-     * source grid-voltage feed-forward is added. */
-    command_d = voltage_d + vd_correction;
-    command_q = voltage_q + vq_correction;
+    voltage_limit = phase_dc_a;
 #endif
+    voltage_limit *= (g_chb_dab_params.modulation_max < g_chb_dab_params.closed_loop_voltage_limit_factor)
+                         ? g_chb_dab_params.modulation_max : g_chb_dab_params.closed_loop_voltage_limit_factor;
+    if (!Chb_CurrentPiLimited(voltage_d, voltage_q, s_id_reference - current_d,
+                              g_chb_dab_command.iq_reference_a - current_q, voltage_limit, &command_d, &command_q))
+    {
+        return;
+    }
 
     command_alpha = command_d * output_cosine_angle - command_q * output_sine_angle;
 #if SST_PHASE_A_ONLY_TEST
@@ -2010,9 +1966,6 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     phase_b = -0.5F * command_alpha + CHB_SQRT3_BY_TWO * command_beta;
     phase_c = -0.5F * command_alpha - CHB_SQRT3_BY_TWO * command_beta;
 
-    phase_dc_a = (float)NHA_module_A * g_chb_dab_command.dc_voltage_ref_v;
-    phase_dc_b = (float)NHA_module_B * g_chb_dab_command.dc_voltage_ref_v;
-    phase_dc_c = (float)NHA_module_C * g_chb_dab_command.dc_voltage_ref_v;
     if ((phase_dc_a > 1.0F) && (phase_dc_b > 1.0F) && (phase_dc_c > 1.0F))
     {
         /* 按各相模块数进行电压限幅，再换算为FPGA Reference。 */

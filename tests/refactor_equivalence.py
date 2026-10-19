@@ -67,7 +67,15 @@ void third(void) { /* } */ }
     text = decode(control.read_bytes())
     entities = [item for item in inventory(text, control.as_posix()) if item.kind == "function"]
     by_name = {item.name: item for item in entities}
-    assert len(entities) == len(by_name) == 37, "Control module function inventory is incomplete or duplicated"
+    # The only removed local control function is the former integral-only PI
+    # executor.  Pin the complete predecessor inventory instead of adjusting a
+    # count blindly, so an unrelated missing/swallowed function still fails.
+    predecessor = git("show", "238879f:Source/04_App/04_Control/ChbDabControl.c", root=root)
+    expected_names = {item.name for item in inventory(decode(predecessor), control.as_posix())
+                      if item.kind == "function"} - {"Chb_SourceEquivalentPiStep"}
+    assert len(entities) == len(by_name) and set(by_name) == expected_names, (
+        "Control function inventory differs from the reviewed PI-only replacement: "
+        + str(sorted(set(by_name) ^ expected_names)))
     tail = ("Chb_UpdatePll", "Chb_RunOpenLoop", "Chb_GetClosedLoopIdReference",
             "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep")
     assert all(name in by_name for name in tail), "A function following the service boundary was swallowed"

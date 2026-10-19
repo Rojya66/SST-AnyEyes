@@ -30,12 +30,15 @@ def run(project: Path, compiler: str, enabled: bool, template: str) -> str:
             "Source/04_App/00_Config/ChbBuildConfig.h",
             "Source/04_App/04_Control/ChbDabControl.h",
             "Source/04_App/02_Measurement/SstBenchInputs.h",
+            "Source/01_ComLib/04_Pi/SstPi.h",
         ):
             shutil.copy2(project / relative, work / Path(relative).name)
         code = template.replace("/* INSERT_BENCH_IMPLEMENTATION */", source_body(
             project / "Source/04_App/02_Measurement/SstBenchInputs.c"))
-        code = code.replace("/* INSERT_CONTROL_IMPLEMENTATION */", source_body(
-            project / "Source/04_App/04_Control/ChbDabControl.c") if enabled else "")
+        control = ("#include \"SstPi.h\"\n" + source_body(
+            project / "Source/01_ComLib/04_Pi/SstPi.c") + "\n" + source_body(
+            project / "Source/04_App/04_Control/ChbDabControl.c")) if enabled else ""
+        code = code.replace("/* INSERT_CONTROL_IMPLEMENTATION */", control)
         unit = work / "bench_test.c"
         unit.write_text(code, encoding="utf-8")
         binary = work / "bench_test.exe"
