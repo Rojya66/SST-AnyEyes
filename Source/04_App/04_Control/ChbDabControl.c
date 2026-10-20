@@ -63,7 +63,7 @@ volatile CHB_DAB_COMMAND g_chb_dab_command = {
     0.20F, /* open_loop_modulation */
     50.0F, /* open_loop_frequency_hz */
 #if SST_LOW_VOLTAGE_100V_TEST
-    35.0F, /* dc_voltage_ref_v: 6 个模块各 35 V。 */
+    60.0F, /* dc_voltage_ref_v: 6 个模块各 60 V。 */
 #else
     680.0F, /* dc_voltage_ref_v */
 #endif
@@ -80,7 +80,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.98F, /* modulation_max: source Reference range is 0.02 ... 1.98 */
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    20.0F, /* precharge_voltage_v: 低压试验预充门槛，单位 V/模块。 */
+    30.0F, /* precharge_voltage_v: 低压试验预充门槛，单位 V/模块。 */
 #else
     280.0F, /* precharge_voltage_v */
 #endif
@@ -93,7 +93,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     80.0F, /* pll_kp, normalized q error */
     4000.0F, /* pll_ki, normalized q error */
     62.831853F, /* pll correction limit: +/-10 Hz */
-    0.02F, /* pll_lock_error_pu */
+    0.06F, /* pll_lock_error_pu */ //0.02   20261020修改至0.06
     100.0F, /* pll_min_grid_peak_v */
     20U, /* pll_lock_10ms: 200 ms */
     500U, /* pll_timeout_10ms: 5 s after bypass */
@@ -109,7 +109,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
 #endif
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    CHB_STARTUP_ID_RAMP, /* startup_strategy: 低压试验先投 Idref，再由电压环平滑接管。 */
+    CHB_STARTUP_SOURCE_COMPATIBLE,//CHB_STARTUP_SOURCE_COMPATIBLE, /* startup_strategy: 低压试验先投 Idref，再由电压环平滑接管。 */
     0.0F, /* startup_udc_offset_v: 从解锁时实测均压起步，单位 V/模块。 */
     0.001F, /* startup_udc_step_v: 每 TAD 增加 0.001 V，即 10 V/s。 */
 #else
@@ -130,12 +130,12 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     -16.66666667F, /* current_ki = (Num_1 + Num_0) / 0.0001 */
     1.10F, /* source per-phase voltage limit factor */
     1.0F, /* current_feedback_sign */
-    0.1085F, /* SoftwarePhaseComValue */
-    0.16F, /* PhaseComValue */
+    0.1685F, /* SoftwarePhaseComValue */
+    0.1085F,//0.16F, /* PhaseComValue */
 
 #if SST_LOW_VOLTAGE_100V_TEST
     SST_LV100_FAST_OC_A, /* ac_overcurrent_trip_a：50 A峰值带载对应的快速过流门槛，单位 A。 */
-    42.0F, /* dc_overvoltage_trip_v：低压试验 A 相模块均压过压门槛，非逐模块最大值，单位 V/模块。 */
+    75.0F, /* dc_overvoltage_trip_v：低压试验 A 相模块均压过压门槛，非逐模块最大值，单位 V/模块。 */
 #else
     120.0F, /* ac_overcurrent_trip_a：每TAD相电流绝对值门槛，单位A。 */
     780.0F, /* dc_overvoltage_trip_v：三相取各相模块均压最大值，单相只检查 A 相，单位V。 */
@@ -2049,6 +2049,15 @@ static void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
     voltage_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad);
     output_sine_angle = sinf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.output_phase_compensation_rad);
     output_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.output_phase_compensation_rad);
+
+//    current_sine_angle = sinf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.current_phase_compensation_rad);
+//    current_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad + g_chb_dab_params.current_phase_compensation_rad);
+//    voltage_sine_angle = sinf(g_chb_dab_status.pll_angle_rad+ g_chb_dab_params.current_phase_compensation_rad);
+//    voltage_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad+ g_chb_dab_params.current_phase_compensation_rad);
+//    output_sine_angle = sinf(g_chb_dab_status.pll_angle_rad);
+//    output_cosine_angle = cosf(g_chb_dab_status.pll_angle_rad);
+
+
     /* 先把采样量变换到同步dq坐标系，电流极性由可调符号统一处理。 */
 #if SST_PHASE_A_ONLY_TEST
     /* 两轴使用同一 SOGI 的滤波输出，并成对应用既有电流极性；虚拟 beta 不写入物理 B/C 采样。 */

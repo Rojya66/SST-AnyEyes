@@ -27,7 +27,7 @@ extern "C"
 /* OV_level_SET_DEFAULT：原HVAC过压默认阈值，比较三相模块均压合成滤波值，单位V。 */
 #if SST_LOW_VOLTAGE_100V_TEST
 /* OV_level_SET_DEFAULT：低压试验原 HVAC 过压阈值，检查模块均压合成滤波值，单位 V/模块。 */
-#define OV_level_SET_DEFAULT 42 /* OV_level_SET_DEFAULT：模块均压合成滤波值阈值，非逐模块最大值，单位 V/模块。 */
+#define OV_level_SET_DEFAULT 80 /* OV_level_SET_DEFAULT：模块均压合成滤波值阈值，非逐模块最大值，单位 V/模块。 */
 #else
 #define OV_level_SET_DEFAULT 830 /* OV_level_SET_DEFAULT：原 HVAC 过压默认阈值，单位 V。 */
 #endif
