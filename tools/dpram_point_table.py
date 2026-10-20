@@ -33,6 +33,19 @@ REQUEST = [
     ('sequence_copy', '必须等于word2'), ('commit', '0xA55A，最后写入'),
     ('reserved', '必须0'),
 ]
+# Fixed protocol layout, kept in step with SstDpramExtension.h.
+REQUEST_BASE = 0x66002C00
+RESPONSE_BASE = 0x66002D00
+TELEMETRY_BASE = 0x66002E00
+HISTORY_BASE = 0x66002F00
+BLOCK_WORDS = 128
+HISTORY_WORDS = 512
+REQUEST_WORDS = 16
+RESPONSE_PARAMETER_START_WORD = 32
+TELEMETRY_ACTIVE_FAULT_START_WORD = 32
+HISTORY_RECORD_START_WORD = 16
+HISTORY_RECORD_WORDS = 15
+HISTORY_RECORD_COUNT = 32
 RESPONSE = {
     0: ('publication_version', '奇数未完成；非零偶数完整，前后读取须相等'),
     1: ('magic', '0x5353'), 2: ('version', '1'), 3: ('ack_sequence', '最近请求序号，0表示无请求'),
@@ -90,8 +103,10 @@ def points():
               for i, (name, scale, unit, low, high) in enumerate(LEGACY)]
     result = []
     for i, p in enumerate(commands + [enable] + params + legacy):
-        row = dict(point=i, field=p['field'], read_address=f'0x{0x66002D40 + 2*i:08X}',
-                   write_index_address='0x66002C08', write_value_address='0x66002C0A',
+        row = dict(point=i, field=p['field'],
+                   read_address=f'0x{RESPONSE_BASE + 2*(RESPONSE_PARAMETER_START_WORD + i):08X}',
+                   write_index_address=f'0x{REQUEST_BASE + 2*4:08X}',
+                   write_value_address=f'0x{REQUEST_BASE + 2*5:08X}',
                    write_point_value=i, wire_type=p['type'], physical_scale=p['scale'],
                    physical_unit=p['unit'], raw_min=p['raw_min'], raw_max=p['raw_max'],
                    host_permission='R' if p['permission'] == 'read-only' else 'R / request-W',
@@ -108,15 +123,17 @@ def points():
 def main():
     table = points()
     write_csv(DOCS / 'DPRAM_PARAMETERS.csv', list(table[0]), table)
-    table_by_word = {32 + row['point']: row for row in table}
+    table_by_word = {RESPONSE_PARAMETER_START_WORD + row['point']: row for row in table}
     with (DOCS / 'DPRAM_ADDRESSES.csv').open(encoding='utf-8-sig') as stream:
         reader = csv.DictReader(stream)
         fields = reader.fieldnames
         addresses = [row for row in reader if not row['region'].startswith('Sst')]
     assert len(addresses) == 2142
     for region, base, count, permission in [
-            ('SstRequest', 0x66002C00, 128, 'W'), ('SstResponse', 0x66002D00, 128, 'R'),
-            ('SstTelemetry', 0x66002E00, 128, 'R'), ('SstHistory', 0x66002F00, 512, 'R')]:
+            ('SstRequest', REQUEST_BASE, BLOCK_WORDS, 'W'),
+            ('SstResponse', RESPONSE_BASE, BLOCK_WORDS, 'R'),
+            ('SstTelemetry', TELEMETRY_BASE, BLOCK_WORDS, 'R'),
+            ('SstHistory', HISTORY_BASE, HISTORY_WORDS, 'R')]:
         for word in range(count):
             name, meaning = 'reserved', '保留，不使用'
             if region == 'SstRequest' and word < 16: name, meaning = REQUEST[word]
@@ -127,14 +144,15 @@ def main():
                     name, meaning = p['field'], f"physical=raw/{p['physical_scale']} {p['physical_unit']}; point={p['point']}"
             elif region == 'SstTelemetry':
                 if word in TELEMETRY: name, meaning = TELEMETRY[word]
-                elif 32 <= word < 64: name, meaning = f'active_fault[{word-32}]', '五位当前故障码，未用项0'
+                elif TELEMETRY_ACTIVE_FAULT_START_WORD <= word < TELEMETRY_ACTIVE_FAULT_START_WORD + 32:
+                    name, meaning = f'active_fault[{word-TELEMETRY_ACTIVE_FAULT_START_WORD}]', '五位当前故障码，未用项0'
             elif region == 'SstHistory':
                 header = {0: ('publication_version', '非零偶数完整版本'), 1: ('magic', '0x5353'),
                           2: ('version', '1'), 3: ('history_count', '0..32'), 4: ('record_words', '15'),
                           5: ('latest_sequence_low', '最新事件序号低16位'), 6: ('latest_sequence_high', '高16位')}
                 if word in header: name, meaning = header[word]
-                elif 16 <= word < 496:
-                    index, member = divmod(word - 16, 15)
+                elif HISTORY_RECORD_START_WORD <= word < HISTORY_RECORD_START_WORD + HISTORY_RECORD_COUNT * HISTORY_RECORD_WORDS:
+                    index, member = divmod(word - HISTORY_RECORD_START_WORD, HISTORY_RECORD_WORDS)
                     name = f'history[{index}].{HISTORY_FIELDS[member]}'
                     meaning = '0最新，至31最旧；仅history_count范围有效；原位图或小端32位低高字'
             address = base + 2 * word
@@ -172,8 +190,8 @@ def main():
     write_csv(DOCS / 'DPRAM_BITS.csv', bit_fields, bits)
     # A readable table keeps every individual read address beside the indexed write instruction.
     lines = ['# DPRAM现代参数点表', '', '生成源：`tools/dpram_point_table.py`；版本1，共54点。', '',
-             '所有读地址为DSP侧16位字。**禁止直接写回读地址**。写入：请求区word3=1，'
-             'word4（`0x66002C08`）=点号，word5（`0x66002C0A`）=raw，补齐CRC和提交标记，最后写左邮箱21。'
+             '所有读地址为DSP侧16位字。回复区参数地址是只读回读镜像，不能直接写入；参数写入通过请求区提交：'
+             'word3=1，word4（点号）和word5（raw），补齐CRC和提交标记，最后写左邮箱21。'
              '回读位于回复区word32+点号，须按版本戳读取。详见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。', '',
              '`physical = raw / scale`；int16按二补码解释。R/request-W表示主机读实际值、通过请求写参数；'
              '只有sample_period_s只读。启停/复位按控制源和存储互锁；其余写入须完全停机。', '',

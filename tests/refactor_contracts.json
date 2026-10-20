@@ -270,7 +270,7 @@
       "new_keys": [
         "function:RemoteRegulate_Dispose_2"
       ],
-      "reason": "HVAC旧Block2移除隐式EEPROM同步，现代参数改显式异步保存；低压profile中旧Block2电压给定合法范围改20~38V，非法恢复35V且同步HA_Module_RefUdc；固定地址、其他端口分支不变，LOW0保持原边界逻辑。",
+      "reason": "HVAC旧Block2移除隐式EEPROM同步，现代参数改显式异步保存；低压 profile 中旧 Block2 电压给定合法范围改 20~150 V，非法恢复 60 V 且同步 HA_Module_RefUdc；固定地址、其他端口分支不变，LOW0保持原边界逻辑。",
       "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/common_control_safety.py; tests/realtime_audit.py; TI builds reported separately",
       "baseline_sha256s": [
         "327e808bcb4b8e07c4cc1cd92e709ffa7bdef402e5952ba36a0cc234cd1db404",
@@ -358,10 +358,10 @@
         "4bba0fd95a32aa97744592d8f85fb68187607e040e8b10cdb05157d213ed4ec2"
       ],
       "current_sha256s": [
-        "34bb5b9b5c38f23ca1c0e33223c3e3c80227aaff885811957ddfa5b91b622f83",
         "46b434afdc7b2c83f015ca5184faca081e345405b2d265db7e6a0df30f244e05",
         "50c39a7123f458eeedc4a5ddcfde4d5d49c8caddb6b7647abc3a15164b60e718",
         "67bcf87d3a8a52496081acfcddcfee5505b79a759a51477c9a9bd824d4b6925e",
+        "a5acc6ba0628d78e3304c83605bfb4181f14f7c339d2749c11400612937b2021",
         "ce56948c10f243992cdf9ce2edd63544a6b9cfcb894564f27967882c182f3db8"
       ],
       "reason": "后台调用仍使用10ms统一时基，保持原TX/RX/协议/存储/TX顺序；保留现场VOFA角度通道，通信不进入TAD。",
@@ -623,9 +623,9 @@
       "current_sha256s": [
         "03a2dbdecfc00ea63e47cbee0eedb3182ee06a7753289b48602812fd68612602",
         "2d504beba0c9d01e95f10f649afff4bd2c1fb43a319d2a46fbb453c3cc384d17",
-        "34bb5b9b5c38f23ca1c0e33223c3e3c80227aaff885811957ddfa5b91b622f83",
         "5e737881eb29c08cced4ea53f3594f3fe62d59d89b77d9c05fa5ec7379604d1b",
         "660e57f35fa725cf7082e4bd13f3ccb42e204021de1638e1303db01f9eb5c897",
+        "a5acc6ba0628d78e3304c83605bfb4181f14f7c339d2749c11400612937b2021",
         "a86c559b2f213e13b51687b494aa3135890e666d724caae5a2ad91f3f87f309b"
       ],
       "reason": "入口仍协调原启动/20s等待与pulse分支；删除485维护页4/5加载，在SstFault_Init后且外部中断开放前加入DPRAM维护初始化。TaskSlice原后台顺序中增加并口维护分片；CRC/遥测/存储均不进入10kHz FPGA ISR。 临时仿真输入只在SST_BENCH_INPUT_SIM开启时于控制初始化后、中断开放前初始化，测试宏关闭后SystemInit_Runtime的TI预处理执行token对照6675a72精确一致。",
@@ -1626,7 +1626,7 @@
         "0bf3ae8914879dc3096e3e34968340f257511cdd0059b66b2661d43d7e617a66"
       ],
       "current_sha256s": [
-        "6fceab12b72419d48e11ed14fb1006083b354833498caa932012d07ba64ea527"
+        "be52c5c65ca3079e144ca90599122f8820efc7c1e7b13d6f7c00dffdf5faafcd"
       ]
     },
     {
@@ -1634,13 +1634,13 @@
       "new_keys": [
         "object:g_chb_dab_params"
       ],
-      "reason": "原参数结构及在线调参入口不变；低压单相提供20V预充、42V过压、3A快速过流、1A外环限流、保守PI、启动参考零偏置/0.001V每拍及0.25A目标/0.00025A每拍。高压分支原值保留。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 保留现场高压组precharge_voltage_v=280V改动；低压组仍为20V。",
+      "reason": "原参数结构及在线调参入口不变；低压单相提供25 V预充、75 V快速过压、60 A快速过流、5 A启动限流、保守PI、启动参考零偏置/0.001V每拍及0.25A目标/0.00025A每拍。高压分支原值保留。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 保留现场高压组precharge_voltage_v=280V改动；低压组仍为25 V预充。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
       "baseline_sha256s": [
         "0703a9ba0a6919f76d96e59a6eb1a6a9411ee06ece3f22f41ab8c903a04cd70c"
       ],
       "current_sha256s": [
-        "01e83a4c027a780ea7b8bb209551f7625e943af1a5344fad1cf3aa738e9809e1"
+        "8328b9727cbf99f5be6999c3297ad28cfa6bcd83381c9f7dfd0cb38385534773"
       ]
     },
     {
@@ -1648,13 +1648,13 @@
       "new_keys": [
         "function:ChbDabControl_FastStep"
       ],
-      "reason": "单相AN/SOGI分支保留；参数/测量有限性、固定100us周期、硬件故障、运行模式锁存、RUNNING首拍屏障、各有效相母线、连续失锁200TAD和控制前快速OC/OV检查推广为双模式公共路径，故障拍不运行PI或继续DAB爬坡。",
+      "reason": "单相AN/SOGI分支保留；参数/测量有限性、固定100us周期、硬件故障、运行模式锁存、RUNNING 首拍由 FastStep 直接选择当前控制路径、各有效相母线、连续失锁200TAD和控制前快速OC/OV检查推广为双模式公共路径，故障拍不运行PI或继续DAB爬坡。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured",
       "baseline_sha256s": [
         "e656bc62165ea3e3acaf8bdbfccac8d3b928834008b3520e0ecadd3fb86d652a"
       ],
       "current_sha256s": [
-        "95d2224ff95cf32df22f18440289c022cb3707213d21a27a12123288a5fc2b1c"
+        "7a63afae42145555c894d78f17678afa6f7e17ecdf09b87b099c07c5e13d01ad"
       ]
     },
     {
@@ -1662,13 +1662,13 @@
       "new_keys": [
         "function:ChbDabControl_Init"
       ],
-      "reason": "初始化三个完整PI对象；双模式统一初始化模式锁存、失锁计数及RUNNING首拍屏障；仅SOGI初始化限定单相。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
+      "reason": "初始化三个完整PI对象；双模式统一初始化模式锁存、失锁计数及RUNNING 首拍由 FastStep 直接选择当前控制路径；仅SOGI初始化限定单相。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
       "baseline_sha256s": [
         "55863ba880bf8fadda0cefe88dacfdc7b12444df6d8379ca46c9305d6192319d"
       ],
       "current_sha256s": [
-        "01603bf006bc3241b3bd2c407c8c65c75c94d46bb3841406f3d9bea3b4b08563"
+        "69f068efcc0799481a6ef5ef47ffb44ac027a0621a2851287c40f6e67f6e5195"
       ]
     },
     {
@@ -1677,12 +1677,12 @@
         "function:Chb_CheckSoftwareProtection"
       ],
       "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
       "baseline_sha256s": [
         "b306b73a3d065e69978be72496102eede61332fd6272294bb152efebceb77366"
       ],
       "current_sha256s": [
-        "2c98e7b5a47fc7fa3fc771132d56ce835297a00c931c05db906e6ea88c314c49"
+        "7d88538a27c887005818bbdf3f098182157b3d856aa021d33c99d65c5df958bf"
       ]
     },
     {
@@ -1696,7 +1696,7 @@
         "07af2f369682ecc7fd0833e23c1b600cee743de33f8f10c460901982d805667f"
       ],
       "current_sha256s": [
-        "535eb54c0b6f1ebedface66160db95ae09236efec2b2f4d69aebb322e7533509"
+        "d147fee5288ada624c53b6576ae33edbd52e1ecb94064d92bc6b93ed72c18933"
       ]
     },
     {
@@ -1705,12 +1705,12 @@
         "function:Chb_Min3"
       ],
       "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
       "baseline_sha256s": [
         "4e5e554574d51ded4048e74cdb27f18c67072374d3b9889c68e8fcc769a31ff7"
       ],
       "current_sha256s": [
-        "74bf99a91fa44378e35eae9284249e58abbbc3a663c93ff546fa6f10d58d000b"
+        "07b00a1d0e5ac29487e145c9dce2d4b19aed0b92d9268b071e163388297b46e2"
       ]
     },
     {
@@ -1724,7 +1724,7 @@
         "9ac30efc10783288f09d031cf7025e6c3a3630d756e89ba1c387845e9eed6fff"
       ],
       "current_sha256s": [
-        "3048fb8b7a53348eb5fa5a001284abe094d718cf7c0455a485bae99fad8ec11c"
+        "6e8c6ac5fd1f32fc9d57e27deaf730c00c13a007ef591de9bd9cabec0f10da14"
       ]
     },
     {
@@ -1738,7 +1738,7 @@
         "15fc50b9c4f1b6753e270b79791ea2ddde4502cce5d947a2f0bd19967038ce09"
       ],
       "current_sha256s": [
-        "9a9b7098601f0c0a5492eb3d4edfb2750649f6719b1aac000370357a7997895e"
+        "76e1c4aeff1e8edc49aae4834506f882108efb1882375190781d65f9edd8b17d"
       ]
     },
     {
@@ -1869,7 +1869,7 @@
         "8c22099ccd92ecb299ecb151a5019a3536770fb46f8921630b9fa97f0a6db9f5"
       ],
       "current_sha256s": [
-        "c7b3f78ee3144d33414a18356069d296a2d424ea09a0c4fc57cbea8ed00ad7ff"
+        "154ecc2c7fef208c5e549e573a3fa017a327ad970ee1b8bb0e923e46adeeb325"
       ]
     },
     {
@@ -1883,7 +1883,7 @@
         "2f912afd5d01bc8e18be3925db8d195b8befc7f52d057b05b87efa63a098a19c"
       ],
       "current_sha256s": [
-        "96ddd25583d3dd239ec49c51b29a417593f3e0ad4688ab9f752fd9b29733ef64"
+        "98a6daaeb40bb5cb9fd0fdedc281586a25bb454976a478e252d8c140902a9eb8"
       ]
     },
     {
@@ -1891,13 +1891,13 @@
       "new_keys": [
         "function:Chb_EnterState"
       ],
-      "reason": "双模式共用锁存模式和故障优先状态发布；RUNNING前完成PI/启动准备，发布首拍中性参考屏障，最终门控复核模式、命令、PLL和各相母线；保持原接触器序列及独立开环能力。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
+      "reason": "双模式共用锁存模式和故障优先状态发布；RUNNING前完成PI/启动准备，发布首拍不再强制写中性参考，参考由 FastStep 当前拍计算，最终门控复核模式、命令、PLL和各相母线；保持原接触器序列及独立开环能力。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
       "baseline_sha256s": [
         "f9e31b12262bd908a8451148de6204f527ecce31e0f15f7cd0d182243e461cd2"
       ],
       "current_sha256s": [
-        "bc9db8e7ea89aeed510e9934d3fe4a4e0699c2f4876101c6581ea4b1e4368cf2"
+        "2e38eccce04f15d492722f6afc7d68bf0caf8def0e432284cf88701f9d631b35"
       ]
     },
     {
@@ -1911,7 +1911,7 @@
         "67bdc41cee2942afeef0d9739ebaee406f0126297a935a9bdf693438478d70a2"
       ],
       "current_sha256s": [
-        "0f3f6a12d26af1439a6332dee578907fcaeb8828f49a35a6bf739b30529a9ee6"
+        "0f85b3c12cb73235f380f74466bf47091969704341ebac83132328be3769ca64"
       ]
     },
     {
@@ -1925,7 +1925,7 @@
         "5ec3aa549d779514ac0f1686fdbb446063131e0134e6a7b433fd8e5fde083c84"
       ],
       "current_sha256s": [
-        "68cab8b7dc0f8a81baabddccfedbcc211c8548aea7783d894f3492f8fb8d8ff4"
+        "e32f216b660253dc290d27066cef257a7088535745f0660e6aa9e038213ec13d"
       ]
     },
     {
@@ -1939,7 +1939,7 @@
         "df181e736829e234ccdbddef19318b7cd03ec90dbbbae6b070cf755827247888"
       ],
       "current_sha256s": [
-        "97ec6928a1b4f6c55f1c170d11e4ad9a825598bbf9edf3ddb91dd3824cbd50df"
+        "422b45661db9d3de6bda8c8a60220e473c205a16c4626cf30c955b81b2a34019"
       ]
     },
     {
@@ -1953,7 +1953,7 @@
         "8be80fce078a45b565c8cf89cba69b8653bc4e4cf52e291c6194339579e989ca"
       ],
       "current_sha256s": [
-        "e4cf42fd8ba59de1b8fceb3680f8886e6cb16ead4029888b22b37a39ab5712b9"
+        "e53ec1c49edc50bfedda889a5671218eb5939f976f31627a05d9e14fb719f159"
       ]
     },
     {
@@ -1967,7 +1967,7 @@
         "ca60c663e64abae5e46ae775d1777a4c54a76a6b1c4cac16a617c745c1458beb"
       ],
       "current_sha256s": [
-        "e316879a4ff74b367ac2eee513f07f8c1362da014bb7ea043a30204019678d6b"
+        "1412f6f5796a9983a294df6fe8289845410313a8e45c12e0ade5e8eb320513df"
       ]
     },
     {
@@ -1991,7 +1991,7 @@
         "07c4d711c517057b1fe7c1ac009f6c63ad0821af57352b40bc78fd63985de667"
       ],
       "current_sha256s": [
-        "c667be0b7b17092592893dc8ce5369cbe614d107bd393bee83bf1af16adbf32c"
+        "03e4716a4c79767c895c2eb8d17960da6d901fce970ac3a1766e89a702b39e21"
       ]
     },
     {
@@ -2005,7 +2005,7 @@
         "f1de7eb29690a0833067a37c3bb178962f3358c21397e11c907b475c418a5d33"
       ],
       "current_sha256s": [
-        "407245e8a1e715287df1b12fa914503dda72bcbd2028a8d09549ab0a2b595b81"
+        "670d10f4c39059e9b9b0418e40e3df38da0dae4e09250b98a1d01b0d6c0a5466"
       ]
     },
     {
@@ -2044,7 +2044,7 @@
         "a81b4bc65be6f322e852fde1ccefa98a40940267903c2ed4ae8f198f01891142"
       ],
       "current_sha256s": [
-        "b81ba29ca2e55c32e87bad87530b7d30191470f75782a0162579d927b534325c"
+        "609a9ee2a37fba5ae340f3b6f25d336e40b30db6febf74b9197b2e840bb7a1db"
       ],
       "new_keys": [
         "function:Chb_AlignVoltagePiToIdReference"
@@ -2058,7 +2058,7 @@
         "a505d82bf00d68973d8f4aa57afef64fee158a0b78a01f4a866aa21f5ea8ad99"
       ],
       "current_sha256s": [
-        "537033700d70f9bda0d9aa0be11852da33026e3e4de8f0adaf303a0fe0e4c779"
+        "721d9f4d52ffbb1408ba66e1ae2bf93c995cecc2b935db4807ec9b4babf7cc2d"
       ],
       "new_keys": [
         "function:Chb_ResetControllers"
@@ -2072,7 +2072,7 @@
         "ea4a35dd4b02f25db36d5cc0fb703c190a876f772eb21a5f570058f79849bcb7"
       ],
       "current_sha256s": [
-        "ac516e4b61e6485e041fc9aa1552e20839f2a2e5b66e5543ca12477430d751d9"
+        "6f6bd0d112b115b3268f2fc15015f478be627eba64427fb49acf9d5c465fc3db"
       ],
       "new_keys": [
         "function:Chb_ResetStartupSequence"
@@ -2086,7 +2086,7 @@
         "4a68faccb5ca87890667f6faef595a4da305a82b2cd903407e21b939caf3f3c3"
       ],
       "current_sha256s": [
-        "e016a72ccf72829ea633531b9454ac7c037393414447a0d8e573a0dbb11d4f8f"
+        "ca83dda27425d7797cf85d1dc303331cbe774110d404dcc25c5a9ac539b0489a"
       ],
       "new_keys": [
         "function:Chb_UpdateVoltageReference"
@@ -2100,7 +2100,7 @@
         "d699553014cdbd8ff9dc9431b375155af86b3a31be23fd8003f96e8c15521de6"
       ],
       "current_sha256s": [
-        "f62cc61ed903c0f3f24e5b588bc641defa52a03be969c70e0c8e48367dc00f25"
+        "217004a7aa9c9dfdfe4ebd20f449e0b793418556e73eb2ad2a60b703fe5afc63"
       ],
       "new_keys": [
         "object:s_id_pi"
@@ -2114,7 +2114,7 @@
         "7425960972cddf2722a95e739939c7f4247d7b8e50ca9336cc123b33b1627591"
       ],
       "current_sha256s": [
-        "91adf7a824ac750a292ddb138b8bf403b37bc471db0b0f146bf5dbc40b361143"
+        "8da0790b40d924afe3caa3cd5dcf1087897f77bdee04024d56c5013bdecb4456"
       ],
       "new_keys": [
         "object:s_iq_pi"
@@ -2128,7 +2128,7 @@
         "7306da02c350bb7a0fa0e2da637a62cc1a27f2f5602c59fead648a65054d4f96"
       ],
       "current_sha256s": [
-        "4c315ef276062d18decbb9caf79e0cc4b0d8348f56375c7adffb54b3070f05ce"
+        "74f5426cb410d629d8bbd92ab66c609a16b0a814cedef86e9577bc0374ab0795"
       ],
       "new_keys": [
         "object:s_voltage_pi"
@@ -2149,7 +2149,7 @@
       "new_keys": [
         "function:RemoteRegulate_Dispose"
       ],
-      "reason": "低压profile中旧Block2电压给定合法范围改20~38V，非法恢复35V且同步HA_Module_RefUdc；并将Reserved_1[3]/Idst_Max电流范围由40~95改低压1~3A并回写；固定地址、其他端口分支不变，LOW0保持原边界逻辑。",
+      "reason": "低压 profile 中旧 Block2 电压给定合法范围改 20~150 V，非法恢复 60 V 且同步 HA_Module_RefUdc；并将Reserved_1[3]/Idst_Max电流范围由40~95改低压1~3A并回写；固定地址、其他端口分支不变，LOW0保持原边界逻辑。",
       "validation": "tests/dpram_maintenance.py; tests/parameter_store_migration.py; tests/common_control_safety.py; tests/realtime_audit.py; TI builds reported separately",
       "baseline_sha256s": [
         "35e778fcc097f1a0759793c2fbede6943fd6a361d5ec3e6388656a69cafc8a71",
@@ -2175,7 +2175,7 @@
         "e49928f34045122b106e917470ae5c9c9181db0e6cf7f594fed85b560d69873c"
       ],
       "current_sha256s": [
-        "e75c5e05291aa3ae1029e00673ba3238fe41c7f57177f7fb4d5dff50bdddb3a7"
+        "002047724653402b90fa075c2ce0366e12f0564242976a9903be67ef87e6c860"
       ]
     },
     {
@@ -2203,7 +2203,7 @@
         "eaac8a83714dc8316ff1515ba221fa3380c3d206fac51b3cec5996130073c5a5"
       ],
       "current_sha256s": [
-        "812ef35dd270fa25272b56d85eeff42f8fb1022c46c7a0a8535dc344cb1fc2d6"
+        "3969e9a1f8097a52ece761145f4a899f34dc69f8b8574d59dc6de886818034e2"
       ]
     },
     {
@@ -2247,13 +2247,379 @@
       "current_sha256s": [
         "46a3a5d1be8395a9c1334e9099e1db2d6ad8ec3a9ea5ef178c08dfef778534d2"
       ]
+    },
+    {
+      "key": "function:Chb_Abs",
+      "baseline_sha256s": [
+        "6fa5bffbeaf380da491ff46889e28bfbd0e47a069476ef4c1dbb599e496099b3"
+      ],
+      "current_sha256s": [
+        "8a8ec718e4542ef859ee7bb1aa61e8a37d948b0a661aa894d8161663a48697ac"
+      ],
+      "new_keys": [
+        "function:Chb_Abs"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_Clamp",
+      "baseline_sha256s": [
+        "d33cfb12f6bc17b81f4029cc20b28a34629fabff602f1d720fabaf976224460f"
+      ],
+      "current_sha256s": [
+        "7e2418fff1e6b14650de7d69cce64ecb5f22b4b9ecfdd84fbfa1b97284dc9cc3"
+      ],
+      "new_keys": [
+        "function:Chb_Clamp"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_ClearAcInputPulse",
+      "baseline_sha256s": [
+        "6e7ae2cb863857ce8880249fd14afa67d41f14cddb4ce3dd82416f0f52fb07e9"
+      ],
+      "current_sha256s": [
+        "884a8f526ea39eebb642e724a9bbc72184dd9eb9f8688571f07a18a57db1ee0c"
+      ],
+      "new_keys": [
+        "function:Chb_ClearAcInputPulse"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_Max3",
+      "baseline_sha256s": [
+        "90ec0b3c32cdccc148ef69824660bcd80c74bc1d2affaa5a91ff588d2bdfc2af"
+      ],
+      "current_sha256s": [
+        "550640187f89ce8a931a5ba60df1a8005e23a7d30814d6a6da9831ab3cf10856"
+      ],
+      "new_keys": [
+        "function:Chb_Max3"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_RunOpenLoop",
+      "baseline_sha256s": [
+        "06fc9698ef4d91b4bc0b7b550c57f1e62ee6d0bb393fcacf6149a4dc7b5c1a97"
+      ],
+      "current_sha256s": [
+        "373c4c6331327222d7da5b0bc58298cac38cacf37d06329c4e17de11796fb8f2"
+      ],
+      "new_keys": [
+        "function:Chb_RunOpenLoop"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_WriteDabDuty",
+      "baseline_sha256s": [
+        "44b6083944254f37313bcffe045a6b50a0ebfc0e446dcc261e43102a223fa125"
+      ],
+      "current_sha256s": [
+        "9a9fcfae6b8c7920497a76232979c3459859bfb516550b25088138e6e1a9cce3"
+      ],
+      "new_keys": [
+        "function:Chb_WriteDabDuty"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:Chb_WriteNeutralReferences",
+      "baseline_sha256s": [
+        "f7f6562e224945fca75e41c3819d903294f818318b99fd161327e4946d2df642"
+      ],
+      "current_sha256s": [
+        "3ab51bdc08cb370fd29596fa49725b5770f0f98e9d1e60ed519154bb965a74b7"
+      ],
+      "new_keys": [
+        "function:Chb_WriteNeutralReferences"
+      ],
+      "reason": "控制中断/主循环拆分及可读性重构，保持原功能与共享状态语义。",
+      "validation": "tests/realtime_audit.py; tests/comment_coverage.py; tree-sitter syntax audit; common_control_safety.py"
+    },
+    {
+      "key": "function:FPGAIsr",
+      "new_keys": [
+        "function:FPGAIsr"
+      ],
+      "reason": "TAD中断仅保留采样、原始测量和 FastStep 调用；软件保护已统一迁移到 FastStep，避免中断内重复且分散的保护判断，硬件故障分支和时序骨架保持不变。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "128321c58998d152b3691a4032d53f7ab6cb8acee4289dd284b286e8b1f1d363"
+      ],
+      "current_sha256s": [
+        "d8ad708ec6691661a11ccf130ba622e975151246a53892e9d851577ae05bf33c"
+      ]
+    },
+    {
+      "key": "macro:SST_ALLOW_REMOTE_COMMANDS",
+      "new_keys": [
+        "macro:SST_ALLOW_REMOTE_COMMANDS"
+      ],
+      "reason": "将遥控权限改为预处理分支，默认配置与 DPRAM 通道显式对应，避免多元逻辑宏并保持仿真器模式下禁止远程写入。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "c72694adcebb9e71b8cbe7a23ef66eec348ebe2fe5447e336f874afd9a8562df"
+      ],
+      "current_sha256s": [
+        "9893f707113b9dee5c74e02dfcb4fcace8924bd93d10d8c143674ec2b7080b37",
+        "d2aaeb7cbd1c0929dd0e1ce863cfdfc7dcd50012cceee8606b9e7d05055ef242"
+      ]
+    },
+    {
+      "key": "macro:SST_ALLOW_SERIAL_COMMANDS",
+      "new_keys": [
+        "macro:SST_ALLOW_SERIAL_COMMANDS"
+      ],
+      "reason": "将串口权限改为可读的预处理分支，仅在允许远程且关闭 DPRAM 时启用，保持命令通道互斥。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "777a042a310443d148d13ec1c91b9b5ec5691a450af42151d5591d145ca66561"
+      ],
+      "current_sha256s": [
+        "29abe3edda0e5a69b5b7b73f40c8848f4b9a2fe81e6d8bb6bb8cb65869ffbd5b",
+        "cecc56365b3c3b600016099105b4e78f4fcfb40928fe914c8842c02de1eb6426"
+      ]
+    },
+    {
+      "key": "macro:SST_ENABLE_DPRAM",
+      "new_keys": [
+        "macro:SST_ENABLE_DPRAM"
+      ],
+      "reason": "默认开启 DPRAM，使参数、遥测和维护地址与文档点表一致。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "8d162152f08c3b28f7fcbd7f6b7057f021858a5168639e1c505a44b641d8dccf"
+      ],
+      "current_sha256s": [
+        "2f8fda91b72b2ca1d9ef6a7fb747c54d0753af40e3fe7be8c2c8cf144426e831"
+      ]
+    },
+    {
+      "key": "macro:SST_SIMULATOR_MODE",
+      "new_keys": [
+        "macro:SST_SIMULATOR_MODE"
+      ],
+      "reason": "默认关闭仿真器模式，目标板使用实际采样和 DPRAM 命令通道。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "9a5ce167d41d3a8db57608a8b323ea7e5b0ea6c08a9863a1416f5a093822adb8"
+      ],
+      "current_sha256s": [
+        "d1032b45e08b539b702455026796cc4790083da79e6346a7aac99cf570443acb"
+      ]
+    },
+    {
+      "key": "object:s_ac_overcurrent_count",
+      "new_keys": [
+        "object:s_ac_overcurrent_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "97b7c7249fd5d01b8cd634cfca0e686c5317eea6fa18ac0feda094c58ff445c5"
+      ],
+      "current_sha256s": [
+        "af6f0faae25be8811e3981b9607dc1cfc139e1a7f3336e49745fb1143b8bbf9c"
+      ]
+    },
+    {
+      "key": "object:s_breaker_pulse_end_tick",
+      "new_keys": [
+        "object:s_breaker_pulse_end_tick"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "53c5dfac0aea4c0fafbaf2b42794a2e53518bbd37a02112c4d8b30a3c7d8e1cc"
+      ],
+      "current_sha256s": [
+        "1768a2464f94ae2577ac8fc4f5b662f21d7046fc7eec8571b9f6b08a4d5e0378"
+      ]
+    },
+    {
+      "key": "object:s_dc_overvoltage_count",
+      "new_keys": [
+        "object:s_dc_overvoltage_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "702631e2b4926006ddfd68c4d9cffe84814e7ce6258623c67c6144f261474db6"
+      ],
+      "current_sha256s": [
+        "275ab602dde590bcd48d2bf36e1fc505a41e01d4e7bc7d244f53019a80cd1de4"
+      ]
+    },
+    {
+      "key": "object:s_id_reference",
+      "new_keys": [
+        "object:s_id_reference"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "ec862afafc7434044fba1a393b3c68f8f6b5096dce048142a710584dc7cace14"
+      ],
+      "current_sha256s": [
+        "4fd70df1bd73dc0583700a982674e459e61fea056a8ed2aafe99846d5dc50634"
+      ]
+    },
+    {
+      "key": "object:s_last_service_tick",
+      "new_keys": [
+        "object:s_last_service_tick"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "e202c9b74cd7c32a805c96ee2e585cb212d0d0cc18f16a6aafdb143d5674ca35"
+      ],
+      "current_sha256s": [
+        "6e312638a4051e36e5f4ed12ec4c8c90494843dea6f8c5974ef34f18d4abf4f0"
+      ]
+    },
+    {
+      "key": "object:s_open_loop_angle",
+      "new_keys": [
+        "object:s_open_loop_angle"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "8755158a439a2c8c0149d325c897fe6bfb1447936e73f6c1d387dcd915bec8c3"
+      ],
+      "current_sha256s": [
+        "c24a8a1d060217ba7f8580b25d3daec1495ec8eebb51f6abb3755fc95d022b72"
+      ]
+    },
+    {
+      "key": "object:s_pll_integral",
+      "new_keys": [
+        "object:s_pll_integral"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "88e660ad2f87cf3ef01005cb3251a2ac82725ec0a0824b6501972907a333c2e6"
+      ],
+      "current_sha256s": [
+        "1c398e623e34161a0b94096e6ba5d5d21322a397a94536876a4b56cb4f7480fc"
+      ]
+    },
+    {
+      "key": "object:s_pll_lock_10ms_count",
+      "new_keys": [
+        "object:s_pll_lock_10ms_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "3a70b7685648cab688029c4b8507ee21359be2cdc4bd533f36e23619d357ac14"
+      ],
+      "current_sha256s": [
+        "44c9b08afaa70774958218a3ee710b58e55640aea0ec132b41d67817d12cfae3"
+      ]
+    },
+    {
+      "key": "object:s_pll_lock_fast_count",
+      "new_keys": [
+        "object:s_pll_lock_fast_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "ca8bffe8481c1b5b14570e9260efb380f0c2e8bf3547bb050d3402a5bef74215"
+      ],
+      "current_sha256s": [
+        "3d875db3a881690a7386bbc930d149b4c273b8cde628eeb1a77477a0202e5385"
+      ]
+    },
+    {
+      "key": "object:s_precharge_stable_count",
+      "new_keys": [
+        "object:s_precharge_stable_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "fdbb383886fd62f743c164c84107ac00f60e84c9d69bfd05085ac680fcf9251c"
+      ],
+      "current_sha256s": [
+        "1bde4b1ce5e979fe24ab7cdc4c942bbd5dc9de47217aa3cf99452167b82ead7b"
+      ]
+    },
+    {
+      "key": "object:s_startup_phase",
+      "new_keys": [
+        "object:s_startup_phase"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "a7657f29cf5aba7efcf8718beb434c27b919a060a4b865b476945ab321162e4f"
+      ],
+      "current_sha256s": [
+        "893a4e80503558bca7fd6d9b490b0f7b671c7d79cd8c432ec09854519c354513"
+      ]
+    },
+    {
+      "key": "object:s_startup_tad_count",
+      "new_keys": [
+        "object:s_startup_tad_count"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "1c1fdeaa6ca1bd6a07e1304d25e8733032b314867f70fc82f83c6cc489ce60a5"
+      ],
+      "current_sha256s": [
+        "d031e9e2def42a4a8c97ce45afbfe9417a396f077d785f0bc81feb6630bb7995"
+      ]
+    },
+    {
+      "key": "object:s_startup_voltage_reference",
+      "new_keys": [
+        "object:s_startup_voltage_reference"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "73cc52f125a2fc8269bc10ec3b91a82d98fee15312a539b528e26c7e4aabee0e"
+      ],
+      "current_sha256s": [
+        "9df63bdbc698eb43d70fdfe3ea02fbefbc941af9f6758014b6dfb4e1aac0ec78"
+      ]
+    },
+    {
+      "key": "object:s_state_enter_tick",
+      "new_keys": [
+        "object:s_state_enter_tick"
+      ],
+      "reason": "控制状态对象在控制核心拆分后保留原变量和生命周期，仅调整声明位置/类型布局以供 FastStep 与 Service 分别访问。",
+      "validation": "tests/common_control_safety.py; tests/realtime_audit.py; tests/refactor_equivalence.py; TI target builds reported separately; hardware WCET not measured",
+      "baseline_sha256s": [
+        "34bb14b0f06401389e97a8d3e31d9628f616ab8b2759b0795ed51d08beda0347"
+      ],
+      "current_sha256s": [
+        "727e3b12149f56211c65fb460847f960395cc382003e979987e85f5c9eff66f5"
+      ]
     }
   ],
   "added_reviews": [
     {
       "key": "function:Chb_GateBlocked",
       "current_sha256s": [
-        "fe6a8fbe6175b8afb8b421585969f6cbd895ab8f159a17f2c1e6f69bc564b755"
+        "c89f5b2856e5ca1d80655779339ad8d91b81d9358f29fac9b84394536266c0ef"
       ],
       "reason": "将原单相故障/状态门控判据改为双模式公共函数。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured"
@@ -2261,7 +2627,7 @@
     {
       "key": "function:Chb_EnablePwm",
       "current_sha256s": [
-        "b90fc88ee8898b6f9701b4ddc016f0f9f0c521585758bbc8f035239e675506cf"
+        "52983017efdb37040d56e88a3f02530bbda8c2b039ead4baefd3eeae9e5a3faf"
       ],
       "reason": "将原单相PWM最终使能推广双模式，短临界区内复核故障/请求/模式/PLL/有效相母线，Variable_RST保留在关中断前。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured"
@@ -2269,7 +2635,7 @@
     {
       "key": "function:Chb_DisablePwm",
       "current_sha256s": [
-        "51e189a7581b3e60f0c15871c69bb56b8e07e134a9ae4994de2237c27f776eea"
+        "b3fe091d50e54332b278b49cc2a574ebb1fcbfdbbe2fa9fc913c4b74fa9a4eec"
       ],
       "reason": "将原单相PWM最终封锁推广双模式；CHB/DAB可独立停，DAB停机保留原StartMethod复位。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured"
@@ -2277,7 +2643,7 @@
     {
       "key": "function:Chb_DcBusReady",
       "current_sha256s": [
-        "475fbe1909a919661a04ecf9f171d8a7b53547bb615908d0c0b7f7eabc7c727f"
+        "f4c3001b152922d3c0b5c8ce12cabcb2de18e79560196d0c53647ee6732f0b92"
       ],
       "reason": "逐一检查实际配置有效相的模块均压，拒绝低压/NaN/Inf；单相只A、三相检查ABC，至少一相有效。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured"

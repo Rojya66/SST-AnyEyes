@@ -49,6 +49,11 @@
       "purpose": "设置电压量程、欠压/过压门限和控制限幅"
     },
     {
+      "name": "ProtectionDefaults_ApplyDerivedThresholds",
+      "file": "Source/04_App/08_Fault/ProtectionDefaults.c",
+      "purpose": "按额定输入和保护系数设置统一保护门限"
+    },
+    {
       "name": "ControlDefaults_InitCoefficients",
       "file": "Source/04_App/04_Control/ControlDefaults.c",
       "purpose": "初始化PLL/电压/电流/谐波系数并保留页1至3恢复顺序"

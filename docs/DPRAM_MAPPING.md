@@ -315,9 +315,9 @@ bits9:8 的附加模式二：0无、1注入谐波、2治理谐波；bits11:10 �
 
 AnyEyes组/index仍不是物理并口地址。新版扩展复用同一16位参数缩放，但使用自己的请求区、点号和回读地址：点0..8命令/总使能、点9..45为37个现代参数、点46..53为8个原保护/巡检参数。每个实际回读地址及写入编码见 [DPRAM_PARAMETERS.md](DPRAM_PARAMETERS.md)。VOFA仍仅发送JustFloat波形，维护经DPRAM进行，485旧维护协议已经删除。
 
-`SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)`，因此启用DPRAM并允许远控时，AnyEyes普通启停/DAB/复位被拒绝，停机参数读写和显示仍可用；AnyEyes `FC` 急停独立有效。若改由AnyEyes普通遥控，应设置 `SST_ENABLE_DPRAM=0,SST_SIMULATOR_MODE=0`。
+串口普通命令仅在仿真器关闭且DPRAM关闭时启用。因此启用DPRAM并允许远控时，AnyEyes普通启停/DAB/复位被拒绝，停机参数读写和显示仍可用；AnyEyes `FC` 急停独立有效。若改由AnyEyes普通遥控，应设置 `SST_ENABLE_DPRAM=0,SST_SIMULATOR_MODE=0`。
 
-预充与保护阈值仍独立，现均可通过扩展点表维护：precharge_voltage_v默认350V（点11）；HA_L_Voltage_Precharge默认350V（点52，逐模块预充巡检）；HA_H_Voltage默认780V（点53，逐模块高压巡检）；OV_level_SET默认830V（点50，三相均压合成滤波值）；dc_overvoltage_trip_v默认780V（点40，三相模块均压最大值）。旧PORT_V_SET是旧参考，不是这些阈值。
+现代预充、快速保护和旧 RMS 保护各有明确的比较对象，统一由 `ProtectionConfig.h` 的额定量和系数给出默认值，并可由扩展点表停机修改。当前低压单相默认值为：`precharge_voltage_v=25 V`（点11）、`HA_L_Voltage_Precharge=25 V`（点52，逐模块预充巡检）、`HA_H_Voltage=80 V`（点53，逐模块高压巡检）、`OV_level_SET=80 V`（点50，三相均压合成滤波值）和 `dc_overvoltage_trip_v=75 V`（点40，三相模块均压最大值）。高压配置对应 `280/350/780/830/780 V`；其中现代预充仍保持现场的280 V设定，旧逐模块预充巡检为350 V。旧PORT_V_SET是旧参考，不是这些阈值。
 
 ## 源码依据
 

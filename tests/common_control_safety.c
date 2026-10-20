@@ -168,7 +168,7 @@ static void test_pll_and_bus(void)
     puts("PASS common positive PLL, each active bus and 200-TAD loss");
 }
 
-static void test_fault_races_and_barrier(void)
+static void test_fault_races_and_first_control_step(void)
 {
     unsigned int before;
     fixture(CHB_AC_MODE_OPEN_LOOP);
@@ -192,14 +192,13 @@ static void test_fault_races_and_barrier(void)
     fixture(CHB_AC_MODE_OPEN_LOOP);
     g_chb_dab_command.run_enable = 1U;
     ChbDabControl_Service();
-    s_running_entry_pending = 1U;
     s_id_pi.integral = 7.0F;
     tick();
-    assert(FPGA_Interface[3].Reference == 1000U);
-    assert(FPGA_Interface[7].Reference == 1000U);
-    assert(FPGA_Interface[11].Reference == 1000U);
+    assert(FPGA_Interface[3].Reference != 1000U ||
+           FPGA_Interface[7].Reference != 1000U ||
+           FPGA_Interface[11].Reference != 1000U);
     assert(s_id_pi.integral == 7.0F);
-    puts("PASS common fault ISR races and RUNNING publication barrier");
+    puts("PASS common fault ISR races and immediate first control step");
 }
 
 static void test_invalid_values_and_protection_order(void)
@@ -269,7 +268,7 @@ static void test_low_voltage_startup(void)
     unsigned int i;
     float previous;
     assert(saved_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP);
-    assert(saved_command.dc_voltage_ref_v == 35.0F);
+    assert(saved_command.dc_voltage_ref_v == 60.0F);
     assert(saved_parameters.startup_strategy == CHB_STARTUP_ID_RAMP);
     fixture(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_command.run_enable = 1U;
@@ -307,10 +306,10 @@ static void test_low_voltage_startup(void)
         assert(fabsf(s_id_reference) <= 1.00001F);
         assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
     }
-    assert(fabsf(s_startup_voltage_reference - 35.0F) < 0.001F);
+    assert(fabsf(s_startup_voltage_reference - 60.0F) < 0.001F);
     assert(g_chb_dab_status.load_ready == 0U);
     assert(g_chb_dab_status.current_limit_active_a == 1.0F);
-    SVG_Udc_A_Ave = 35.0F;
+    SVG_Udc_A_Ave = 60.0F;
     for (i = 0U; i < SST_LV100_READY_TAD - 1U; ++i)
     {
         tick();
@@ -369,7 +368,7 @@ int main(void)
     saved_command = g_chb_dab_command;
     test_mode_latch();
     test_pll_and_bus();
-    test_fault_races_and_barrier();
+    test_fault_races_and_first_control_step();
     test_invalid_values_and_protection_order();
     test_low_voltage_startup();
     return 0;

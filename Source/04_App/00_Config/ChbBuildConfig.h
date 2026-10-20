@@ -11,12 +11,12 @@
 #define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_VOFA
 #endif
 #ifndef SST_ENABLE_DPRAM
-/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；当前单UNIT调试默认0。 */
-#define SST_ENABLE_DPRAM 0U
+/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；默认与DPRAM地址文档一致。 */
+#define SST_ENABLE_DPRAM 1U
 #endif
 #ifndef SST_SIMULATOR_MODE
-/* SST_SIMULATOR_MODE：当前默认1由仿真器控制；0允许所选通信源远控，急停仍有效。 */
-#define SST_SIMULATOR_MODE 1U
+/* SST_SIMULATOR_MODE：1为仿真器专用控制；默认0允许DPRAM维护点表写入。 */
+#define SST_SIMULATOR_MODE 0U
 #endif
 #ifndef SST_BENCH_INPUT_SIM
 /* SST_BENCH_INPUT_SIM：临时无主回路输入注入；0 使用真实采样，1 生成测试采样。
@@ -28,8 +28,8 @@
 #define SST_PHASE_A_ONLY_TEST 1U
 #endif
 #ifndef SST_LOW_VOLTAGE_100V_TEST
-/* SST_LOW_VOLTAGE_100V_TEST：当前显式选择0，保留现场高压参数配置。
- * 100 Vac带载试验必须改为1；1只允许用于单相，0可用于高压单相或三相。 */
+/* SST_LOW_VOLTAGE_100V_TEST：默认随当前单相低压配置启用。
+ * 置0可保留高压单相或三相参数；1只允许用于单相。 */
 #define SST_LOW_VOLTAGE_100V_TEST 1U
 #endif
 
@@ -43,7 +43,7 @@
 #define SST_LV100_MODULE_OV_V 80.0
 /* SST_LV100_PORT_V_MIN：低压试验上位机可写单模块电压给定下限，单位 V。 */
 #define SST_LV100_PORT_V_MIN 20.0
-/* SST_LV100_PORT_V_MAX：低压试验上位机可写模块均压给定上限，单位 V；距 42 V 保护留有裕量。 */
+/* SST_LV100_PORT_V_MAX：低压试验上位机可写模块均压给定上限，单位 V；实际保护门限仍由 ProtectionConfig.h 集中计算。 */
 #define SST_LV100_PORT_V_MAX 150.0
 /* SST_LV100_PORT_V_DEFAULT：低压试验通信/仿真命令的默认单模块电压给定，单位 V。 */
 #define SST_LV100_PORT_V_DEFAULT 60.0
@@ -117,9 +117,17 @@
 /* SST_LV100_UST_ADD_V：低压启动阶段电压给定的附加步进，单位 V。 */
 #define SST_LV100_UST_ADD_V 3.0
 /* SST_ALLOW_REMOTE_COMMANDS：由仿真器模式与 DPRAM 配置派生的遥控权限。 */
-#define SST_ALLOW_REMOTE_COMMANDS (!SST_SIMULATOR_MODE)
+#if SST_SIMULATOR_MODE
+#define SST_ALLOW_REMOTE_COMMANDS 0U /* SST_ALLOW_REMOTE_COMMANDS：仿真器下关闭远程写入。 */
+#else
+#define SST_ALLOW_REMOTE_COMMANDS 1U /* SST_ALLOW_REMOTE_COMMANDS：目标板允许远程写入。 */
+#endif
 /* SST_ALLOW_SERIAL_COMMANDS：由仿真器模式派生的普通串口命令权限。 */
-#define SST_ALLOW_SERIAL_COMMANDS (SST_ALLOW_REMOTE_COMMANDS && !SST_ENABLE_DPRAM)
+#if SST_ALLOW_REMOTE_COMMANDS && !SST_ENABLE_DPRAM
+#define SST_ALLOW_SERIAL_COMMANDS 1U /* SST_ALLOW_SERIAL_COMMANDS：无DPRAM时允许串口命令。 */
+#else
+#define SST_ALLOW_SERIAL_COMMANDS 0U /* SST_ALLOW_SERIAL_COMMANDS：DPRAM拥有命令通道。 */
+#endif
 #ifndef SST_UART_BAUD
 /* SST_UART_BAUD：UART2 调试通信波特率，单位 bit/s。 */
 #define SST_UART_BAUD 460800U

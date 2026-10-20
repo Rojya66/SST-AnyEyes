@@ -58,8 +58,9 @@ typedef enum
     /* 控制核心交流过流故障编号。 */ CHB_FAULT_AC_OVERCURRENT = 3,
     /* 控制核心直流过压故障编号。 */ CHB_FAULT_DC_OVERVOLTAGE = 4,
     /* 控制核心硬件故障编号。 */ CHB_FAULT_HARDWARE = 5,
-    /* 配置非法；包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6,
-    /* 开关反馈超时或运行反馈丢失；仅开启开关反馈联锁时使用。 */ CHB_FAULT_SWITCH_FEEDBACK = 7
+    /* 配置非法；仅表示启动前或在线写入的控制参数不满足范围。 */ CHB_FAULT_BAD_CONFIGURATION = 6,
+    /* 开关反馈超时或运行反馈丢失；仅开启开关反馈联锁时使用。 */ CHB_FAULT_SWITCH_FEEDBACK = 7,
+    /* 运行中的采样、PI数值或母线状态失效；不再混入配置故障。 */ CHB_FAULT_CONTROL_RUNTIME = 8
 } CHB_DAB_FAULT;
 
 /* Direct debugger/upper-computer commands. All commands are level signals. */

@@ -32,7 +32,7 @@ J2/J3的5、7脚为15V_DRIVER，9、13脚为SO1/SO2故障返回，11、15脚才�
 
 `Source/03_System/02_ISR/Redef_Interrupt.c:251-270`的10kHz `FPGAIsr()`调用`ChbDabControl_FastStep()`。控制核心在运行态选择开环或闭环，最终都进入`Chb_WriteNormalizedReferences()`，没有由DSP直接输出CHB四路门极PWM。
 
-- 开环：`ChbDabControl.c:1261-1285`计算`qA=1+M*sin(theta)`，B/C相各偏移120°。
+- 开环：`ChbDabControlFast.c` 的 `Chb_RunOpenLoop()` 计算 `qA=1+M*sin(theta)`，B/C相各偏移120°。
 - 闭环：同文件约1480～1510行把电压环/电流环及电网前馈得到的相电压换成`q=1+vphase/(N*Udc_ref)`。
 - 统一写入：394～425行把q限幅到0.02～1.98，并写`Reference=(uint16_t)(q*HA_ReferenceDEF_phase)`；同相两块插件收到同一个相参考。
 - `FpgaInit.c:79-174`按模块位图置位数求N，再令`HA_ReferenceDEF_phase=N*1250`。`SstControlConfig.h:17/35`为`ControlTAD=5000`、`ReferenceDEF=1250`。

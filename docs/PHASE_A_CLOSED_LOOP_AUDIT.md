@@ -6,26 +6,26 @@
 
 ## 1. 当前范围和参数
 
-当前目标为 C6748 + 202采样板 + `501_compatible_build` + UNIT。宏默认单相=1、实际采样（注入=0）、仿真器=1、DPRAM=0、VOFA。A1/A2各 `0x0007`，A相共6逻辑模块；现场板数/编号必须匹配，B/C不参与控制。
+当前目标为 C6748 + 202采样板 + `501_compatible_build` + UNIT。宏默认单相=1、实际采样（注入=0）、目标板远控=1、DPRAM=1、VOFA。A1/A2各 `0x0007`，A相共6逻辑模块；现场板数/编号必须匹配，B/C不参与控制。
 
 | 参数 | 当前值 | 解释 |
 |---|---:|---|
 | `sample_period_s` | 0.0001 s | 10 kHz外部TAD；不能通过改变量改变中断周期 |
-| `precharge_voltage_v` | 350 V | A相模块均压连续达标，非单模块最小值 |
+| `precharge_voltage_v` | 25 V/module | A相模块均压连续达标，非单模块最小值 |
 | `precharge_stable_10ms` | 20 | 达标确认200 ms |
 | `precharge_timeout_10ms` | 1000 | 预充超时10 s |
 | `bypass_delay_10ms` | 20 | 旁路稳定200 ms |
 | `pll_min_grid_peak_v` | 100 V | SOGI alpha/beta矢量幅值下限，非RMS |
-| `pll_lock_error_pu` | 0.02 | 归一化q误差门限，同时要求d正向 |
+| `pll_lock_error_pu` | 0.06 | 归一化q误差门限，同时要求d正向 |
 | `pll_lock_10ms` | 20 | 慢状态机连续锁定确认200 ms |
 | `pll_timeout_10ms` | 500 | WAIT_PLL超时5 s |
-| `dc_voltage_ref_v` | 680 V/模块 | 电压外环目标；共6模块时总尺度4080 V |
-| `dc_overvoltage_trip_v` | 780 V/模块 | A相均压快速过压阈值，不能排除个别模块过压 |
-| `ac_overcurrent_trip_a` | 120 A | A相物理电流快速过流绝对值阈值 |
+| `dc_voltage_ref_v` | 60 V/模块 | 低压电压外环目标；共6模块时总尺度360 V |
+| `dc_overvoltage_trip_v` | 75 V/模块 | A相均压快速过压阈值，不能排除个别模块过压 |
+| `ac_overcurrent_trip_a` | 由`ProtectionConfig.h`按额定电流和峰值系数派生，低压默认约60 A | A相物理电流快速过流绝对值阈值 |
 | `protection_confirm_samples` | 5 | 快速OC/OV连续确认500 us |
 | 运行PLL异常确认 | 200 TAD | 20 ms，从算法检测失锁/失压后计数 |
 
-默认开机仍为开环模式、run/dab=0。输入220 Vrms不保证达到350 V/模块预充门槛，尤其当前6模块配置不能当作单模块演示。不得为了跳过预充而直接写状态机或伪造实际母线。
+默认开机为闭环模式但 run/dab=0。低压实测输入仍需达到25 V/module预充门槛，当前6模块配置不能当作单模块演示。不得为了跳过预充而直接写状态机或伪造实际母线。
 
 ## 2. 调用链和状态路径
 
@@ -50,7 +50,7 @@ FPGA TAD / GPIO69
 ```text
 STOPPED
   配置有效且run=1 -> PRECHARGE（进线合，旁路断，PWM封锁）
-  均压连续>=350 V -> BYPASS_DELAY（旁路合）
+  均压连续>=25 V/module -> BYPASS_DELAY（旁路合）
   延时完成 -> WAIT_PLL
   正向PLL连续确认 -> RUNNING
   最终PWM使能前临界区复查 -> CHB发波；DAB按独立命令

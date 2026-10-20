@@ -27,7 +27,8 @@
 | 29103 | 二级 | `CHB_FAULT_AC_OVERCURRENT` 或 `HVAC_OC_Fault` | 快速 AC 过流/旧 HVAC 软件过流；旧一级、二级过流共用一标志，不能事后区分 |
 | 29104 | 二级 | `CHB_FAULT_DC_OVERVOLTAGE` 或 `HVAC_OV_Fault` | 快速直流过压/旧 HVAC 软件过压；原始 `control_fault` 随历史保存以区分来源 |
 | 29108 | 二级 | `CHB_FAULT_SWITCH_FEEDBACK=7` | 开关反馈联锁启用时，动作超时或运行中连续反馈不符；复位须实际开关断开稳定 |
-| 29105 | 二级 | `CHB_FAULT_BAD_CONFIGURATION` | 模块数量/参考量等配置检查失败；单相、三相均包括启动/运行中切模式、非法数值/采样及有效相母线低于预充门槛 |
+| 29105 | 二级 | `CHB_FAULT_BAD_CONFIGURATION` | 模块数量、参考量、启动参数或运行中模式切换等配置检查失败；运行采样、PI 数值和母线状态异常单独上报 29109 |
+| 29109 | 二级 | `CHB_FAULT_CONTROL_RUNTIME` | 运行中采样、PI 数值或母线状态失效；与配置非法、相序和频率故障分开上报 |
 | 19101 | 一级 | `CHB_FAULT_HARDWARE` 或端口总故障，但无可辨识分类 | 未分类汇总；不能解释为某个具体器件损坏 |
 | 19102 | 一级 | `FaultTypeFLAG.Port_OverCurrent` 或端口 bit10 | 模拟插件/端口硬件过流；具体通道仍需原寄存器证据 |
 | 19103 | 一级 | `FaultTypeFLAG.Port_OverVolt` 或端口 bit12 | 端口硬件过压兼容报告；当前 HVAC 的 AD 保护分支主要归类为过流 |
@@ -44,19 +45,19 @@
 
 ### 两套软件保护的阈值与计时
 
-下表列出高压参数组（`SST_LOW_VOLTAGE_100V_TEST=0`）。当前配置显式 LOW=0；启用 LOW=1 的 100 Vac 参数组时，原一级/二级过流为 40/45 A RMS、原过压为 42 V，快速过流/过压为 60 A/42 V；确认时间沿用原设置。50 A峰值为运行给定上限，启动限流仍为1 A，详见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。42 V 检查相模块均压或其合成滤波值，均不是逐模块最大电压保护。低压参数及恢复三相的方法见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
+下表列出高压参数组（`SST_LOW_VOLTAGE_100V_TEST=0`）。当前默认配置为 LOW=1 单相低压；下文高压参数组仅在显式 LOW=0 时生效；启用 LOW=1 的 100 Vac 参数组时，原一级/二级过流为 40/45 A RMS、原过压为 80 V，快速过流/过压为 60 A/75 V；确认时间沿用原设置。50 A峰值为运行给定上限，启动限流默认 5 A，详见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。75 V 快速门槛、80 V 有效值门槛分别检查相模块均压或其合成滤波值，均不是逐模块最大电压保护。低压参数及恢复三相的方法见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。
 
 | 保护来源 | 默认阈值及比较对象 | 确认规则 | 设置位置 |
 |---|---|---|---|
 | 原HVAC一级过流 | `OC_level_SET=70 A`；三相电流200点有效值，任一相严格大于阈值 | `counter_OC_time > OC_time_SET`，默认设置100 | `ProtectionConfig.h`默认宏 → `ProtectionData.c`运行变量 |
 | 原HVAC二级过流 | `OC_level_SET_L2=75 A`；同一有效值口径 | `counter_OC_time1 > OC_time_SET_L2`，默认设置5 | 同上 |
 | 原HVAC过压 | `OV_level_SET=830 V`；三相模块均压合成并滤波后的`SVG_Udc_Ave` | `counter_OV_time > OV_time_SET`，默认设置5 | 同上 |
-| 快速过流 | `ac_overcurrent_trip_a=120 A`；每TAD标定相电流绝对值最大值，单相仅取A相 | 达到阈值后连续`protection_confirm_samples=5`个TAD确认，未达到时清计数 | `ChbDabControl.c`中`g_chb_dab_params`初始化表 |
+| 快速过流 | `ac_overcurrent_trip_a`按额定输入电流峰值和`SST_FAST_OC_FACTOR`计算；低压默认约60 A；每TAD标定相电流绝对值最大值，单相仅取A相 | 达到阈值后连续`protection_confirm_samples=5`个TAD确认，未达到时清计数 | `ProtectionConfig.h`及`ChbDabControl.c`中的派生默认值 |
 | 快速过压 | `dc_overvoltage_trip_v=780 V`；三相各自模块均压的最大值，单相仅取A相模块均压 | 同上 | 同上 |
 
 原保护的`counter_*_flag`是计时使能标志，`counter_*_time`在Timer2中断中每10 ms递增；原`*_time_SET`单位是Timer2节拍，不是TAD。严格大于判据使默认100/5需101/6次递增；持续超限且运行检查未中断时，从置位计时标志到确认约1.00～1.01 s / 50～60 ms，另受节拍相位、TAD检查和有效值发布时间影响。一级过流与过压进入95%～100%回差带后仍保留计时标志和累计计数，低于95%才清；二级过流在三相均不超过75 A时清计数，没有95%回差。
 
-电流有效值累积200个有效TAD样本后等待后台发布；10 kHz时积累窗口为20 ms，发布时间还取决于后台服务。快速保护直接使用每TAD的标定电流样本，不能把120 A与原70/75 A按同一测量口径比较。5个TAD在10 kHz下是名义0.5 ms窗口，实际保护响应仍需板级测量。
+电流有效值累积200个有效TAD样本后等待后台发布；10 kHz时积累窗口为20 ms，发布时间还取决于后台服务。快速保护直接使用每TAD的标定电流样本，不能与原RMS 70/75 A按同一测量口径比较。5个TAD在10 kHz下是名义0.5 ms窗口，实际保护响应仍需板级测量。
 
 CCS可修改上述运行变量；修改默认值需改相应宏或初始化表。AnyEyes的组/索引`1/30`、`1/31`、`1/32`分别映射快速过流门槛、快速过压门槛、快速确认样本数，停机可写；原保护阈值不与这三个参数自动同步。DPRAM扩展点39/40/41复用这三个快速参数，点46..51维护原OC/OV阈值和10ms计时，点52/53分别为 `HA_L_Voltage_Precharge` 和 `HA_H_Voltage`（0.1V/count）。所有阈值维护要求完全停机、存储空闲，并校验范围；精确回读地址见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。
 

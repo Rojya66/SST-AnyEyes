@@ -4,7 +4,7 @@
 
 记录固件 build_result.json、宏组合、模块位图、FPGA版本和板卡编号。核对 C6748.cmd 的 CS2/CS5 寄存器位置、GPIO69 TAD、GPIO142 FAULT、GPIO101 DPRAM、GPIO104 RS485、GPIO40 WDI，以及 ADC 极性、增益和继电器输出。
 
-首次台架检查显式设 `SST_SIMULATOR_MODE=1`；2026-10-14单UNIT调试源码默认是 `SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，临时输入宏`SST_BENCH_INPUT_SIM`默认关闭。使用真实主回路必须保持测试宏为0，并按实际需要恢复远控/DPRAM配置。无主回路输入测试单独见[BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)。上电 run/dab 应均为0。确认原20秒初始化等待和WDI。确认控制周期实际为100us，并与 sample_period_s=0.0001 一致。
+首次台架检查如需无主回路注入才显式设 `SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`；当前源码默认是 `SST_SIMULATOR_MODE=0,SST_ENABLE_DPRAM=1`，临时输入宏`SST_BENCH_INPUT_SIM`默认关闭。使用真实主回路必须保持测试宏为0，并按实际需要恢复远控/DPRAM配置。无主回路输入测试单独见[BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md)。上电 run/dab 应均为0。确认原20秒初始化等待和WDI。确认控制周期实际为100us，并与 sample_period_s=0.0001 一致。
 
 ## 2. 10 kHz 实时性测量
 

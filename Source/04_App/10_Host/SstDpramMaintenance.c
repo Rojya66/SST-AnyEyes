@@ -23,14 +23,14 @@ typedef struct
     uint16_t busy; /* busy：发布未结束标志。 */
 } SST_DPRAM_PUBLICATION;
 
-static uint16_t response_data[128]; /* response_data：回复及54点实际值RAM快照。 */
-static uint16_t telemetry_data[128]; /* telemetry_data：现代遥测RAM快照。 */
-static uint16_t history_data[512]; /* history_data：详细故障历史RAM快照，不复制C结构对齐空洞。 */
+static uint16_t response_data[SST_DPRAM_BLOCK_WORDS]; /* response_data：回复及54点实际值RAM快照。 */
+static uint16_t telemetry_data[SST_DPRAM_BLOCK_WORDS]; /* telemetry_data：现代遥测RAM快照。 */
+static uint16_t history_data[SST_DPRAM_HISTORY_WORDS]; /* history_data：详细故障历史RAM快照，不复制C结构对齐空洞。 */
 static SST_DPRAM_PUBLICATION response_publication; /* response_publication：回复分片发布进度。 */
 static SST_DPRAM_PUBLICATION telemetry_publication; /* telemetry_publication：遥测分片发布进度。 */
 static SST_DPRAM_PUBLICATION history_publication; /* history_publication：历史分片发布进度。 */
 static uint16_t request_pending; /* request_pending：邮箱21已通知，等待前一回复完成后处理。 */
-static uint16_t last_request[16]; /* last_request：最近一次合法请求，用于同序号同载荷幂等。 */
+static uint16_t last_request[SST_DPRAM_REQUEST_WORDS]; /* last_request：最近一次合法请求，用于同序号同载荷幂等。 */
 static uint16_t last_valid; /* last_valid：是否已记录一个合法序号。 */
 static uint16_t last_result; /* last_result：最近合法序号的受理结果，非法请求不能覆盖幂等缓存。 */
 static uint16_t ack_sequence, /* ack_sequence：最近回复对应的请求序号，不等同PWM执行完成。 */
@@ -55,14 +55,55 @@ static uint16_t RequestCrc(const uint16_t *data)
     uint16_t i, /* i：当前请求、参数或发布快照中的 16 位字索引。 */
         byte_index, /* byte_index：CRC当前字的低/高字节下标。 */
         bit; /* bit：CRC逐位迭代下标，范围0..7。 */
-    for (i = 0U; i < 12U; ++i)
+    for (i = 0U; i < SST_DPRAM_REQUEST_CRC_WORDS; ++i)
         for (byte_index = 0U; byte_index < 2U; ++byte_index)
         {
             crc ^= (uint16_t)((data[i] >> (8U * byte_index)) & 0xFFU);
             for (bit = 0U; bit < 8U; ++bit)
-                crc = (uint16_t)((crc >> 1) ^ ((crc & 1U) ? 0xA001U : 0U));
+            {
+                uint16_t polynomial = 0U; /* polynomial：当前位为1时使用IBM多项式。 */
+                if (crc & 1U)
+                    polynomial = 0xA001U;
+                crc = (uint16_t)((crc >> 1) ^ polynomial);
+            }
         }
     return crc;
+}
+
+/*==================================================================
+ * 函数功能: 校验请求帧的固定字段及提交时序
+ * 输入参数: data：主循环复制的请求帧；commit：复制前读取的提交字
+ * 输出参数: 无。
+ * 返回值: 1表示帧完整且一致，0表示应回复格式错误。
+ * 执行说明: 提交字和序号在复制前后各读取一次，防止主机正在改写帧时消费半帧。
+ *==================================================================*/
+static uint16_t IsRequestFrameValid(const uint16_t *data, uint16_t commit)
+{
+    if (commit != SST_DPRAM_COMMIT)
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_COMMIT_WORD] != commit)
+        return 0U;
+    if (DPRAM_SstRequest[SST_DPRAM_REQUEST_COMMIT_WORD] != commit)
+        return 0U;
+    if (DPRAM_SstRequest[SST_DPRAM_REQUEST_SEQUENCE_WORD] != data[SST_DPRAM_REQUEST_SEQUENCE_WORD])
+        return 0U;
+    if (DPRAM_SstRequest[SST_DPRAM_REQUEST_SEQUENCE_COPY_WORD] != data[SST_DPRAM_REQUEST_SEQUENCE_COPY_WORD])
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_MAGIC_WORD] != SST_DPRAM_MAGIC)
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_VERSION_WORD] != SST_DPRAM_VERSION)
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_SEQUENCE_WORD] == 0U)
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_SEQUENCE_WORD] != data[SST_DPRAM_REQUEST_SEQUENCE_COPY_WORD])
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_RESERVED_WORD] != 0U)
+        return 0U;
+    if (data[SST_DPRAM_REQUEST_TAIL_RESERVED_WORD] != 0U)
+        return 0U;
+    if (RequestCrc(data) != data[SST_DPRAM_REQUEST_CRC_WORD])
+        return 0U;
+    return 1U;
 }
 
 /*==================================================================
@@ -74,14 +115,14 @@ static uint16_t RequestCrc(const uint16_t *data)
  *================================================================*/
 static uint16_t ReadPoint(uint16_t point)
 {
-    if (point < 8U)
+    if (point < SST_DPRAM_COMMAND_POINT_COUNT)
         return SstParameterTable_ReadCommand(point);
-    if (point == 8U)
+    if (point == SST_DPRAM_PROTECTION_ENABLE_POINT)
         return g_chb_dab_protection_enable;
-    if (point < 46U)
-        return SstParameterTable_ReadParameter((uint16_t)(point - 9U));
-    if (point < 54U)
-        return SstLegacyParameters_Read((uint16_t)(point - 46U));
+    if (point < SST_DPRAM_PARAMETER_POINT_END)
+        return SstParameterTable_ReadParameter((uint16_t)(point - SST_DPRAM_PARAMETER_POINT_START));
+    if (point < SST_DPRAM_POINT_COUNT)
+        return SstLegacyParameters_Read((uint16_t)(point - SST_DPRAM_LEGACY_POINT_START));
     return 0U;
 }
 
@@ -96,7 +137,9 @@ static uint16_t WritePoint(uint16_t point, uint16_t value)
 {
 #if SST_ALLOW_REMOTE_COMMANDS
     uint16_t n; /* n：现代参数表索引，跨AnyEyes组1与组2。 */
-    if (point >= 54U)
+    uint16_t group; /* group：参数表所属组号。 */
+    uint16_t index; /* index：组内参数索引。 */
+    if (point >= SST_DPRAM_POINT_COUNT)
         return SST_PARAM_BAD_ADDRESS;
     if (point == 0U || point == 1U || point == 3U)
     {
@@ -114,14 +157,24 @@ static uint16_t WritePoint(uint16_t point, uint16_t value)
             g_chb_dab_command.fault_reset = value;
         return SST_PARAM_OK;
     }
-    if (point < 9U)
+    if (point < SST_DPRAM_PARAMETER_POINT_START)
         return SstParams_Write(0U, point, value);
-    if (point < 46U)
+    if (point < SST_DPRAM_PARAMETER_POINT_END)
     {
-        n = (uint16_t)(point - 9U);
-        return SstParams_Write(n < 34U ? 1U : 2U, n < 34U ? n : (uint16_t)(n - 34U), value);
+        n = (uint16_t)(point - SST_DPRAM_PARAMETER_POINT_START);
+        if (n < 34U)
+        {
+            group = 1U;
+            index = n;
+        }
+        else
+        {
+            group = 2U;
+            index = (uint16_t)(n - 34U);
+        }
+        return SstParams_Write(group, index, value);
     }
-    return SstLegacyParameters_Write((uint16_t)(point - 46U), value);
+    return SstLegacyParameters_Write((uint16_t)(point - SST_DPRAM_LEGACY_POINT_START), value);
 #else
     (void)point;
     (void)value;
@@ -140,17 +193,29 @@ static uint16_t ApplyCommand(const uint16_t *data)
 {
 #if SST_ALLOW_REMOTE_COMMANDS
     uint16_t result = SST_PARAM_OK; /* result：忙或复位条件不满足时报告部分请求未受理。 */
-    if ((data[6] & 0xFFFEU) || (data[7] & 0xFFFEU) || (data[8] & 0xFFFCU) || (data[9] & 0xFFFCU) ||
-        (data[10] & 0xFFFEU))
+    if ((data[SST_DPRAM_REQUEST_START_WORD] & 0xFFFEU) != 0U)
         return SST_PARAM_RANGE;
-    if (!(data[7] & 1U))
+    if ((data[SST_DPRAM_REQUEST_STOP_WORD] & 0xFFFEU) != 0U)
+        return SST_PARAM_RANGE;
+    if ((data[SST_DPRAM_REQUEST_PULSE_ON_WORD] & 0xFFFCU) != 0U)
+        return SST_PARAM_RANGE;
+    if ((data[SST_DPRAM_REQUEST_PULSE_OFF_WORD] & 0xFFFCU) != 0U)
+        return SST_PARAM_RANGE;
+    if ((data[SST_DPRAM_REQUEST_FAULT_RESET_WORD] & 0xFFFEU) != 0U)
+        return SST_PARAM_RANGE;
+    if ((data[SST_DPRAM_REQUEST_STOP_WORD] & 1U) == 0U)
     {
-        if (SstParams_IsStorageBusy() && (data[6] || data[8] || data[10]))
+        if (SstParams_IsStorageBusy() &&
+            ((data[SST_DPRAM_REQUEST_START_WORD] != 0U) || (data[SST_DPRAM_REQUEST_PULSE_ON_WORD] != 0U) || (data[SST_DPRAM_REQUEST_FAULT_RESET_WORD] != 0U)))
             result = SST_PARAM_BUSY;
     }
-    SstCommand_ApplyDpram(data[6], data[7], data[8], data[9], data[10]);
+    SstCommand_ApplyDpram(data[SST_DPRAM_REQUEST_START_WORD],
+                          data[SST_DPRAM_REQUEST_STOP_WORD],
+                          data[SST_DPRAM_REQUEST_PULSE_ON_WORD],
+                          data[SST_DPRAM_REQUEST_PULSE_OFF_WORD],
+                          data[SST_DPRAM_REQUEST_FAULT_RESET_WORD]);
     /* 先按OFF优先更新命令，再按同一停机判据判断复位是否受理，避免ON/OFF同位误报。 */
-    if (!(data[7] & 1U) && data[10] && !SstParams_IsStopped())
+    if ((data[SST_DPRAM_REQUEST_STOP_WORD] & 1U) == 0U && data[SST_DPRAM_REQUEST_FAULT_RESET_WORD] != 0U && SstParams_IsStopped() == 0U)
         result = SST_PARAM_BUSY;
     return result;
 #else
@@ -171,8 +236,8 @@ static void BeginPublication(SST_DPRAM_PUBLICATION *publication)
     publication->epoch = (uint16_t)(publication->epoch + 2U);
     if (!publication->epoch)
         publication->epoch = 2U;
-    publication->target[0] = (uint16_t)(publication->epoch - 1U);
-    publication->next = 1U;
+    publication->target[SST_DPRAM_PUBLICATION_WORD] = (uint16_t)(publication->epoch - 1U);
+    publication->next = SST_DPRAM_PUBLICATION_WORD + 1U;
     publication->busy = 1U;
 }
 
@@ -185,7 +250,7 @@ static void BeginPublication(SST_DPRAM_PUBLICATION *publication)
  *================================================================*/
 static uint16_t PublishSlice(SST_DPRAM_PUBLICATION *publication)
 {
-    uint16_t budget = 16U; /* budget：单轮新增并口写入数据字上限。 */
+    uint16_t budget = SST_DPRAM_PUBLICATION_BUDGET_WORDS; /* budget：单轮新增并口写入数据字上限。 */
     while (budget && publication->next < publication->count)
     {
         publication->target[publication->next] = publication->data[publication->next];
@@ -194,7 +259,7 @@ static uint16_t PublishSlice(SST_DPRAM_PUBLICATION *publication)
     }
     if (publication->next < publication->count)
         return 0U;
-    publication->target[0] = publication->epoch;
+    publication->target[SST_DPRAM_PUBLICATION_WORD] = publication->epoch;
     publication->busy = 0U;
     return 1U;
 }
@@ -209,21 +274,21 @@ static uint16_t PublishSlice(SST_DPRAM_PUBLICATION *publication)
 static void BuildResponse(void)
 {
     uint16_t i; /* i：当前请求、参数或发布快照中的 16 位字索引。 */
-    for (i = 0U; i < 128U; ++i)
+    for (i = 0U; i < SST_DPRAM_BLOCK_WORDS; ++i)
         response_data[i] = 0U;
-    response_data[1] = SST_DPRAM_MAGIC;
-    response_data[2] = SST_DPRAM_VERSION;
-    response_data[3] = ack_sequence;
-    response_data[4] = ack_result;
-    response_data[5] = ack_operation;
-    response_data[6] = ack_point;
-    response_data[7] = ReadPoint(ack_point);
-    response_data[8] = SstParams_GetStorageResult();
-    response_data[9] = SstParameterStore_IsPending();
-    response_data[10] = SST_ALLOW_REMOTE_COMMANDS;
-    response_data[11] = SST_DPRAM_POINT_COUNT;
-    for (i = 0U; i < 54U; ++i)
-        response_data[32U + i] = ReadPoint(i);
+    response_data[SST_DPRAM_RESPONSE_MAGIC_WORD] = SST_DPRAM_MAGIC;
+    response_data[SST_DPRAM_RESPONSE_VERSION_WORD] = SST_DPRAM_VERSION;
+    response_data[SST_DPRAM_RESPONSE_SEQUENCE_WORD] = ack_sequence;
+    response_data[SST_DPRAM_RESPONSE_RESULT_WORD] = ack_result;
+    response_data[SST_DPRAM_RESPONSE_OPERATION_WORD] = ack_operation;
+    response_data[SST_DPRAM_RESPONSE_POINT_WORD] = ack_point;
+    response_data[SST_DPRAM_RESPONSE_VALUE_WORD] = ReadPoint(ack_point);
+    response_data[SST_DPRAM_RESPONSE_STORAGE_RESULT_WORD] = SstParams_GetStorageResult();
+    response_data[SST_DPRAM_RESPONSE_STORAGE_PENDING_WORD] = SstParameterStore_IsPending();
+    response_data[SST_DPRAM_RESPONSE_REMOTE_ALLOWED_WORD] = SST_ALLOW_REMOTE_COMMANDS;
+    response_data[SST_DPRAM_RESPONSE_POINT_COUNT_WORD] = SST_DPRAM_POINT_COUNT;
+    for (i = 0U; i < SST_DPRAM_POINT_COUNT; ++i)
+        response_data[SST_DPRAM_RESPONSE_PARAMETER_START_WORD + i] = ReadPoint(i);
     BeginPublication(&response_publication);
 }
 
@@ -236,37 +301,40 @@ static void BuildResponse(void)
  *================================================================*/
 static void ProcessRequest(void)
 {
-    uint16_t data[16]; /* data：请求RAM副本，防止消费时反复读取并口。 */
+    uint16_t data[SST_DPRAM_REQUEST_WORDS]; /* data：请求RAM副本，防止消费时反复读取并口。 */
     uint16_t i, /* i：当前请求、参数或发布快照中的 16 位字索引。 */
         same = 1U; /* same：同序号请求载荷完全一致标志。 */
-    uint16_t commit = DPRAM_SstRequest[14]; /* commit：读取前的末提交标记。 */
-    for (i = 0U; i < 16U; ++i)
+    uint16_t commit = DPRAM_SstRequest[SST_DPRAM_REQUEST_COMMIT_WORD]; /* commit：读取前的末提交标记。 */
+    for (i = 0U; i < SST_DPRAM_REQUEST_WORDS; ++i)
         data[i] = DPRAM_SstRequest[i];
     request_pending = 0U;
-    ack_sequence = data[2];
-    ack_operation = data[3];
-    ack_point = data[4];
-    if (commit != SST_DPRAM_COMMIT || data[14] != commit || DPRAM_SstRequest[14] != commit ||
-        DPRAM_SstRequest[2] != data[2] || DPRAM_SstRequest[13] != data[13] || data[0] != SST_DPRAM_MAGIC ||
-        data[1] != SST_DPRAM_VERSION || !data[2] || data[2] != data[13] || data[11] || data[15] ||
-        RequestCrc(data) != data[12])
+    ack_sequence = data[SST_DPRAM_REQUEST_SEQUENCE_WORD];
+    ack_operation = data[SST_DPRAM_REQUEST_OPERATION_WORD];
+    ack_point = data[SST_DPRAM_REQUEST_POINT_WORD];
+    if (!IsRequestFrameValid(data, commit))
         ack_result = SST_DPRAM_FRAME_ERROR;
-    else if (last_valid && data[2] == last_request[2])
+    else if (last_valid && data[SST_DPRAM_REQUEST_SEQUENCE_WORD] == last_request[SST_DPRAM_REQUEST_SEQUENCE_WORD])
     {
-        for (i = 0U; i < 16U; ++i)
+        for (i = 0U; i < SST_DPRAM_REQUEST_WORDS; ++i)
             if (data[i] != last_request[i])
                 same = 0U;
-        ack_result = same ? last_result : SST_DPRAM_FRAME_ERROR;
+        if (same != 0U)
+            ack_result = last_result;
+        else
+            ack_result = SST_DPRAM_FRAME_ERROR;
     }
     else
     {
-        switch (data[3])
+        switch (data[SST_DPRAM_REQUEST_OPERATION_WORD])
         {
             case 0:
-                ack_result = data[4] < 54U ? SST_PARAM_OK : SST_PARAM_BAD_ADDRESS;
+                if (data[SST_DPRAM_REQUEST_POINT_WORD] < SST_DPRAM_POINT_COUNT)
+                    ack_result = SST_PARAM_OK;
+                else
+                    ack_result = SST_PARAM_BAD_ADDRESS;
                 break;
             case 1:
-                ack_result = WritePoint(data[4], data[5]);
+                ack_result = WritePoint(data[SST_DPRAM_REQUEST_POINT_WORD], data[SST_DPRAM_REQUEST_VALUE_WORD]);
                 break;
             case 2:
                 ack_result = ApplyCommand(data);
@@ -274,8 +342,11 @@ static void ProcessRequest(void)
             case 3:
             case 4:
 #if SST_ALLOW_REMOTE_COMMANDS
-                ack_result =
-                    data[5] == SST_DPRAM_COMMIT ? SstParameterStore_Request((uint16_t)(data[3] - 3U)) : SST_PARAM_RANGE;
+                if (data[SST_DPRAM_REQUEST_VALUE_WORD] == SST_DPRAM_COMMIT)
+                    ack_result = SstParameterStore_Request(
+                        (uint16_t)(data[SST_DPRAM_REQUEST_OPERATION_WORD] - 3U));
+                else
+                    ack_result = SST_PARAM_RANGE;
 #else
                 ack_result = SST_PARAM_DENIED;
 #endif
@@ -284,7 +355,7 @@ static void ProcessRequest(void)
                 ack_result = SST_PARAM_BAD_ADDRESS;
                 break;
         }
-        for (i = 0U; i < 16U; ++i)
+        for (i = 0U; i < SST_DPRAM_REQUEST_WORDS; ++i)
             last_request[i] = data[i];
         last_result = ack_result;
         last_valid = 1U;
@@ -302,15 +373,38 @@ static void ProcessRequest(void)
  *================================================================*/
 static uint16_t Encode(float value, uint16_t is_signed)
 {
-    float lower = is_signed ? -32768.0F : 0.0F; /* lower：编码下界。 */
-    float upper = is_signed ? 32767.0F : 65535.0F; /* upper：编码上界。 */
+    float lower = 0.0F; /* lower：编码下界。 */
+    float upper = 65535.0F; /* upper：编码上界。 */
+    if (is_signed)
+    {
+        lower = -32768.0F;
+        upper = 32767.0F;
+    }
     if (value != value)
         return 0U;
     if (value < lower)
         value = lower;
     if (value > upper)
         value = upper;
-    return (uint16_t)(int32_t)(value + (value < 0.0F ? -0.5F : 0.5F));
+    if (value < 0.0F)
+        value -= 0.5F;
+    else
+        value += 0.5F;
+    return (uint16_t)(int32_t)value;
+}
+
+/*==================================================================
+ * 函数功能: 按布尔状态设置遥测 flags 位
+ * 输入参数: flags：当前位图；condition：对应状态；mask：协议位掩码
+ * 输出参数: 无。
+ * 返回值: 更新后的位图。
+ * 执行说明: 每个状态单独写出，便于维护和核对 DPRAM_BITS.csv。
+ *==================================================================*/
+static uint16_t SetTelemetryFlag(uint16_t flags, uint16_t condition, uint16_t mask)
+{
+    if (condition)
+        flags = (uint16_t)(flags | mask);
+    return flags;
 }
 
 /*==================================================================
@@ -337,40 +431,44 @@ static void BuildHistory(void)
 {
     SST_FAULT_RECORD record; /* record：当前读取的单条详细历史，不直接结构memcpy。 */
     uint16_t count = SstFault_GetHistoryCount(); /* count：历史有效条数。 */
-    uint32_t sequence =
-        SstFault_GetHistory(0U, &record) ? (uint32_t)record.sequence : 0UL; /* sequence：最新事件序号。 */
+    uint32_t sequence; /* sequence：最新事件序号。 */
     uint16_t i, /* i：当前请求、参数或发布快照中的 16 位字索引。 */
         base; /* base：当前详细历史记录在目标数组中的起始字偏移。 */
-    if (history_publication.busy || (history_initialized && count == history_count && sequence == history_sequence))
+    sequence = 0UL;
+    if (SstFault_GetHistory(0U, &record))
+        sequence = (uint32_t)record.sequence;
+    if (history_publication.busy)
+        return;
+    if (history_initialized && count == history_count && sequence == history_sequence)
         return;
     history_count = count;
     history_sequence = sequence;
     history_initialized = 1U;
-    for (i = 0U; i < 512U; ++i)
+    for (i = 0U; i < SST_DPRAM_HISTORY_WORDS; ++i)
         history_data[i] = 0U;
-    history_data[1] = SST_DPRAM_MAGIC;
-    history_data[2] = SST_DPRAM_VERSION;
-    history_data[3] = count;
-    history_data[4] = 15U;
-    Put32(&history_data[5], sequence);
-    for (i = 0U; i < count && i < 32U; ++i)
+    history_data[SST_DPRAM_HISTORY_MAGIC_WORD] = SST_DPRAM_MAGIC;
+    history_data[SST_DPRAM_HISTORY_VERSION_WORD] = SST_DPRAM_VERSION;
+    history_data[SST_DPRAM_HISTORY_COUNT_WORD] = count;
+    history_data[SST_DPRAM_HISTORY_RECORD_WORDS_WORD] = SST_DPRAM_HISTORY_RECORD_WORDS;
+    Put32(&history_data[SST_DPRAM_HISTORY_SEQUENCE_LOW_WORD], sequence);
+    for (i = 0U; i < count && i < SST_DPRAM_HISTORY_RECORD_COUNT; ++i)
     {
         if (!SstFault_GetHistory(i, &record))
             break;
-        base = (uint16_t)(16U + 15U * i);
-        history_data[base] = record.code;
-        history_data[base + 1U] = record.level;
-        history_data[base + 2U] = record.control_fault;
-        history_data[base + 3U] = record.port_fault;
-        history_data[base + 4U] = record.fault_type;
-        history_data[base + 5U] = record.port_latch;
-        history_data[base + 6U] = record.fb_latch;
-        history_data[base + 7U] = record.fo_a;
-        history_data[base + 8U] = record.fo_b;
-        history_data[base + 9U] = record.fo_c;
-        history_data[base + 10U] = record.module_dispose;
-        Put32(&history_data[base + 11U], (uint32_t)record.tick_10ms);
-        Put32(&history_data[base + 13U], (uint32_t)record.sequence);
+        base = (uint16_t)(SST_DPRAM_HISTORY_RECORD_START_WORD + SST_DPRAM_HISTORY_RECORD_WORDS * i);
+        history_data[base + SST_DPRAM_HISTORY_CODE_OFFSET] = record.code;
+        history_data[base + SST_DPRAM_HISTORY_LEVEL_OFFSET] = record.level;
+        history_data[base + SST_DPRAM_HISTORY_CONTROL_FAULT_OFFSET] = record.control_fault;
+        history_data[base + SST_DPRAM_HISTORY_PORT_FAULT_OFFSET] = record.port_fault;
+        history_data[base + SST_DPRAM_HISTORY_FAULT_TYPE_OFFSET] = record.fault_type;
+        history_data[base + SST_DPRAM_HISTORY_PORT_LATCH_OFFSET] = record.port_latch;
+        history_data[base + SST_DPRAM_HISTORY_FB_LATCH_OFFSET] = record.fb_latch;
+        history_data[base + SST_DPRAM_HISTORY_FO_A_OFFSET] = record.fo_a;
+        history_data[base + SST_DPRAM_HISTORY_FO_B_OFFSET] = record.fo_b;
+        history_data[base + SST_DPRAM_HISTORY_FO_C_OFFSET] = record.fo_c;
+        history_data[base + SST_DPRAM_HISTORY_MODULE_DISPOSE_OFFSET] = record.module_dispose;
+        Put32(&history_data[base + SST_DPRAM_HISTORY_TICK_OFFSET], (uint32_t)record.tick_10ms);
+        Put32(&history_data[base + SST_DPRAM_HISTORY_SEQUENCE_OFFSET], (uint32_t)record.sequence);
     }
     BeginPublication(&history_publication);
 }
@@ -388,17 +486,21 @@ void SstDpramMaintenance_Init(void)
 #if SST_ENABLE_DPRAM
     response_publication.target = DPRAM_SstResponse;
     response_publication.data = response_data;
-    response_publication.count = 128U;
+    response_publication.count = SST_DPRAM_BLOCK_WORDS;
     telemetry_publication.target = DPRAM_SstTelemetry;
     telemetry_publication.data = telemetry_data;
-    telemetry_publication.count = 128U;
+    telemetry_publication.count = SST_DPRAM_BLOCK_WORDS;
     history_publication.target = DPRAM_SstHistory;
     history_publication.data = history_data;
-    history_publication.count = 512U;
+    history_publication.count = SST_DPRAM_HISTORY_WORDS;
     response_publication.busy = telemetry_publication.busy = history_publication.busy = 0U;
     response_publication.epoch = telemetry_publication.epoch = history_publication.epoch = 0U;
-    DPRAM_SstResponse[0] = DPRAM_SstTelemetry[0] = DPRAM_SstHistory[0] = 1U;
-    DPRAM_SstResponse[1] = DPRAM_SstTelemetry[1] = DPRAM_SstHistory[1] = 0U;
+    DPRAM_SstResponse[SST_DPRAM_PUBLICATION_WORD] =
+        DPRAM_SstTelemetry[SST_DPRAM_PUBLICATION_WORD] =
+            DPRAM_SstHistory[SST_DPRAM_PUBLICATION_WORD] = 1U;
+    DPRAM_SstResponse[SST_DPRAM_RESPONSE_MAGIC_WORD] =
+        DPRAM_SstTelemetry[SST_DPRAM_TELEMETRY_MAGIC_WORD] =
+            DPRAM_SstHistory[SST_DPRAM_HISTORY_MAGIC_WORD] = 0U;
     request_pending = last_valid = notify_response = history_initialized = 0U;
     last_result = 0U;
     ack_sequence = ack_result = ack_operation = ack_point = 0U;
@@ -465,42 +567,46 @@ void SstDpramMaintenance_Publish(void)
         BuildResponse();
     if (!telemetry_publication.busy)
     {
-        for (i = 0U; i < 128U; ++i)
+        for (i = 0U; i < SST_DPRAM_BLOCK_WORDS; ++i)
             telemetry_data[i] = 0U;
-        flags =
-            (uint16_t)((g_chb_dab_status.ac_input_closed ? 1U : 0U) | (g_chb_dab_status.precharge_bypassed ? 2U : 0U) |
-                       (g_chb_dab_status.ac_pwm_enabled ? 4U : 0U) | (g_chb_dab_status.dab_pwm_enabled ? 8U : 0U) |
-                       (g_chb_dab_status.pll_locked ? 16U : 0U) | (g_chb_dab_status.voltage_loop_active ? 32U : 0U) |
-                       (g_chb_dab_protection_enable ? 64U : 0U) | (g_chb_dab_command.run_enable ? 128U : 0U) |
-                       (g_chb_dab_command.dab_enable ? 256U : 0U));
-        telemetry_data[1] = SST_DPRAM_MAGIC;
-        telemetry_data[2] = SST_DPRAM_VERSION;
-        telemetry_data[3] = g_chb_dab_status.state;
-        telemetry_data[4] = g_chb_dab_status.fault_code;
-        telemetry_data[5] = g_chb_dab_status.startup_phase;
-        telemetry_data[6] = flags;
-        telemetry_data[7] = g_chb_dab_command.ac_mode;
-        telemetry_data[8] = SstFault_GetFirstCode();
-        telemetry_data[9] = SstFault_GetLevel();
-        telemetry_data[10] = SstFault_GetActiveCount();
-        Put32(&telemetry_data[12], (uint32_t)g_chb_dab_status.tick_10ms);
-        Put32(&telemetry_data[14], (uint32_t)g_chb_dab_status.startup_tad_count);
-        telemetry_data[16] = Encode(g_chb_dab_status.dc_voltage_average_v * 10.0F, 0U);
-        telemetry_data[17] = Encode(g_chb_dab_status.dc_voltage_min_v * 10.0F, 0U);
-        telemetry_data[18] = Encode(g_chb_dab_status.pll_angle_rad * 10000.0F, 0U);
-        telemetry_data[19] = Encode(g_chb_dab_status.pll_frequency_hz * 100.0F, 0U);
-        telemetry_data[20] = Encode(g_chb_dab_status.id_feedback_a * 100.0F, 1U);
-        telemetry_data[21] = Encode(g_chb_dab_status.iq_feedback_a * 100.0F, 1U);
-        telemetry_data[22] = Encode(g_chb_dab_status.id_reference_a * 100.0F, 1U);
-        telemetry_data[23] = Encode(g_chb_dab_status.startup_id_reference_a * 100.0F, 1U);
-        telemetry_data[24] = Encode(g_chb_dab_status.startup_voltage_reference_v * 10.0F, 0U);
-        telemetry_data[25] = Encode(g_chb_dab_status.modulation_actual * 10000.0F, 0U);
-        telemetry_data[26] = g_chb_dab_status.dab_duty_count;
-        telemetry_data[27] = SstParams_GetStorageResult();
-        telemetry_data[28] = SstParameterStore_IsPending();
-        telemetry_data[29] = SstFault_GetHistoryCount();
-        for (i = 0U; i < 32U; ++i)
-            telemetry_data[32U + i] = SstFault_GetCode(i);
+        flags = 0U;
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.ac_input_closed, SST_DPRAM_FLAG_AC_INPUT_CLOSED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.precharge_bypassed, SST_DPRAM_FLAG_PRECHARGE_BYPASSED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.ac_pwm_enabled, SST_DPRAM_FLAG_AC_PWM_ENABLED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.dab_pwm_enabled, SST_DPRAM_FLAG_DAB_PWM_ENABLED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.pll_locked, SST_DPRAM_FLAG_PLL_LOCKED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_status.voltage_loop_active, SST_DPRAM_FLAG_VOLTAGE_LOOP_ACTIVE);
+        flags = SetTelemetryFlag(flags, g_chb_dab_protection_enable, SST_DPRAM_FLAG_PROTECTION_ENABLED);
+        flags = SetTelemetryFlag(flags, g_chb_dab_command.run_enable, SST_DPRAM_FLAG_RUN_REQUEST);
+        flags = SetTelemetryFlag(flags, g_chb_dab_command.dab_enable, SST_DPRAM_FLAG_DAB_REQUEST);
+        telemetry_data[SST_DPRAM_TELEMETRY_MAGIC_WORD] = SST_DPRAM_MAGIC;
+        telemetry_data[SST_DPRAM_TELEMETRY_VERSION_WORD] = SST_DPRAM_VERSION;
+        telemetry_data[SST_DPRAM_TELEMETRY_STATE_WORD] = g_chb_dab_status.state;
+        telemetry_data[SST_DPRAM_TELEMETRY_CONTROL_FAULT_WORD] = g_chb_dab_status.fault_code;
+        telemetry_data[SST_DPRAM_TELEMETRY_STARTUP_PHASE_WORD] = g_chb_dab_status.startup_phase;
+        telemetry_data[SST_DPRAM_TELEMETRY_FLAGS_WORD] = flags;
+        telemetry_data[SST_DPRAM_TELEMETRY_AC_MODE_WORD] = g_chb_dab_command.ac_mode;
+        telemetry_data[SST_DPRAM_TELEMETRY_FIRST_FAULT_WORD] = SstFault_GetFirstCode();
+        telemetry_data[SST_DPRAM_TELEMETRY_FAULT_LEVEL_WORD] = SstFault_GetLevel();
+        telemetry_data[SST_DPRAM_TELEMETRY_ACTIVE_COUNT_WORD] = SstFault_GetActiveCount();
+        Put32(&telemetry_data[SST_DPRAM_TELEMETRY_TICK_LOW_WORD], (uint32_t)g_chb_dab_status.tick_10ms);
+        Put32(&telemetry_data[SST_DPRAM_TELEMETRY_STARTUP_TAD_LOW_WORD], (uint32_t)g_chb_dab_status.startup_tad_count);
+        telemetry_data[SST_DPRAM_TELEMETRY_DC_AVERAGE_WORD] = Encode(g_chb_dab_status.dc_voltage_average_v * 10.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_DC_MIN_WORD] = Encode(g_chb_dab_status.dc_voltage_min_v * 10.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_PLL_ANGLE_WORD] = Encode(g_chb_dab_status.pll_angle_rad * 10000.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_PLL_FREQUENCY_WORD] = Encode(g_chb_dab_status.pll_frequency_hz * 100.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_ID_FEEDBACK_WORD] = Encode(g_chb_dab_status.id_feedback_a * 100.0F, 1U);
+        telemetry_data[SST_DPRAM_TELEMETRY_IQ_FEEDBACK_WORD] = Encode(g_chb_dab_status.iq_feedback_a * 100.0F, 1U);
+        telemetry_data[SST_DPRAM_TELEMETRY_ID_REFERENCE_WORD] = Encode(g_chb_dab_status.id_reference_a * 100.0F, 1U);
+        telemetry_data[SST_DPRAM_TELEMETRY_STARTUP_ID_REFERENCE_WORD] = Encode(g_chb_dab_status.startup_id_reference_a * 100.0F, 1U);
+        telemetry_data[SST_DPRAM_TELEMETRY_STARTUP_VOLTAGE_REFERENCE_WORD] = Encode(g_chb_dab_status.startup_voltage_reference_v * 10.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_MODULATION_WORD] = Encode(g_chb_dab_status.modulation_actual * 10000.0F, 0U);
+        telemetry_data[SST_DPRAM_TELEMETRY_DAB_DUTY_WORD] = g_chb_dab_status.dab_duty_count;
+        telemetry_data[SST_DPRAM_TELEMETRY_STORAGE_RESULT_WORD] = SstParams_GetStorageResult();
+        telemetry_data[SST_DPRAM_TELEMETRY_STORAGE_PENDING_WORD] = SstParameterStore_IsPending();
+        telemetry_data[SST_DPRAM_TELEMETRY_HISTORY_COUNT_WORD] = SstFault_GetHistoryCount();
+        for (i = 0U; i < SST_DPRAM_TELEMETRY_ACTIVE_FAULT_COUNT; ++i)
+            telemetry_data[SST_DPRAM_TELEMETRY_ACTIVE_FAULT_START_WORD + i] = SstFault_GetCode(i);
         BeginPublication(&telemetry_publication);
     }
     BuildHistory();

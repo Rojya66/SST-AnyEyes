@@ -2,7 +2,7 @@
 
 生成源：`tools/dpram_point_table.py`；版本1，共54点。
 
-所有读地址为DSP侧16位字。**禁止直接写回读地址**。写入：请求区word3=1，word4（`0x66002C08`）=点号，word5（`0x66002C0A`）=raw，补齐CRC和提交标记，最后写左邮箱21。回读位于回复区word32+点号，须按版本戳读取。详见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。
+所有读地址为DSP侧16位字。回复区参数地址是只读回读镜像，不能直接写入；参数写入通过请求区提交：word3=1，word4（点号）和word5（raw），补齐CRC和提交标记，最后写左邮箱21。回读位于回复区word32+点号，须按版本戳读取。详见 [DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。
 
 `physical = raw / scale`；int16按二补码解释。R/request-W表示主机读实际值、通过请求写参数；只有sample_period_s只读。启停/复位按控制源和存储互锁；其余写入须完全停机。
 

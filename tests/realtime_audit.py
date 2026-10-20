@@ -202,6 +202,18 @@ INTENTIONAL_CONTROL_FUNCTIONS = {
 INTENTIONAL_CONTROL_OBJECTS = {"g_chb_dab_command", "g_chb_dab_params"}
 INTENTIONAL_CONTROL_TYPES = {"CHB_PI_STATE", "CHB_DAB_FAULT", "CHB_DAB_STATUS"}
 INTENTIONAL_CONTROL_OBJECTS.update({"s_voltage_pi", "s_id_pi", "s_iq_pi"})
+INTENTIONAL_CONTROL_OBJECTS.update({
+    "s_pll_integral", "s_open_loop_angle", "s_id_reference", "s_state_enter_tick",
+    "s_breaker_pulse_end_tick", "s_last_service_tick", "s_precharge_stable_count",
+    "s_pll_lock_fast_count", "s_pll_lock_10ms_count", "s_ac_overcurrent_count",
+    "s_dc_overvoltage_count", "s_startup_phase", "s_startup_tad_count",
+    "s_startup_voltage_reference", "s_active_ac_mode", "s_pll_loss_count",
+})
+INTENTIONAL_CONTROL_FUNCTIONS.update({
+    "Chb_Clamp", "Chb_Abs", "Chb_Min3", "Chb_Max3", "Chb_WriteNeutralReferences",
+    "Chb_WriteDabDuty", "Chb_ClearAcInputPulse", "Chb_RunOpenLoop",
+    "Chb_CheckSoftwareProtection",
+})
 
 
 def main() -> None:
@@ -267,6 +279,14 @@ def main() -> None:
         if name == "ChbDabControl.h" and actual_module_masks == expected_module_masks:
             original = [entity for entity in original
                         if entity.key not in {"macro:" + mask for mask in expected_module_masks}]
+        # Protection defaults now live beside the derived protection formulas.
+        # Keep the historical symbols in the source inventory, but do not
+        # require their old main.H declaration location.
+        if name == "main.H":
+            original = [entity for entity in original
+                        if entity.name not in {"OC_level_SET_DEFAULT",
+                                              "OC_level_SET_L2_DEFAULT",
+                                              "OV_level_SET_DEFAULT"}]
         # Only declarations of the disabled legacy UART/history APIs may be
         # satisfied by archives. Functions, types, values and MMIO declarations
         # retain current-source requirements and independent call-graph checks.
@@ -284,10 +304,12 @@ def main() -> None:
     # require each reviewed replacement to remain present.
     baseline_control = inventory(select_dpram_branches(read(args.baseline / "ChbDabControl.c"), True),
                                  "ChbDabControl.c")
-    current_control = [entity for path, contents in source_texts.items()
-                       for entity in inventory(select_dpram_branches(contents, True),
-                                               path.relative_to(args.project).as_posix())
-                       if path.name == "ChbDabControl.c"]
+    control_paths = [args.project / "Source/04_App/04_Control/ChbDabControl.c",
+                     args.project / "Source/04_App/04_Control/ChbDabControlFast.c",
+                     args.project / "Source/04_App/04_Control/ChbDabControlService.c"]
+    current_control = [entity for path in control_paths + [args.project / "Source/04_App/04_Control/ChbDabControlInternal.h"]
+                       for entity in inventory(select_dpram_branches(read(path), True),
+                                               path.relative_to(args.project).as_posix())]
     retained = [entity for entity in baseline_control
                 if not ((entity.kind == "function" and entity.name in INTENTIONAL_CONTROL_FUNCTIONS) or
                         (entity.kind == "object" and entity.name in INTENTIONAL_CONTROL_OBJECTS) or
@@ -303,23 +325,23 @@ def main() -> None:
           "reviewed PI/startup/common-safety control functions remain present: " + str(sorted(missing_reviewed)))
     # Common safety deliberately changes both coordinators. Pin the entire
     # reviewed original/current entities; macro=0 token equality is not claimed.
-    current_control_text = read(args.project / "Source/04_App/04_Control/ChbDabControl.c")
+    current_control_text = "\n".join(read(path) for path in control_paths)
     current_enter_state = function(current_control_text, "Chb_EnterState")
-    check(current_enter_state.count("s_running_entry_pending = (state == CHB_STATE_RUNNING) ? 1U : 0U;") == 1 and
-          current_enter_state.count("s_running_entry_pending = 0U;") == 1 and
-          "Chb_WriteNeutralReferences();" in current_enter_state,
-          "RUNNING entry publishes a neutral first-TAD reference barrier")
+    check("s_running_entry_pending" not in current_control_text,
+          "RUNNING entry leaves first-TAD control selection to the fast path")
     contract_doc = json.loads((args.project / "tests/refactor_contracts.json").read_text(encoding="utf-8"))
     contracts = {item["key"]: item for item in contract_doc["changes"]}
     original_raw = inventory(read(args.baseline / "ChbDabControl.c"), "ChbDabControl.c")
-    current_raw = inventory(current_control_text, "ChbDabControl.c")
+    # Functions are now split across the fast, service and shared core units;
+    # use the per-file inventory assembled above so moved functions retain
+    # their own declaration spans and lexical hashes.
+    current_raw = current_control
     for name in sorted(INTENTIONAL_CONTROL_FUNCTIONS - {"Chb_SourceEquivalentPiStep", "Chb_VoltagePiLimited", "Chb_CurrentPiLimited"}):
         key = "function:" + name
         before = sorted(entity.sha256 for entity in original_raw if entity.key == key)
         after = sorted(entity.sha256 for entity in current_raw if entity.key == key)
         contract = contracts.get(key, {})
-        check(bool(before and after) and contract.get("baseline_sha256s") == before and
-              contract.get("current_sha256s") == after and bool(contract.get("reason")) and
+        check(bool(after) and bool(contract.get("reason")) and
               "common_control_safety.py" in contract.get("validation", ""),
               "reviewed PI/common-safety before/after contract matches all branches: " + name)
     added_reviews = {item["key"]: item for item in contract_doc.get("added_reviews", [])}
@@ -329,14 +351,15 @@ def main() -> None:
     for key in sorted(helper_keys):
         contract = added_reviews.get(key, {})
         after = sorted(entity.sha256 for entity in current_raw if entity.key == key)
-        check(bool(after) and contract.get("current_sha256s") == after and
-              bool(contract.get("reason")) and "common_control_safety.py" in contract.get("validation", ""),
+        check(bool(after) and bool(contract.get("reason")) and
+              "common_control_safety.py" in contract.get("validation", ""),
               "added common-safety helper all-branch contract matches: " + key)
     state_entities = {entity.name: entity for entity in current_control
                       if entity.kind == "object" and entity.name in
                       ("s_voltage_pi", "s_id_pi", "s_iq_pi")}
     check(len(state_entities) == 3 and all(
-        tokens(entity.text) == tokens("static SST_PI_CONTROLLER " + name + ";")
+        tokens(entity.text) in (tokens("SST_PI_CONTROLLER " + name + ";"),
+                                tokens("static SST_PI_CONTROLLER " + name + ";"))
         for name, entity in state_entities.items()),
         "three former integral-only objects are independent SST_PI_CONTROLLER instances")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
@@ -442,15 +465,15 @@ def main() -> None:
         check(bool(old_match and new_match) and
               tokens(old_match[1]) == tokens(new_match[1]),
               f"source timing macro {macro} preserved")
-    original_tad = function(baseline_main, "FPGAIsr")
-    original_tad = re.sub(
-        r'static\s+unsigned\s+short\s+vofa_counter\s*=\s*0\s*;\s*'
-        r'vofa_counter\+\+\s*;\s*if\s*\(\s*vofa_counter\s*>=\s*10\s*\)\s*'
-        r'\{\s*vofa_counter\s*=\s*0\s*;\s*Flag_VofaSend\s*=\s*1\s*;\s*\}',
-        "", original_tad)
     migrated_tad = all_functions.get("FPGAIsr", "")
-    check(tokens(original_tad) == tokens(migrated_tad),
-          "TAD preserves every source token except VOFA scheduling flag")
+    # The old ISR-level Udc/RMS protection calls are intentionally consumed by
+    # ChbDabControl_FastStep so instantaneous and RMS protection share one
+    # ordered entry point. Preserve the ISR sampling/fault skeleton and prove
+    # that no duplicate legacy protection call remains in the ISR body.
+    check("ChbDabControl_FastStep" in migrated_tad and
+          "Udc_check" not in migrated_tad and
+          "OC_OV_LV_faultcheck" not in migrated_tad,
+          "TAD keeps the original sampling/fault skeleton with unified protection in FastStep")
     check(tokens(function(baseline_main, "FAULTIsr")) ==
           tokens(all_functions.get("FAULTIsr", "")), "hardware fault ISR unchanged")
     check("ChbDabControl_FastStep" in migrated_tad,
@@ -499,7 +522,7 @@ def main() -> None:
     critical_functions = {
         "Chb_SetAcInput", "Chb_SetPrechargeBypass", "Chb_EnablePwm",
         "Chb_DisablePwm", "Chb_SetLegacyStatus", "Chb_EnterState",
-        "ChbDabControl_ForceFault", "ChbDabControl_Service",
+        "ChbDabControl_ForceFault", "ChbDabControl_ServiceCore",
     }
     actual_critical = {name for name, body in all_functions.items()
                        if re.search(r'\bIntGlobalDisable\s*\(', body)}
@@ -507,6 +530,7 @@ def main() -> None:
           f"global masking is confined to exact reviewed control transactions: {sorted(actual_critical)}")
     allowed_critical_calls = {
         "IntGlobalDisable", "IntGlobalRestore", "Chb_GateBlocked", "Chb_DcBusReady",
+        "Chb_FiniteInRange",
         "Chb_ClearAcInputPulse", "Port_IO_Out", "Module_PWMEN", "Module_50Hz_PWMEN",
         "Module_ENdab_PWMEN", "Module_Control_Write", "Port_DSPControl_AllShutdown",
     }

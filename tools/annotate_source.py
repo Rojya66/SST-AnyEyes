@@ -639,6 +639,7 @@ PLL_TIMEOUT|PLL 锁定超时五位上报码
 SW_AC_OC|软件交流过流五位上报码
 SW_DC_OV|软件直流过压五位上报码
 BAD_CONFIGURATION|控制配置非法五位上报码
+CONTROL_RUNTIME|运行时采样或控制计算失效五位上报码
 PHASE_SEQUENCE|相序异常五位上报码
 FREQUENCY|频率异常五位上报码
 CONTACTOR|接触器故障五位上报码
@@ -648,7 +649,7 @@ SYNC|同步故障五位上报码
 '''.strip().splitlines())
 PARAM_RESULTS=dict(OK='成功结果码',BAD_ADDRESS='地址非法结果码',READ_ONLY='只读地址拒绝结果码',BUSY='忙或不满足停机条件结果码',RANGE='数值越界结果码',DENIED='编译权限拒绝结果码',STORAGE='存储校验/读写失败结果码',GROUPS='固定参数组数，参考协议为 30',PER_GROUP='每组固定参数字数，参考协议为 34')
 STATE_CONSTANTS=dict(STOPPED='停止',PRECHARGE='预充',BYPASS_DELAY='旁路等待',WAIT_PLL='等待 PLL',RUNNING='运行',FAULT='故障')
-CONTROL_FAULTS=dict(NONE='无',PRECHARGE_TIMEOUT='预充超时',PLL_TIMEOUT='PLL 超时',AC_OVERCURRENT='交流过流',DC_OVERVOLTAGE='直流过压',HARDWARE='硬件',BAD_CONFIGURATION='配置非法')
+CONTROL_FAULTS=dict(NONE='无',PRECHARGE_TIMEOUT='预充超时',PLL_TIMEOUT='PLL 超时',AC_OVERCURRENT='交流过流',DC_OVERVOLTAGE='直流过压',HARDWARE='硬件',BAD_CONFIGURATION='配置非法',SWITCH_FEEDBACK='开关反馈',CONTROL_RUNTIME='运行时控制失效')
 VOFA_CONSTANTS=dict(RX_BUFFER_SIZE='旧 VOFA 接收缓存容量兼容定义',TX_BUFFER_SIZE='旧 VOFA 发送缓存容量兼容定义')
 
 if __name__=='__main__': raise SystemExit(apply())

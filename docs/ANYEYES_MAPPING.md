@@ -61,7 +61,7 @@
 
 参数直接映射 `g_chb_dab_params`，命令直接映射 `g_chb_dab_command`；不以 reference 原产品的参数含义替代 SST 参数。DAB start duty <= target duty；反馈极性仅+1/-1；open_loop_modulation <= modulation_max。sample_period_s只读，以防串口参数与真实TAD时序不一致。所有普通调参停机写；不会在运行中跨多个控制成员更新参数。
 
-`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。当前用户源码为 `SST_BENCH_INPUT_SIM=1,SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，运行控制由仿真器接管，以上串口控制写返回5；AnyEyes握手、普通停机参数访问和观测仍可用。有效 `FC` 急停始终把run/dab清零，不受控制源选择阻止。485只使用AnyEyes或VOFA，旧MaintenanceProtocol已移除。
+`0/0 run_enable`、`0/1 dab_enable`、`0/3 fault_reset` 和 `F8` 只有 `SST_ALLOW_SERIAL_COMMANDS=(!SST_SIMULATOR_MODE && !SST_ENABLE_DPRAM)` 时生效；fault_reset还要求停机。历史仿真构建使用 `SST_BENCH_INPUT_SIM=1,SST_SIMULATOR_MODE=1,SST_ENABLE_DPRAM=0`，运行控制由仿真器接管，以上串口控制写返回5；当前默认构建通过DPRAM维护点表远控；AnyEyes握手、普通停机参数访问和观测仍可用。有效 `FC` 急停始终把run/dab清零，不受控制源选择阻止。485只使用AnyEyes或VOFA，旧MaintenanceProtocol已移除。
 
 | 功能码范围 | 含义 |
 |---|---|

@@ -1,6 +1,6 @@
 # 编译、模式与使用说明
 
-2026-10-19 当前默认配置为：`SST_PHASE_A_ONLY_TEST=1`、低压参数随单相宏启用、`SST_BENCH_INPUT_SIM=0`、VOFA、仿真器控制和 DPRAM 关闭。A1/A2 位图各为 `0x0007`，共 6 个 A 相模块，B/C 全零。当前 PI、100 Vac 参数、三相公共路径修复及验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。关闭单相宏默认恢复高压三相参数；三相闭环还需按现场安装配置 B/C 位图。
+2026-10-21 当前默认配置为：`SST_PHASE_A_ONLY_TEST=1`、低压参数随单相宏启用、`SST_BENCH_INPUT_SIM=0`、VOFA、目标板远控和 DPRAM 开启。A1/A2 位图各为 `0x0007`，共 6 个 A 相模块，B/C 全零。当前 PI、100 Vac 参数、三相公共路径修复及验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md)。关闭单相宏默认恢复高压三相参数；三相闭环还需按现场安装配置 B/C 位图。
 
 历史记录：2026-10-15 首次新增单相宏时默认值为 0，现场当时仅配置 A1 的 3 个逻辑模块，说明见 [PHASE_A_SINGLE_PHASE_TEST.md](PHASE_A_SINGLE_PHASE_TEST.md)。只有一套 UNIT 时，须按实际拓扑核对所有模块位图后重编译；单相宏本身不覆盖现场位图。
 
@@ -62,8 +62,8 @@ python tools/build.py --variant anyeyes_dpram --define SST_DEBUG_PROTOCOL=1 --de
 | 选择 | 默认 | 说明 |
 |---|---:|---|
 | `SST_DEBUG_PROTOCOL` | 2 | 1=AnyEyes，2=VOFA；不能同时发送两种连续遥测 |
-| `SST_SIMULATOR_MODE` | 1 | 1=通过仿真器直接写控制命令；0=允许远程控制 |
-| `SST_ENABLE_DPRAM` | 0 | 独立启用DPRAM中断、原块及现代54点维护扩展 |
+| `SST_SIMULATOR_MODE` | 0 | 1=通过仿真器直接写控制命令；0=允许远程控制 |
+| `SST_ENABLE_DPRAM` | 1 | 独立启用DPRAM中断、原块及现代54点维护扩展 |
 | `SST_PHASE_A_ONLY_TEST` | 1 | AN 单相采样、SOGI 虚拟 dq，B/C 封锁；0 选择原三相采样及变换 |
 | `SST_LOW_VOLTAGE_100V_TEST` | 随单相宏 | 默认与单相宏相同；单相可显式设 0 使用高压参数，显式 LOW=1/PHASE=0 编译拒绝 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 | 1=初始化停机时载入新SST参数；非法图像拒绝并保留默认值 |
@@ -78,7 +78,7 @@ python tools/build.py --variant anyeyes_dpram --define SST_DEBUG_PROTOCOL=1 --de
 | 0 | 0 | AnyEyes控制命令；VOFA构建只观测，运行由仿真器调试 | AnyEyes可用；VOFA仅观测 |
 | 0 | 1 | DPRAM；串口普通启动/复位拒绝 | 可用 |
 
-当前源码默认选择 VOFA、DPRAM 关闭、仿真器控制和 A 相 100 Vac 试验参数。AnyEyes FC急停始终清运行命令。VOFA是单向JustFloat观测格式，远程启停和参数维护使用DPRAM；切换VOFA无需关闭并口。485的MaintenanceProtocol及 `SST_ENABLE_MAINTENANCE` 宏已删除。AnyEyes/DPRAM共享统一参数保存忙状态，启动/修改在保存期间拒绝，停止/关闭仍有效。仿真器直接写RAM无法被通信权限机制拦截，调试期间由操作者遵守停机调参要求。
+当前源码默认选择 VOFA、DPRAM 开启、目标板远控和 A 相 100 Vac 试验参数。AnyEyes FC急停始终清运行命令。VOFA是单向JustFloat观测格式，远程启停和参数维护使用DPRAM；切换VOFA无需关闭并口。485的MaintenanceProtocol及 `SST_ENABLE_MAINTENANCE` 宏已删除。AnyEyes/DPRAM共享统一参数保存忙状态，启动/修改在保存期间拒绝，停止/关闭仍有效。仿真器直接写RAM无法被通信权限机制拦截，调试期间由操作者遵守停机调参要求。
 
 并口旧地址与新54点编码见 [DPRAM_MAPPING.md](DPRAM_MAPPING.md)、[DPRAM_EXTENSION.md](DPRAM_EXTENSION.md)。新SAVE显式保存EEPROM页6/7的v2镜像108字节/50字，兼容读取v1的92字节/42字；旧Block2的V/Q自动Page1保存已取消。保护总使能是临时调试开关，不保存。
 
@@ -136,4 +136,4 @@ git clone --branch framework-refactored-2026-10-12 https://github.com/Rojya66/SS
 
 ## 2026-10-19 带载限流与开关量配置
 
-当前现场默认 LOW=0、BENCH=1，并非100 Vac实物带载配置。低压实物须 LOW=1、BENCH=0。新增开关输出/反馈使能默认均为0，现场核对极性后启用。50 A峰值限流、完整宏表、DSP IO字节地址、CCS步骤及构建组合见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。
+当前默认 LOW=1、BENCH=0，为100 Vac单相真实采样配置。无主回路验证须显式切换 LOW=1、BENCH=1，并同时启用仿真器和关闭DPRAM。新增开关输出/反馈使能默认均为0，现场核对极性后启用。50 A峰值限流、完整宏表、DSP IO字节地址、CCS步骤及构建组合见 [LOAD_CURRENT_AND_SWITCH_IO.md](LOAD_CURRENT_AND_SWITCH_IO.md)。

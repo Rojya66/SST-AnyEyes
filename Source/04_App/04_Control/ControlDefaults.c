@@ -55,7 +55,7 @@ void ControlDefaults_InitLimits(void)
 #if SST_LOW_VOLTAGE_100V_TEST
     /*
      * 100 Vac 单相台架覆盖现场高压默认值：
-     * PORT_V_A 是 AN 输入有效值，6 个 A 相模块每个以 35 V 为目标，
+     * PORT_V_A 是 AN 输入有效值，6 个 A 相模块每个以 60 V 为目标，
      * 预充和快速过压均检查相模块均压，非逐模块最大电压。
      */
     Ust_HVAC_Port = SST_LV100_INPUT_PRESENT_V;

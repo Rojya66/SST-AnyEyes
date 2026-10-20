@@ -265,38 +265,10 @@ void FPGAIsr(void)
         HVAC_RealTimeParameter(); // 累积200点RMS窗口并更新功率；有效值由后台开方发布
         SVG_Udc_Average(); // 计算三相单元直流平均值
         ChbDabControl_FastStep(); // PLL、开/闭环调制、DAB占空比爬坡
-        /*
-             * Udc_check()/OC_OV_LV_faultcheck() 是原 HVAC 闭环保护链路。
-             * 开环调试时外部母线和采样值可能不存在，不能用它们决定是否
-             * 允许发波；否则 DAB 第一拍后会被误判为欠压/越限而封锁。
-             * UNIT/FPGA 硬件 FO/FB 故障仍在下面的独立故障中断中处理。
-             */
-        if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
-        {
-            Udc_check();
-        }
-
         if ((FaultTypeFLAG.Bbits.Module_Fault) && (ModuleFault_DisposeTimes)) // 模块故障立即封波
         {
             FaultDispose();
             ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-        }
-
-        // Source-project software OC/OV can be disabled for low-power debugging.
-        // FPGA/module hardware fault paths remain active outside this switch.
-        /* 软件保护可由仿真器关闭，硬件故障路径不受该变量影响。 */
-        if (g_chb_dab_command.ac_mode != CHB_AC_MODE_OPEN_LOOP)
-        {
-            if ((g_chb_dab_protection_enable != 0U) && ((HVAC_OC_Fault == 1) || (HVAC_OV_Fault == 1)) &&
-                (OC_OV_LV_PortLatch_TAD != 1))
-            {
-                OC_OV_LV_FaultDispose();
-                ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-            }
-            else if (g_chb_dab_protection_enable != 0U)
-            {
-                OC_OV_LV_faultcheck();
-            }
         }
 
         //if(SVG_Udc_Ave > OV_allport_shutdown)

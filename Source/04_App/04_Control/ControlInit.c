@@ -28,6 +28,7 @@ void Initial_Variable(void)
     DpramDefaults_InitRegulation();
     FpgaInit_ConfigureModuleLayout();
     ControlDefaults_InitLimits();
+    ProtectionDefaults_ApplyDerivedThresholds();
     ControlDefaults_InitCoefficients();
     FpgaInit_InitTimingDuty();
     FpgaInit_InitOutputControls();

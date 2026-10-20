@@ -21,7 +21,7 @@
 
 启动阶段：`0 IDLE`、`1 ID_RAMP_PHASE`、`2 VOLTAGE_HANDOVER`、`3 NORMAL`。
 
-控制故障码：`0 NONE`、`1 PRECHARGE_TIMEOUT`、`2 PLL_TIMEOUT`（包括单相/三相闭环运行连续失锁）、`3 AC_OVERCURRENT`、`4 DC_OVERVOLTAGE`、`5 HARDWARE`、`6 BAD_CONFIGURATION`、`7 SWITCH_FEEDBACK`（五位上报29108）。完整故障及五位故障码仍按现有 `FAULT_CODES.md`，AnyEyes 的参数、显示与波形地址未改。
+控制故障码：`0 NONE`、`1 PRECHARGE_TIMEOUT`、`2 PLL_TIMEOUT`（包括单相/三相闭环运行连续失锁）、`3 AC_OVERCURRENT`、`4 DC_OVERVOLTAGE`、`5 HARDWARE`、`6 BAD_CONFIGURATION`、`7 SWITCH_FEEDBACK`（五位上报29108）、`8 CONTROL_RUNTIME`（五位上报29109）。完整故障及五位故障码仍按现有 `FAULT_CODES.md`，AnyEyes 的参数、显示与波形地址未改。
 
 上述 CH2/CH8 说明针对单相低压模式；三相模式中 CH2 为三相模块均压的算术平均，CH8 为三相调制绝对值的最大值。编码与通道顺序相同。
 

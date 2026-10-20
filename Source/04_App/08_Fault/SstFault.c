@@ -192,6 +192,8 @@ void SstFault_Service(void)
     SST_FAULT_INPUT input; /* input：后台采集的原故障输入及控制状态。 */
     unsigned short code = SST_FAULT_NONE; /* code：参考五位 SST_FAULT_* 上报故障码，0 表示无故障。 */
     unsigned short has_detail = 0U; /* has_detail：本轮是否已获得可分类的故障明细。 */
+    unsigned short has_module_category; /* has_module_category：本轮是否已有模块类别明细。 */
+    unsigned short has_port_category; /* has_port_category：本轮是否已有端口类别明细。 */
     unsigned short i; /* i：当前故障表、位映射表或历史表的遍历索引。 */
     if (!SstFault_ReadInput(&input))
         return;
@@ -222,6 +224,9 @@ void SstFault_Service(void)
             break;
         case CHB_FAULT_BAD_CONFIGURATION:
             code = SST_FAULT_BAD_CONFIGURATION;
+            break;
+        case CHB_FAULT_CONTROL_RUNTIME:
+            code = SST_FAULT_CONTROL_RUNTIME;
             break;
         case CHB_FAULT_SWITCH_FEEDBACK:
             code = SST_FAULT_SWITCH_FEEDBACK;
@@ -261,16 +266,23 @@ void SstFault_Service(void)
             has_detail = 1U;
         }
     }
-    /* Keep an aggregate only when no module category has been decoded. */
-    if (((input.raw.fault_type & 0x2000U) || (input.raw.port_fault & 0x0040U)) && !(input.raw.fault_type & 0xC0FCU) &&
-        !(input.raw.port_fault & 0x0880U))
+    /* 仅在模块故障位存在且尚未解码出更具体类别时保留汇总故障。 */
+    has_module_category = (unsigned short)(input.raw.fault_type & 0xC0FCU);
+    has_port_category = (unsigned short)(input.raw.port_fault & 0x0880U);
+    if ((input.raw.fault_type & 0x2000U) != 0U || (input.raw.port_fault & 0x0040U) != 0U)
     {
-        SstFault_Add(SST_FAULT_HW_MODULE, SST_FAULT_LEVEL_1, &input);
-        has_detail = 1U;
+        if (has_module_category == 0U && has_port_category == 0U)
+        {
+            SstFault_Add(SST_FAULT_HW_MODULE, SST_FAULT_LEVEL_1, &input);
+            has_detail = 1U;
+        }
     }
-    if (!has_detail && ((input.raw.control_fault == CHB_FAULT_HARDWARE) || (input.raw.port_fault & 0x8000U)))
+    if (has_detail == 0U)
     {
-        SstFault_Add(SST_FAULT_HW_UNCLASSIFIED, SST_FAULT_LEVEL_1, &input);
+        if (input.raw.control_fault == CHB_FAULT_HARDWARE || (input.raw.port_fault & 0x8000U) != 0U)
+        {
+            SstFault_Add(SST_FAULT_HW_UNCLASSIFIED, SST_FAULT_LEVEL_1, &input);
+        }
     }
 }
 

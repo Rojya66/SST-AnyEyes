@@ -823,7 +823,7 @@ static void test_voltage_reference_continuity(void)
     float target;
     float step;
     const float measured[2] = {600.0F, 23.570226F};
-    const float targets[2] = {680.0F, 35.0F};
+    const float targets[2] = {680.0F, 60.0F};
     const float steps[2] = {2.0F, 0.001F};
 
     for (profile = 0U; profile < 2U; ++profile)

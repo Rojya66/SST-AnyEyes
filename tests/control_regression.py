@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import tempfile
 from git_baseline import materialize
+from control_sources import control_source
 
 
 def _support_translation_unit(project: Path | None) -> tuple[str, list[Path]]:
@@ -44,13 +45,18 @@ def run(source: Path, header: Path, config: Path, compiler: str, template: str,
     with tempfile.TemporaryDirectory(prefix="sst_control_regression_") as folder:
         work = Path(folder)
         shutil.copy2(header, work / "ChbDabControl.h")
+        if support_project is not None:
+            shutil.copy2(support_project / "Source/04_App/04_Control/ChbDabControlInternal.h",
+                         work / "ChbDabControlInternal.h")
         shutil.copy2(config, work / "ChbBuildConfig.h")
         support_source, support_headers = _support_translation_unit(support_project)
         for support_header in support_headers:
             shutil.copy2(support_header, work / support_header.name)
-        implementation = source.read_text(encoding="utf-8-sig")
-        implementation = re.sub(r'^\s*#\s*include\s*"[^"\n]+"\s*$', "", implementation,
-                                flags=re.MULTILINE)
+        if support_project is not None:
+            implementation = control_source(support_project)
+        else:
+            implementation = re.sub(r'^\s*#\s*include\s*"[^"\n]+"\s*$', "",
+                                    source.read_text(encoding="utf-8-sig"), flags=re.MULTILINE)
         # SstPi.c must precede the control source because the latter references
         # the public PI instances and step functions from its header.
         implementation = support_source + "\n" + implementation

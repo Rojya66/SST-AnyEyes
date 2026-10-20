@@ -2,11 +2,11 @@
 
 ## 当前 PI、100 Vac 参数及三相兼容修复（2026-10-19）
 
-当前默认是 100 Vac 单相低压参数、真实采样、VOFA、仿真器控制、DPRAM 关闭。公共 PI、三相 DC_Log 及安全路径修复、低压启动参数和最终验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 9 节；持久软件证据见 [low_voltage_100vac_validation.json](evidence/low_voltage_100vac_validation.json)。以下各节对应各自固定历史版本，不能用于证明当前固件已经通过同样检查。
+当前默认是 100 Vac 单相低压参数、真实采样、VOFA、目标板远控、DPRAM 开启。公共 PI、三相 DC_Log 及安全路径修复、低压启动参数和最终验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 9 节；持久软件证据见 [low_voltage_100vac_validation.json](evidence/low_voltage_100vac_validation.json)。以下各节对应各自固定历史版本，不能用于证明当前固件已经通过同样检查。
 
 ## 历史电子标签与握手完善（2026-10-14）
 
-本轮集中四标签`255/43/1/0`及六段版本`255.43.1.0.1.0`，保留FF/7F布局及参数、波形、状态地址，补齐FA/7A并统一重连/失联会话清理。当前用户配置为AnyEyes、`SST_BENCH_INPUT_SIM=1`、仿真器控制、DPRAM关闭、EEPROM上电加载关闭。修改前用户配置已保存于提交`fc3c917`；最终标签为`anyeyes-identity-2026-10-14`，本轮证据为[anyeyes_identity_validation.json](evidence/anyeyes_identity_validation.json)，握手及实板复验步骤见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。
+本轮集中四标签`255/43/1/0`及六段版本`255.43.1.0.1.0`，保留FF/7F布局及参数、波形、状态地址，补齐FA/7A并统一重连/失联会话清理。本节证据对应历史AnyEyes仿真配置：`SST_BENCH_INPUT_SIM=1`、仿真器控制、DPRAM关闭、EEPROM上电加载关闭；当前默认配置见README。修改前用户配置已保存于提交`fc3c917`；最终标签为`anyeyes-identity-2026-10-14`，本轮证据为[anyeyes_identity_validation.json](evidence/anyeyes_identity_validation.json)，握手及实板复验步骤见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。
 
 | 检查 | 本轮结果 |
 |---|---|
@@ -105,7 +105,7 @@ python tools/export_validation_summary.py
 | TI原生命令行Debug/Release | 全部源文件编译成功，链接退出0 | `build/Debug/default/`、`build/Release/default/` |
 | 11项宏组合 | 11/11编译及链接通过 | `build/matrix_result.json`及各变体目录 |
 | 控制算法对照 | 8场景、每版17,325个快照完全一致 | `build/host_validation/control_regression.log` |
-| 实时路径静态审计 | 34/34通过；核心采样/控制/保护、ISR顺序、无新增ISR通信、DPRAM关闭路径及链接布局检查通过 | `build/host_validation/realtime_audit.log` |
+| 实时路径静态审计 | 77/77通过；核心采样/控制/保护、ISR顺序、无新增ISR通信、DPRAM关闭路径及链接布局检查通过 | `tests/realtime_audit.py` |
 | 链接表DPRAM审计 | 15/15通过；原地址、零加载字节、无启动初始化镜像 | `build/dpram_map_validation.json` |
 | 故障报告 | 编码、等级、首故障、历史、去重及复位回归通过 | `build/host_validation/fault_reporting.log` |
 | AnyEyes/VOFA | 4配置O2主机回归通过，帧、CRC、权限、恢复、串口预算、保存及心跳字节核对通过 | `build/host_validation/protocol_regression.log` |
@@ -117,7 +117,7 @@ python tools/export_validation_summary.py
 
 宏矩阵包含AnyEyes/VOFA × 仿真器/远程 × DPRAM关闭/开启的8种组合，另有AnyEyes维护、VOFA维护、AnyEyes上电参数加载3种组合。Debug与Release均沿用原关闭优化的策略；主机O2只用于回归，不改变TI目标编译选项。
 
-最终CCS固件为 `Debug/SST_AnyEyes.out`、`Release/SST_AnyEyes.out`。默认AnyEyes+仿真器+DPRAM关闭配置有17条保留告警：9条TI驱动头文件续行空白告警，8条原DPRAM/ADC/FaultCheck未使用变量告警。没有屏蔽告警，也没有把“零错误”描述为“零告警”；新通信和命令适配未产生这些告警。4种未启用维护的VOFA配置另有1条`muxExpected`在该编译分支未被使用的告警（总18条），不影响链接；所有变体的告警数均保存在矩阵JSON。
+最终CCS固件为 `Debug/SST_AnyEyes.out`、`Release/SST_AnyEyes.out`。历史默认AnyEyes+仿真器+DPRAM关闭配置有17条保留告警：9条TI驱动头文件续行空白告警，8条原DPRAM/ADC/FaultCheck未使用变量告警。没有屏蔽告警，也没有把“零错误”描述为“零告警”；新通信和命令适配未产生这些告警。4种未启用维护的VOFA配置另有1条`muxExpected`在该编译分支未被使用的告警（总18条），不影响链接；所有变体的告警数均保存在矩阵JSON。
 
 主程序RAM区 `SHDSPL2RAM` 范围保持 `0x11801000`、长度 `0x3F000`；默认Debug/Release用量`0x262D6`、剩余`0x18D2A`，各变体以自己的 `.map` 为准。19个DPRAM输出section保持CS5原地址，增加`NOINIT`属性，取消运行库在EMIFA初始化前对外部通信区的清零。实际链接保留18段，未使用的Unit17被删除。关闭配置不注册DPRAM中断、后台不读写映射区；FT3故障字从本地`Port_RealFault`取得。开启配置保留原FT3来源与后台收发，新宏关闭语义可由静态调用检查和链接初始化表复核。
 

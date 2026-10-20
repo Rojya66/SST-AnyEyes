@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from control_sources import control_source
 
 
 def source_body(path: Path) -> str:
@@ -29,6 +30,7 @@ def run(project: Path, compiler: str, enabled: bool, template: str) -> str:
         for relative in (
             "Source/04_App/00_Config/ChbBuildConfig.h",
             "Source/04_App/04_Control/ChbDabControl.h",
+            "Source/04_App/04_Control/ChbDabControlInternal.h",
             "Source/04_App/02_Measurement/SstBenchInputs.h",
             "Source/01_ComLib/04_Pi/SstPi.h",
         ):
@@ -36,8 +38,7 @@ def run(project: Path, compiler: str, enabled: bool, template: str) -> str:
         code = template.replace("/* INSERT_BENCH_IMPLEMENTATION */", source_body(
             project / "Source/04_App/02_Measurement/SstBenchInputs.c"))
         control = ("#include \"SstPi.h\"\n" + source_body(
-            project / "Source/01_ComLib/04_Pi/SstPi.c") + "\n" + source_body(
-            project / "Source/04_App/04_Control/ChbDabControl.c")) if enabled else ""
+            project / "Source/01_ComLib/04_Pi/SstPi.c") + "\n" + control_source(project)) if enabled else ""
         code = code.replace("/* INSERT_CONTROL_IMPLEMENTATION */", control)
         unit = work / "bench_test.c"
         unit.write_text(code, encoding="utf-8")

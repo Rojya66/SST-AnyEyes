@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from control_sources import control_paths, strip_local_includes
 
 
 def strip_local_includes(source: str) -> str:
@@ -28,6 +29,7 @@ def run(project: Path, compiler: str) -> str:
         for name, path in (
             ("ChbBuildConfig.h", source_dir / "00_Config/ChbBuildConfig.h"),
             ("ChbDabControl.h", source_dir / "04_Control/ChbDabControl.h"),
+            ("ChbDabControlInternal.h", source_dir / "04_Control/ChbDabControlInternal.h"),
             ("SstSinglePhase.h", source_dir / "04_Control/SstSinglePhase.h"),
             ("SstPi.h", project / "Source/01_ComLib/04_Pi/SstPi.h"),
         ):
@@ -39,9 +41,8 @@ def run(project: Path, compiler: str) -> str:
         )
         pi_path = project / "Source/01_ComLib/04_Pi/SstPi.c"
         pi = strip_local_includes(pi_path.read_text(encoding="utf-8-sig"))
-        control = strip_local_includes(
-            (source_dir / "04_Control/ChbDabControl.c").read_text(encoding="utf-8-sig")
-        )
+        control = "\n".join(strip_local_includes(path.read_text(encoding="utf-8-sig"))
+                           for path in control_paths(project))
         body = (tests / "single_phase_control.c").read_text(encoding="utf-8-sig")
         unit = work / "single_phase_control_test.c"
         # Keep assertion/compile diagnostics attached to their real source
@@ -58,6 +59,8 @@ def run(project: Path, compiler: str) -> str:
                 pieces.append('#include "SstSinglePhase.h"\n')
             if path.name == "SstPi.c":
                 pieces.append('#include "SstPi.h"\n')
+            if path.name == "ChbDabControl.c":
+                pieces.append('#include "ChbDabControlInternal.h"\n')
             pieces.append(f'#line 1 "{path.as_posix()}"\n{source}\n')
         unit.write_text("".join(pieces), encoding="utf-8")
         binary = work / "single_phase_control_test.exe"

@@ -82,7 +82,7 @@ op2禁止START/STOP/RESET的bit1..15及ON/OFF的bit2..15，返回范围错误且
 |---:|---|---|
 | 0..2 | `0x66002E00～0x66002E04` | 版本戳、magic=5353、协议版本1 |
 | 3 | `0x66002E06` | state：0停机、1预充、2旁路延时、3等PLL、4运行、5故障 |
-| 4 | `0x66002E08` | control_fault：0无、1预充超时、2PLL超时、3快速AC过流、4快速DC过压、5硬件、6非法配置 |
+| 4 | `0x66002E08` | control_fault：0无、1预充超时、2PLL超时、3快速AC过流、4快速DC过压、5硬件、6非法配置、7开关反馈、8控制运行时失效 |
 | 5 | `0x66002E0A` | startup_phase：0空闲、1固定Id斜坡、2电压环平滑移交、3正常电压环运行 |
 | 6 | `0x66002E0C` | 布尔位图，见下表 |
 | 7 | `0x66002E0E` | ac_mode：0开环、1闭环 |
@@ -117,7 +117,7 @@ word0版本戳；word1=5353；word2=1；word3历史数量；word4=15（每条记
 |---:|---|---|
 | 0 | code | 五位故障码 |
 | 1 | level | 参考等级0..4 |
-| 2 | control_fault | CHB_FAULT内部原因0..6 |
+| 2 | control_fault | CHB_FAULT内部原因0..8 |
 | 3 | port_fault | 原16位PORT_FAULT位图 |
 | 4 | fault_type | 原FaultTypeFLAG位图 |
 | 5 | port_latch | 原AD保护锁存后台副本 |

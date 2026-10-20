@@ -1,6 +1,6 @@
 # 单UNIT、无主回路的闭环输入模拟与CCS操作指南
 
-> 2026-10-19 更新：下文的 300→680 V 和默认模式描述保留为历史高压流程。当前源码默认是 100 Vac 单相试验，输入发生器仍默认 300 V/module、325 V peak，不能直接启动。低压注入需先设 `dc_a_v=19`、`grid_peak_v=141.42136`、`current_peak_a=0`，预充时手动升至 23～25 V，运行后逐步升至 35 V；具体按 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 5 节。复现本文原高压三相流程须显式 LOW=0、PHASE=0，并按实际硬件核对三相模块位图。
+> 2026-10-19 更新：下文的 300→680 V 和默认模式描述保留为历史高压流程。当前源码默认是 100 Vac 单相试验，输入发生器仍默认 300 V/module、325 V peak，不能直接启动。低压注入需先设 `dc_a_v=19`、`grid_peak_v=141.42136`、`current_peak_a=0`，预充时手动升至 23～25 V，运行后逐步升至 60 V；具体按 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 5 节。复现本文原高压三相流程须显式 LOW=0、PHASE=0，并按实际硬件核对三相模块位图。
 
 2026-10-14握手完善后的工作区保留用户手动设置`SST_BENCH_INPUT_SIM=1`，最新默认AnyEyes测试固件位于`build/Debug/anyeyes_identity/SST_AnyEyes.out`，电子标签见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。下述默认关闭说明及`bench_inputs`产物对应此前固定标签`bench-input-simulation-2026-10-14`；当前测试输入字段和启动操作仍相同。恢复真实采样应明确设置测试宏为0并重新构建。
 
@@ -118,18 +118,18 @@ python tools/build.py --configuration Release --variant bench_inputs_vofa --defi
 
 ## 5. 断点位置与电压环移交观察
 
-以下行号对应本次`ChbDabControl.c`，该控制文件没有因输入模块而插入代码；后续修改仍应以函数及语句定位。在可执行行左侧双击加断点，`View → Breakpoints`可禁用；暂停后选当前C6748栈帧。`F6/F5/F8`通常是Step Over/Step Into/Resume，以当前CCS配置为准。
+以下定位使用当前拆分后的函数名；快速控制位于 `ChbDabControlFast.c`，状态机位于 `ChbDabControlService.c`，共享输出和PI位于 `ChbDabControl.c`。后续修改仍应以函数及语句定位。在可执行行左侧双击加断点，`View → Breakpoints`可禁用；暂停后选当前C6748栈帧。`F6/F5/F8`通常是Step Over/Step Into/Resume，以当前CCS配置为准。
 
 | 文件、行号与语句 | 用途 | 使用方式 |
 |---|---|---|
 | `TaskSlice.c:24`，`ChbDabControl_Service()` | 初始化后设置模式及启停 | 命中一次后禁用 |
-| `ChbDabControl.c:620`，`g_chb_dab_status.state = state` | 捕获自然状态转换 | 暂停时局部`state`为目标状态，旧状态尚未更新 |
-| `ChbDabControl.c:670`，建立Id斜坡阶段 | 策略1运行入口 | 单步到PWM使能后再观察，命中该行时不能认定PWM已经打开 |
-| `ChbDabControl.c:1073/1100/1119`附近条件 | 预充、旁路、PLL慢速确认 | 临时逐段检查，不修改计数或状态跳过条件 |
-| `ChbDabControl.c:1348`，`Chb_AlignVoltagePiToIdReference(...)` | 斜坡结束时积分对齐 | 比每TAD入口断点更容易捕获一次移交 |
-| `ChbDabControl.c:1360`，进入正常电压环阶段 | 移交后的下一拍 | 捕获后禁用 |
-| `ChbDabControl.c:1370`附近PI调用 | 查看真实电压PI计算 | 高频位置，短时单步后禁用 |
-| `ChbDabControl.c:895`，ForceFault记录`fault_code` | 捕获控制故障原因 | 观察参数及Call Stack；函数定义在882行 |
+| `ChbDabControlService.c` 的 `Chb_EnterState()` | 捕获自然状态转换 | 暂停时局部`state`为目标状态，旧状态尚未更新 |
+| `ChbDabControlService.c` 的 `Chb_EnterState()` | 策略1运行入口 | 单步到PWM使能后再观察，命中该行时不能认定PWM已经打开 |
+| `ChbDabControlService.c` 的 `ChbDabControl_ServiceCore()` | 预充、旁路、PLL慢速确认 | 临时逐段检查，不修改计数或状态跳过条件 |
+| `ChbDabControlFast.c` 的 `Chb_AlignVoltagePiToIdReference()` | 斜坡结束时积分对齐 | 比每TAD入口断点更容易捕获一次移交 |
+| `ChbDabControlFast.c` 的 `Chb_GetClosedLoopIdReference()` | 移交后的下一拍 | 捕获后禁用 |
+| `ChbDabControlFast.c` 的 `Chb_VoltagePiLimited()` 调用 | 查看真实电压PI计算 | 高频位置，短时单步后禁用 |
+| `ChbDabControl.c` 的 `ChbDabControl_ForceFault()` | 捕获控制故障原因 | 观察参数及Call Stack |
 | `Redef_Interrupt.c:575`，`FaultCheckAndDispose_StepOne()` | 查看GPIO142硬件FAULT路径 | 排查缺失板卡或UNIT反馈，不当作虚拟输入保护结果 |
 
 关键状态观察量为`state`、`fault_code`、`dc_voltage_average_v`、`dc_voltage_min_v`、`pll_frequency_hz`、`pll_locked`、`startup_phase`、`startup_tad_count`、`startup_voltage_reference_v`、`id_reference_a`、`id_feedback_a`、`iq_feedback_a`、`voltage_loop_active`、`modulation_actual`和`dab_duty_count`。全局测试输入可以随时在停机/暂停时改；内部静态量和局部量只观察。局部量不可见时确认加载未优化Debug符号并选对栈帧。

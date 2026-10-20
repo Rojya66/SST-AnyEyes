@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from control_sources import control_paths
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,18 +45,21 @@ static void Module_PWMEN(unsigned short enable)
     sources = [ROOT / p for p in (
         'Source/01_ComLib/04_Pi/SstPi.c',
         'Source/04_App/04_Control/SstSinglePhase.c',
-        'Source/04_App/04_Control/ChbDabControl.c',
+        *[str(path.relative_to(ROOT)) for path in control_paths(ROOT)],
         'tests/common_control_safety.c')]
     headers = [ROOT / p for p in (
         'Source/01_ComLib/04_Pi/SstPi.h',
         'Source/04_App/00_Config/ChbBuildConfig.h',
         'Source/04_App/04_Control/ChbDabControl.h',
+        'Source/04_App/04_Control/ChbDabControlInternal.h',
         'Source/04_App/04_Control/SstSinglePhase.h')]
     with tempfile.TemporaryDirectory(prefix='sst_common_safety_') as temp:
         work = Path(temp)
         for path in headers:
             shutil.copy2(path, work / path.name)
-        pieces = [prefix, gate_probe, '#include "SstPi.h"\n#include "SstSinglePhase.h"\n']
+        pieces = [prefix, gate_probe,
+                  '#include "SstPi.h"\n#include "SstSinglePhase.h"\n'
+                  '#include "ChbDabControlInternal.h"\n']
         for path in sources:
             pieces.append(f'#line 1 "{path.as_posix()}"\n' +
                           strip_includes(path.read_text(encoding='utf-8-sig')) + '\n')

@@ -46,23 +46,23 @@ output                = clamp(output_unsaturated, Umin, Umax)
 | 活动模块 | A 相 6 个 | A1/A2 位图分别为 `0x0007`，各 3 个；B/C 不投入 |
 | 电感 | 6 mH | 等效串联电阻与总延迟尚需实测 |
 | 每模块电容 | 3.2 mF | 用于估算电压外环及充电能量 |
-| 目标模块均压 | 35 V/module | A 相串联电压约 210 V |
-| 预充门槛 | 20 V/module | A 相模块均压连续达标 200 ms 后进入旁路延时 |
+| 目标模块均压 | 60 V/module | A 相串联电压约 360 V |
+| 预充门槛 | 25 V/module | A 相模块均压连续达标 200 ms 后进入旁路延时 |
 | 预充超时 | 10 s | 超时报告 `20103` |
 | 旁路延时 | 200 ms | 保留原状态机动作顺序 |
 | 输入已建立 | 50 V RMS | `SST_LV100_INPUT_PRESENT_V`，消费者为 AN 有效值 |
 | PLL 最低电网幅值 | 100 V peak | 与输入已建立判据不同，使用电压矢量峰值 |
 | PLL 连续锁定/超时 | 200 ms / 5 s | 运行中失锁继续按现有保护处理 |
 | 调制绝对值上限 | 0.98 | 保持 FPGA Reference 的 0.02～1.98 范围 |
-| 电压给定允许范围 | 20～38 V/module | DPRAM `PORT_V_SET` 校验；默认 35 V，距 42 V 保护留裕量 |
-| 电压环 Id 限幅 | ±1 A | dq Id 是峰值坐标量，不直接等同输入有效值 |
-| 快速过流 | 3 A，连续 5 TAD | 比较 A 相每拍标定瞬时电流绝对值 |
+| 电压给定允许范围 | 20～150 V/module | DPRAM 扩展点校验；默认 60 V，快速过压门槛为 75 V |
+| 电压环 Id 限幅 | 启动 5 A，运行上限 50 A | 低压配置按当前动态限流状态限制 dq 矢量，不直接等同输入有效值 |
+| 快速过流 | 60 A，连续 5 TAD | 比较 A 相每拍标定瞬时电流绝对值 |
 | 电流方向滞环 | ±0.1 A | 仅 LOW=1 的 A 相，严格越界更新 `HA_IG_Log_A`，不是保护阈值 |
-| 快速过压 | 42 V，连续 5 TAD | 比较 A 相模块均压，非逐模块最大电压 |
-| 原一级/二级过流 | 3 A / 4 A | 比较后台发布的 200 点电流有效值 |
-| 原 HVAC 过压 | 42 V | 比较模块均压合成滤波值 |
+| 快速过压 | 75 V，连续 5 TAD | 比较 A 相模块均压，非逐模块最大电压 |
+| 原一级/二级过流 | 40 A / 45 A | 比较后台发布的 200 点电流有效值 |
+| 原 HVAC 过压 | 80 V | 比较模块均压合成滤波值 |
 
-`SST_LV100_MODULE_OV_V` 虽沿用 MODULE 命名，快速保护实际只检查相模块均压；不能把它解释成每一个子模块电压均不超过 42 V。逐模块硬件保护能力仍取决于 UNIT 和现场位流。原 `HA_H_Voltage` 用于原逐模块扫描阈值，其直接封波分支在源工程已注释，不能与正在执行的快速均压过压保护混为一谈。
+`SST_LV100_MODULE_OV_V` 虽沿用 MODULE 命名，快速保护实际只检查相模块均压；不能把它解释成每一个子模块电压均不超过 75 V 快速、80 V 有效值；逐模块硬件保护能力仍取决于 UNIT 和现场位流。原 `HA_H_Voltage` 用于原逐模块扫描阈值，其直接封波分支在源工程已注释，不能与正在执行的快速均压过压保护混为一谈。
 
 ## 4. 低压 PI 与启动给定
 
@@ -70,7 +70,7 @@ output                = clamp(output_unsaturated, Umin, Umax)
 |---|---:|---|
 | `voltage_kp` | 0.05 | 电压外环比例项，A/V |
 | `voltage_ki` | 0.10 | 连续域积分项，A/(V·s) |
-| `voltage_current_limit_a` | 1.0 | Id 输出绝对值上限，A |
+| `voltage_current_limit_a` | 50.0 | 运行 Id/Iq 合成矢量上限，A 峰值；启动阶段由动态限流状态收紧 |
 | `startup_strategy` | `CHB_STARTUP_ID_RAMP` | 先投小 Id 斜坡，再移交电压环 |
 | `startup_udc_offset_v` | 0.0 | 从解锁时实测均压起步，不套用高压 +20 V 偏置 |
 | `startup_udc_step_v` | 0.001 | V/TAD，10 kHz 时约 10 V/s |
@@ -81,7 +81,7 @@ output                = clamp(output_unsaturated, Umin, Umax)
 | `current_ki` | -16.66666667 | 连续域增益，不随输入电压按比例缩放 |
 | `current_feedback_sign` | +1 | 仍须通过实测验证实际电流方向 |
 
-这里的关键调整是去掉原高压启动时 `实测均压 +20 V`、每 TAD 增加 2 V 的快速给定。对于 35 V/module 的低压目标，20 V 偏置会直接触及最终目标，失去缓启动作用。新给定先从实测电压建立，固定小 Id 平滑上升，电压环接管后再按 10 V/s 更新参考。
+这里的关键调整是去掉原高压启动时 `实测均压 +20 V`、每 TAD 增加 2 V 的快速给定。对于 60 V/module 的低压目标，20 V 偏置会直接触及最终目标，失去缓启动作用。新给定先从实测电压建立，固定小 Id 平滑上升，电压环接管后再按 10 V/s 更新参考。
 
 参数估算采用六个电容共同充电的简化模型：
 
@@ -91,9 +91,9 @@ Pavg ≈ Vgrid_peak * Id_peak / 2
 dVmodule/dt ≈ Vgrid_peak * Id_peak / (2 * 6 * C * Vmodule)
 ```
 
-在 35 V/module、C=3.2 mF、Vgrid_peak=141.4 V 时，`dVmodule/dt≈105.2×Id_peak V/s`。Id 为 0.25 A 时理想平均输入功率约 17.7 W，20 V 到 35 V 所需电容能量约 7.92 J，忽略损耗时约 0.45 s；实际过程还受预充、调制能力、限流和负载影响。
+在 60 V/module、C=3.2 mF、Vgrid_peak=141.4 V 时，`dVmodule/dt≈105.2×Id_peak V/s`。Id 为 0.25 A 时理想平均输入功率约 17.7 W，25 V 到 60 V 所需电容能量约 7.92 J，忽略损耗时约 0.45 s；实际过程还受预充、调制能力、限流和负载影响。
 
-在 35 V 工作点按电流理想跟踪线性化，外环对象增益约 105.2 V/(A·s)，上述外环增益对应自然角频率约 3.24 rad/s（约 0.52 Hz）、阻尼比约 0.81。这只是保守起始估算。内环在忽略 R 和其他环节时比例交越量级约为 `|Kp|/(2πL)≈33 Hz`，等效电阻、dq 耦合、采样滤波、SOGI 和 PWM 延迟未知，不能据此认定已经整定稳定。
+在 60 V 工作点按电流理想跟踪线性化，外环对象增益约 105.2 V/(A·s)，上述外环增益对应自然角频率约 3.24 rad/s（约 0.52 Hz）、阻尼比约 0.81。这只是保守起始估算。内环在忽略 R 和其他环节时比例交越量级约为 `|Kp|/(2πL)≈33 Hz`，等效电阻、dq 耦合、采样滤波、SOGI 和 PWM 延迟未知，不能据此认定已经整定稳定。
 
 ## 5. 启动流程和 CCS 验证方法
 
@@ -102,13 +102,13 @@ dVmodule/dt ≈ Vgrid_peak * Id_peak / (2 * 6 * C * Vmodule)
 1. 首次下载保持 `run_enable=0`、`dab_enable=0`，检查 A 相 6 个模块在线配置、AN 电压/电流方向、每模块电压和硬件故障字。
 2. 确认当前宏为 LOW=1、PHASE_A=1、BENCH_INPUT_SIM=0；真实主回路不得带着临时输入注入运行。无主回路控制板验证则按 [BENCH_CLOSED_LOOP_DEBUG.md](BENCH_CLOSED_LOOP_DEBUG.md) 显式选择注入模式。
 3. 输入 100 V RMS 后确认 `PORT_RealTime_DATA.PORT_V_A` 为有效值，`HA_Port_Volt_A` 为瞬时量；`SVG_Udc_A_Ave` 为 A 相模块均压。
-4. 在停机状态确认 `ac_mode=CHB_AC_MODE_CLOSED_LOOP`、目标 35 V/module、Iqref=0，置 `run_enable=1`。
-5. 观察预充连续达标、旁路延时、PLL 连续锁定，之后才进入 RUNNING。RUNNING 发布与门控提交期间使用中性参考屏障，避免中断抢占时使用旧 PI 状态；该屏障不表示每次进入 RUNNING 后固定等待一整个额外 TAD。
-6. Idref 应从 0 缓慢爬升至 0.25 A，外环通过积分跟踪接管，之后电压参考从实测均压逐步升至 35 V。观察 Idref 不出现高压版本 10 A 级启动阶跃。
+4. 在停机状态确认 `ac_mode=CHB_AC_MODE_CLOSED_LOOP`、目标 60 V/module、Iqref=0，置 `run_enable=1`。
+5. 观察预充连续达标、旁路延时、PLL 连续锁定，之后才进入 RUNNING。进入 RUNNING 时由当前 TAD 的 FastStep 直接计算 PI、调制和参考值；启动状态在 Service 中准备完成，不再额外写一拍中性参考。
+6. Idref 应从 0 缓慢爬升至 0.25 A，外环通过积分跟踪接管，之后电压参考从实测均压逐步升至 60 V。观察 Idref 不出现高压版本 10 A 级启动阶跃。
 7. 对无功率注入模式，可在停机、预充、锁相等待点使用断点并修改注入变量验证状态边界。带真实主回路运行时不使用会冻结 DSP 而 FPGA 继续发波的普通断点；动态过程使用 CCS 实时观察、缓冲录波和示波器。
 8. 清 `run_enable`、`dab_enable` 后验证 PWM 关闭；故障复位要求启动命令为 0。检查控制故障和五位故障记录一致，故障未排除时不得反复强行复位启动。
 
-临时输入发生器仍保留历史高压默认 `300 V/module`、电网 `325 V peak`。若 LOW=1 同时开启 BENCH，必须在启动前将 `g_sst_bench_inputs.dc_a_v` 设为 19 V、`grid_peak_v` 设为 141.42136 V、`current_peak_a` 设为 0；预充等待期间人工升至 23～25 V 通过预充，进入运行后逐步升至 35 V 模拟充电。B/C 在单相模式被隔离。不得直接套用旧说明中 300→680 V 的流程，否则会触发 42 V 均压保护。输入发生器不含主回路模型，母线不会因 PI 自动升高。
+临时输入发生器仍保留历史高压默认 `300 V/module`、电网 `325 V peak`。若 LOW=1 同时开启 BENCH，必须在启动前将 `g_sst_bench_inputs.dc_a_v` 设为 19 V、`grid_peak_v` 设为 141.42136 V、`current_peak_a` 设为 0；预充等待期间人工升至 23～25 V 通过预充，进入运行后逐步升至 60 V 模拟充电。B/C 在单相模式被隔离。不得直接套用旧说明中 300→680 V 的流程，否则会触发 75 V 快速或 80 V 有效值过压保护。输入发生器不含主回路模型，母线不会因 PI 自动升高。
 
 启动 Id 步长在线编码为 `0.0001 A/TAD` 一格。源码 `0.00025` 经现有 AnyEyes/DPRAM/EEPROM 编码保存再加载会量化为 `0.0003`，约 83.3 ms 到 0.25 A；地址和缩放保持原协议，未为此修改。默认 `CHB_LOAD_EEPROM_PARAMETERS=0` 时启动使用源码值；显式 LOAD 后须按实际读回值确认，量化测试覆盖此半 LSB 误差。
 
@@ -122,9 +122,9 @@ dVmodule/dt ≈ Vgrid_peak * Id_peak / (2 * 6 * C * Vmodule)
 
 实际调用链为 `FPGAIsr → ChbDabControl_FastStep → Chb_WriteNormalizedReferences`；原 `Write_ControlParameter_50Hz()` 没有活动调用点，不能以旧函数仍有三相代码来证明实时路径完整。本次回归直接从 FastStep 检查六张卡、四种方向/排序组合、非零布尔值、停止/运行、保留位及无关槽位，并验证重新加单相宏、整字清零及 B 相误读 A 相三种错误都能使测试失败。
 
-同类审查还将此前仅限单相的基础约束推广到两种模式：运行及启动期间模式锁存、RUNNING 发布屏障、PWM/接触器提交前最终故障复核、首故障保留、有效相逐相母线门槛、正向 PLL 锁定及 200 TAD 连续失锁、参数/采样有限性检查，以及先快速保护再 PI/调制。公共助手使用 `Chb_GateBlocked`、`Chb_EnablePwm`、`Chb_DisablePwm` 命名，避免名称误导其适用范围。长调节器复位仍放在门控关中断区外。DAB 单独停机保留原 `DAB_StartMethod=0` 副作用。
+同类审查还将此前仅限单相的基础约束推广到两种模式：运行及启动期间模式锁存、PWM/接触器提交前最终故障复核、首故障保留、有效相逐相母线门槛、正向 PLL 锁定及 200 TAD 连续失锁、参数/采样有限性检查，以及先快速保护再 PI/调制。进入 RUNNING 后，FastStep 按当前有效状态直接选择控制路径并计算参考值，不再插入额外的中性参考拍。公共助手使用 `Chb_GateBlocked`、`Chb_EnablePwm`、`Chb_DisablePwm` 命名，避免名称误导其适用范围。长调节器复位仍放在门控关中断区外。DAB 单独停机保留原 `DAB_StartMethod=0` 副作用。
 
-低压复核还发现原 `HA_IG_Log_A` 仅在瞬时电流严格超过 ±1 A 才翻转，0.25 A 启动给定无法跨越该门槛，虽写入 DC_Log 仍可能保持旧排序方向。LOW=1 下 A 相改用 `SST_LV100_CURRENT_DIRECTION_HYST_A=0.1F`，大于 +0.1 A 置 1，小于 -0.1 A 置 0，边界及中间区保持；LOW=0 以及 B/C 的原 ±1 A 逻辑不变。501 `Avg_IG/10` 当前分辨率为 0.1 A，因此实际正负 2 count（±0.2 A）切换，正负 1 count 和 0 保持。这是小电流试验的排序方向判据，不改变 3 A 过流门槛；零点漂移/噪声及实际小电流测量能力仍需示波器和原始计数核验。
+低压复核还发现原 `HA_IG_Log_A` 仅在瞬时电流严格超过 ±1 A 才翻转，0.25 A 启动给定无法跨越该门槛，虽写入 DC_Log 仍可能保持旧排序方向。LOW=1 下 A 相改用 `SST_LV100_CURRENT_DIRECTION_HYST_A=0.1F`，大于 +0.1 A 置 1，小于 -0.1 A 置 0，边界及中间区保持；LOW=0 以及 B/C 的原 ±1 A 逻辑不变。501 `Avg_IG/10` 当前分辨率为 0.1 A，因此实际正负 2 count（±0.2 A）切换，正负 1 count 和 0 保持。这是小电流试验的排序方向判据，不改变 60 A 快速过流门槛；零点漂移/噪声及实际小电流测量能力仍需示波器和原始计数核验。
 
 ## 7. 保护、封波和故障码
 
@@ -137,7 +137,8 @@ dVmodule/dt ≈ Vgrid_peak * Id_peak / (2 * 6 * C * Vmodule)
 | 3 | 29103 | 快速过流；原 HVAC OC 也映射到此报告码 |
 | 4 | 29104 | 快速过压；原 HVAC OV 也映射到此报告码 |
 | 5 | 19101 或原硬件细分 | 硬件故障汇总，具体依据已有 FO/FB/类型标志 |
-| 6 | 29105 | 非法配置、数值/采样/运行约束等 |
+| 6 | 29105 | 非法配置、启动配置和模式切换约束 |
+| 8 | 29109 | 运行中采样、PI 数值或母线状态失效 |
 
 原保护时限继续按 Timer2 的 10 ms 节拍和严格大于判据执行：设置 100/5 需要 101/6 次递增。电流有效值发布还包含 200 点积累及后台延迟，不能把原 RMS 保护与 5 TAD 瞬时保护按同一时间和电流口径比较。完整等级、细分码、首故障及历史语义见 [FAULT_CODES.md](FAULT_CODES.md)。
 
@@ -184,7 +185,7 @@ python tools/run_checks.py
 |---|---|---|
 | TI C6000 8.3.12 编译矩阵 | 13/13 通过；每组 91 源文件、0 错误、17 条既有警告 | Debug/Release × 三相高压/单相高压/单相低压 × AnyEyes+DPRAM远控/VOFA+仿真器；另加只关闭单相宏的默认三相 Debug；`build/control_compatibility_matrix.json` |
 | CCS 实际工程验证 | 隔离工作区导入、Clean Debug、Clean Release 全部通过 | `build/ccs_validation/result.json`、`summary.json`；默认低压输出 `Debug/SST_AnyEyes.out` 和 `Release/SST_AnyEyes.out` |
-| 三相配置/排序及公共保护 | 通过；六卡每拍排序及保留位正确 | 合法三相位图下验证闭环、各相母线、正向PLL、200 TAD失锁、模式锁存、首拍屏障、故障竞态、NaN/Inf、先保护后PI；真实默认B/C位图仍需按现场修改 |
+| 三相配置/排序及公共保护 | 通过；六卡每拍排序及保留位正确 | 合法三相位图下验证闭环、各相母线、正向PLL、200 TAD失锁、模式锁存、FastStep 当前拍控制选择、故障竞态、NaN/Inf、先保护后PI；真实默认B/C位图仍需按现场修改 |
 | PI/控制/VOFA/故障/DPRAM 等主机检查 | 20/20 通过 | `build/host_validation/result.json`；低压默认预充阻挡、Id斜坡、接管及电压参考斜率通过；方向滞环覆盖LOW1、LOW0单相、LOW0三相及边界 |
 | 注释覆盖与结构/等价审计 | 通过，零未知源码变更 | 136 个自定义文件；2419 原实体→2386 当前实体，179 项精确登记变更；`build/refactor_equivalence.json`、`build/comment_inventory/verification.json` |
 | 实时静态及 TI 隔离检查 | 静态 67/67；四个 ISR 宏0/1的指令、直接调用和栈一致 | `build/host_validation/realtime_audit.log`、`build/single_phase_isolation/result.json`；宏0采样/IO保持严格token比较；ISR调用闭包真实耗时未实测 |
