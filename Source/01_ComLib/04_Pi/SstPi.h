@@ -75,6 +75,7 @@ typedef struct
     /* 1 时启用条件积分抗饱和；集成层的 CHB 三相和单相均应置1。 */
     unsigned short anti_windup_enable;
     unsigned short flags;          /* 本拍有效性、限幅、积分保持及数值错误位标志。 */
+    unsigned short configuration_valid; /* 已完成配置校验；快速运行不重复扫描全部参数。 */
 } SST_PI_CONTROLLER;
 
 /*==================================================================
@@ -107,6 +108,31 @@ unsigned short SstPi_Configure(
     float integral_min,
     float integral_max,
     unsigned short anti_windup_enable);
+
+/*==================================================================
+ * 函数功能: 更新已经校验过的 PI 输出和积分边界
+ * 输入参数: controller：已完成参数配置的 PI 对象。
+ *           output_min、output_max：新的输出上下限；integral_min、integral_max：新的积分上下限。
+ * 输出参数: controller：边界及必要的积分钳位结果。
+ * 返回值: 无。
+ * 执行说明: 不重复检查增益、采样周期和边界；调用者必须先完成配置校验。
+ *==================================================================*/
+void SstPi_UpdateBounds(
+    SST_PI_CONTROLLER *controller,
+    float output_min,
+    float output_max,
+    float integral_min,
+    float integral_max);
+
+/*==================================================================
+ * 函数功能: 将最终物理输出的饱和偏差反馈给单轴 PI，撤销向外积分。
+ * 输入参数: controller：本拍已执行的 PI 对象；previous_integral：本拍计算前的积分。
+ *           saturation_error：最终限幅值减原指令，再投影到本轴的电压偏差。
+ * 输出参数: controller：必要时恢复积分，重算输出并更新限幅/积分保持标志。
+ * 返回值: 无。
+ * 执行说明: 用于单相物理输出限幅；调用者保证参数来自本拍有效计算。
+ *==================================================================*/
+void SstPi_ApplySaturation(SST_PI_CONTROLLER *controller, float previous_integral, float saturation_error);
 
 /*==================================================================
  * 函数功能: 清除历史积分和本拍运行量，保留增益及限幅配置。

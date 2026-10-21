@@ -37,7 +37,8 @@ def _support_translation_unit(project: Path | None) -> tuple[str, list[Path]]:
     support = source_path.read_text(encoding="utf-8-sig")
     support = re.sub(r'^\s*#\s*include\s*"[^"\n]+"\s*$', "", support,
                      flags=re.MULTILINE)
-    return '#include "SstPi.h"\n' + support, [header_path] if header_path.is_file() else []
+    config = project / "Source/04_App/08_Fault/ProtectionConfig.h"
+    return '#include "ProtectionConfig.h"\n#include "SstPi.h"\n' + support, [header_path, config]
 
 
 def run(source: Path, header: Path, config: Path, compiler: str, template: str,

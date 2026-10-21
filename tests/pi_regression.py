@@ -123,6 +123,18 @@ int main(void)
                      "invalid Ts");
     failures += check((pi.flags & SST_PI_FLAG_INVALID_PARAMETER) != 0U, "invalid parameter flag");
 
+    SstPi_Init(&pi);
+    failures += check(SstPi_Run(&pi, 0.0F, 0.0F, 0.0F) == SST_PI_FAILURE, "unconfigured controller rejected");
+    failures += check(SstPi_Configure(&pi, 0.0F, 1.0F, 1.0F,
+                                      -10.0F, 10.0F, -10.0F, 10.0F, 1U), "dynamic bounds configure");
+    failures += check(SstPi_Run(&pi, 2.0F, 0.0F, 0.0F) == SST_PI_SUCCESS, "dynamic bounds preload");
+    SstPi_UpdateBounds(&pi, -1.0F, 1.0F, -1.0F, 1.0F);
+    failures += check(near(pi.integral, 1.0F) && pi.configuration_valid, "dynamic shrink preserves configuration and clamps history");
+    failures += check(SstPi_Run(&pi, -0.5F, 0.0F, 0.0F) == SST_PI_SUCCESS, "dynamic bounds recover");
+    failures += check(near(pi.output, 0.5F), "dynamic bounds use new output limit");
+    SstPi_Reset(&pi);
+    failures += check(pi.configuration_valid && near(pi.integral, 0.0F), "reset keeps configured gains");
+
     if (failures != 0) { return 1; }
     puts("SstPi regression: PASS");
     return 0;

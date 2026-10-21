@@ -48,6 +48,7 @@ static void Module_PWMEN(unsigned short enable)
         *[str(path.relative_to(ROOT)) for path in control_paths(ROOT)],
         'tests/common_control_safety.c')]
     headers = [ROOT / p for p in (
+        'Source/04_App/08_Fault/ProtectionConfig.h',
         'Source/01_ComLib/04_Pi/SstPi.h',
         'Source/04_App/00_Config/ChbBuildConfig.h',
         'Source/04_App/04_Control/ChbDabControl.h',
@@ -57,7 +58,7 @@ static void Module_PWMEN(unsigned short enable)
         work = Path(temp)
         for path in headers:
             shutil.copy2(path, work / path.name)
-        pieces = [prefix, gate_probe,
+        pieces = [prefix, gate_probe, '#include "ProtectionConfig.h"\n',
                   '#include "SstPi.h"\n#include "SstSinglePhase.h"\n'
                   '#include "ChbDabControlInternal.h"\n']
         for path in sources:
@@ -65,8 +66,8 @@ static void Module_PWMEN(unsigned short enable)
                           strip_includes(path.read_text(encoding='utf-8-sig')) + '\n')
         unit = work / 'safety.c'
         unit.write_text('\n'.join(pieces), encoding='utf-8')
-        for phase, low in ((0, 0), (1, 0), (1, 1), (0, None), (1, None)):
-            expected_low = 0 if low is None else low  # Current checkout explicitly selects the high-voltage profile.
+        for phase, low in ((0, 0), (1, 0), (1, 1), (1, None)):
+            expected_low = 1 if low is None else low  # Current checkout explicitly selects the low-voltage profile.
             binary = work / f'safety_{phase}_{low}.exe'
             command = [compiler, '-std=c99', '-O2', '-Wall', '-Wextra',
                        '-DSST_SIMULATOR_MODE=1', '-DSST_ENABLE_DPRAM=0',

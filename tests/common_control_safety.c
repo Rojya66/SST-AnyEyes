@@ -29,7 +29,7 @@ static float grid_peak(void)
 
 static float bus_voltage(void)
 {
-    return SST_LOW_VOLTAGE_100V_TEST ? 23.570226F : 600.0F;
+    return SST_LOW_VOLTAGE_100V_TEST ? 30.0F : 600.0F;
 }
 
 static void fixture(unsigned short mode)
@@ -222,9 +222,11 @@ static void test_invalid_values_and_protection_order(void)
     {
         for (j = 0U; j < 3U; ++j)
         {
-            start_closed();
+            fixture(CHB_AC_MODE_CLOSED_LOOP);
             *parameters[i] = invalid[j];
-            tick();
+            g_chb_dab_command.run_enable = 1U;
+            ChbDabControl_Tick10ms();
+            ChbDabControl_Service();
             assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
             assert(fake_ac_pwm == 0U);
         }
@@ -236,7 +238,7 @@ static void test_invalid_values_and_protection_order(void)
             start_closed();
             *sampling[i] = invalid[j];
             ChbDabControl_FastStep();
-            assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+            assert(g_chb_dab_status.fault_code == CHB_FAULT_CONTROL_RUNTIME);
             assert(fake_ac_pwm == 0U);
         }
     }
@@ -262,6 +264,68 @@ static void test_invalid_values_and_protection_order(void)
     puts("PASS common NaN/Inf and protection before PI");
 }
 
+/* Exercise the production limit path with an unavailable startup voltage.
+ * These are algebraic control tests, not a simulated power-stage stability proof. */
+static void test_current_output_saturation(void)
+{
+    float d, q;
+    fixture(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_params.current_kp = 0.0F;
+    g_chb_dab_params.current_ki = 10.0F;
+    assert(Chb_ConfigureControllers() != 0U);
+    g_chb_dab_status.id_feedback_a = 0.0F;
+    g_chb_dab_status.iq_feedback_a = 0.0F;
+#if SST_PHASE_A_ONLY_TEST
+    {
+        const float cosine[] = {1.0F, -1.0F, 0.0F, 0.0F, 0.70710678F};
+        const float sine[] = {0.0F, 0.0F, 1.0F, -1.0F, 0.70710678F};
+        const float feed_d[] = {150.0F, 150.0F, 0.0F, 0.0F, 150.0F};
+        const float feed_q[] = {0.0F, 0.0F, 150.0F, 150.0F, -150.0F};
+        unsigned int angle, sample;
+        for (angle = 0U; angle < 5U; ++angle)
+        {
+            Chb_ResetControllers();
+            for (sample = 0U; sample < 10000U; ++sample)
+            {
+                assert(Chb_CurrentPiLimited(feed_d[angle], feed_q[angle],
+                           feed_d[angle] / 150.0F, feed_q[angle] / 150.0F,
+                           100.0F, cosine[angle], sine[angle], &d, &q) != 0U);
+                assert(fabsf(s_id_pi.integral) < 0.000001F);
+                assert(fabsf(s_iq_pi.integral) < 0.000001F);
+            }
+            /* Reverse the error: integration toward the available range must resume. */
+            assert(Chb_CurrentPiLimited(feed_d[angle], feed_q[angle],
+                       -feed_d[angle] / 150.0F, -feed_q[angle] / 150.0F,
+                       100.0F, cosine[angle], sine[angle], &d, &q) != 0U);
+            assert(s_id_pi.integral * feed_d[angle] + s_iq_pi.integral * feed_q[angle] < 0.0F);
+        }
+    }
+    Chb_ResetControllers();
+    assert(Chb_CurrentPiLimited(80.0F, 300.0F, 0.0F, 0.0F, 100.0F, 1.0F, 0.0F, &d, &q) != 0U);
+    assert(fabsf(d - 80.0F) < 0.0001F && fabsf(q - 300.0F) < 0.0001F);
+    puts("PASS single-phase physical saturation: five angles, outward hold, inward recovery, virtual beta unrestricted");
+#else
+    assert(Chb_CurrentPiLimited(150.0F, 150.0F, 1.0F, 1.0F, 100.0F, 1.0F, 0.0F, &d, &q) != 0U);
+    assert(d * d + q * q <= 10000.01F);
+    assert(s_id_pi.integral == 0.0F && s_iq_pi.integral == 0.0F);
+    assert((s_id_pi.flags & SST_PI_FLAG_VECTOR_LIMIT) != 0U);
+    puts("PASS three-phase dq circle retains feedforward-aware anti-windup");
+#endif
+    /* Fixed gains remain cached across steps and are reapplied at the next startup configuration. */
+    g_chb_dab_params.current_ki = 20.0F;
+    assert(Chb_CurrentPiLimited(0.0F, 0.0F, 0.0F, 0.0F, 100.0F, 1.0F, 0.0F, &d, &q) != 0U);
+    assert(s_id_pi.ki == 10.0F && s_iq_pi.ki == 10.0F);
+    assert(Chb_ConfigureControllers() != 0U);
+    assert(s_id_pi.ki == 20.0F && s_iq_pi.ki == 20.0F);
+    puts("PASS PI fixed configuration cached between startup entries");
+    g_chb_dab_params.current_kp = NAN;
+    ChbDabControl_Init();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+    assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
+    puts("PASS invalid initialization enters resettable fault state");
+}
+
 static void test_low_voltage_startup(void)
 {
 #if SST_LOW_VOLTAGE_100V_TEST
@@ -269,7 +333,9 @@ static void test_low_voltage_startup(void)
     float previous;
     assert(saved_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP);
     assert(saved_command.dc_voltage_ref_v == 60.0F);
-    assert(saved_parameters.startup_strategy == CHB_STARTUP_ID_RAMP);
+    assert(saved_parameters.startup_strategy == CHB_STARTUP_SOURCE_COMPATIBLE);
+    /* Explicitly exercise the optional Id-ramp mode as well as the source-compatible default. */
+    saved_parameters.startup_strategy = CHB_STARTUP_ID_RAMP;
     fixture(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_command.run_enable = 1U;
     SVG_Udc_A_Ave = 19.0F;
@@ -298,17 +364,17 @@ static void test_low_voltage_startup(void)
     tick();
     assert(s_startup_phase == CHB_STARTUP_NORMAL);
     assert(fabsf(s_id_reference - previous) < 0.001F);
-    for (i = 0U; i < 12000U; ++i)
+    for (i = 0U; i < 40000U; ++i)
     {
         previous = s_startup_voltage_reference;
         tick();
         assert(s_startup_voltage_reference - previous <= saved_parameters.startup_udc_step_v + 0.00001F);
-        assert(fabsf(s_id_reference) <= 1.00001F);
+        assert(fabsf(s_id_reference) <= SST_LV100_START_CURRENT_LIMIT_A + 0.00001F);
         assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
     }
     assert(fabsf(s_startup_voltage_reference - 60.0F) < 0.001F);
     assert(g_chb_dab_status.load_ready == 0U);
-    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
+    assert(g_chb_dab_status.current_limit_active_a == SST_LV100_START_CURRENT_LIMIT_A);
     SVG_Udc_A_Ave = 60.0F;
     for (i = 0U; i < SST_LV100_READY_TAD - 1U; ++i)
     {
@@ -347,17 +413,19 @@ static void test_low_voltage_startup(void)
     }
     assert(g_chb_dab_status.state == CHB_STATE_STOPPED && fake_ac_pwm == 0U);
     assert(g_chb_dab_status.load_ready == 0U);
-    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
+    assert(g_chb_dab_status.current_limit_active_a == SST_LV100_START_CURRENT_LIMIT_A);
     start_closed();
     g_chb_dab_command.iq_reference_a = 30.0F;
     tick();
-    assert(fabsf(s_iq_pi.reference) <= 1.00001F);
-    assert(s_id_reference * s_id_reference + s_iq_pi.reference * s_iq_pi.reference <= 1.0001F);
-    start_closed();
+    assert(fabsf(s_iq_pi.reference) <= SST_LV100_START_CURRENT_LIMIT_A + 0.00001F);
+    assert(s_id_reference * s_id_reference + s_iq_pi.reference * s_iq_pi.reference <= SST_LV100_START_CURRENT_LIMIT_A * SST_LV100_START_CURRENT_LIMIT_A + 0.0001F);
+    fixture(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_params.voltage_current_limit_a = 50.1F;
-    tick();
+    g_chb_dab_command.run_enable = 1U;
+    ChbDabControl_Tick10ms();
+    ChbDabControl_Service();
     assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
-    puts("PASS load-ready debounce, 1-to-50A slew, dq budget, live derating and restart reset");
+    puts("PASS load-ready debounce, 5-to-50A slew, dq budget, live derating and restart reset");
     puts("PASS actual 100Vac defaults, insufficient precharge, 100ms Id ramp, voltage slew and stop");
 #endif
 }
@@ -370,6 +438,7 @@ int main(void)
     test_pll_and_bus();
     test_fault_races_and_first_control_step();
     test_invalid_values_and_protection_order();
+    test_current_output_saturation();
     test_low_voltage_startup();
     return 0;
 }

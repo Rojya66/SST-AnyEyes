@@ -5,8 +5,9 @@
 
 /*
  * 保护门限只在这里定义一次。快速保护比较TAD瞬时采样，旧保护比较
- * 10 ms有效值/滤波值；两者可以同时存在，但使用同一组额定输入和系数，
- * 避免在控制文件、旧故障文件和DPRAM默认值中分别维护魔数。
+ * 后台发布的电流有效值。直流过压只由 SST_FAST_OV_TRIP_V 派生的
+ * dc_overvoltage_trip_v 执行；旧 OV 常量只保留 DPRAM/持久化兼容值。
+ * 电流两种判据使用同一组额定输入和系数，避免分散维护魔数。
  */
 #if SST_PHASE_A_ONLY_TEST
 #define SST_GRID_PHASES 1U /* SST_GRID_PHASES：当前输入相数，单相为1。 */
@@ -43,7 +44,7 @@
 #define SST_RMS_OC_L2_TRIP_A (SST_INPUT_CURRENT_RMS_A * SST_RMS_OC_L2_FACTOR) /* SST_RMS_OC_L2_TRIP_A：二级有效值过流门限，单位A。 */
 #define SST_RMS_OV_TRIP_V (SST_MODULE_REFERENCE_V * SST_RMS_OV_FACTOR) /* SST_RMS_OV_TRIP_V：有效值过压门限，单位V。 */
 
-/* 启动预充与旧逐模块巡检的门限也集中在此处；它们的比较对象不同，不能混用。 */
+/* 启动预充与旧巡检兼容参数集中在此处；当前 CHB 不调用旧逐模块巡检。 */
 #if SST_LOW_VOLTAGE_100V_TEST
 /* SST_CONTROL_PRECHARGE_V：现代闭环状态机的相模块均压预充门槛，单位 V。 */
 #define SST_CONTROL_PRECHARGE_V SST_LV100_PRECHARGE_V /* SST_CONTROL_PRECHARGE_V：协议/保护配置常量。 */

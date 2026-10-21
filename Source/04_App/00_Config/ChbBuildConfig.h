@@ -38,8 +38,8 @@
 #define SST_LV100_MODULE_REF_UDC_V 60.0
 /* SST_LV100_PRECHARGE_V：低压试验每个模块允许进入旁路的最低预充电压，单位 V。 */
 #define SST_LV100_PRECHARGE_V 25.0
-/* SST_LV100_MODULE_OV_V：低压试验相模块均压的快速过压阈值，单位 V/模块；
- * 不是逐模块最大电压保护，不能据此判断每个子模块均未过压。 */
+/* SST_LV100_MODULE_OV_V：保留给旧巡检参数/报警的兼容默认值，单位 V/模块。
+ * 当前 CHB 直流过压只使用 g_chb_dab_params.dc_overvoltage_trip_v，不使用此值。 */
 #define SST_LV100_MODULE_OV_V 80.0
 /* SST_LV100_PORT_V_MIN：低压试验上位机可写单模块电压给定下限，单位 V。 */
 #define SST_LV100_PORT_V_MIN 20.0

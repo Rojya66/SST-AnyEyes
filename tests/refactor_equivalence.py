@@ -87,7 +87,7 @@ void third(void) { /* } */ }
                       set(safety_renames.values()) |
                       {"Chb_DcBusReady", "Chb_FiniteInRange",
                        "ChbDabControl_FastStepCore",
-                       "ChbDabControl_ServiceCore"})
+                       "ChbDabControl_ServiceCore", "Chb_ConfigureControllers"})
     assert len(entities) == len(by_name) and set(by_name) == expected_names, (
         "Control function inventory differs from the reviewed PI/common-safety mapping: "
         + str(sorted(set(by_name) ^ expected_names)))

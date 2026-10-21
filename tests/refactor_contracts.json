@@ -1662,13 +1662,13 @@
       "new_keys": [
         "function:ChbDabControl_Init"
       ],
-      "reason": "初始化三个完整PI对象；双模式统一初始化模式锁存、失锁计数及RUNNING 首拍由 FastStep 直接选择当前控制路径；仅SOGI初始化限定单相。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
-      "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
+      "reason": "初始化三个完整PI对象；双模式统一初始化模式锁存、失锁计数及RUNNING 首拍由 FastStep 直接选择当前控制路径；仅SOGI初始化限定单相。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 初始化配置 PI 固定增益，运行周期只更新动态边界。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
       "baseline_sha256s": [
         "55863ba880bf8fadda0cefe88dacfdc7b12444df6d8379ca46c9305d6192319d"
       ],
       "current_sha256s": [
-        "69f068efcc0799481a6ef5ef47ffb44ac027a0621a2851287c40f6e67f6e5195"
+        "85c17df3f042e4dbe703334d69d77455f2dcaa89b730fd83413fa7a08fe7ea87"
       ]
     },
     {
@@ -1676,13 +1676,13 @@
       "new_keys": [
         "function:Chb_CheckSoftwareProtection"
       ],
-      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。",
-      "validation": "tests/common_control_safety.py; tests/single_phase_control.py (actual SOGI/PLL, startup/handover, B/C isolation, OC/OV and invalid input); tests/single_phase_io.py (actual ADC/telemetry/Udc/PM_CTL); tests/control_regression.py (macro0 exact eight-scenario traces); tests/realtime_audit.py (macro0 exact source invariants with explicit local-declaration normalization); TI target builds; hardware WCET not measured",
+      "reason": "增加默认关闭的 SST_PHASE_A_ONLY_TEST 分支：宏1只采用物理 AN/A电流/A相均压并构造SOGI虚拟dq，B/C采样/参考/使能隔离；宏0保持原三相执行逻辑。SVG_Udc_Average的三个无初始化float局部声明拆为独立声明，变量类型、顺序及执行语句不变。原临时输入注入条件、硬件故障及ISR保持。 移除重复的旧模块巡检和 HVAC 直流过压判据；唯一均压门限连续 TAD 确认，保留原两级 RMS 过流锁存和消费顺序。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
       "baseline_sha256s": [
         "b306b73a3d065e69978be72496102eede61332fd6272294bb152efebceb77366"
       ],
       "current_sha256s": [
-        "7d88538a27c887005818bbdf3f098182157b3d856aa021d33c99d65c5df958bf"
+        "83f63f06f0b7e89d26b281ac741b730daba9632754a3ededf5df2851186985f9"
       ]
     },
     {
@@ -1718,13 +1718,13 @@
       "new_keys": [
         "function:Chb_RunClosedLoop"
       ],
-      "reason": "闭环电流调节统一调用 d/q 双轴 PI，使用实测活动相母线、条件积分和动态圆限幅；单相 SOGI 路径与三相宏0路径保持隔离。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
-      "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
+      "reason": "闭环电流调节统一调用 d/q 双轴 PI，使用实测活动相母线、条件积分和动态圆限幅；单相 SOGI 路径与三相宏0路径保持隔离。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 单相以最终 phase_a 约束电压，饱和偏差向 dq 投影后撤销向外积分；三相保留前馈参与的圆限幅。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
       "baseline_sha256s": [
         "9ac30efc10783288f09d031cf7025e6c3a3630d756e89ba1c387845e9eed6fff"
       ],
       "current_sha256s": [
-        "6e8c6ac5fd1f32fc9d57e27deaf730c00c13a007ef591de9bd9cabec0f10da14"
+        "782c8e82e91ef09c1de1c7826ab84c73d237037fdc8c9d84368f9f2f708f6f3f"
       ]
     },
     {
@@ -1891,13 +1891,13 @@
       "new_keys": [
         "function:Chb_EnterState"
       ],
-      "reason": "双模式共用锁存模式和故障优先状态发布；RUNNING前完成PI/启动准备，发布首拍不再强制写中性参考，参考由 FastStep 当前拍计算，最终门控复核模式、命令、PLL和各相母线；保持原接触器序列及独立开环能力。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
-      "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
+      "reason": "双模式共用锁存模式和故障优先状态发布；RUNNING前完成PI/启动准备，发布首拍不再强制写中性参考，参考由 FastStep 当前拍计算，最终门控复核模式、命令、PLL和各相母线；保持原接触器序列及独立开环能力。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 进入 RUNNING 前配置三组 PI 的固定增益和采样周期，取消每拍重新配置。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
       "baseline_sha256s": [
         "f9e31b12262bd908a8451148de6204f527ecce31e0f15f7cd0d182243e461cd2"
       ],
       "current_sha256s": [
-        "2e38eccce04f15d492722f6afc7d68bf0caf8def0e432284cf88701f9d631b35"
+        "23d906a9dad43a5def95f17ec0a508a4991ad3b5a7bf780a8aa1995a85359fab"
       ]
     },
     {
@@ -2038,13 +2038,13 @@
     },
     {
       "key": "function:Chb_AlignVoltagePiToIdReference",
-      "reason": "在电压环接管前按当前 Idref 反算完整电压 PI 的积分状态，使用 SstPi_Track 避免接管阶跃，并在配置异常时进入故障。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。",
-      "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured; tests/common_control_safety.py; tests/switch_io.py (production Port_IO_Out, register union and control service; output-off, all8 coil levels, precharge/bypass/stop/fault/reset/feedback timeout/bounce/loss, single/three phase); tests/fault_reporting.py; tests/control_regression.py; tests/single_phase_isolation.py; tests/refactor_equivalence.py; TI/CCS builds reported separately; hardware WCET unmeasured",
+      "reason": "在电压环接管前按当前 Idref 反算完整电压 PI 的积分状态，使用 SstPi_Track 避免接管阶跃，并在配置异常时进入故障。 2026-10-19 50A峰值带载：低压启动1A，母线连续达标200ms后以10A/s放宽至运行上限，Id/Iq共用矢量预算；高压PI参数/算法保留。开关量输出及实际反馈由独立宏使能，默认关闭；后台10ms非阻塞核验预充/旁路/启停，动作超时或运行反馈丢失封波并锁存内部7/上报29108。状态只追加尾部字段，不移动既有协议地址。 接管时复用已配置 PI，只更新动态电流边界并跟踪积分。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
       "baseline_sha256s": [
         "a81b4bc65be6f322e852fde1ccefa98a40940267903c2ed4ae8f198f01891142"
       ],
       "current_sha256s": [
-        "609a9ee2a37fba5ae340f3b6f25d336e40b30db6febf74b9197b2e840bb7a1db"
+        "2a91d16787a2f1a6836555141072e60447256dad855439dc4e0e6ccb0b2b1618"
       ],
       "new_keys": [
         "function:Chb_AlignVoltagePiToIdReference"
@@ -2612,6 +2612,22 @@
       ],
       "current_sha256s": [
         "727e3b12149f56211c65fb460847f960395cc382003e979987e85f5c9eff66f5"
+      ]
+    },
+    {
+      "key": "function:OC_OV_LV_faultcheck",
+      "new_keys": [
+        "function:OC_OV_LV_faultcheck"
+      ],
+      "reason": "用户要求直流电压保护只保留一个：仅删除 HVAC 软件直流过压检测及无用局部量，保留两级有效值过流判据、回差和 Timer2 计时；其他端口分支不变。",
+      "validation": "tests/common_control_safety.py; tests/single_phase_control.py; tests/pi_regression.py; tests/protection_regression.py; tests/realtime_audit.py; TI target timing and hardware startup not measured in this change",
+      "baseline_sha256s": [
+        "2b1553c6cd69744f62bada939be1e342c6045aee00c99230e1dede5467f04396",
+        "49f0dce90c483d749cf069bbeab9f09bd7cb2b70f3b1127bc9b90c88c4a56742"
+      ],
+      "current_sha256s": [
+        "49f0dce90c483d749cf069bbeab9f09bd7cb2b70f3b1127bc9b90c88c4a56742",
+        "b4251925051149b3bdbf2ce2ce05cff8b954cd90f68f090dc51c079bf15d2e13"
       ]
     }
   ],

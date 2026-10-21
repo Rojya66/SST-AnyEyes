@@ -28,6 +28,7 @@ def run(project: Path, compiler: str) -> str:
         work = Path(folder)
         for name, path in (
             ("ChbBuildConfig.h", source_dir / "00_Config/ChbBuildConfig.h"),
+            ("ProtectionConfig.h", source_dir / "08_Fault/ProtectionConfig.h"),
             ("ChbDabControl.h", source_dir / "04_Control/ChbDabControl.h"),
             ("ChbDabControlInternal.h", source_dir / "04_Control/ChbDabControlInternal.h"),
             ("SstSinglePhase.h", source_dir / "04_Control/SstSinglePhase.h"),
@@ -47,7 +48,7 @@ def run(project: Path, compiler: str) -> str:
         unit = work / "single_phase_control_test.c"
         # Keep assertion/compile diagnostics attached to their real source
         # files even though the host runner uses one translation unit.
-        pieces = []
+        pieces = ['#include "ProtectionConfig.h"\n']
         for path, source in (
             (tests / "control_regression.c", prefix),
             (pi_path, pi),

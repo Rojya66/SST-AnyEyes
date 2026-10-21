@@ -12,7 +12,6 @@
 #include <math.h>
 
 #include "FaultCheck.h"
-#include "ModuleVoltageCheck.h"
 #include "ChbDabControl.h"
 #include "ChbDabControlInternal.h"
 #include "SstSinglePhase.h"
@@ -318,13 +317,6 @@ float Chb_VoltagePiLimited(float reference, float feedback)
     float limit; /* limit：外环输出电流的绝对值边界，单位 A。 */
     float iq; /* iq：本拍 q 轴给定，单位 A。 */
 
-    if (Chb_FiniteInRange(reference, -FLT_MAX, FLT_MAX) == 0U ||
-        Chb_FiniteInRange(feedback, -FLT_MAX, FLT_MAX) == 0U)
-    {
-        ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
-        return 0.0F;
-    }
-
     limit = g_chb_dab_params.voltage_current_limit_a;
 #if SST_LOW_VOLTAGE_100V_TEST
     limit = g_chb_dab_status.current_limit_active_a;
@@ -341,10 +333,8 @@ float Chb_VoltagePiLimited(float reference, float feedback)
     (void)iq;
 #endif
 
-    if (limit < 0.0F ||
-        SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
-                        g_chb_dab_params.sample_period_s, -limit, limit, -limit, limit, 1U) == 0U ||
-        SstPi_Run(&s_voltage_pi, reference, feedback, 0.0F) == SST_PI_FAILURE)
+    SstPi_UpdateBounds(&s_voltage_pi, -limit, limit, -limit, limit);
+    if (limit < 0.0F || SstPi_Run(&s_voltage_pi, reference, feedback, 0.0F) == SST_PI_FAILURE)
     {
         ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
         return 0.0F;
@@ -355,124 +345,114 @@ float Chb_VoltagePiLimited(float reference, float feedback)
 
 
 /*==================================================================
- * 函数功能: 配置并执行 dq 电流 PI，电网前馈一同参与矢量限幅及抗饱和
+ * 函数功能: 执行 dq 电流 PI，电网前馈与内环输出共同参与最终限幅和抗饱和
  * 输入参数: voltage_d/voltage_q：d、q 轴电网前馈，单位 V
  *           error_d/error_q：d、q 轴给定减反馈误差，单位 A
- *           limit：实际母线允许的电压矢量幅值，单位 V
+ *           limit：实际母线允许的电压幅值，单位 V；单相用于 A 相，三相用于 dq 矢量
+ *           output_cosine/output_sine：输出逆变换的余弦、正弦值
  *           command_d/command_q：输出 d、q 轴电压指令的存储指针，单位 V
- * 输出参数: command_d/command_q：限幅后的 d、q 轴电压指令，单位 V；更新完整两轴 PI 对象。
+ * 输出参数: command_d/command_q：包含前馈和抗饱和修正的 dq 指令，单位 V；单相最终 A 相限幅由调用者执行。
  * 返回值: 1 成功，0 失败且已封波；单相和三相复用相同调节器。
  *================================================================*/
 unsigned short Chb_CurrentPiLimited(
-    float voltage_d, float voltage_q, float error_d, float error_q, float limit, float *command_d, float *command_q)
+    float voltage_d, float voltage_q, float error_d, float error_q, float limit,
+    float output_cosine, float output_sine, float *command_d, float *command_q)
 {
-    float d_inner; /* d_inner：d轴电流PI输出，不含电网电压前馈，单位V。 */
-    float q_inner; /* q_inner：q轴电流PI输出，不含电网电压前馈，单位V。 */
-    float magnitude; /* magnitude：叠加前馈后的dq电压矢量幅值，单位V。 */
-    float scale; /* scale：超过圆限幅时的统一缩放系数。 */
-    unsigned short valid_d; /* valid_d：d轴参数及动态边界校验结果。 */
-    unsigned short valid_q; /* valid_q：q轴参数及动态边界校验结果。 */
-    unsigned short input_valid; /* input_valid：前馈、误差和电压边界是否为有限值。 */
-    unsigned short pi_valid; /* pi_valid：两轴 PI 配置及本拍计算是否成功。 */
+    unsigned short pi_valid; /* pi_valid：两轴 PI 本拍计算是否成功。 */
+#if SST_PHASE_A_ONLY_TEST
+    float previous_d_integral; /* previous_d_integral：动态边界钳位后、本拍计算前的 d 轴积分。 */
+    float previous_q_integral; /* previous_q_integral：动态边界钳位后、本拍计算前的 q 轴积分。 */
+    float phase_command; /* phase_command：包含前馈的真实 A 相电压指令，单位 V。 */
+    float phase_limited; /* phase_limited：按可用母线限幅的 A 相电压，单位 V。 */
+    float saturation_error; /* saturation_error：限幅值减原指令，用于向 dq 投影饱和方向。 */
+#endif
 
     if (command_d == (float *)0 || command_q == (float *)0)
     {
         ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
         return 0U;
     }
-    input_valid = 1U;
-    if (Chb_FiniteInRange(voltage_d, -FLT_MAX, FLT_MAX) == 0U)
-    {
-        input_valid = 0U;
-    }
-    if (Chb_FiniteInRange(voltage_q, -FLT_MAX, FLT_MAX) == 0U)
-    {
-        input_valid = 0U;
-    }
-    if (Chb_FiniteInRange(error_d, -FLT_MAX, FLT_MAX) == 0U)
-    {
-        input_valid = 0U;
-    }
-    if (Chb_FiniteInRange(error_q, -FLT_MAX, FLT_MAX) == 0U)
-    {
-        input_valid = 0U;
-    }
+    *command_d = 0.0F;
+    *command_q = 0.0F;
+
+#if SST_PHASE_A_ONLY_TEST
     if (Chb_FiniteInRange(limit, 0.0F, FLT_MAX) == 0U)
     {
-        input_valid = 0U;
-    }
-    if (input_valid == 0U)
-    {
         ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
         return 0U;
     }
-
-    /* d、q轴分别执行电流PI；PI本身只负责内环修正量和轴向限幅。 */
-    valid_d = SstPi_Configure(&s_id_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
-                              g_chb_dab_params.sample_period_s, -limit, limit, -2.0F * limit, 2.0F * limit, 1U);
-    valid_q = SstPi_Configure(&s_iq_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
-                              g_chb_dab_params.sample_period_s, -limit, limit, -2.0F * limit, 2.0F * limit, 1U);
-    pi_valid = 1U;
-    if (valid_d == 0U)
+    /* 单相 beta 为虚拟量，不先削小 dq 幅值；只约束实际 A 相电压。
+     * 积分仍按可用母线限制，前馈与 P/I 合成后再判断物理输出饱和。
+     */
+    SstPi_UpdateBounds(&s_id_pi, -FLT_MAX, FLT_MAX, -2.0F * limit, 2.0F * limit);
+    SstPi_UpdateBounds(&s_iq_pi, -FLT_MAX, FLT_MAX, -2.0F * limit, 2.0F * limit);
+    previous_d_integral = s_id_pi.integral;
+    previous_q_integral = s_iq_pi.integral;
+    pi_valid = SstPi_Run(&s_id_pi, g_chb_dab_status.id_feedback_a + error_d,
+                          g_chb_dab_status.id_feedback_a, voltage_d);
+    if (pi_valid != 0U)
     {
-        pi_valid = 0U;
-    }
-    if (valid_q == 0U)
-    {
-        pi_valid = 0U;
+        pi_valid = SstPi_Run(&s_iq_pi, g_chb_dab_status.iq_feedback_a + error_q,
+                              g_chb_dab_status.iq_feedback_a, voltage_q);
     }
     if (pi_valid != 0U)
     {
-        if (SstPi_Run(&s_id_pi, g_chb_dab_status.id_feedback_a + error_d,
-                      g_chb_dab_status.id_feedback_a, 0.0F) == SST_PI_FAILURE)
-        {
-            pi_valid = 0U;
-        }
+        phase_command = s_id_pi.output * output_cosine - s_iq_pi.output * output_sine;
+        phase_limited = Chb_Clamp(phase_command, -limit, limit);
+        saturation_error = phase_limited - phase_command;
+        /* 仅撤销把 A 相进一步推向饱和的本拍积分，允许反向积分帮助退出饱和。
+         * 两轴使用同一次物理限幅偏差，避免虚拟 q 轴另行压低真实 A 相。
+         */
+        SstPi_ApplySaturation(&s_id_pi, previous_d_integral, saturation_error * output_cosine);
+        SstPi_ApplySaturation(&s_iq_pi, previous_q_integral, -saturation_error * output_sine);
     }
-    if (pi_valid != 0U)
-    {
-        if (SstPi_Run(&s_iq_pi, g_chb_dab_status.iq_feedback_a + error_q,
-                      g_chb_dab_status.iq_feedback_a, 0.0F) == SST_PI_FAILURE)
-        {
-            pi_valid = 0U;
-        }
-    }
+#else
+    (void)output_cosine;
+    (void)output_sine;
+    /* 三相保留轴向及圆形矢量限幅；只在矢量超限时执行开方。 */
+    SstPi_UpdateBounds(&s_id_pi, -limit, limit, -2.0F * limit, 2.0F * limit);
+    SstPi_UpdateBounds(&s_iq_pi, -limit, limit, -2.0F * limit, 2.0F * limit);
+    pi_valid = SstPi_RunDq(&s_id_pi, &s_iq_pi,
+                            g_chb_dab_status.id_feedback_a + error_d, g_chb_dab_status.id_feedback_a, voltage_d,
+                            g_chb_dab_status.iq_feedback_a + error_q, g_chb_dab_status.iq_feedback_a, voltage_q, limit);
+#endif
     if (pi_valid == 0U)
     {
-        *command_d = 0.0F;
-        *command_q = 0.0F;
         ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
         return 0U;
     }
-
-    d_inner = s_id_pi.output;
-    q_inner = s_iq_pi.output;
-    /* 调制波由“内环输出 + 电网电压前馈”组成，再统一执行dq圆限幅。 */
-    *command_d = d_inner + voltage_d;
-    *command_q = q_inner + voltage_q;
-    magnitude = sqrtf((*command_d * *command_d) + (*command_q * *command_q));
-    if (Chb_FiniteInRange(magnitude, 0.0F, FLT_MAX) == 0U)
-    {
-        *command_d = 0.0F;
-        *command_q = 0.0F;
-        ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
-        return 0U;
-    }
-    if (magnitude > limit)
-    {
-        if (magnitude <= 0.0F)
-        {
-            *command_d = 0.0F;
-            *command_q = 0.0F;
-        }
-        else
-        {
-            scale = limit / magnitude;
-            *command_d *= scale;
-            *command_q *= scale;
-        }
-    }
+    *command_d = s_id_pi.output;
+    *command_q = s_iq_pi.output;
     return 1U;
+}
+
+/*==================================================================
+ * 函数功能: 在停机或启动入口配置三组 PI 参数
+ * 输入参数: 无。
+ * 输出参数: 三组 PI 的固定增益、采样周期及初始边界。
+ * 返回值: 1 表示配置成功，0 表示配置非法。
+ * 执行说明: 仅在初始化和运行状态入口调用，避免每拍重复验证固定参数。
+ *==================================================================*/
+unsigned short Chb_ConfigureControllers(void)
+{
+    unsigned short valid; /* valid：当前 PI 固定参数的配置结果。 */
+
+    /* 启动前先用零边界，首个控制周期再按实测母线和动态电流上限更新。 */
+    valid = SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
+                            g_chb_dab_params.sample_period_s, 0.0F, 0.0F, 0.0F, 0.0F, 1U);
+    if (valid == 0U)
+    {
+        return 0U;
+    }
+    valid = SstPi_Configure(&s_id_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
+                            g_chb_dab_params.sample_period_s, 0.0F, 0.0F, 0.0F, 0.0F, 1U);
+    if (valid == 0U)
+    {
+        return 0U;
+    }
+    valid = SstPi_Configure(&s_iq_pi, g_chb_dab_params.current_kp, g_chb_dab_params.current_ki,
+                            g_chb_dab_params.sample_period_s, 0.0F, 0.0F, 0.0F, 0.0F, 1U);
+    return valid;
 }
 
 /*==================================================================
@@ -605,12 +585,7 @@ void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_reference)
         }
     }
 #endif
-    if (!SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
-                         g_chb_dab_params.sample_period_s, -limit, limit, -limit, limit, 1U))
-    {
-        ChbDabControl_ForceFault(CHB_FAULT_CONTROL_RUNTIME);
-        return;
-    }
+    SstPi_UpdateBounds(&s_voltage_pi, -limit, limit, -limit, limit);
     /* 显式建立本拍输入，再反算积分，使电压环输出跟踪现有 Idref。 */
     s_voltage_pi.reference = s_startup_voltage_reference;
     s_voltage_pi.feedback = g_chb_dab_status.dc_voltage_average_v;
@@ -1223,6 +1198,11 @@ void Chb_EnterState(unsigned short state)
     if ((state == CHB_STATE_RUNNING) && (Chb_GateBlocked() == 0U))
     {
         /* 先完成控制器准备，再发布 RUNNING；此过程允许 TAD/FAULT 中断抢占。 */
+        if (Chb_ConfigureControllers() == 0U)
+        {
+            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+            return;
+        }
         Chb_ResetControllers();
         Chb_ResetStartupSequence();
         s_pll_loss_count = 0U;
@@ -1563,6 +1543,8 @@ unsigned short Chb_ConfigurationValid(void)
  *================================================================*/
 void ChbDabControl_Init(void)
 {
+    unsigned short controllers_valid; /* controllers_valid：三组 PI 初始化配置是否成功。 */
+
 #if SST_PHASE_A_ONLY_TEST
     SstSinglePhase_Init(); /* 仅上电清零；预充、锁相及停机期间持续构造正交量。 */
 #endif
@@ -1610,11 +1592,17 @@ void ChbDabControl_Init(void)
     SstPi_Init(&s_voltage_pi);
     SstPi_Init(&s_id_pi);
     SstPi_Init(&s_iq_pi);
+    controllers_valid = Chb_ConfigureControllers();
     Chb_ResetControllers();
 
     g_chb_dab_command.run_enable = 0U;
     g_chb_dab_command.dab_enable = 0U;
     g_chb_dab_command.fault_reset = 0U;
+    if (controllers_valid == 0U)
+    {
+        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+        return;
+    }
     Chb_EnterState(CHB_STATE_STOPPED);
 }
 

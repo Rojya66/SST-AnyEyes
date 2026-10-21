@@ -460,7 +460,7 @@ static void test_physical_protection_and_nan(void)
             default: SVG_Udc_A_Ave = INFINITY; break;
         }
         ChbDabControl_FastStep();
-        assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
+        assert(g_chb_dab_status.fault_code == CHB_FAULT_CONTROL_RUNTIME);
         assert(fake_ac_pwm == 0U && fake_dab_pwm == 0U);
         assert(FPGA_Interface[3].Reference == 1250U);
         assert_unused_phase_references();
@@ -684,16 +684,16 @@ static void test_nonfinite_control_parameters(void)
     };
     unsigned int parameter;
     unsigned int value;
-    unsigned long sample;
 
     for (parameter = 0U; parameter < sizeof(parameters) / sizeof(parameters[0]); ++parameter)
     {
         for (value = 0U; value < sizeof(invalid_values) / sizeof(invalid_values[0]); ++value)
         {
-            sample = start_single_phase_closed_loop(CHB_STARTUP_SOURCE_COMPATIBLE);
+            setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
             *parameters[parameter] = invalid_values[value];
-            feed_single_phase(sample, 50.0F, 311.0F, 7.0F, 600.0F);
-            ChbDabControl_FastStep();
+            g_chb_dab_command.run_enable = 1U;
+            ChbDabControl_Tick10ms();
+            ChbDabControl_Service();
             if (g_chb_dab_status.fault_code != CHB_FAULT_BAD_CONFIGURATION)
             {
                 fprintf(stderr, "nonfinite parameter=%u value=%u fault=%u\n",
@@ -705,7 +705,7 @@ static void test_nonfinite_control_parameters(void)
             assert(FPGA_Interface[3].Reference == 1250U);
         }
     }
-    printf("PASS nonfinite_control_parameters floats=28 values=NaN,+Inf,-Inf\n");
+    printf("PASS nonfinite_control_parameters before_start floats=28 values=NaN,+Inf,-Inf\n");
 }
 
 /* Remove PI action so the observed reference is the voltage feed-forward.
@@ -726,6 +726,7 @@ static void prepare_numerical_control(void)
     s_startup_phase = CHB_STARTUP_NORMAL;
     g_sst_single_phase_status.current_alpha_a = 0.0F;
     g_sst_single_phase_status.current_beta_a = 0.0F;
+    assert(Chb_ConfigureControllers() != 0U);
 }
 
 static float actual_normalized_reference(void)
@@ -733,7 +734,7 @@ static float actual_normalized_reference(void)
     return DAC_BUF[0] / 2.5F - 1.0F;
 }
 
-static void test_measured_bus_normalization_and_vector_limit(void)
+static void test_measured_bus_normalization_and_phase_limit(void)
 {
     float normalized_reference;
 
@@ -754,16 +755,17 @@ static void test_measured_bus_normalization_and_vector_limit(void)
     g_chb_dab_params.modulation_max = 0.8F;
     g_chb_dab_params.closed_loop_voltage_limit_factor = 0.6F;
     Chb_RunClosedLoop(400.0F, 400.0F);
-    assert_near(actual_normalized_reference(), 0.6F / sqrtf(2.0F), 0.00001F);
+    /* Virtual beta must not reduce an attainable physical alpha command. */
+    assert_near(actual_normalized_reference(), 0.6F, 0.00001F);
     g_chb_dab_params.output_phase_compensation_rad = -0.7853981633974483F;
     Chb_RunClosedLoop(400.0F, 400.0F);
     assert_near(actual_normalized_reference(), 0.6F, 0.00001F);
-    /* Swapping which limit is smaller must preserve the same vector bound. */
+    /* Swapping which limit is smaller must preserve the same physical bound. */
     g_chb_dab_params.modulation_max = 0.5F;
     g_chb_dab_params.closed_loop_voltage_limit_factor = 0.9F;
     Chb_RunClosedLoop(400.0F, 400.0F);
     assert_near(actual_normalized_reference(), 0.5F, 0.00001F);
-    printf("PASS measured_bus_normalization_and_dq_vector_limit\n");
+    printf("PASS measured_bus_normalization_and_physical_phase_limit\n");
 }
 
 static void test_pi_saturation_recovery(void)
@@ -776,6 +778,7 @@ static void test_pi_saturation_recovery(void)
     g_chb_dab_params.voltage_kp = 1.0F;
     g_chb_dab_params.voltage_ki = 100.0F;
     g_chb_dab_params.voltage_current_limit_a = 95.0F;
+    assert(Chb_ConfigureControllers() != 0U);
     for (sample = 0U; sample < 20000U; ++sample)
     {
         output = Chb_VoltagePiLimited(1000.0F, 0.0F);
@@ -796,6 +799,7 @@ static void test_pi_saturation_recovery(void)
     prepare_numerical_control();
     g_chb_dab_params.current_kp = -10.0F;
     g_chb_dab_params.current_ki = -100.0F;
+    assert(Chb_ConfigureControllers() != 0U);
     g_chb_dab_command.iq_reference_a = 95.0F;
     SVG_Udc_A_Ave = 400.0F;
     g_chb_dab_params.modulation_max = 0.5F;
@@ -803,7 +807,7 @@ static void test_pi_saturation_recovery(void)
     {
         Chb_RunClosedLoop(311.0F, 0.0F);
     }
-    assert(fabsf(s_iq_pi.integral) < 400.0F);
+    assert(fabsf(s_iq_pi.integral) <= 400.0F); /* Virtual q remains bounded even at zero physical projection. */
     before_unwind = s_iq_pi.integral;
     g_chb_dab_command.iq_reference_a = -1.0F;
     Chb_RunClosedLoop(0.0F, 0.0F);
@@ -837,7 +841,7 @@ static void test_voltage_reference_continuity(void)
         assert_near(s_startup_voltage_reference, measured[profile], 0.0001F);
         target = targets[profile];
         step = steps[profile];
-        for (sample = 0U; sample < 20000U; ++sample)
+        for (sample = 0U; sample < 60000U; ++sample)
         {
             previous = s_startup_voltage_reference;
             /* Emulate the measured voltage catching up with the target. */
@@ -850,7 +854,7 @@ static void test_voltage_reference_continuity(void)
         assert_near(s_startup_voltage_reference, target, 0.0001F);
         target -= 5.0F;
         g_chb_dab_command.dc_voltage_ref_v = target;
-        for (sample = 0U; sample < 20000U; ++sample)
+        for (sample = 0U; sample < 60000U; ++sample)
         {
             previous = s_startup_voltage_reference;
             Chb_UpdateVoltageReference();
@@ -934,7 +938,7 @@ int main(void)
     test_mode_change_fault();
     test_running_voltage_loss_and_pll_loss();
     test_nonfinite_control_parameters();
-    test_measured_bus_normalization_and_vector_limit();
+    test_measured_bus_normalization_and_phase_limit();
     test_pi_saturation_recovery();
     test_voltage_reference_continuity();
     test_atomic_pwm_enable_fault_race();

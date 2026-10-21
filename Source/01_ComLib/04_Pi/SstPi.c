@@ -126,6 +126,7 @@ void SstPi_Init(SST_PI_CONTROLLER *controller)
     controller->integral_max = 0.0F;
     controller->anti_windup_enable = 1U;
     controller->flags = 0U;
+    controller->configuration_valid = 0U;
 }
 
 /*==================================================================
@@ -170,21 +171,77 @@ unsigned short SstPi_Configure(
     {
         SstPi_ClearRuntime(controller);
         controller->flags = SST_PI_FLAG_INVALID_PARAMETER;
+        controller->configuration_valid = 0U;
         return SST_PI_FAILURE;
     }
 
-    /* 运行中允许每拍更新可用母线/限幅，不能因此清空上一拍积分。 */
+    /* 配置保留已有积分；每拍动态边界改由 SstPi_UpdateBounds 更新。 */
     if (!SstPi_IsFinite(controller->integral))
     {
+        controller->configuration_valid = 0U;
         return SstPi_Reject(controller, SST_PI_FLAG_NUMERIC_ERROR);
     }
     controller->flags = SST_PI_FLAG_VALID;
+    controller->configuration_valid = 1U;
     if (controller->integral < integral_min || controller->integral > integral_max)
     {
         controller->integral = SstPi_Clamp(controller->integral, integral_min, integral_max);
         controller->flags |= SST_PI_FLAG_INTEGRAL_CLAMPED;
     }
     return SST_PI_SUCCESS;
+}
+
+/*==================================================================
+ * 函数功能: 更新已经校验过的 PI 输出和积分边界
+ * 输入参数: controller：已完成参数配置的 PI 对象。
+ *           output_min、output_max：新的输出上下限；integral_min、integral_max：新的积分上下限。
+ * 输出参数: controller：边界及必要的积分钳位结果。
+ * 返回值: 无。
+ * 执行说明: 快速路径只更新动态边界，不重复执行配置有效性检查。
+ *==================================================================*/
+void SstPi_UpdateBounds(
+    SST_PI_CONTROLLER *controller,
+    float output_min,
+    float output_max,
+    float integral_min,
+    float integral_max)
+{
+    if (controller == (SST_PI_CONTROLLER *)0)
+    {
+        return;
+    }
+
+    controller->output_min = output_min;
+    controller->output_max = output_max;
+    controller->integral_min = integral_min;
+    controller->integral_max = integral_max;
+    controller->integral = SstPi_Clamp(controller->integral, integral_min, integral_max);
+}
+
+/*==================================================================
+ * 函数功能: 将最终物理输出的饱和偏差反馈给单轴 PI，撤销向外积分。
+ * 输入参数: controller：本拍已执行的 PI 对象；previous_integral：本拍计算前的积分。
+ *           saturation_error：最终限幅值减原指令，再投影到本轴的电压偏差。
+ * 输出参数: controller：必要时恢复积分，重算输出并更新限幅/积分保持标志。
+ * 返回值: 无。
+ * 执行说明: 不重复校验配置；仅撤销把物理输出进一步推向饱和的积分。
+ *==================================================================*/
+void SstPi_ApplySaturation(SST_PI_CONTROLLER *controller, float previous_integral, float saturation_error)
+{
+    if (controller == (SST_PI_CONTROLLER *)0 || saturation_error == 0.0F)
+    {
+        return;
+    }
+    controller->flags |= SST_PI_FLAG_SATURATED;
+    if (controller->anti_windup_enable != 0U &&
+        saturation_error * (controller->integral - previous_integral) < 0.0F)
+    {
+        controller->integral = previous_integral;
+        controller->output_unsaturated = controller->feedforward + controller->proportional + controller->integral;
+        controller->output = SstPi_Clamp(controller->output_unsaturated, controller->output_min, controller->output_max);
+        controller->flags |= SST_PI_FLAG_INTEGRAL_HELD;
+    }
+    controller->saturation_error = saturation_error;
 }
 
 /*==================================================================
@@ -209,7 +266,8 @@ void SstPi_Reset(SST_PI_CONTROLLER *controller)
     controller->output_unsaturated = 0.0F;
     controller->output = 0.0F;
     controller->saturation_error = 0.0F;
-    controller->flags = SstPi_ConfigurationValid(controller) ? SST_PI_FLAG_VALID : SST_PI_FLAG_INVALID_PARAMETER;
+    controller->configuration_valid = SstPi_ConfigurationValid(controller);
+    controller->flags = controller->configuration_valid ? SST_PI_FLAG_VALID : SST_PI_FLAG_INVALID_PARAMETER;
 }
 
 /*==================================================================
@@ -222,7 +280,7 @@ unsigned short SstPi_Track(SST_PI_CONTROLLER *controller, float tracked_output)
 {
     float target_integral; /* target_integral：按跟踪输出反算得到的候选积分状态。 */
 
-    if (controller == (SST_PI_CONTROLLER *)0 || !SstPi_ConfigurationValid(controller))
+    if (controller == (SST_PI_CONTROLLER *)0 || controller->configuration_valid == 0U)
     {
         return SstPi_Reject(controller, SST_PI_FLAG_INVALID_PARAMETER);
     }
@@ -306,7 +364,7 @@ unsigned short SstPi_Run(
     unsigned short flags = SST_PI_FLAG_VALID; /* flags：本拍输出及积分限幅状态。 */
     unsigned short hold_integral = 0U; /* hold_integral：本拍是否冻结积分。 */
 
-    if (controller == (SST_PI_CONTROLLER *)0 || !SstPi_ConfigurationValid(controller))
+    if (controller == (SST_PI_CONTROLLER *)0 || controller->configuration_valid == 0U)
     {
         return SstPi_Reject(controller, SST_PI_FLAG_INVALID_PARAMETER);
     }
@@ -318,8 +376,7 @@ unsigned short SstPi_Run(
     SstPi_Predict(controller, reference, feedback, feedforward,
                   &candidate_integral, &base_output, &candidate_output);
     if (!SstPi_IsFinite(controller->error) || !SstPi_IsFinite(controller->proportional) ||
-        !SstPi_IsFinite(controller->integral_increment) || !SstPi_IsFinite(candidate_integral) ||
-        !SstPi_IsFinite(base_output) || !SstPi_IsFinite(candidate_output))
+        !SstPi_IsFinite(controller->integral_increment) || !SstPi_IsFinite(candidate_output))
     {
         return SstPi_Reject(controller, SST_PI_FLAG_NUMERIC_ERROR);
     }
@@ -416,7 +473,7 @@ unsigned short SstPi_RunDq(
     {
         return SST_PI_FAILURE;
     }
-    if (!SstPi_ConfigurationValid(d_controller) || !SstPi_ConfigurationValid(q_controller) ||
+    if (d_controller->configuration_valid == 0U || q_controller->configuration_valid == 0U ||
         d_controller->output_min > 0.0F || d_controller->output_max < 0.0F ||
         q_controller->output_min > 0.0F || q_controller->output_max < 0.0F ||
         !SstPi_IsFinite(voltage_limit) || voltage_limit < 0.0F)
@@ -443,8 +500,6 @@ unsigned short SstPi_RunDq(
         !SstPi_IsFinite(d_controller->proportional) || !SstPi_IsFinite(q_controller->proportional) ||
         !SstPi_IsFinite(d_controller->integral_increment) ||
         !SstPi_IsFinite(q_controller->integral_increment) ||
-        !SstPi_IsFinite(d_candidate_integral) || !SstPi_IsFinite(q_candidate_integral) ||
-        !SstPi_IsFinite(d_base) || !SstPi_IsFinite(q_base) ||
         !SstPi_IsFinite(d_candidate) || !SstPi_IsFinite(q_candidate))
     {
         SstPi_Reject(d_controller, SST_PI_FLAG_NUMERIC_ERROR);

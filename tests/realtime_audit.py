@@ -295,6 +295,19 @@ def main() -> None:
         if name == "ChbDabControl.h":
             original = [entity for entity in original
                         if entity.name not in {"CHB_DAB_FAULT", "CHB_DAB_STATUS"}]
+        if name == "FaultCheck.C":
+            contract_doc = json.loads((args.project / "tests/refactor_contracts.json").read_text(encoding="utf-8"))
+            contract = next(item for item in contract_doc["changes"]
+                            if item["key"] == "function:OC_OV_LV_faultcheck")
+            before = [entity for entity in inventory(read(args.baseline / name), name)
+                      if entity.key == contract["key"]]
+            after = [entity for entity in inventory(read(source / relative), relative)
+                     if entity.key == contract["key"]]
+            check(sorted(entity.sha256 for entity in before) == contract["baseline_sha256s"] and
+                  sorted(entity.sha256 for entity in after) == contract["current_sha256s"] and
+                  "protection_regression.py" in contract["validation"],
+                  "reviewed HVAC DC protection removal matches exact before/after contract")
+            original = [entity for entity in original if entity.key != contract["key"]]
         missing = missing_entities(original, all_entities + archived_interfaces)
         check(not missing, f"every original executable entity preserved (module masks and Udc declarations checked separately): {name} "
               f"missing={[entity.key for entity in missing]}")
@@ -362,6 +375,18 @@ def main() -> None:
                                 tokens("static SST_PI_CONTROLLER " + name + ";"))
         for name, entity in state_entities.items()),
         "three former integral-only objects are independent SST_PI_CONTROLLER instances")
+    pi_text = read(args.project / "Source/01_ComLib/04_Pi/SstPi.c")
+    check(all("SstPi_ConfigurationValid" not in function(pi_text, name)
+              for name in ("SstPi_Run", "SstPi_RunDq")),
+          "PI fixed configuration is not rescanned by either per-sample runner")
+    check(all("SstPi_Configure" not in function(current_control_text, name)
+              for name in ("Chb_VoltagePiLimited", "Chb_CurrentPiLimited", "Chb_AlignVoltagePiToIdReference")) and
+          "Chb_ConfigurationValid" not in function(current_control_text, "ChbDabControl_FastStepCore"),
+          "fast control updates dynamic PI bounds without whole-configuration validation")
+    protection = function(current_control_text, "Chb_CheckSoftwareProtection")
+    check("Udc_check" not in protection and "HVAC_OV_Fault" not in protection and
+          protection.count("dc_overvoltage_trip_v") == 1 and "OC_OV_LV_faultcheck" in protection,
+          "one DC threshold remains alongside instantaneous and legacy RMS current protection")
     baseline_linker = uncomment(read(args.baseline / "C6748.cmd"))
     migrated_linker = uncomment(read(args.project / "C6748.cmd"))
     extension_memory = {

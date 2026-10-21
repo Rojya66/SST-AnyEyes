@@ -122,13 +122,14 @@ float Chb_WrapAngle(float angle);
 float Chb_VoltagePiLimited(float reference, float feedback);
 /*==================================================================
  * 函数功能: Chb_CurrentPiLimited跨文件内部接口。
- * 输入参数: voltage_d、voltage_q：dq电压前馈；error_d、error_q：dq电流误差；limit：电压限幅；command_d、command_q：dq输出指针。
+ * 输入参数: voltage_d、voltage_q：dq电压前馈；error_d、error_q：dq电流误差；limit：电压限幅。
+ *           output_cosine、output_sine：输出逆变换余弦、正弦；command_d、command_q：dq输出指针。
  * 输出参数: 内部控制状态或输出寄存器。
  * 返回值: 1表示成功，0表示运行故障。
  * 执行说明: 仅供拆分后的控制源文件调用。
  *==================================================================*/
 unsigned short Chb_CurrentPiLimited(float voltage_d, float voltage_q, float error_d, float error_q,
-                                    float limit, float *command_d, float *command_q);
+                                    float limit, float output_cosine, float output_sine, float *command_d, float *command_q);
 /*==================================================================
  * 函数功能: Chb_ResetControllers跨文件内部接口。
  * 输入参数: 无。
@@ -137,6 +138,14 @@ unsigned short Chb_CurrentPiLimited(float voltage_d, float voltage_q, float erro
  * 执行说明: 仅供拆分后的控制源文件调用。
  *==================================================================*/
 void Chb_ResetControllers(void);
+/*==================================================================
+ * 函数功能: 在停机或启动入口配置三组 PI 参数
+ * 输入参数: 无。
+ * 输出参数: 三组 PI 的固定增益、采样周期及初始边界。
+ * 返回值: 1 表示配置成功，0 表示配置非法。
+ * 执行说明: 仅由初始化和状态入口调用，不得放入 10 kHz 快速循环。
+ *==================================================================*/
+unsigned short Chb_ConfigureControllers(void);
 /*==================================================================
  * 函数功能: Chb_ResetStartupSequence跨文件内部接口。
  * 输入参数: 无。

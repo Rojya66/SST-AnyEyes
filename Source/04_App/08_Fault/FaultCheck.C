@@ -77,9 +77,9 @@ void FaultDispose(void);
 void FaultLatch_Clear(uchar runindex, uchar RstFlagFault);
 
 /*==================================================================
- * 函数功能: 按原阈值和计时策略检查端口过流与直流过压，保留历史函数名
+ * 函数功能: 检查 HVAC 有效值过流；其他历史端口分支保留原判据和函数名
  * 输入参数: 无
- * 输出参数: 过流/过压计时使能、计数及 HVAC/LVDC 软件故障标志；不在本函数内封锁 PWM。
+ * 输出参数: 过流计时使能、计数及 HVAC_OC_Fault；不在本函数内封锁 PWM。
  * 返回值: 无
  * 执行说明: 保护检测调用点检查阈值；确认计数由 Timer2 的 10 ms 路径递增。
  *================================================================*/
@@ -97,24 +97,19 @@ void OC_OV_LV_FaultDispose(void);
 
 #ifdef HVAC_online
 /*==================================================================
- * 函数功能: 按原阈值和计时策略检查HVAC交流有效值过流及直流过压
+ * 函数功能: 按原阈值和计时策略检查 HVAC 交流有效值过流
  * 输入参数: 无
- * 输出参数: 过流/过压计时使能、计数及 HVAC/LVDC 软件故障标志；不在本函数内封锁 PWM。
+ * 输出参数: 过流计时使能、计数及 HVAC_OC_Fault；不在本函数内封锁 PWM。
  * 返回值: 无
  * 执行说明: 保护检测调用点检查阈值；确认计数由 Timer2 的 10 ms 路径递增。
  *================================================================*/
 void OC_OV_LV_faultcheck(void)
 {
-    float temp_set1, /* temp_set1：原一级过流阈值的本轮计算缓存。 */
-        temp_set2, /* temp_set2：一级过流计时复位门槛，取一级过流阈值的95%。 */
-        temp_set3, /* temp_set3：本HVAC分支保留的未使用局部变量。 */
-        temp_set4; /* temp_set4：本HVAC分支保留的未使用局部变量。 */
+    float temp_set1; /* temp_set1：一级有效值过流阈值，单位 A。 */
+    float temp_set2; /* temp_set2：一级过流计时复位门槛，取阈值的95%。 */
     float grid_current_A, /* grid_current_A：A相200点电流有效值，单位A。 */
         grid_current_B, /* grid_current_B：B相200点电流有效值，单位A。 */
         grid_current_C; /* grid_current_C：C相200点电流有效值，单位A。 */
-    float temp_set5, /* temp_set5：原过压阈值的本轮计算缓存。 */
-        temp_set6; /* temp_set6：过压计时复位门槛，取过压阈值的95%。 */
-    float DC_vol; /* DC_vol：三相模块均压合成后的滤波值SVG_Udc_Ave，单位V。 */
 
     /*
      * 原HVAC软件保护在TAD路径检查，电流读取后台更新的200点有效值。
@@ -123,21 +118,16 @@ void OC_OV_LV_faultcheck(void)
      *   三相均低于95%门槛才清计数，回差带内保留标志并继续累计。
      * - 二级过流：任一相有效值>OC_level_SET_L2，且计数>OC_time_SET_L2时置故障；
      *   三相均不超过门槛即清计数，本分支没有95%回差。
-     * - 过压：DC_vol>OV_level_SET，且计数>OV_time_SET时置故障；
-     *   低于95%门槛才清计数，回差带内继续累计。
+     * 直流过压只由 Chb_CheckSoftwareProtection 的均压门限和连续 TAD 计数确认。
+     * 原 OV 参数和故障位保留协议布局，本 HVAC 检测入口不再使用它们。
      * 默认计数100/5需101/6次Timer2递增；实际延时还取决于节拍相位和检测时刻。
      */
     temp_set1 = OC_level_SET;
     temp_set2 = 0.95 * temp_set1;
 
-    temp_set5 = OV_level_SET;
-    temp_set6 = 0.95 * OV_level_SET;
-
     grid_current_A = PORT_RealTime_DATA.PORT_I_A;
     grid_current_B = PORT_RealTime_DATA.PORT_I_B;
     grid_current_C = PORT_RealTime_DATA.PORT_I_C;
-
-    DC_vol = SVG_Udc_Ave;
 
     if ((ControlFLAG.Bbits.SVG_Start) || (Port_RunStatus == PortStatusNum_Run))
     {
@@ -186,29 +176,6 @@ void OC_OV_LV_faultcheck(void)
         {
             counter_OC_flag1 = 0;
             counter_OC_time1 = 0;
-        }
-
-        if (DC_vol > temp_set5)
-        {
-            if (counter_OV_flag != 1 && HVAC_OV_Fault != 1)
-            {
-                counter_OV_flag = 1;
-                counter_OV_time = 0;
-            }
-            else if (counter_OV_time > OV_time_SET)
-            {
-                HVAC_OV_Fault = 1;
-                counter_OV_flag = 0;
-                counter_OV_time = 0;
-            }
-            else
-            {
-            }
-        }
-        else if (DC_vol < temp_set6)
-        {
-            counter_OV_flag = 0;
-            counter_OV_time = 0;
         }
     }
 }

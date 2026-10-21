@@ -13,7 +13,6 @@
 #include <math.h>
 #include <float.h>
 #include "FaultCheck.h"
-#include "ModuleVoltageCheck.h"
 #include "ChbDabControl.h"
 #include "SstSinglePhase.h"
 #include "SstPi.h"
@@ -45,7 +44,6 @@ void ChbDabControl_FastStepCore(void)
     float voltage_beta; /* voltage_beta：电网/端口电压 β 轴分量，单位 V。 */
     unsigned short duty; /* duty：本拍 DAB 占空比计数。 */
     unsigned short step; /* step：DAB 占空比每个 TAD 的递增计数。 */
-    unsigned short configuration_active; /* configuration_active：运行中是否已经消费控制配置。 */
     unsigned short angle_valid; /* angle_valid：PLL 相角是否在允许范围内。 */
     unsigned short sampling_valid; /* sampling_valid：本拍采样量是否全部通过有限值检查。 */
 
@@ -54,32 +52,7 @@ void ChbDabControl_FastStepCore(void)
      * 通讯或 EEPROM 操作；这里只做浮点控制计算和 FPGA 寄存器/内存映射写入。
      */
 
-    /* 先校验再做 SOGI/PLL，阻止在线 NaN/Inf 进入积分及角度归一化。 */
-    if (Chb_ConfigurationValid() == 0U)
-    {
-        s_pll_integral = 0.0F;
-        s_pll_lock_fast_count = 0U;
-        g_chb_dab_status.pll_locked = 0U;
-        configuration_active = 0U;
-        if (g_chb_dab_status.state != CHB_STATE_STOPPED)
-        {
-            configuration_active = 1U;
-        }
-        if (g_chb_dab_command.run_enable != 0U)
-        {
-            configuration_active = 1U;
-        }
-        if (g_chb_dab_command.dab_enable != 0U)
-        {
-            configuration_active = 1U;
-        }
-        if (configuration_active != 0U)
-        {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        }
-        Chb_WriteNeutralReferences();
-        return;
-    }
+    /* 参数校验由主循环在启动/在线配置入口完成，快速路径只检查运行数据。 */
     if (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U)
     {
         ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
@@ -233,7 +206,7 @@ void ChbDabControl_FastStepCore(void)
     }
 #endif
 
-    /* 闭环启动阶段也保留原模块巡检和有效值保护；停机/故障态不消费旧采样。 */
+    /* 闭环启动阶段也执行统一快速保护和有效值过流；停机/故障态不消费旧采样。 */
     if (s_active_ac_mode == CHB_AC_MODE_CLOSED_LOOP)
     {
         if (g_chb_dab_status.state != CHB_STATE_STOPPED)
@@ -714,7 +687,8 @@ void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
                              g_chb_dab_status.current_limit_active_a);
 #endif
     current_pi_valid = Chb_CurrentPiLimited(voltage_d, voltage_q, s_id_reference - current_d,
-                                            iq_reference - current_q, voltage_limit, &command_d, &command_q);
+                                            iq_reference - current_q, voltage_limit, output_cosine_angle, output_sine_angle,
+                                            &command_d, &command_q);
     if (current_pi_valid == 0U)
     {
         return;
@@ -722,7 +696,7 @@ void Chb_RunClosedLoop(float voltage_alpha, float voltage_beta)
 
     command_alpha = command_d * output_cosine_angle - command_q * output_sine_angle;
 #if SST_PHASE_A_ONLY_TEST
-    /* 虚拟 dq 逆变换后只取真实 alpha=AN 输出，复用上面的电压外环、电流 PI 与电压前馈。 */
+    /* PI 已根据 A 相试算饱和撤销向外积分；此处用修正后的 dq 重算真实 alpha=AN，再执行最终物理限幅。 */
     phase_a = command_alpha;
     if (phase_dc_a > 1.0F)
     {
@@ -786,8 +760,10 @@ void Chb_CheckSoftwareProtection(void)
 {
     float maximum_current; /* maximum_current：三相端口电流绝对值中的最大值，单位 A。 */
     float maximum_dc_voltage; /* maximum_dc_voltage：各相模块平均直流电压中的最大值，单位 V。 */
+#if !SST_PHASE_A_ONLY_TEST
     float current_b_abs; /* current_b_abs：B相端口电流绝对值，单位 A。 */
     float current_c_abs; /* current_c_abs：C相端口电流绝对值，单位 A。 */
+#endif
 
     /*
      * 这是新增的软件快速保护；硬件故障回传和封波能力取决于现场 FPGA 位流。
@@ -804,10 +780,7 @@ void Chb_CheckSoftwareProtection(void)
         return;
     }
 
-    /* 逐模块巡检保留原48拍循环；开环路径不会进入本函数。 */
-    Udc_check();
-
-    /* 先消费上一拍已确认的旧RMS故障，保持原两阶段计时语义。 */
+    /* 更新旧有效值过流计数；直流过压统一由下方快速判据负责。 */
     if (HVAC_OC_Fault == 1U)
     {
         if (OC_OV_LV_PortLatch_TAD == 0U)
@@ -817,27 +790,11 @@ void Chb_CheckSoftwareProtection(void)
             return;
         }
 
-        /* 锁存已由原故障链消费时，保留原入口的计数推进，不重复封波。 */
         OC_OV_LV_faultcheck();
         return;
     }
-    if (HVAC_OV_Fault == 1U)
-    {
-        if (OC_OV_LV_PortLatch_TAD == 0U)
-        {
-            OC_OV_LV_FaultDispose();
-            ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
-            return;
-        }
-
-        /* 锁存已由原故障链消费时，保留原入口的计数推进，不重复封波。 */
-        OC_OV_LV_faultcheck();
-        return;
-    }
-
-    /* 本拍只推进原有效值计数；故障在下一拍按原路径封波。 */
+    /* 本拍推进原 RMS 计数，已确认故障由下一拍按原顺序消费。 */
     OC_OV_LV_faultcheck();
-
 #if SST_PHASE_A_ONLY_TEST
     /* 快速保护直接检查物理 A 相采样，不使用有滤波延迟的 SOGI 电流。 */
     maximum_current = Chb_Abs(HA_Port_Current_A);

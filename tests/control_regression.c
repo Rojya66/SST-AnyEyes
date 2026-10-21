@@ -52,6 +52,11 @@ static unsigned short NHA_module_A, NHA_module_B, NHA_module_C;
 static float HA_Port_Volt_A, HA_Port_Volt_B, HA_Port_Volt_C;
 static float HA_Port_Current_A, HA_Port_Current_B, HA_Port_Current_C;
 static float SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave;
+/* Legacy RMS routines are external to the control unit. Their actual HVAC
+ * detector is tested separately; these substitutes isolate control behavior. */
+static unsigned short HVAC_OC_Fault, OC_OV_LV_PortLatch_TAD;
+static void OC_OV_LV_faultcheck(void) {}
+static void OC_OV_LV_FaultDispose(void) { OC_OV_LV_PortLatch_TAD = 1U; }
 static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
 static unsigned short HA_IG_Log_A, HA_IG_Log_B, HA_IG_Log_C;
 static unsigned short Port_RunStatus, Port_State;
