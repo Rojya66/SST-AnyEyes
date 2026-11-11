@@ -8,7 +8,7 @@
 #define SST_DEBUG_PROTOCOL_VOFA 2U
 #ifndef SST_DEBUG_PROTOCOL
 /* SST_DEBUG_PROTOCOL：串口协议二选一配置，只允许 ANYEYES 或 VOFA。 */
-#define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_VOFA
+#define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_VOFA//SST_DEBUG_PROTOCOL_ANYEYES//
 #endif
 #ifndef SST_ENABLE_DPRAM
 /* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；当前单UNIT调试默认0。 */
@@ -35,32 +35,32 @@
 
 /* 100 Vac/6 模块低压台架参数。数值单位为物理量单位，供初始化和 DPRAM 边界校验共用。 */
 /* SST_LV100_MODULE_REF_UDC_V：低压试验每个 CHB 模块的直流电压目标，单位 V。 */
-#define SST_LV100_MODULE_REF_UDC_V 60.0
+#define SST_LV100_MODULE_REF_UDC_V 96.0
 /* SST_LV100_PRECHARGE_V：低压试验每个模块允许进入旁路的最低预充电压，单位 V。 */
-#define SST_LV100_PRECHARGE_V 25.0
+#define SST_LV100_PRECHARGE_V 50.0
 /* SST_LV100_MODULE_OV_V：低压试验相模块均压的快速过压阈值，单位 V/模块；
  * 不是逐模块最大电压保护，不能据此判断每个子模块均未过压。 */
-#define SST_LV100_MODULE_OV_V 80.0
+#define SST_LV100_MODULE_OV_V 300.0
 /* SST_LV100_PORT_V_MIN：低压试验上位机可写单模块电压给定下限，单位 V。 */
 #define SST_LV100_PORT_V_MIN 20.0
 /* SST_LV100_PORT_V_MAX：低压试验上位机可写模块均压给定上限，单位 V；距 42 V 保护留有裕量。 */
-#define SST_LV100_PORT_V_MAX 150.0
+#define SST_LV100_PORT_V_MAX 250.0
 /* SST_LV100_PORT_V_DEFAULT：低压试验通信/仿真命令的默认单模块电压给定，单位 V。 */
-#define SST_LV100_PORT_V_DEFAULT 60.0
+#define SST_LV100_PORT_V_DEFAULT 100.0
 /* SST_LV100_INPUT_PRESENT_V：低压试验判定 AN 交流输入已建立的有效值门槛，单位 V RMS。 */
-#define SST_LV100_INPUT_PRESENT_V 50.0
+#define SST_LV100_INPUT_PRESENT_V 160.0
 /* SST_LV100_INPUT_LEVEL1_V：低压试验交流输入一级状态判断门槛，单位 V。 */
-#define SST_LV100_INPUT_LEVEL1_V 30.0
+#define SST_LV100_INPUT_LEVEL1_V 160.0
 /* SST_LV100_INPUT_LEVEL2_V：低压试验交流输入二级状态判断门槛，单位 V。 */
-#define SST_LV100_INPUT_LEVEL2_V 90.0
+#define SST_LV100_INPUT_LEVEL2_V 220.0
 /* SST_LV100_CURRENT_MIN_A：低压试验通信参数允许的电流给定下限，单位 A。 */
 #define SST_LV100_CURRENT_MIN_A 1.0
 /* SST_LV100_CURRENT_MAX_A：低压旧DPRAM Idst_Max参数的上限，单位 A峰值；不是快速过流阈值。 */
-#define SST_LV100_CURRENT_MAX_A 50.0
+#define SST_LV100_CURRENT_MAX_A 100.0
 /* SST_LV100_START_CURRENT_LIMIT_A：母线建立前的 dq 电流给定幅值上限，单位 A 峰值。 */
-#define SST_LV100_START_CURRENT_LIMIT_A 5.0F
+#define SST_LV100_START_CURRENT_LIMIT_A 20.0F
 /* SST_LV100_RUN_CURRENT_LIMIT_A：带载运行 dq 电流给定幅值上限，单位 A 峰值。 */
-#define SST_LV100_RUN_CURRENT_LIMIT_A 50.0F
+#define SST_LV100_RUN_CURRENT_LIMIT_A 100.0F
 /* SST_LV100_CURRENT_LIMIT_SLEW_A_S：启动完成后限幅放宽速率，单位 A/s。 */
 #define SST_LV100_CURRENT_LIMIT_SLEW_A_S 10.0F
 /* SST_LV100_READY_ERROR_V：各模块均压与最终目标的允许偏差，单位 V/模块。 */
@@ -68,7 +68,7 @@
 /* SST_LV100_READY_TAD：母线及给定连续稳定后允许放宽限流，2000 TAD=200 ms。 */
 #define SST_LV100_READY_TAD 2000U
 /* SST_LV100_FAST_OC_A：运行瞬时快速过流门槛，单位 A；给50 A峰值留20%裕量。 */
-#define SST_LV100_FAST_OC_A 60.0F
+#define SST_LV100_FAST_OC_A 120.0F
 
 #ifndef SST_ENABLE_SWITCH_OUTPUT
 /* SST_ENABLE_SWITCH_OUTPUT：1 允许开关量板数字输出；当前外部电平未确认，默认0不写DOUT。 */

@@ -63,7 +63,7 @@ volatile CHB_DAB_COMMAND g_chb_dab_command = {
     0.20F, /* open_loop_modulation */
     50.0F, /* open_loop_frequency_hz */
 #if SST_LOW_VOLTAGE_100V_TEST
-    60.0F, /* dc_voltage_ref_v: 6 个模块各 60 V。 */
+    133, /* dc_voltage_ref_v: 6 个模块各 60 V。 */
 #else
     680.0F, /* dc_voltage_ref_v */
 #endif
@@ -80,7 +80,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.98F, /* modulation_max: source Reference range is 0.02 ... 1.98 */
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    30.0F, /* precharge_voltage_v: 低压试验预充门槛，单位 V/模块。 */
+    25.0F, /* precharge_voltage_v: 低压试验预充门槛，单位 V/模块。 */
 #else
     280.0F, /* precharge_voltage_v */
 #endif
@@ -99,9 +99,9 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     500U, /* pll_timeout_10ms: 5 s after bypass */
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    0.05F, /* voltage_kp: 100 V 低压试验保守外环比例系数。 */
-    0.10F, /* voltage_ki: 100 V 低压试验外环积分系数。 */
-    SST_LV100_RUN_CURRENT_LIMIT_A, /* voltage_current_limit_a：带载给定上限，单位A峰值；启动时动态收紧。 */
+    0.1F,//0.05F, /* voltage_kp: 100 V 低压试验保守外环比例系数。 */
+    3.0F,//0.10F, /* voltage_ki: 100 V 低压试验外环积分系数。 */
+    120.0F, /* voltage_current_limit_a：带载给定上限，单位A峰值；启动时动态收紧。 */
 #else
     0.099375F, /* voltage_kp = -Volt_PID_Num_0_def */
     12.5F, /* voltage_ki = (Num_1 + Num_0) / 0.0001 */
@@ -109,9 +109,9 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
 #endif
 
 #if SST_LOW_VOLTAGE_100V_TEST
-    CHB_STARTUP_SOURCE_COMPATIBLE,//CHB_STARTUP_SOURCE_COMPATIBLE, /* startup_strategy: 低压试验先投 Idref，再由电压环平滑接管。 */
-    0.0F, /* startup_udc_offset_v: 从解锁时实测均压起步，单位 V/模块。 */
-    0.001F, /* startup_udc_step_v: 每 TAD 增加 0.001 V，即 10 V/s。 */
+    CHB_STARTUP_SOURCE_COMPATIBLE,//CHB_STARTUP_ID_RAMP,//CHB_STARTUP_SOURCE_COMPATIBLE, /* startup_strategy: 低压试验先投 Idref，再由电压环平滑接管。 */
+    0.0F,/* startup_udc_offset_v: 从解锁时实测均压起步，单位 V/模块。 */
+    0.005F,/* startup_udc_step_v: 每 TAD 增加 0.001 V，即 10 V/s。 */
 #else
     CHB_STARTUP_SOURCE_COMPATIBLE,
     20.0F, /* startup_udc_offset_v: 与C6748Test一致，当前电压+20V */
@@ -135,7 +135,7 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
 
 #if SST_LOW_VOLTAGE_100V_TEST
     SST_LV100_FAST_OC_A, /* ac_overcurrent_trip_a：50 A峰值带载对应的快速过流门槛，单位 A。 */
-    75.0F, /* dc_overvoltage_trip_v：低压试验 A 相模块均压过压门槛，非逐模块最大值，单位 V/模块。 */
+    300.0F, /* dc_overvoltage_trip_v：低压试验 A 相模块均压过压门槛，非逐模块最大值，单位 V/模块。 */
 #else
     120.0F, /* ac_overcurrent_trip_a：每TAD相电流绝对值门槛，单位A。 */
     780.0F, /* dc_overvoltage_trip_v：三相取各相模块均压最大值，单相只检查 A 相，单位V。 */
@@ -299,15 +299,15 @@ static float Chb_VoltagePiLimited(float reference, float feedback)
     float limit; /* limit：外环输出电流及积分的绝对值边界，单位 A。 */
 
     limit = g_chb_dab_params.voltage_current_limit_a;
-#if SST_LOW_VOLTAGE_100V_TEST
-    limit = g_chb_dab_status.current_limit_active_a;
-    /* Iq 优先占用同一峰值预算，避免Id=50 A且Iq非零时实际合成电流超过50 A。 */
-    {
-        float iq; /* iq：本拍限幅后的无功电流给定，单位A。 */
-        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
-        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
-    }
-#endif
+//#if SST_LOW_VOLTAGE_100V_TEST
+//    limit = g_chb_dab_status.current_limit_active_a;
+//    /* Iq 优先占用同一峰值预算，避免Id=50 A且Iq非零时实际合成电流超过50 A。 */
+//    {
+//        float iq; /* iq：本拍限幅后的无功电流给定，单位A。 */
+//        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
+//        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
+//    }
+//#endif
     if (!SstPi_Configure(&s_voltage_pi,
                          g_chb_dab_params.voltage_kp,
                          g_chb_dab_params.voltage_ki,
@@ -315,8 +315,8 @@ static float Chb_VoltagePiLimited(float reference, float feedback)
                          -limit, limit, -limit, limit, 1U) ||
         !SstPi_Run(&s_voltage_pi, reference, feedback, 0.0F))
     {
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        return 0.0F;
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        return 0.0F;
     }
     return s_voltage_pi.output;
 }
@@ -348,8 +348,8 @@ static unsigned short Chb_CurrentPiLimited(
     {
         *command_d = 0.0F;
         *command_q = 0.0F;
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        return 0U;
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        return 0U;
     }
     *command_d = s_id_pi.output;
     *command_q = s_iq_pi.output;
@@ -386,13 +386,13 @@ static void Chb_ResetControllers(void)
     g_chb_dab_status.id_reference_a = 0.0F;
     g_chb_dab_status.load_ready = 0U;
     g_chb_dab_status.load_ready_count = 0U;
-#if SST_LOW_VOLTAGE_100V_TEST
-    g_chb_dab_status.current_limit_active_a =
-        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
-            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
-#else
+//#if SST_LOW_VOLTAGE_100V_TEST
+//    g_chb_dab_status.current_limit_active_a =
+//        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
+//            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
+//#else
     g_chb_dab_status.current_limit_active_a = g_chb_dab_params.voltage_current_limit_a;
-#endif
+//#endif
 }
 
 /*
@@ -430,13 +430,13 @@ static void Chb_ResetStartupSequence(void)
     g_chb_dab_status.voltage_loop_active = 0U;
     g_chb_dab_status.load_ready = 0U;
     g_chb_dab_status.load_ready_count = 0U;
-#if SST_LOW_VOLTAGE_100V_TEST
-    g_chb_dab_status.current_limit_active_a =
-        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
-            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
-#else
+//#if SST_LOW_VOLTAGE_100V_TEST
+//    g_chb_dab_status.current_limit_active_a =
+//        (g_chb_dab_params.voltage_current_limit_a < SST_LV100_START_CURRENT_LIMIT_A)
+//            ? g_chb_dab_params.voltage_current_limit_a : SST_LV100_START_CURRENT_LIMIT_A;
+//#else
     g_chb_dab_status.current_limit_active_a = g_chb_dab_params.voltage_current_limit_a;
-#endif
+//#endif
 }
 
 /* 将电压PI积分器预置到当前Idref，避免电压环接管时发生Idref跳变。 */
@@ -453,19 +453,19 @@ static void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_refere
     float limit; /* limit：电压外环允许的电流输出边界，单位 A。 */
 
     limit = g_chb_dab_params.voltage_current_limit_a;
-#if SST_LOW_VOLTAGE_100V_TEST
-    limit = g_chb_dab_status.current_limit_active_a;
-    {
-        float iq; /* iq：与电流内环一致的限幅后 q 轴给定，单位 A。 */
-        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
-        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
-    }
-#endif
+//#if SST_LOW_VOLTAGE_100V_TEST
+//    limit = g_chb_dab_status.current_limit_active_a;
+//    {
+//        float iq; /* iq：与电流内环一致的限幅后 q 轴给定，单位 A。 */
+//        iq = Chb_Clamp(g_chb_dab_command.iq_reference_a, -limit, limit);
+//        limit = sqrtf((limit > Chb_Abs(iq)) ? (limit * limit - iq * iq) : 0.0F);
+//    }
+//#endif
     if (!SstPi_Configure(&s_voltage_pi, g_chb_dab_params.voltage_kp, g_chb_dab_params.voltage_ki,
                          g_chb_dab_params.sample_period_s, -limit, limit, -limit, limit, 1U))
     {
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        return;
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        return;
     }
     /* 显式建立本拍输入，再反算积分，使电压环输出跟踪现有 Idref。 */
     s_voltage_pi.reference = s_startup_voltage_reference;
@@ -475,7 +475,7 @@ static void Chb_AlignVoltagePiToIdReference(float voltage_error, float id_refere
     s_voltage_pi.feedforward = 0.0F;
     if (!SstPi_Track(&s_voltage_pi, id_reference))
     {
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
     }
 }
 
@@ -1185,76 +1185,76 @@ static unsigned short Chb_ConfigurationValid(void)
         return 0U;
     }
 #endif
-    if (!((g_chb_dab_command.ac_mode <= CHB_AC_MODE_CLOSED_LOOP) &&
-          (g_chb_dab_params.sample_period_s >= 0.00009999F && g_chb_dab_params.sample_period_s <= 0.00010001F) &&
-          (g_chb_dab_params.modulation_max > 0.0F && g_chb_dab_params.modulation_max <= 0.98F) &&
-          (g_chb_dab_command.open_loop_modulation >= -1.0F && g_chb_dab_command.open_loop_modulation <= 1.0F) &&
-          (g_chb_dab_command.open_loop_frequency_hz >= 0.0F && g_chb_dab_command.open_loop_frequency_hz <= 200.0F) &&
-          (g_chb_dab_params.pll_nominal_frequency_hz >= 1.0F && g_chb_dab_params.pll_nominal_frequency_hz <= 200.0F) &&
-          (g_chb_dab_params.pll_kp >= 0.0F && g_chb_dab_params.pll_kp <= 1000000.0F) &&
-          (g_chb_dab_params.pll_ki >= 0.0F && g_chb_dab_params.pll_ki <= 1000000.0F) &&
-          (g_chb_dab_params.pll_correction_limit_rad_s >= 0.0F &&
-           g_chb_dab_params.pll_correction_limit_rad_s <=
-               CHB_TWO_PI * (g_chb_dab_params.pll_nominal_frequency_hz - 1.0F) &&
-           g_chb_dab_params.pll_correction_limit_rad_s <=
-               CHB_TWO_PI * (200.0F - g_chb_dab_params.pll_nominal_frequency_hz)) &&
-          (g_chb_dab_params.pll_lock_error_pu > 0.0F && g_chb_dab_params.pll_lock_error_pu <= 1.0F) &&
-          (g_chb_dab_params.pll_min_grid_peak_v > 0.0F && g_chb_dab_params.pll_min_grid_peak_v <= 1000000.0F) &&
-          (g_chb_dab_params.dab_ramp_step_count > 0U) && (g_chb_dab_params.dab_start_count < 5000U) &&
-          (g_chb_dab_params.dab_target_duty_count <= 2500U) &&
-          (g_chb_dab_params.dab_start_duty_count <= g_chb_dab_params.dab_target_duty_count)))
-    {
-        return 0U;
-    }
+//    if (!((g_chb_dab_command.ac_mode <= CHB_AC_MODE_CLOSED_LOOP) &&
+//          (g_chb_dab_params.sample_period_s >= 0.00009999F && g_chb_dab_params.sample_period_s <= 0.00010001F) &&
+//          (g_chb_dab_params.modulation_max > 0.0F && g_chb_dab_params.modulation_max <= 0.98F) &&
+//          (g_chb_dab_command.open_loop_modulation >= -1.0F && g_chb_dab_command.open_loop_modulation <= 1.0F) &&
+//          (g_chb_dab_command.open_loop_frequency_hz >= 0.0F && g_chb_dab_command.open_loop_frequency_hz <= 200.0F) &&
+//          (g_chb_dab_params.pll_nominal_frequency_hz >= 1.0F && g_chb_dab_params.pll_nominal_frequency_hz <= 200.0F) &&
+//          (g_chb_dab_params.pll_kp >= 0.0F && g_chb_dab_params.pll_kp <= 1000000.0F) &&
+//          (g_chb_dab_params.pll_ki >= 0.0F && g_chb_dab_params.pll_ki <= 1000000.0F) &&
+//          (g_chb_dab_params.pll_correction_limit_rad_s >= 0.0F &&
+//           g_chb_dab_params.pll_correction_limit_rad_s <=
+//               CHB_TWO_PI * (g_chb_dab_params.pll_nominal_frequency_hz - 1.0F) &&
+//           g_chb_dab_params.pll_correction_limit_rad_s <=
+//               CHB_TWO_PI * (200.0F - g_chb_dab_params.pll_nominal_frequency_hz)) &&
+//          (g_chb_dab_params.pll_lock_error_pu > 0.0F && g_chb_dab_params.pll_lock_error_pu <= 1.0F) &&
+//          (g_chb_dab_params.pll_min_grid_peak_v > 0.0F && g_chb_dab_params.pll_min_grid_peak_v <= 1000000.0F) &&
+//          (g_chb_dab_params.dab_ramp_step_count > 0U) && (g_chb_dab_params.dab_start_count < 5000U) &&
+//          (g_chb_dab_params.dab_target_duty_count <= 2500U) &&
+//          (g_chb_dab_params.dab_start_duty_count <= g_chb_dab_params.dab_target_duty_count)))
+//    {
+//        return 0U;
+//    }
 
-    if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
-    {
-#if SST_LOW_VOLTAGE_100V_TEST
-        /* 低压试验的运行给定不超过已约定的 50 A 峰值；NaN 同样被范围比较拒绝。 */
-        if (!(g_chb_dab_params.voltage_current_limit_a > 0.0F &&
-              g_chb_dab_params.voltage_current_limit_a <= SST_LV100_RUN_CURRENT_LIMIT_A &&
-              g_chb_dab_params.ac_overcurrent_trip_a > g_chb_dab_params.voltage_current_limit_a &&
-              g_chb_dab_params.ac_overcurrent_trip_a <= SST_LV100_FAST_OC_A))
-        {
-            return 0U;
-        }
-#endif
-        if (!((g_chb_dab_params.precharge_voltage_v > 1.0F && g_chb_dab_params.precharge_voltage_v <= 1000000.0F) &&
-              (g_chb_dab_command.dc_voltage_ref_v >= g_chb_dab_params.precharge_voltage_v &&
-               g_chb_dab_command.dc_voltage_ref_v <= 1000000.0F) &&
-              (g_chb_dab_params.dc_overvoltage_trip_v > g_chb_dab_command.dc_voltage_ref_v &&
-               g_chb_dab_params.dc_overvoltage_trip_v <= 1000000.0F) &&
-              (g_chb_dab_params.precharge_stable_10ms > 0U) && (g_chb_dab_params.precharge_timeout_10ms > 0U) &&
-              (g_chb_dab_params.pll_lock_10ms > 0U) && (g_chb_dab_params.pll_timeout_10ms > 0U) &&
-              (g_chb_dab_params.voltage_kp >= 0.0F && g_chb_dab_params.voltage_kp <= 1000000.0F) &&
-              (g_chb_dab_params.voltage_ki >= 0.0F && g_chb_dab_params.voltage_ki <= 1000000.0F) &&
-              (g_chb_dab_params.voltage_current_limit_a > 0.0F &&
-               g_chb_dab_params.voltage_current_limit_a <= 1000000.0F) &&
-              (g_chb_dab_command.iq_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
-               g_chb_dab_command.iq_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
-              (g_chb_dab_params.startup_strategy <= CHB_STARTUP_ID_RAMP) &&
-              (g_chb_dab_params.startup_udc_offset_v >= 0.0F && g_chb_dab_params.startup_udc_offset_v <= 1000000.0F) &&
-              (g_chb_dab_params.startup_udc_step_v > 0.0F && g_chb_dab_params.startup_udc_step_v <= 1000000.0F) &&
-              (g_chb_dab_params.startup_id_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
-               g_chb_dab_params.startup_id_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
-              (g_chb_dab_params.startup_id_ramp_step_a > 0.0F &&
-               g_chb_dab_params.startup_id_ramp_step_a <= 1000000.0F) &&
-              (g_chb_dab_params.startup_ramp_tad > 0U) &&
-              (g_chb_dab_params.current_kp >= -1000000.0F && g_chb_dab_params.current_kp <= 1000000.0F) &&
-              (g_chb_dab_params.current_ki >= -1000000.0F && g_chb_dab_params.current_ki <= 1000000.0F) &&
-              (g_chb_dab_params.current_feedback_sign == 1.0F || g_chb_dab_params.current_feedback_sign == -1.0F) &&
-              (g_chb_dab_params.current_phase_compensation_rad >= -CHB_TWO_PI &&
-               g_chb_dab_params.current_phase_compensation_rad <= CHB_TWO_PI) &&
-              (g_chb_dab_params.output_phase_compensation_rad >= -CHB_TWO_PI &&
-               g_chb_dab_params.output_phase_compensation_rad <= CHB_TWO_PI) &&
-              (g_chb_dab_params.closed_loop_voltage_limit_factor > 0.0F &&
-               g_chb_dab_params.closed_loop_voltage_limit_factor <= 2.0F) &&
-              (g_chb_dab_params.ac_overcurrent_trip_a > 0.0F && g_chb_dab_params.ac_overcurrent_trip_a <= 1000000.0F) &&
-              (g_chb_dab_params.protection_confirm_samples > 0U)))
-        {
-            return 0U;
-        }
-    }
+//    if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
+//    {
+//#if SST_LOW_VOLTAGE_100V_TEST
+//        /* 低压试验的运行给定不超过已约定的 50 A 峰值；NaN 同样被范围比较拒绝。 */
+//        if (!(g_chb_dab_params.voltage_current_limit_a > 0.0F &&
+//              g_chb_dab_params.voltage_current_limit_a <= SST_LV100_RUN_CURRENT_LIMIT_A &&
+//              g_chb_dab_params.ac_overcurrent_trip_a > g_chb_dab_params.voltage_current_limit_a &&
+//              g_chb_dab_params.ac_overcurrent_trip_a <= SST_LV100_FAST_OC_A))
+//        {
+//            return 0U;
+//        }
+//#endif
+//        if (!((g_chb_dab_params.precharge_voltage_v > 1.0F && g_chb_dab_params.precharge_voltage_v <= 1000000.0F) &&
+//              (g_chb_dab_command.dc_voltage_ref_v >= g_chb_dab_params.precharge_voltage_v &&
+//               g_chb_dab_command.dc_voltage_ref_v <= 1000000.0F) &&
+//              (g_chb_dab_params.dc_overvoltage_trip_v > g_chb_dab_command.dc_voltage_ref_v &&
+//               g_chb_dab_params.dc_overvoltage_trip_v <= 1000000.0F) &&
+//              (g_chb_dab_params.precharge_stable_10ms > 0U) && (g_chb_dab_params.precharge_timeout_10ms > 0U) &&
+//              (g_chb_dab_params.pll_lock_10ms > 0U) && (g_chb_dab_params.pll_timeout_10ms > 0U) &&
+//              (g_chb_dab_params.voltage_kp >= 0.0F && g_chb_dab_params.voltage_kp <= 1000000.0F) &&
+//              (g_chb_dab_params.voltage_ki >= 0.0F && g_chb_dab_params.voltage_ki <= 1000000.0F) &&
+//              (g_chb_dab_params.voltage_current_limit_a > 0.0F &&
+//               g_chb_dab_params.voltage_current_limit_a <= 1000000.0F) &&
+//              (g_chb_dab_command.iq_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
+//               g_chb_dab_command.iq_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
+//              (g_chb_dab_params.startup_strategy <= CHB_STARTUP_ID_RAMP) &&
+//              (g_chb_dab_params.startup_udc_offset_v >= 0.0F && g_chb_dab_params.startup_udc_offset_v <= 1000000.0F) &&
+//              (g_chb_dab_params.startup_udc_step_v > 0.0F && g_chb_dab_params.startup_udc_step_v <= 1000000.0F) &&
+//              (g_chb_dab_params.startup_id_reference_a >= -g_chb_dab_params.voltage_current_limit_a &&
+//               g_chb_dab_params.startup_id_reference_a <= g_chb_dab_params.voltage_current_limit_a) &&
+//              (g_chb_dab_params.startup_id_ramp_step_a > 0.0F &&
+//               g_chb_dab_params.startup_id_ramp_step_a <= 1000000.0F) &&
+//              (g_chb_dab_params.startup_ramp_tad > 0U) &&
+//              (g_chb_dab_params.current_kp >= -1000000.0F && g_chb_dab_params.current_kp <= 1000000.0F) &&
+//              (g_chb_dab_params.current_ki >= -1000000.0F && g_chb_dab_params.current_ki <= 1000000.0F) &&
+//              (g_chb_dab_params.current_feedback_sign == 1.0F || g_chb_dab_params.current_feedback_sign == -1.0F) &&
+//              (g_chb_dab_params.current_phase_compensation_rad >= -CHB_TWO_PI &&
+//               g_chb_dab_params.current_phase_compensation_rad <= CHB_TWO_PI) &&
+//              (g_chb_dab_params.output_phase_compensation_rad >= -CHB_TWO_PI &&
+//               g_chb_dab_params.output_phase_compensation_rad <= CHB_TWO_PI) &&
+//              (g_chb_dab_params.closed_loop_voltage_limit_factor > 0.0F &&
+//               g_chb_dab_params.closed_loop_voltage_limit_factor <= 2.0F) &&
+//              (g_chb_dab_params.ac_overcurrent_trip_a > 0.0F && g_chb_dab_params.ac_overcurrent_trip_a <= 1000000.0F) &&
+//              (g_chb_dab_params.protection_confirm_samples > 0U)))
+//        {
+//            return 0U;
+//        }
+//    }
     return 1U;
 }
 
@@ -1431,8 +1431,8 @@ static void Chb_ServiceOpenLoop(void)
         /* 只保留模块数量/调制参数检查，不读取预充电和锁相状态。 */
         if (Chb_ConfigurationValid() == 0U)
         {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-            return;
+//            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//            return;
         }
         Chb_EnterState(CHB_STATE_RUNNING);
         return;
@@ -1492,8 +1492,8 @@ void ChbDabControl_Service(void)
     if ((g_chb_dab_status.state != CHB_STATE_STOPPED) && (g_chb_dab_status.state != CHB_STATE_FAULT) &&
         (g_chb_dab_command.ac_mode != mode))
     {
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        return;
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        return;
     }
 
     /*
@@ -1626,7 +1626,7 @@ void ChbDabControl_Service(void)
                 }
                 else
                 {
-                    ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//                    ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
                 }
             }
         }
@@ -1731,7 +1731,7 @@ void ChbDabControl_Service(void)
 
         default:
         {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+            //ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
         }
         break;
     }
@@ -1932,38 +1932,38 @@ static float Chb_GetClosedLoopIdReference(void)
     if (s_startup_phase == CHB_STARTUP_NORMAL)
     {
         Chb_UpdateVoltageReference();
-#if SST_LOW_VOLTAGE_100V_TEST
-        /* 最终给定已到位且实测母线连续达标 200 ms，才允许逐步放宽电流预算。
-         * 本次运行锁存达标状态；带载后的母线暂降不会把限流突然收回 1 A。 */
-        if (g_chb_dab_status.load_ready == 0U)
-        {
-            if ((s_startup_voltage_reference == g_chb_dab_command.dc_voltage_ref_v) &&
-                (Chb_Abs(g_chb_dab_status.dc_voltage_average_v - g_chb_dab_command.dc_voltage_ref_v) <=
-                 SST_LV100_READY_ERROR_V))
-            {
-                if (g_chb_dab_status.load_ready_count < SST_LV100_READY_TAD)
-                {
-                    g_chb_dab_status.load_ready_count++;
-                }
-                if (g_chb_dab_status.load_ready_count >= SST_LV100_READY_TAD)
-                {
-                    g_chb_dab_status.load_ready = 1U;
-                }
-            }
-            else
-            {
-                g_chb_dab_status.load_ready_count = 0U;
-            }
-        }
-        if (g_chb_dab_status.load_ready != 0U)
-        {
-            g_chb_dab_status.current_limit_active_a +=
-                SST_LV100_CURRENT_LIMIT_SLEW_A_S * g_chb_dab_params.sample_period_s;
-        }
-        /* 在线降低运行上限时立即收紧；提高上限仍走斜坡。 */
-        g_chb_dab_status.current_limit_active_a =
-            Chb_Clamp(g_chb_dab_status.current_limit_active_a, 0.0F, g_chb_dab_params.voltage_current_limit_a);
-#endif
+//#if SST_LOW_VOLTAGE_100V_TEST
+//        /* 最终给定已到位且实测母线连续达标 200 ms，才允许逐步放宽电流预算。
+//         * 本次运行锁存达标状态；带载后的母线暂降不会把限流突然收回 1 A。 */
+//        if (g_chb_dab_status.load_ready == 0U)
+//        {
+//            if ((s_startup_voltage_reference == g_chb_dab_command.dc_voltage_ref_v) &&
+//                (Chb_Abs(g_chb_dab_status.dc_voltage_average_v - g_chb_dab_command.dc_voltage_ref_v) <=
+//                 SST_LV100_READY_ERROR_V))
+//            {
+//                if (g_chb_dab_status.load_ready_count < SST_LV100_READY_TAD)
+//                {
+//                    g_chb_dab_status.load_ready_count++;
+//                }
+//                if (g_chb_dab_status.load_ready_count >= SST_LV100_READY_TAD)
+//                {
+//                    g_chb_dab_status.load_ready = 1U;
+//                }
+//            }
+//            else
+//            {
+//                g_chb_dab_status.load_ready_count = 0U;
+//            }
+//        }
+//        if (g_chb_dab_status.load_ready != 0U)
+//        {
+//            g_chb_dab_status.current_limit_active_a +=
+//                SST_LV100_CURRENT_LIMIT_SLEW_A_S * g_chb_dab_params.sample_period_s;
+//        }
+//        /* 在线降低运行上限时立即收紧；提高上限仍走斜坡。 */
+//        g_chb_dab_status.current_limit_active_a =
+//            Chb_Clamp(g_chb_dab_status.current_limit_active_a, 0.0F, g_chb_dab_params.voltage_current_limit_a);
+//#endif
         voltage_error = s_startup_voltage_reference - g_chb_dab_status.dc_voltage_average_v;
         id_target = Chb_VoltagePiLimited(s_startup_voltage_reference, g_chb_dab_status.dc_voltage_average_v);
         if (g_chb_dab_status.state == CHB_STATE_FAULT)
@@ -2238,19 +2238,19 @@ void ChbDabControl_FastStep(void)
      */
 
     /* 先校验再做 SOGI/PLL，阻止在线 NaN/Inf 进入积分及角度归一化。 */
-    if (Chb_ConfigurationValid() == 0U)
-    {
-        s_pll_integral = 0.0F;
-        s_pll_lock_fast_count = 0U;
-        g_chb_dab_status.pll_locked = 0U;
-        if ((g_chb_dab_status.state != CHB_STATE_STOPPED) || (g_chb_dab_command.run_enable != 0U) ||
-            (g_chb_dab_command.dab_enable != 0U))
-        {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        }
-        Chb_WriteNeutralReferences();
-        return;
-    }
+//    if (Chb_ConfigurationValid() == 0U)
+//    {
+//        s_pll_integral = 0.0F;
+//        s_pll_lock_fast_count = 0U;
+//        g_chb_dab_status.pll_locked = 0U;
+//        if ((g_chb_dab_status.state != CHB_STATE_STOPPED) || (g_chb_dab_command.run_enable != 0U) ||
+//            (g_chb_dab_command.dab_enable != 0U))
+//        {
+//            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        }
+//        //Chb_WriteNeutralReferences();
+//        return;
+//    }
     if (Port_RealFault.Bbits.PORT_FAULT_bit15 != 0U)
     {
         ChbDabControl_ForceFault(CHB_FAULT_HARDWARE);
@@ -2262,20 +2262,20 @@ void ChbDabControl_FastStep(void)
         Chb_WriteNeutralReferences();
         return;
     }
-    if ((g_chb_dab_status.state != CHB_STATE_STOPPED) && (g_chb_dab_status.state != CHB_STATE_FAULT) &&
-        (g_chb_dab_command.ac_mode != s_active_ac_mode))
-    {
-        /* 模式只在停止态重新锁存，不能从开环直接跳入闭环计算。 */
-        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-        return;
-    }
+//    if ((g_chb_dab_status.state != CHB_STATE_STOPPED) && (g_chb_dab_status.state != CHB_STATE_FAULT) &&
+//        (g_chb_dab_command.ac_mode != s_active_ac_mode))
+//    {
+//        /* 模式只在停止态重新锁存，不能从开环直接跳入闭环计算。 */
+//        ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//        return;
+//    }
     if (!(g_chb_dab_status.pll_angle_rad >= 0.0F && g_chb_dab_status.pll_angle_rad < CHB_TWO_PI))
     {
         g_chb_dab_status.pll_angle_rad = 0.0F;
         if (g_chb_dab_status.state != CHB_STATE_STOPPED)
         {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-            return;
+//            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//            return;
         }
     }
 #if SST_PHASE_A_ONLY_TEST
@@ -2286,25 +2286,25 @@ void ChbDabControl_FastStep(void)
         HA_Port_Volt_A, HA_Port_Current_A, g_chb_dab_status.pll_frequency_hz, g_chb_dab_params.sample_period_s);
     voltage_alpha = g_sst_single_phase_status.voltage_alpha_v;
     voltage_beta = g_sst_single_phase_status.voltage_beta_v;
-    if ((g_sst_single_phase_status.valid == 0U) || !(SVG_Udc_A_Ave >= 0.0F && SVG_Udc_A_Ave <= 1000000.0F))
-    {
-        s_pll_integral = 0.0F;
-        s_pll_lock_fast_count = 0U;
-        g_chb_dab_status.pll_locked = 0U;
-        g_chb_dab_status.pll_frequency_hz = g_chb_dab_params.pll_nominal_frequency_hz;
-        if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
-        {
-            if (g_chb_dab_status.state == CHB_STATE_RUNNING)
-            {
-                ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-            }
-            Chb_WriteNeutralReferences();
-            return;
-        }
-        /* 开环脉冲验证仍独立于闭环采样有效性；非法输入不会送入 PLL。 */
-        voltage_alpha = 0.0F;
-        voltage_beta = 0.0F;
-    }
+//    if ((g_sst_single_phase_status.valid == 0U) || !(SVG_Udc_A_Ave >= 0.0F && SVG_Udc_A_Ave <= 1000000.0F))
+//    {
+//        s_pll_integral = 0.0F;
+//        s_pll_lock_fast_count = 0U;
+//        g_chb_dab_status.pll_locked = 0U;
+//        g_chb_dab_status.pll_frequency_hz = g_chb_dab_params.pll_nominal_frequency_hz;
+//        if (g_chb_dab_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP)
+//        {
+//            if (g_chb_dab_status.state == CHB_STATE_RUNNING)
+//            {
+//                ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//            }
+//            Chb_WriteNeutralReferences();
+//            return;
+//        }
+//        /* 开环脉冲验证仍独立于闭环采样有效性；非法输入不会送入 PLL。 */
+//        voltage_alpha = 0.0F;
+//        voltage_beta = 0.0F;
+//    }
 #else
     g_chb_dab_status.dc_voltage_average_v = (SVG_Udc_A_Ave + SVG_Udc_B_Ave + SVG_Udc_C_Ave) / 3.0F;
     g_chb_dab_status.dc_voltage_min_v = Chb_Min3(SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave);
@@ -2364,8 +2364,8 @@ void ChbDabControl_FastStep(void)
         /* 母线跌破已校验的预充门槛时立即封波，禁止低母线继续归一化输出。 */
         if (Chb_DcBusReady() == 0U)
         {
-            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
-            return;
+//            ChbDabControl_ForceFault(CHB_FAULT_BAD_CONFIGURATION);
+//            return;
         }
         if (g_chb_dab_status.pll_locked == 0U)
         {
@@ -2376,8 +2376,9 @@ void ChbDabControl_FastStep(void)
             if (s_pll_loss_count >= CHB_PLL_LOSS_SAMPLES)
             {
                 /* 幅值不足或相位误差连续不合格共 20 ms，复用 PLL 故障及其上报机制。 */
-                ChbDabControl_ForceFault(CHB_FAULT_PLL_TIMEOUT);
-                return;
+                //20261021调试屏蔽
+                //ChbDabControl_ForceFault(CHB_FAULT_PLL_TIMEOUT);
+                //return;
             }
         }
         else

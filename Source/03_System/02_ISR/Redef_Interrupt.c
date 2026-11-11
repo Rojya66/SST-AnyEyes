@@ -325,16 +325,17 @@ void FPGAIsr(void)
         //edited end
 
         //edited by shiqi, start, fault recorder
-        if (dataPackNum < 2)
-        {
-            dataPackNum++;
-        }
-        else
-        {
-            dataPackNum = 1;
-        }
-        FT3_PluginUint_Write(2, dataPackNum);
-        FT3_PluginUint_Read(2);
+        //20261021屏蔽
+//        if (dataPackNum < 2)
+//        {
+//            dataPackNum++;
+//        }
+//        else
+//        {
+//            dataPackNum = 1;
+//        }
+//        FT3_PluginUint_Write(2, dataPackNum);
+//        FT3_PluginUint_Read(2);
 
 #ifdef COM_TEST_PluginUnit
 /*

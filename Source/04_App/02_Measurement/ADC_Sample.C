@@ -499,6 +499,9 @@ void Port_AD_Sample(uchar latch)
     HA_Port_Volt_A = ADSample_buffer[0];
     HA_Port_Volt_B = 0.0F;
     HA_Port_Volt_C = 0.0F;
+
+
+
 #else
     AD_CalTemp = ADSample_buffer[0];
     HA_Port_Volt_A_Temp = (AD_CalTemp * 2.0 + ADSample_buffer[1]) / 3.0;
@@ -563,18 +566,19 @@ void Port_AD_Sample(uchar latch)
     //	DAC_BUF[2]=HA_Port_Current_B*100.0;
     //	DAC_BUF[3]=HA_Port_Current_C*100.0;
 
-#if SST_LOW_VOLTAGE_100V_TEST
-    /* 小电流试验的排序方向采用独立滞环；只改变 A 相方向判定，不改变采样及保护阈值。
-     * Avg_IG/10 每计数 0.1 A；±0.1 A 及其间保持，达到 ±0.2 A 才可靠越界切换。 */
-    if (HA_Port_Current_A < (-SST_LV100_CURRENT_DIRECTION_HYST_A))
-    {
-        HA_IG_Log_A = 0;
-    }
-    if (HA_Port_Current_A > SST_LV100_CURRENT_DIRECTION_HYST_A)
-    {
-        HA_IG_Log_A = 1;
-    }
-#else
+    //for test, Sine current injection
+//        static float theta_openloop = 0.0f;
+//        if(theta_openloop < 6.283185307)
+//        {
+//            theta_openloop = theta_openloop + 6.283185307*0.005;
+//        }
+//        else
+//        {
+//            theta_openloop = 0;
+//        }
+//        HA_Port_Current_A = 60*cosf(theta_openloop);
+
+
     if (HA_Port_Current_A < (-1.0))
     {
         HA_IG_Log_A = 0;
@@ -583,7 +587,6 @@ void Port_AD_Sample(uchar latch)
     {
         HA_IG_Log_A = 1;
     }
-#endif
 
     if (HA_Port_Current_B < (-1.0))
     {

@@ -341,7 +341,7 @@ typedef union _XXG_LED
 		ushort led5:           1; /* led5：第 5 路插件 LED 控制位，1 点亮、0 熄灭。 */
 		ushort led6:           1; /* led6：第 6 路插件 LED 控制位，1 点亮、0 熄灭。 */
 		ushort led7:           1; /* led7：第 7 路插件 LED 控制位，1 点亮、0 熄灭。 */
-		ushort Reservedbit:    8; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Reservedbit:    8; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort LED16; /* LED16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_LED;
@@ -351,9 +351,9 @@ typedef union _XXG_DC_Log
 	struct _DC_Log
 	{
 		ushort DC_Order:     	1; /* DC_Order：直流平均电压排序：0——高，1——低。 */  //直流平均电压排序：0——高，1——低
-		ushort Reservedbit1:  7; /* Reservedbit1：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Reservedbit1:  7; /* Reservedbit1：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 		ushort IG_Orient:    	1; /* IG_Orient：电流方向：1:正向 0:负向。 */  //电流方向：1:正向 0:负向
-		ushort Reservedbit2:  7; /* Reservedbit2：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Reservedbit2:  7; /* Reservedbit2：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort DC_Log16; /* DC_Log16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_DC_Log;
@@ -387,14 +387,14 @@ typedef union _XXG_SwitchINOUT
 		ushort Breaker_OuterOff:  1; /* Breaker_OuterOff：外部断路器关；HVAC端口：0表示外部断路器合，1表示外部断路器分；HVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVAC端口：0表示外部断路器合，1表示外部断路器分；。 */  //外部断路器关；HVAC端口：0表示外部断路器合，1表示外部断路器分；HVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVAC端口：0表示外部断路器合，1表示外部断路器分；
 		ushort Breaker_OuterOn:   1; /* Breaker_OuterOn：外部断路器合；HVAC端口：1表示外部断路器合，0表示外部断路器分；HVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVAC端口：1表示外部断路器合，0表示外部断路器分；。 */  //外部断路器合；HVAC端口：1表示外部断路器合，0表示外部断路器分；HVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVAC端口：1表示外部断路器合，0表示外部断路器分；
 		ushort Breaker2_OuterOff: 1; /* Breaker2_OuterOff：外部断路器2。 */	//外部断路器2
-		ushort Breaker2_OuterOn:   1; /* Breaker2_OuterOn：原第二外部断路器/故障电流控制器合闸控制位。 */  
+		ushort Breaker2_OuterOn:   1; /* Breaker2_OuterOn：原第二外部断路器/故障电流控制器合闸控制位。 */
 		ushort Breaker_InnerOff:  1; /* Breaker_InnerOff：内部断路器关；HVAC端口：0表示内部断路器合，1表示内部断路器分；HVDC端口：0表示内部断路器合，1表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；。 */  //内部断路器关；HVAC端口：0表示内部断路器合，1表示内部断路器分；HVDC端口：0表示内部断路器合，1表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；
 		ushort Breaker_InnerOn:   1; /* Breaker_InnerOn：内部断路器合；HVAC端口：1表示内部断路器合，0表示内部断路器分；HVDC端口：1表示内部断路器合，0表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；。 */  //内部断路器合；HVAC端口：1表示内部断路器合，0表示内部断路器分；HVDC端口：1表示内部断路器合，0表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；
 		
-		ushort Reservedbit:      1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */	
+		ushort Reservedbit:      1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 		ushort Contactor_Inner:   1; /* Contactor_Inner：内部接触器，0表示断；1表示合；。 */  //内部接触器，0表示断；1表示合；
 
-		ushort Invalidbit:        8; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */	
+		ushort Invalidbit:        8; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort SwitchINOUT16; /* SwitchINOUT16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_SwitchINOUT;
@@ -405,7 +405,7 @@ typedef union _XXG_INV_CTL
 	{
 		ushort TAD_DIV:           3; /* TAD_DIV：逆变模块开关周期=同步周期50us*(TAD_DIV+1)。 */	  //逆变模块开关周期=同步周期50us*(TAD_DIV+1)
 		ushort DEADZONE:          10; /* DEADZONE：逆变模块死区时间，0~10.23us。 */	  //逆变模块死区时间，0~10.23us
-		ushort Invalidbit:        3; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */	
+		ushort Invalidbit:        3; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort INV_CTL16; /* INV_CTL16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_INV_CTL;
@@ -428,7 +428,7 @@ typedef union _XXG_DSP_CTL
 	{	
 		ushort SHUTDOWN:           1; /* SHUTDOWN：模块硬件关断位图，保持原 FPGA/DPRAM 字布局。 */	  //1:光纤SHUTDOWN信号，脉冲闭锁
 		ushort HW_RST:             1; /* HW_RST：1:RESET主控插件上的FB信号；。 */	  //1:RESET主控插件上的FB信号；
-		ushort Invalidbit:        14; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */	
+		ushort Invalidbit:        14; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort DSP_CTL16; /* DSP_CTL16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_DSP_CTL;
@@ -499,8 +499,8 @@ typedef struct _FPGA_InterfaceBLOCK {
   	ushort NUM; /* NUM：原调制算法在线模块数量寄存器，保持原 FPGA/DPRAM 字布局。 */								//每相总的功率模块链节数量
   	ushort PM; /* PM：本插件在线模块位图，保持原 FPGA/DPRAM 字布局。 */								//光纤插件上连接的功率模块  7:0有效，bitX=1：插件上第X对TX/RX光纤与功率模块连接
   	ushort Reference; /* Reference：工频桥原始调制参考计数，保持原 FPGA/DPRAM 字布局。 */					//参考电压
-  	ushort Orient; /* Orient：模块调制/电流方向字段，保持原 FPGA/DPRAM 字布局。 */						
-  	XXG_DC_Log DC_Log; /* DC_Log：模块直流电压排序及电流方向控制字，保持原 FPGA/DPRAM 字布局。 */						
+  	ushort Orient; /* Orient：模块调制/电流方向字段，保持原 FPGA/DPRAM 字布局。 */
+  	XXG_DC_Log DC_Log; /* DC_Log：模块直流电压排序及电流方向控制字，保持原 FPGA/DPRAM 字布局。 */
   	ushort TAD; /* TAD：FPGA 控制周期计数，保持原 FPGA/DPRAM 字布局。 */								//AD采样周期(us)   控制周期
   	ushort Reserved_1[2]; /* Reserved_1：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
   	ushort DAB_LEFTDuty; /* DAB_LEFTDuty：DAB 左桥占空比计数，保持原 FPGA/DPRAM 字布局。 */      //DAB脉冲占空比；
@@ -581,7 +581,7 @@ typedef struct _FPGA_InterfaceBLOCK {
   	short TEMP_LATCH[8]; /* TEMP_LATCH：模块温度原始锁存采样数组，供故障/同步采样使用。 */      //故障锁存模块温度；16位有符号整数；
   	XXG_STATUS STATUS[8]; /* STATUS：各模块原始实时状态字数组，保持原 FPGA/DPRAM 字布局。 */         //模块状态
 //  	XXG_STATUS STATUS_LATCH[8];   //故障锁存模块状态
-  	short HD_S_PH[8]; /* HD_S_PH：原 HVDC 同步相位字段，保持原 FPGA/DPRAM 字布局。 */ 
+  	short HD_S_PH[8]; /* HD_S_PH：原 HVDC 同步相位字段，保持原 FPGA/DPRAM 字布局。 */
   	
   	XXG_DRIVER DRIVER[8]; /* DRIVER：各模块驱动原始状态字数组，保持原 FPGA/DPRAM 字布局。 */         //驱动板状态
 //  	XXG_DRIVER DRIVER_LATCH[8];   //故障锁存驱动板状态
@@ -648,7 +648,7 @@ typedef union _XXG_DPRAM_PluginUnit{
   	short TEMP_LATCH[8]; /* TEMP_LATCH：模块温度原始锁存采样数组，供故障/同步采样使用。 */      //故障锁存模块温度；16位有符号整数；
   	XXG_STATUS STATUS[8]; /* STATUS：各模块原始实时状态字数组，保持原 FPGA/DPRAM 字布局。 */         //模块状态
 //  	XXG_STATUS STATUS_LATCH[8];   //故障锁存模块状态
-  	short HD_S_PH[8]; /* HD_S_PH：原 HVDC 同步相位字段，保持原 FPGA/DPRAM 字布局。 */ 
+  	short HD_S_PH[8]; /* HD_S_PH：原 HVDC 同步相位字段，保持原 FPGA/DPRAM 字布局。 */
   	XXG_DRIVER DRIVER[8]; /* DRIVER：各模块驱动原始状态字数组，保持原 FPGA/DPRAM 字布局。 */         //驱动板状态
 //  	XXG_DRIVER DRIVER_LATCH[8];   //故障锁存驱动板状态
   	ushort Reserved_6[8]; /* Reserved_6：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
@@ -997,7 +997,7 @@ typedef union _XXG_DPRAM_RemControl{
 	ushort DPRAM_Block1Buf[DPRAMBlock1_Length]; /* DPRAM_Block1Buf：本联合体的连续原始字/状态数组视图，供复制或存储打包使用。 */
 }XXG_DPRAM_RemControl;
 
-extern volatile XXG_DPRAM_RemControl DPRAM_Block1_remControl; /* DPRAM_Block1_remControl：原地址映射的遥控区；访问受 SST_ENABLE_DPRAM 门控。 */ 
+extern volatile XXG_DPRAM_RemControl DPRAM_Block1_remControl; /* DPRAM_Block1_remControl：原地址映射的遥控区；访问受 SST_ENABLE_DPRAM 门控。 */
 extern XXG_DPRAM_RemControl PORT_Control_DATA_Buf; /* PORT_Control_DATA_Buf：旧遥控协议的本地字缓存。 */
 extern XXG_COM_START_PORT Port_COM_START; /* Port_COM_START：旧遥控启动字的位域解码缓存。 */
 extern XXG_COM_STOP_PORT Port_COM_STOP; /* Port_COM_STOP：旧遥控停止字的位域解码缓存。 */
@@ -1179,7 +1179,7 @@ typedef struct _DPRAM_RemRegulateFloat {
 
 } DPRAM_RemRegulateFloat, *P_DPRAM_RemRegulateFloat;//DPRAM的第2分区的结构体
 
-extern volatile XXG_DPRAM_RemRegulate DPRAM_Block2_remRegulate; /* DPRAM_Block2_remRegulate：原地址映射的遥调区；访问受 SST_ENABLE_DPRAM 门控。 */ 
+extern volatile XXG_DPRAM_RemRegulate DPRAM_Block2_remRegulate; /* DPRAM_Block2_remRegulate：原地址映射的遥调区；访问受 SST_ENABLE_DPRAM 门控。 */
 extern XXG_DPRAM_RemRegulate PORT_Regulate_DATA_Buf; /* PORT_Regulate_DATA_Buf：旧遥调协议的本地定点字缓存。 */
 extern DPRAM_RemRegulateFloat PORT_Regulate_DATA; /* PORT_Regulate_DATA：旧遥调定点值换算后的浮点给定缓存。 */
 
@@ -1193,18 +1193,18 @@ typedef union _XXG_SwitchFLAG
 {
 	struct _SwitchFLAG
 	{
-		ushort S_EXT_CB_ON_EN:  1; /* S_EXT_CB_ON_EN：旧开关流程的外部断路器合闸允许条件。 */  
+		ushort S_EXT_CB_ON_EN:  1; /* S_EXT_CB_ON_EN：旧开关流程的外部断路器合闸允许条件。 */
 		ushort S_EXT_CB:   			2; /* S_EXT_CB：旧开关流程的外部断路器目标/判定状态。 */
-		ushort S_INT_CB:   			2; /* S_INT_CB：旧开关流程的内部断路器目标/判定状态。 */ 
-		ushort S_CONTACTOR:     1; /* S_CONTACTOR：旧开关流程的接触器目标/判定状态。 */ 
+		ushort S_INT_CB:   			2; /* S_INT_CB：旧开关流程的内部断路器目标/判定状态。 */
+		ushort S_CONTACTOR:     1; /* S_CONTACTOR：旧开关流程的接触器目标/判定状态。 */
 			
-		ushort EXT_CB_ON_EN:    		1; /* EXT_CB_ON_EN：外部断路器合闸允许标志。 */  
+		ushort EXT_CB_ON_EN:    		1; /* EXT_CB_ON_EN：外部断路器合闸允许标志。 */
 		ushort Flag_Switch:   			3; /* Flag_Switch：1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2。 */   //1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2
 		ushort Flag_SwitchZhi:      1; /* Flag_SwitchZhi：旧开关动作时序状态值。 */   //0:断；1：合
-		ushort Flag_SwitchSuccess:  1; /* Flag_SwitchSuccess：旧开关动作成功标志。 */ 
-		ushort Flag_SwitchRun:      1; /* Flag_SwitchRun：旧开关动作正在执行标志。 */ 
+		ushort Flag_SwitchSuccess:  1; /* Flag_SwitchSuccess：旧开关动作成功标志。 */
+		ushort Flag_SwitchRun:      1; /* Flag_SwitchRun：旧开关动作正在执行标志。 */
 		ushort Flag_SwitchTable:    2; /* Flag_SwitchTable：0：操作失败；1:无需继续操作1；2：无需继续操作2；3：继续操作。 */   //0：操作失败；1:无需继续操作1；2：无需继续操作2；3：继续操作
-		ushort Reservedbit:     1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */				
+		ushort Reservedbit:     1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort SwitchFLAG16; /* SwitchFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_SwitchFLAG;
@@ -1214,8 +1214,8 @@ typedef union _XXG_FaultTypeFLAG
 {
 	struct _FaultTypeFLAG
 	{
-		ushort Port_OverVolt:      1; /* Port_OverVolt：原端口过压故障分类位。 */   //0--no fault;      
-		ushort Port_OverCurrent:   1; /* Port_OverCurrent：原端口过流故障分类位。 */   
+		ushort Port_OverVolt:      1; /* Port_OverVolt：原端口过压故障分类位。 */   //0--no fault;
+		ushort Port_OverCurrent:   1; /* Port_OverCurrent：原端口过流故障分类位。 */
  		ushort Module_DAB_H:   		 1; /* Module_DAB_H：原模块 DAB 桥故障分类位。 */
 		ushort Module_50Hz_H:      1; /* Module_50Hz_H：原模块工频桥故障分类位。 */
 		ushort Module_Single:      1; /* Module_Single：原单模块故障分类位。 */
@@ -1223,15 +1223,15 @@ typedef union _XXG_FaultTypeFLAG
 		ushort Module_OverCurrent: 1; /* Module_OverCurrent：原模块过流故障分类位。 */
 		ushort Module_OverTemp:    1; /* Module_OverTemp：原模块过温故障分类位。 */
 
-		ushort Contactor:    			 1; /* Contactor：原接触器动作故障分类位。 */	
-		ushort Breaker:            1; /* Breaker：原断路器动作故障分类位。 */		
-		ushort Controller:   			 1; /* Controller：原控制器故障分类位。 */	
-		ushort Sync:               1; /* Sync：原同步故障分类位。 */			
-		ushort Communication:      1; /* Communication：原通信故障分类位。 */			
+		ushort Contactor:    			 1; /* Contactor：原接触器动作故障分类位。 */
+		ushort Breaker:            1; /* Breaker：原断路器动作故障分类位。 */
+		ushort Controller:   			 1; /* Controller：原控制器故障分类位。 */
+		ushort Sync:               1; /* Sync：原同步故障分类位。 */
+		ushort Communication:      1; /* Communication：原通信故障分类位。 */
 		
 		ushort Module_Fault:       1; /* Module_Fault：原模块汇总故障分类位。 */
 		ushort Module_LowerVolt:   1; /* Module_LowerVolt：原模块欠压故障分类位。 */
-		ushort Module_OverVoltLevel2:  1; /* Module_OverVoltLevel2：原模块二级过压故障分类位。 */ 
+		ushort Module_OverVoltLevel2:  1; /* Module_OverVoltLevel2：原模块二级过压故障分类位。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort FaultTypeFLAG16; /* FaultTypeFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_FaultTypeFLAG;
@@ -1241,18 +1241,18 @@ typedef union _XXG_PortRunFLAG
 {
 	struct _PortRunFLAG
 	{
-		ushort Port_SigUdc:           1; /* Port_SigUdc：旧端口直流电压单独检查/信号标志。 */  
+		ushort Port_SigUdc:           1; /* Port_SigUdc：旧端口直流电压单独检查/信号标志。 */
 		ushort Port_UdcOK:            1; /* Port_UdcOK：旧端口模块直流电压预充达标标志。 */
 		ushort Port_AutoOrManual:     1; /* Port_AutoOrManual：旧端口自动/手动运行选择字段。 */     //1: Auto
 		ushort Port_RunOrTest:        1; /* Port_RunOrTest：旧端口正常运行/测试选择字段。 */		 //1: Run
 		
 		ushort PWMState_50Hz:					1; /* PWMState_50Hz：旧工频桥实际 PWM 状态镜像。 */		 //1: Disable
-		ushort PWMState_Dab:					1; /* PWMState_Dab：旧 DAB 实际 PWM 状态镜像。 */		 //1: Disable	
-		ushort PWMState_Module:       1; /* PWMState_Module：旧模块桥 PWM 汇总状态镜像。 */		 //1: Disable	
+		ushort PWMState_Dab:					1; /* PWMState_Dab：旧 DAB 实际 PWM 状态镜像。 */		 //1: Disable
+		ushort PWMState_Module:       1; /* PWMState_Module：旧模块桥 PWM 汇总状态镜像。 */		 //1: Disable
 		ushort Stop_AllPort:					1; /* Stop_AllPort：旧全端口停机请求标志。 */     //1: all port need shutdown
 		ushort PhaseSquence_Error:    1; /* PhaseSquence_Error：旧相序错误标志，保留原字段拼写。 */
-		ushort Port_HighUdc:          1; /* Port_HighUdc：旧端口模块直流电压过高标志。 */	
-		ushort Reservedbit:           6; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Port_HighUdc:          1; /* Port_HighUdc：旧端口模块直流电压过高标志。 */
+		ushort Reservedbit:           6; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort PortRunFLAG16; /* PortRunFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_PortRunFLAG;
@@ -1262,22 +1262,22 @@ typedef union _XXG_ControlFLAG
 {
 	struct _ControlFLAG
 	{
-		ushort SVG_PWMEN:       		1; /* SVG_PWMEN：旧工频桥 PWM 使能命令标志。 */  
+		ushort SVG_PWMEN:       		1; /* SVG_PWMEN：旧工频桥 PWM 使能命令标志。 */
 		ushort DAB_PWMEN:       		1; /* DAB_PWMEN：旧 DAB PWM 使能命令标志。 */
 			
 		ushort Port_Start:      		2; /* Port_Start：旧端口启动流程请求。 */    //01: starting; 11: start failure; 10: start success
 		ushort Port_Stop:       		2; /* Port_Stop：旧端口停止流程请求。 */    //01: stoping; 11: stop failure; 10: stop success
 		ushort Port_FaultDispose:   2; /* Port_FaultDispose：旧端口故障处置待执行标志。 */    //01: disposing; 11: failure; 10: success
 					
-		ushort DAB_DutyStart:   		1; /* DAB_DutyStart：旧 DAB 占空比启动斜坡进行标志。 */ 
+		ushort DAB_DutyStart:   		1; /* DAB_DutyStart：旧 DAB 占空比启动斜坡进行标志。 */
 		ushort SVG_Start:       		1; /* SVG_Start：旧工频桥启动流程进行标志。 */
 		
 		ushort Port_StartValid: 		1; /* Port_StartValid：旧端口启动条件检查通过标志。 */
-		ushort DAB_DutyOver:    		1; /* DAB_DutyOver：旧 DAB 占空比启动斜坡完成标志。 */		
+		ushort DAB_DutyOver:    		1; /* DAB_DutyOver：旧 DAB 占空比启动斜坡完成标志。 */
 		ushort SVG_StartOver:   		1; /* SVG_StartOver：旧工频桥启动流程完成标志。 */
 		ushort DAB_StartMethod:   	1; /* DAB_StartMethod：旧 DAB 启动策略字段。 */
 						
-		ushort Reservedbit:     		2; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Reservedbit:     		2; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort ControlFLAG16; /* ControlFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 } XXG_ControlFLAG;
@@ -1297,16 +1297,16 @@ typedef union _XXG_FaultDisposeFLAG
 //		ushort Port_PWMEnable:     2;   //01: PWM pulse opening;  10: PWM pulse opening success; 11: PWM pulse opening failure
 				
 		ushort Port_StopType:      3; /* Port_StopType：旧端口停机类型字段。 */ 	//000: non-stop   001:normal shutdown  002: system shutdown   003: Remote-control shutdown
-		ushort Port_StopAll:       1; /* Port_StopAll：旧故障策略要求全端口停机的标志。 */ 	//1: system shutdown   
+		ushort Port_StopAll:       1; /* Port_StopAll：旧故障策略要求全端口停机的标志。 */ 	//1: system shutdown
 		
-		ushort Reservedbit:        5; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ 
+		ushort Reservedbit:        5; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
 	} Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
 	ushort FaultDisposeFLAG16; /* FaultDisposeFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
 	
 } XXG_FaultDisposeFLAG;
 
 extern XXG_FaultDisposeFLAG FaultDisposeFLAG; /* FaultDisposeFLAG：原故障处理策略及 PWM 禁用范围的位域缓存。 */
-extern ushort ModuleIndex_PWMPulseDisable; /* ModuleIndex_PWMPulseDisable：原故障策略中待禁用 PWM 的模块索引。 */   //Index of Module which is disabled   
+extern ushort ModuleIndex_PWMPulseDisable; /* ModuleIndex_PWMPulseDisable：原故障策略中待禁用 PWM 的模块索引。 */   //Index of Module which is disabled
 
 typedef union _XXG_FT3_FaultRecorder_Control_Word
 {
@@ -1458,14 +1458,14 @@ extern ushort LastWrong_Reference_A1,LastWrong_Reference_A2,LastWrong_Reference_
 extern ushort Wrong_Reference_A1,Wrong_Reference_A2,Wrong_Reference_C1,Wrong_Reference_C2; /* Wrong_Reference_A1：原 FPGA Reference_A1 参考/通信核对的本轮不一致值。 */
 /* Wrong_Reference_A2：原 FPGA Reference_A2 参考/通信核对的本轮不一致值。 */
 /* Wrong_Reference_C1：原 FPGA Reference_C1 参考/通信核对的本轮不一致值。 */
-/* Wrong_Reference_C2：原 FPGA Reference_C2 参考/通信核对的本轮不一致值。 */	
+/* Wrong_Reference_C2：原 FPGA Reference_C2 参考/通信核对的本轮不一致值。 */
 
 extern ushort WrongTimes_ControlReference_A,WrongTimes_ControlReference_C; /* WrongTimes_ControlReference_A：原 FPGA ControlReference_A 参考/通信核对的累计不一致次数。 */
 /* WrongTimes_ControlReference_C：原 FPGA ControlReference_C 参考/通信核对的累计不一致次数。 */
 extern ushort LastWrong_ControlReference_A,LastWrong_ControlReference_C; /* LastWrong_ControlReference_A：原 FPGA ControlReference_A 参考/通信核对的上一轮不一致值。 */
 /* LastWrong_ControlReference_C：原 FPGA ControlReference_C 参考/通信核对的上一轮不一致值。 */
 extern ushort Wrong_ControlReference_A,Wrong_ControlReference_C; /* Wrong_ControlReference_A：原 FPGA ControlReference_A 参考/通信核对的本轮不一致值。 */
-/* Wrong_ControlReference_C：原 FPGA ControlReference_C 参考/通信核对的本轮不一致值。 */	
+/* Wrong_ControlReference_C：原 FPGA ControlReference_C 参考/通信核对的本轮不一致值。 */
 
 //FLAG
 extern unsigned char Flag_PC; /* Flag_PC：旧 PC/本地控制兼容标志。 */
@@ -1739,70 +1739,70 @@ extern float Har_5OR7_PH0,Har_11_PH0; /* Har_5OR7_PH0：原 5OR7 次谐波初始
 
 
 //controller
-extern float PLL_PID_Num_1; /* PLL_PID_Num_1：锁相环增量 PI 本拍误差系数。 */ 
-extern float PLL_PID_Num_0; /* PLL_PID_Num_0：锁相环增量 PI 上一拍误差系数。 */		
+extern float PLL_PID_Num_1; /* PLL_PID_Num_1：锁相环增量 PI 本拍误差系数。 */
+extern float PLL_PID_Num_0; /* PLL_PID_Num_0：锁相环增量 PI 上一拍误差系数。 */
 
 	//voltage loop
-extern float Volt_PID_Num_1; /* Volt_PID_Num_1：电压增量 PI 本拍误差系数。 */    
-extern float Volt_PID_Num_0; /* Volt_PID_Num_0：电压增量 PI 上一拍误差系数。 */   
+extern float Volt_PID_Num_1; /* Volt_PID_Num_1：电压增量 PI 本拍误差系数。 */
+extern float Volt_PID_Num_0; /* Volt_PID_Num_0：电压增量 PI 上一拍误差系数。 */
 
-extern float PH_Volt_PID_Num_1; /* PH_Volt_PID_Num_1：相间电压增量 PI 本拍误差系数。 */ 
+extern float PH_Volt_PID_Num_1; /* PH_Volt_PID_Num_1：相间电压增量 PI 本拍误差系数。 */
 extern float PH_Volt_PID_Num_0; /* PH_Volt_PID_Num_0：相间电压增量 PI 上一拍误差系数。 */
 
 	//Current loop
-extern float Har_2_Controller_Num_2; /* Har_2_Controller_Num_2：2 次谐振控制器差分式分子第 2 项系数。 */         
-extern float Har_2_Controller_Num_1; /* Har_2_Controller_Num_1：2 次谐振控制器差分式分子第 1 项系数。 */        
-extern float Har_2_Controller_Num_0; /* Har_2_Controller_Num_0：2 次谐振控制器差分式分子第 0 项系数。 */				
+extern float Har_2_Controller_Num_2; /* Har_2_Controller_Num_2：2 次谐振控制器差分式分子第 2 项系数。 */
+extern float Har_2_Controller_Num_1; /* Har_2_Controller_Num_1：2 次谐振控制器差分式分子第 1 项系数。 */
+extern float Har_2_Controller_Num_0; /* Har_2_Controller_Num_0：2 次谐振控制器差分式分子第 0 项系数。 */
 extern float Har_2_Controller_Den_1; /* Har_2_Controller_Den_1：2 次谐振控制器差分式分母第 1 项系数。 */
 
-extern float Har_6_Controller_Num_2; /* Har_6_Controller_Num_2：6 次谐振控制器差分式分子第 2 项系数。 */          		
-extern float Har_6_Controller_Num_1; /* Har_6_Controller_Num_1：6 次谐振控制器差分式分子第 1 项系数。 */        		
-extern float Har_6_Controller_Num_0; /* Har_6_Controller_Num_0：6 次谐振控制器差分式分子第 0 项系数。 */       			
+extern float Har_6_Controller_Num_2; /* Har_6_Controller_Num_2：6 次谐振控制器差分式分子第 2 项系数。 */
+extern float Har_6_Controller_Num_1; /* Har_6_Controller_Num_1：6 次谐振控制器差分式分子第 1 项系数。 */
+extern float Har_6_Controller_Num_0; /* Har_6_Controller_Num_0：6 次谐振控制器差分式分子第 0 项系数。 */
 extern float Har_6_Controller_Den_1; /* Har_6_Controller_Den_1：6 次谐振控制器差分式分母第 1 项系数。 */
 
-extern float Har_12_Controller_Num_2; /* Har_12_Controller_Num_2：12 次谐振控制器差分式分子第 2 项系数。 */				 
-extern float Har_12_Controller_Num_1; /* Har_12_Controller_Num_1：12 次谐振控制器差分式分子第 1 项系数。 */     	 
-extern float Har_12_Controller_Num_0; /* Har_12_Controller_Num_0：12 次谐振控制器差分式分子第 0 项系数。 */   	  
+extern float Har_12_Controller_Num_2; /* Har_12_Controller_Num_2：12 次谐振控制器差分式分子第 2 项系数。 */
+extern float Har_12_Controller_Num_1; /* Har_12_Controller_Num_1：12 次谐振控制器差分式分子第 1 项系数。 */
+extern float Har_12_Controller_Num_0; /* Har_12_Controller_Num_0：12 次谐振控制器差分式分子第 0 项系数。 */
 extern float Har_12_Controller_Den_1; /* Har_12_Controller_Den_1：12 次谐振控制器差分式分母第 1 项系数。 */
 
-extern float Current_PID_Num_1; /* Current_PID_Num_1：电流增量 PI 本拍误差系数。 */ 	           
+extern float Current_PID_Num_1; /* Current_PID_Num_1：电流增量 PI 本拍误差系数。 */
 extern float Current_PID_Num_0; /* Current_PID_Num_0：电流增量 PI 上一拍误差系数。 */
 extern float Current_PID_Num_1_Pres; /* Current_PID_Num_1_Pres：电流增量 PI 本拍误差系数的预设值。 */
 extern float Current_PID_Num_0_Pres; /* Current_PID_Num_0_Pres：电流增量 PI 上一拍误差系数的预设值。 */
 
-extern float Neg_Current_PID_Num_1; /* Neg_Current_PID_Num_1：负序电流增量 PI 本拍误差系数。 */ 	      		
-extern float Neg_Current_PID_Num_0; /* Neg_Current_PID_Num_0：负序电流增量 PI 上一拍误差系数。 */         		 
+extern float Neg_Current_PID_Num_1; /* Neg_Current_PID_Num_1：负序电流增量 PI 本拍误差系数。 */
+extern float Neg_Current_PID_Num_0; /* Neg_Current_PID_Num_0：负序电流增量 PI 上一拍误差系数。 */
 
 ///////////////////////////////////////////////////////
 
 extern float HA_Port_Volt_A; /* HA_Port_Volt_A：高压交流端口 A 相/相间原采样电压，单位 V。 */      //port voltage
-extern float HA_Port_Volt_B; /* HA_Port_Volt_B：高压交流端口 B 相/相间原采样电压，单位 V。 */      
-extern float HA_Port_Volt_C; /* HA_Port_Volt_C：高压交流端口 C 相/相间原采样电压，单位 V。 */      
+extern float HA_Port_Volt_B; /* HA_Port_Volt_B：高压交流端口 B 相/相间原采样电压，单位 V。 */
+extern float HA_Port_Volt_C; /* HA_Port_Volt_C：高压交流端口 C 相/相间原采样电压，单位 V。 */
 
 extern float HA_Port_Volt_AB; /* HA_Port_Volt_AB：高压交流端口 AB 相/相间原采样电压，单位 V。 */
 extern float HA_Port_Volt_BC; /* HA_Port_Volt_BC：高压交流端口 BC 相/相间原采样电压，单位 V。 */
 extern float HA_Port_Volt_CA; /* HA_Port_Volt_CA：高压交流端口 CA 相/相间原采样电压，单位 V。 */
 
 extern float HA_Port_Current_A; /* HA_Port_Current_A：高压交流端口 A 相/相间端口电流，单位 A。 */   //port current
-extern float HA_Port_Current_B; /* HA_Port_Current_B：高压交流端口 B 相/相间端口电流，单位 A。 */   
-extern float HA_Port_Current_C; /* HA_Port_Current_C：高压交流端口 C 相/相间端口电流，单位 A。 */   
+extern float HA_Port_Current_B; /* HA_Port_Current_B：高压交流端口 B 相/相间端口电流，单位 A。 */
+extern float HA_Port_Current_C; /* HA_Port_Current_C：高压交流端口 C 相/相间端口电流，单位 A。 */
 
 extern float HA_Grid_Current_A; /* HA_Grid_Current_A：高压交流端口 A 相/相间电网电流，单位 A。 */   //system current
-extern float HA_Grid_Current_B; /* HA_Grid_Current_B：高压交流端口 B 相/相间电网电流，单位 A。 */   
-extern float HA_Grid_Current_C; /* HA_Grid_Current_C：高压交流端口 C 相/相间电网电流，单位 A。 */   
+extern float HA_Grid_Current_B; /* HA_Grid_Current_B：高压交流端口 B 相/相间电网电流，单位 A。 */
+extern float HA_Grid_Current_C; /* HA_Grid_Current_C：高压交流端口 C 相/相间电网电流，单位 A。 */
 
 
-extern float HA_Port_Volt_AB_LATCH; /* HA_Port_Volt_AB_LATCH：高压交流端口 AB 相/相间原采样电压，单位 V；锁存采样值。 */      
-extern float HA_Port_Volt_BC_LATCH; /* HA_Port_Volt_BC_LATCH：高压交流端口 BC 相/相间原采样电压，单位 V；锁存采样值。 */      
-extern float HA_Port_Volt_CA_LATCH; /* HA_Port_Volt_CA_LATCH：高压交流端口 CA 相/相间原采样电压，单位 V；锁存采样值。 */      
+extern float HA_Port_Volt_AB_LATCH; /* HA_Port_Volt_AB_LATCH：高压交流端口 AB 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float HA_Port_Volt_BC_LATCH; /* HA_Port_Volt_BC_LATCH：高压交流端口 BC 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float HA_Port_Volt_CA_LATCH; /* HA_Port_Volt_CA_LATCH：高压交流端口 CA 相/相间原采样电压，单位 V；锁存采样值。 */
 
-extern float HA_Port_Current_A_LATCH; /* HA_Port_Current_A_LATCH：高压交流端口 A 相/相间端口电流，单位 A；锁存采样值。 */   
-extern float HA_Port_Current_B_LATCH; /* HA_Port_Current_B_LATCH：高压交流端口 B 相/相间端口电流，单位 A；锁存采样值。 */   
-extern float HA_Port_Current_C_LATCH; /* HA_Port_Current_C_LATCH：高压交流端口 C 相/相间端口电流，单位 A；锁存采样值。 */   
+extern float HA_Port_Current_A_LATCH; /* HA_Port_Current_A_LATCH：高压交流端口 A 相/相间端口电流，单位 A；锁存采样值。 */
+extern float HA_Port_Current_B_LATCH; /* HA_Port_Current_B_LATCH：高压交流端口 B 相/相间端口电流，单位 A；锁存采样值。 */
+extern float HA_Port_Current_C_LATCH; /* HA_Port_Current_C_LATCH：高压交流端口 C 相/相间端口电流，单位 A；锁存采样值。 */
 
-extern float HA_Grid_Current_A_LATCH; /* HA_Grid_Current_A_LATCH：高压交流端口 A 相/相间电网电流，单位 A；锁存采样值。 */   
-extern float HA_Grid_Current_B_LATCH; /* HA_Grid_Current_B_LATCH：高压交流端口 B 相/相间电网电流，单位 A；锁存采样值。 */   
-extern float HA_Grid_Current_C_LATCH; /* HA_Grid_Current_C_LATCH：高压交流端口 C 相/相间电网电流，单位 A；锁存采样值。 */   
+extern float HA_Grid_Current_A_LATCH; /* HA_Grid_Current_A_LATCH：高压交流端口 A 相/相间电网电流，单位 A；锁存采样值。 */
+extern float HA_Grid_Current_B_LATCH; /* HA_Grid_Current_B_LATCH：高压交流端口 B 相/相间电网电流，单位 A；锁存采样值。 */
+extern float HA_Grid_Current_C_LATCH; /* HA_Grid_Current_C_LATCH：高压交流端口 C 相/相间电网电流，单位 A；锁存采样值。 */
 
 extern float HA_PortUanRms_LF_1; /* HA_PortUanRms_LF_1：高压交流端口 PortUanRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
 extern float HA_PortUanRms_LF_2; /* HA_PortUanRms_LF_2：高压交流端口 PortUanRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */
@@ -1886,7 +1886,7 @@ extern float Ust_HVAC_Port; /* Ust_HVAC_Port：旧 HVAC 单模块直流电压运
 extern float UstOK_HVAC_Port; /* UstOK_HVAC_Port：旧 HVAC 启动电压达标值，单位 V。 */
 
 extern float OverVolt_AlarmLevel2; /* OverVolt_AlarmLevel2：旧模块二级过压报警阈值，单位 V。 */
-extern float VoltLevel_1; /* VoltLevel_1：旧电压判断第一级阈值。 */  
+extern float VoltLevel_1; /* VoltLevel_1：旧电压判断第一级阈值。 */
 extern float VoltLevel_2; /* VoltLevel_2：旧电压判断第二级阈值。 */
 
 //HVAC abnormal
@@ -1917,12 +1917,12 @@ extern float PLL_Phase_Com; /* PLL_Phase_Com：旧电流变换相位补偿，单
 extern float PLL_Phase_Com_NEW; /* PLL_Phase_Com_NEW：旧输出变换相位补偿，单位 rad。 */
 extern float PhaseCom; /* PhaseCom：旧附加相位补偿量，单位 rad。 */
 extern float Sin_ph_Trans_Com; /* Sin_ph_Trans_Com：正弦坐标变换系数，含原相位补偿。 */
-extern float Cos_ph_Trans_Com; /* Cos_ph_Trans_Com：余弦坐标变换系数，含原相位补偿。 */	
+extern float Cos_ph_Trans_Com; /* Cos_ph_Trans_Com：余弦坐标变换系数，含原相位补偿。 */
 extern float Sin_ph_Trans_Com_NEW; /* Sin_ph_Trans_Com_NEW：正弦坐标变换系数，含原相位补偿，输出变换使用值。 */
 extern float Cos_ph_Trans_Com_NEW; /* Cos_ph_Trans_Com_NEW：余弦坐标变换系数，含原相位补偿，输出变换使用值。 */
 extern float Sin_ph_Trans_next; /* Sin_ph_Trans_next：正弦坐标变换系数，下一拍预测值。 */
 extern float Cos_ph_Trans_next; /* Cos_ph_Trans_next：余弦坐标变换系数，下一拍预测值。 */
-extern float Ugrid_Max; /* Ugrid_Max：旧控制使用的电网电压幅值上限/估计值，单位 V。 */	
+extern float Ugrid_Max; /* Ugrid_Max：旧控制使用的电网电压幅值上限/估计值，单位 V。 */
 ////////////////////////////////////////////
 //Reference
 extern float HA_Module_RefVolt_A; /* HA_Module_RefVolt_A：高压交流端口 A 相/相间模块电压调制给定，单位 V。 */
@@ -1956,11 +1956,11 @@ extern ushort OC_time_SET; /* OC_time_SET：原一级过流确认计数阈值，
 extern ushort OC_level_SET_L2; /* OC_level_SET_L2：原二级过流阈值，沿用采样计数/系数约定。 */
 extern ushort OC_time_SET_L2; /* OC_time_SET_L2：原二级过流确认计数阈值，单位 TAD。 */
 /* OC_level_SET_DEFAULT：原一级过流保护默认阈值。 */
-#define OC_level_SET_DEFAULT 70
+#define OC_level_SET_DEFAULT 170
 /* OC_time_SET_DEFAULT：原一级过流确认默认 TAD 计数。 */
 #define OC_time_SET_DEFAULT 100
 /* OC_level_SET_L2_DEFAULT：原二级过流保护默认阈值。 */
-#define OC_level_SET_L2_DEFAULT 75
+#define OC_level_SET_L2_DEFAULT 180
 /* OC_time_SET_L2_DEFAULT：原二级过流确认默认 TAD 计数。 */
 #define OC_time_SET_L2_DEFAULT 5
 extern ushort counter_OV_flag; /* counter_OV_flag：原一级过压连续超限样本计数。 */
@@ -2010,49 +2010,49 @@ extern ushort ISO_counter_on, ISO_counter_off; /* ISO_counter_on：原隔离开�
 /******************************************************************************/
 #ifdef LVAC_online
 extern float LA_Grid_Volt_A; /* LA_Grid_Volt_A：低压交流端口 A 相/相间原采样电压，单位 V。 */   	 //system voltage
-extern float LA_Grid_Volt_B; /* LA_Grid_Volt_B：低压交流端口 B 相/相间原采样电压，单位 V。 */      
-extern float LA_Grid_Volt_C; /* LA_Grid_Volt_C：低压交流端口 C 相/相间原采样电压，单位 V。 */      
+extern float LA_Grid_Volt_B; /* LA_Grid_Volt_B：低压交流端口 B 相/相间原采样电压，单位 V。 */
+extern float LA_Grid_Volt_C; /* LA_Grid_Volt_C：低压交流端口 C 相/相间原采样电压，单位 V。 */
 
 extern float LA_Grid_Current_A; /* LA_Grid_Current_A：低压交流端口 A 相/相间电网电流，单位 A。 */   //system current
-extern float LA_Grid_Current_B; /* LA_Grid_Current_B：低压交流端口 B 相/相间电网电流，单位 A。 */   
-extern float LA_Grid_Current_C; /* LA_Grid_Current_C：低压交流端口 C 相/相间电网电流，单位 A。 */   
+extern float LA_Grid_Current_B; /* LA_Grid_Current_B：低压交流端口 B 相/相间电网电流，单位 A。 */
+extern float LA_Grid_Current_C; /* LA_Grid_Current_C：低压交流端口 C 相/相间电网电流，单位 A。 */
 
 extern float LA_Port_Volt_A; /* LA_Port_Volt_A：低压交流端口 A 相/相间原采样电压，单位 V。 */      //port voltage
-extern float LA_Port_Volt_B; /* LA_Port_Volt_B：低压交流端口 B 相/相间原采样电压，单位 V。 */      
-extern float LA_Port_Volt_C; /* LA_Port_Volt_C：低压交流端口 C 相/相间原采样电压，单位 V。 */      
+extern float LA_Port_Volt_B; /* LA_Port_Volt_B：低压交流端口 B 相/相间原采样电压，单位 V。 */
+extern float LA_Port_Volt_C; /* LA_Port_Volt_C：低压交流端口 C 相/相间原采样电压，单位 V。 */
 
 extern float LA_Lg_Current_A; /* LA_Lg_Current_A：低压交流端口 A 相/相间滤波电感电流，单位 A。 */   	 //inductance current
-extern float LA_Lg_Current_B; /* LA_Lg_Current_B：低压交流端口 B 相/相间滤波电感电流，单位 A。 */     
-extern float LA_Lg_Current_C; /* LA_Lg_Current_C：低压交流端口 C 相/相间滤波电感电流，单位 A。 */     
+extern float LA_Lg_Current_B; /* LA_Lg_Current_B：低压交流端口 B 相/相间滤波电感电流，单位 A。 */
+extern float LA_Lg_Current_C; /* LA_Lg_Current_C：低压交流端口 C 相/相间滤波电感电流，单位 A。 */
 
 extern float LA_Cap_Current_A; /* LA_Cap_Current_A：低压交流端口 A 相/相间电容电流，单位 A。 */    //capacitance current
-extern float LA_Cap_Current_B; /* LA_Cap_Current_B：低压交流端口 B 相/相间电容电流，单位 A。 */    
-extern float LA_Cap_Current_C; /* LA_Cap_Current_C：低压交流端口 C 相/相间电容电流，单位 A。 */    
+extern float LA_Cap_Current_B; /* LA_Cap_Current_B：低压交流端口 B 相/相间电容电流，单位 A。 */
+extern float LA_Cap_Current_C; /* LA_Cap_Current_C：低压交流端口 C 相/相间电容电流，单位 A。 */
 
 extern float LA_DCbus_Volt; /* LA_DCbus_Volt：低压交流端口 原采样电压，单位 V。 */       //DCbus voltage
 
 
-extern float LA_Grid_Volt_A_LATCH; /* LA_Grid_Volt_A_LATCH：低压交流端口 A 相/相间原采样电压，单位 V；锁存采样值。 */   	 
-extern float LA_Grid_Volt_B_LATCH; /* LA_Grid_Volt_B_LATCH：低压交流端口 B 相/相间原采样电压，单位 V；锁存采样值。 */      
-extern float LA_Grid_Volt_C_LATCH; /* LA_Grid_Volt_C_LATCH：低压交流端口 C 相/相间原采样电压，单位 V；锁存采样值。 */      
+extern float LA_Grid_Volt_A_LATCH; /* LA_Grid_Volt_A_LATCH：低压交流端口 A 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float LA_Grid_Volt_B_LATCH; /* LA_Grid_Volt_B_LATCH：低压交流端口 B 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float LA_Grid_Volt_C_LATCH; /* LA_Grid_Volt_C_LATCH：低压交流端口 C 相/相间原采样电压，单位 V；锁存采样值。 */
 
-extern float LA_Grid_Current_A_LATCH; /* LA_Grid_Current_A_LATCH：低压交流端口 A 相/相间电网电流，单位 A；锁存采样值。 */   
-extern float LA_Grid_Current_B_LATCH; /* LA_Grid_Current_B_LATCH：低压交流端口 B 相/相间电网电流，单位 A；锁存采样值。 */   
-extern float LA_Grid_Current_C_LATCH; /* LA_Grid_Current_C_LATCH：低压交流端口 C 相/相间电网电流，单位 A；锁存采样值。 */   
+extern float LA_Grid_Current_A_LATCH; /* LA_Grid_Current_A_LATCH：低压交流端口 A 相/相间电网电流，单位 A；锁存采样值。 */
+extern float LA_Grid_Current_B_LATCH; /* LA_Grid_Current_B_LATCH：低压交流端口 B 相/相间电网电流，单位 A；锁存采样值。 */
+extern float LA_Grid_Current_C_LATCH; /* LA_Grid_Current_C_LATCH：低压交流端口 C 相/相间电网电流，单位 A；锁存采样值。 */
 
-extern float LA_Port_Volt_A_LATCH; /* LA_Port_Volt_A_LATCH：低压交流端口 A 相/相间原采样电压，单位 V；锁存采样值。 */      
-extern float LA_Port_Volt_B_LATCH; /* LA_Port_Volt_B_LATCH：低压交流端口 B 相/相间原采样电压，单位 V；锁存采样值。 */      
-extern float LA_Port_Volt_C_LATCH; /* LA_Port_Volt_C_LATCH：低压交流端口 C 相/相间原采样电压，单位 V；锁存采样值。 */      
+extern float LA_Port_Volt_A_LATCH; /* LA_Port_Volt_A_LATCH：低压交流端口 A 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float LA_Port_Volt_B_LATCH; /* LA_Port_Volt_B_LATCH：低压交流端口 B 相/相间原采样电压，单位 V；锁存采样值。 */
+extern float LA_Port_Volt_C_LATCH; /* LA_Port_Volt_C_LATCH：低压交流端口 C 相/相间原采样电压，单位 V；锁存采样值。 */
 
-extern float LA_Lg_Current_A_LATCH; /* LA_Lg_Current_A_LATCH：低压交流端口 A 相/相间滤波电感电流，单位 A；锁存采样值。 */   	 
-extern float LA_Lg_Current_B_LATCH; /* LA_Lg_Current_B_LATCH：低压交流端口 B 相/相间滤波电感电流，单位 A；锁存采样值。 */     
-extern float LA_Lg_Current_C_LATCH; /* LA_Lg_Current_C_LATCH：低压交流端口 C 相/相间滤波电感电流，单位 A；锁存采样值。 */     
+extern float LA_Lg_Current_A_LATCH; /* LA_Lg_Current_A_LATCH：低压交流端口 A 相/相间滤波电感电流，单位 A；锁存采样值。 */
+extern float LA_Lg_Current_B_LATCH; /* LA_Lg_Current_B_LATCH：低压交流端口 B 相/相间滤波电感电流，单位 A；锁存采样值。 */
+extern float LA_Lg_Current_C_LATCH; /* LA_Lg_Current_C_LATCH：低压交流端口 C 相/相间滤波电感电流，单位 A；锁存采样值。 */
 
-extern float LA_Cap_Current_A_LATCH; /* LA_Cap_Current_A_LATCH：低压交流端口 A 相/相间电容电流，单位 A；锁存采样值。 */    
-extern float LA_Cap_Current_B_LATCH; /* LA_Cap_Current_B_LATCH：低压交流端口 B 相/相间电容电流，单位 A；锁存采样值。 */    
-extern float LA_Cap_Current_C_LATCH; /* LA_Cap_Current_C_LATCH：低压交流端口 C 相/相间电容电流，单位 A；锁存采样值。 */    
+extern float LA_Cap_Current_A_LATCH; /* LA_Cap_Current_A_LATCH：低压交流端口 A 相/相间电容电流，单位 A；锁存采样值。 */
+extern float LA_Cap_Current_B_LATCH; /* LA_Cap_Current_B_LATCH：低压交流端口 B 相/相间电容电流，单位 A；锁存采样值。 */
+extern float LA_Cap_Current_C_LATCH; /* LA_Cap_Current_C_LATCH：低压交流端口 C 相/相间电容电流，单位 A；锁存采样值。 */
 
-extern float LA_DCbus_Volt_LATCH; /* LA_DCbus_Volt_LATCH：低压交流端口 原采样电压，单位 V；锁存采样值。 */       
+extern float LA_DCbus_Volt_LATCH; /* LA_DCbus_Volt_LATCH：低压交流端口 原采样电压，单位 V；锁存采样值。 */
 
 extern float LA_GridUanRms_LF_1; /* LA_GridUanRms_LF_1：低压交流端口 GridUanRms 有效值低通滤波第 1 个历史状态，电压 V、电流 A。 */
 extern float LA_GridUanRms_LF_2; /* LA_GridUanRms_LF_2：低压交流端口 GridUanRms 有效值低通滤波第 2 个历史状态，电压 V、电流 A。 */

@@ -7,7 +7,7 @@
  * derived from the masks by Initial_Variable().
  */
 /* CHB_PM_A1_MASK：A1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A1_MASK 0x0007U //0x007FU
+#define CHB_PM_A1_MASK 0x0007U //7U//0x007FU
 /* CHB_PM_A2_MASK：A2 组在线模块位图，决定模块数及参考尺度。 */
 #define CHB_PM_A2_MASK 0x0007U //0x003FU
 /* CHB_PM_B1_MASK：B1 组在线模块位图，决定模块数及参考尺度。 */
