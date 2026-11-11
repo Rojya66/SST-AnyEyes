@@ -2,6 +2,15 @@
 #define SST_PARAMETER_TABLE_H
 #include "SstParamTypes.h"
 
+/*==================================================================
+ * 函数功能: 已整体校验后，只写入线上编码发生变化的参数
+ * 输入参数: snapshot：通过SnapshotValidate的42字镜像
+ * 输出参数: 变化参数；未变化浮点值保留原精度，不发生回读量化漂移
+ * 返回值: 无
+ * 执行说明: 后台完全停机调用；负PI由WriteEntry按int16解释，保留符号。
+ *================================================================*/
+void SstParameterTable_SnapshotApplyChanged(const uint16_t *snapshot);
+
 #ifdef __cplusplus
 extern "C"
 {

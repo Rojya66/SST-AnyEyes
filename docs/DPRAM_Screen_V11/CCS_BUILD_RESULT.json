@@ -1,0 +1,22 @@
+{
+  "workspace": "C:\\Users\\Roj\\AppData\\Local\\Temp\\SST_DpramCompat_ccs_9qdzbvwq",
+  "results": [
+    {
+      "action": "import",
+      "exit_code": 0,
+      "clean_exit_code": null
+    },
+    {
+      "action": "Debug",
+      "exit_code": 0,
+      "clean_exit_code": 0
+    },
+    {
+      "action": "Release",
+      "exit_code": 0,
+      "clean_exit_code": 0
+    }
+  ],
+  "firmware_input_sha256": "013a343b8ffa7c7443743aae67ff72e8237058327422a11b0b5df738e14e4d3f",
+  "firmware_unchanged_during_build": true
+}

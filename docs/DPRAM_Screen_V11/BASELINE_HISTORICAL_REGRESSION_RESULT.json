@@ -1,0 +1,111 @@
+{
+  "firmware_input_sha256": "36b39ee8a94ebb937538bff19d39858e0e1c99586f77f96f212a374987df7977",
+  "firmware_unchanged_during_checks": true,
+  "checks": [
+    {
+      "check": "realtime_audit",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\realtime_audit.log"
+    },
+    {
+      "check": "control_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\control_regression.log"
+    },
+    {
+      "check": "pi_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\pi_regression.log"
+    },
+    {
+      "check": "fault_reporting",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\fault_reporting.log"
+    },
+    {
+      "check": "dpram_commands",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\dpram_commands.log"
+    },
+    {
+      "check": "parameter_precision",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\parameter_precision.log"
+    },
+    {
+      "check": "protocol_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\protocol_regression.log"
+    },
+    {
+      "check": "refactor_equivalence",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\refactor_equivalence.log"
+    },
+    {
+      "check": "comment_coverage",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\comment_coverage.log"
+    },
+    {
+      "check": "framework_structure",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\framework_structure.log"
+    },
+    {
+      "check": "firmware_trace",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\firmware_trace.log"
+    },
+    {
+      "check": "serial_protocol_scope",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\serial_protocol_scope.log"
+    },
+    {
+      "check": "parameter_store_migration",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\parameter_store_migration.log"
+    },
+    {
+      "check": "dpram_maintenance",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\dpram_maintenance.log"
+    },
+    {
+      "check": "bench_inputs",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\bench_inputs.log"
+    },
+    {
+      "check": "single_phase_control",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\single_phase_control.log"
+    },
+    {
+      "check": "single_phase_io",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\single_phase_io.log"
+    },
+    {
+      "check": "single_phase_isolation",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\single_phase_isolation.log"
+    },
+    {
+      "check": "vofa_telemetry",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\vofa_telemetry.log"
+    },
+    {
+      "check": "common_control_safety",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\common_control_safety.log"
+    },
+    {
+      "check": "switch_io",
+      "exit_code": 1,
+      "log": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\host_validation\\switch_io.log"
+    }
+  ]
+}

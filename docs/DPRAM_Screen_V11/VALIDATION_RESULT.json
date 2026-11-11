@@ -1,0 +1,212 @@
+{
+  "firmware_input_sha256": "013a343b8ffa7c7443743aae67ff72e8237058327422a11b0b5df738e14e4d3f",
+  "firmware_unchanged": true,
+  "results": [
+    {
+      "name": "Debug_default",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Debug_default.log"
+    },
+    {
+      "name": "Release_default",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Release_default.log"
+    },
+    {
+      "name": "Debug_anyeyes",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Debug_anyeyes.log"
+    },
+    {
+      "name": "Debug_simulator",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Debug_simulator.log"
+    },
+    {
+      "name": "Debug_three_phase",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Debug_three_phase.log"
+    },
+    {
+      "name": "Debug_switch_io",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\Debug_switch_io.log"
+    },
+    {
+      "name": "dpram_screen",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\dpram_screen.log"
+    },
+    {
+      "name": "dpram_screen_layout",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\dpram_screen_layout.log"
+    },
+    {
+      "name": "comment_coverage",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\comment_coverage.log"
+    },
+    {
+      "name": "firmware_trace",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\firmware_trace.log"
+    },
+    {
+      "name": "dpram_commands",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\dpram_commands.log"
+    },
+    {
+      "name": "dpram_maintenance",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\dpram_maintenance.log"
+    },
+    {
+      "name": "parameter_precision",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\parameter_precision.log"
+    },
+    {
+      "name": "parameter_store_migration",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\parameter_store_migration.log"
+    },
+    {
+      "name": "protocol_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\protocol_regression.log"
+    },
+    {
+      "name": "serial_protocol_scope",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\serial_protocol_scope.log"
+    },
+    {
+      "name": "pi_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\pi_regression.log"
+    },
+    {
+      "name": "fault_reporting",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\fault_reporting.log"
+    },
+    {
+      "name": "control_regression",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\control_regression.log"
+    },
+    {
+      "name": "vofa_telemetry",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\vofa_telemetry.log"
+    },
+    {
+      "name": "dpram_switch_maintenance",
+      "exit_code": 0,
+      "log": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\dpram_screen_validation\\dpram_switch_maintenance.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\default\\SST_DpramCompat.out",
+      "sha256": "2d69e2b1fa7655f44c0d1d6b6b1890921be5fd4f5c869fb388c28bb0c549e5d5"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\default\\SST_DpramCompat.map",
+      "sha256": "b35b7c864b95f2f3ad13dfbc33065c889d6fecb561ce5b716295ae4da398ebb8"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\default\\build.log",
+      "sha256": "73c2a6b452f655f7d5f27402cc350e49c5750462d6813a22cf9e71baa5c6ab81"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\default\\build_result.json",
+      "sha256": "5b3bb8fb4419d7472355d66469c2307137f38ea534e02568d0b4d5210b00ca3a"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Release\\default\\SST_DpramCompat.out",
+      "sha256": "23cb0b30236f5b5ae3cbf715caf2008b8efece61a200f431c72cc4822ea97bad"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Release\\default\\SST_DpramCompat.map",
+      "sha256": "a178a1349e7a8cf4cf48f9d15890def4912d9854cffbd43ff0eaaf254d019be3"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Release\\default\\build.log",
+      "sha256": "73c2a6b452f655f7d5f27402cc350e49c5750462d6813a22cf9e71baa5c6ab81"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Release\\default\\build_result.json",
+      "sha256": "25e1d778ac817358f2eb1764f15bd4fb7467ca67fc5b5b24b9a1461da697039c"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\anyeyes\\SST_DpramCompat.out",
+      "sha256": "37bcb8f58db0e948b8cb4f2dba066c6b952682b21b3490ff590dea94aefbb6db"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\anyeyes\\SST_DpramCompat.map",
+      "sha256": "c49f33ba8e002a4cf979e933ad32c92e4556d32c173b3be74610bb26e2c65bbb"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\anyeyes\\build.log",
+      "sha256": "73c2a6b452f655f7d5f27402cc350e49c5750462d6813a22cf9e71baa5c6ab81"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\anyeyes\\build_result.json",
+      "sha256": "a9febd859d36916d2d794add114e720a16941d266da03f45da1f456ee9f24602"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\simulator\\SST_DpramCompat.out",
+      "sha256": "f7b96a4c43258b46a19750511dfba6bc095c264d9806a1e90d99f900e56a3bcc"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\simulator\\SST_DpramCompat.map",
+      "sha256": "96b6f9d8ed142719fa5a08b8835c002b6db099a568f8a40d76852ad0d9360396"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\simulator\\build.log",
+      "sha256": "b9fb757772e36205a285e77da61fe3a7a910836046c4e3d303ac47203264ffaa"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\simulator\\build_result.json",
+      "sha256": "4e99a42682293fdab39cc77003d7406568703390b2db888ec2459e862acfbf81"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\three_phase\\SST_DpramCompat.out",
+      "sha256": "75d95497651cf5a18ed572f24c282d0257bdb14dd8c5e8024cc6928acd89cae0"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\three_phase\\SST_DpramCompat.map",
+      "sha256": "bd265058932efab3f4e67d6620598e7c857abfc43720e2b6ae6ba7dda5903cc0"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\three_phase\\build.log",
+      "sha256": "1200878c63315a4c1a3f34c78aedc69a946d0c7cdf1e1468f0ea02f952be793c"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\three_phase\\build_result.json",
+      "sha256": "ffc06172048d2e5be6baa5b48b5d705889325ba6136fa5edcbfb1a6309c3487e"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\switch_io\\SST_DpramCompat.out",
+      "sha256": "519c672bd634ac023bae3a262c4e478f66f7a26bc5d2b29e480e146274ae394b"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\switch_io\\SST_DpramCompat.map",
+      "sha256": "32cb229de8caa1331b497e1b695126ef33064619c02dc641fb7b2b94fb17a793"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\switch_io\\build.log",
+      "sha256": "73c2a6b452f655f7d5f27402cc350e49c5750462d6813a22cf9e71baa5c6ab81"
+    },
+    {
+      "path": "D:\\Code\\SST\\AnyEyesVersion_DpramCompat\\build\\Debug\\switch_io\\build_result.json",
+      "sha256": "6cc3ac3c744cfa5674183ac1d409d6a749cd9266d676fb95e5ac74152388f649"
+    }
+  ],
+  "retried": [
+    "dpram_switch_maintenance"
+  ]
+}

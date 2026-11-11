@@ -18,6 +18,8 @@
 #include "SstFault.h"
 #include "SstParams.h"
 #include "SstDpramMaintenance.h"
+#include "SstDpramProtocol.h"
+#include "SstDpramHost.h"
 #include "SstBenchInputs.h"
 
 /*==================================================================
@@ -95,6 +97,8 @@ void SystemInit_Runtime(void)
 #if CHB_LOAD_EEPROM_PARAMETERS
     SstParameters_LoadPersistent();
 #endif
+    SstDpramScreen_Init();
+    SstDpramHost_Init();
     /* Control objects and safe outputs exist before TAD/FAULT enable. */
     GPIOBankPinInterruptInit();
 

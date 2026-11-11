@@ -4,6 +4,7 @@
 #include "SstFault.h"
 #include "SstDpramHost.h"
 #include "SstDpramMaintenance.h"
+#include "SstDpramProtocol.h"
 #include "ChbBuildConfig.h"
 #include "SstDebug.h"
 #include "SstSerial.h"
@@ -29,6 +30,7 @@ void TaskSlice_Service(void)
     SstDpramHost_ServiceRemoteControl();
     SstDpramHost_ServiceTelemetry();
     SstDpramMaintenance_Service();
+    SstDpramScreen_Service();
 #endif
     //now = SstDebug_GetTick10ms(); /* 与协议初始化及周期参数保持同一时基。 */
     now = SstDebug_GetTick1ms();

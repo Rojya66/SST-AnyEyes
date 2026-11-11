@@ -1,3 +1,7 @@
+# DPRAM Modbus屏幕兼容工程
+
+本复制工程名为 **AnyEyesVersion_DpramCompat**，输出 **SST_DpramCompat.out**。本版生效接口以 [DPRAM兼容说明](docs/DPRAM_Screen_V11/README.md)、[2400行点表](docs/DPRAM_Screen_V11/DPRAM_MODBUS_POINTS.csv)、[联调步骤](docs/DPRAM_Screen_V11/DEBUG_STEPS.md) 和 [修改记录](docs/DPRAM_Screen_V11/MODIFICATION_RECORD.md) 为准。下方保留原框架文档作为历史背景。
+
 # SST_AnyEyes 工程
 
 本工程在 C6748 + FPGA 硬件上迁移 `Chb_DabPrim_vofa` 的 HVAC/CHB 和 DAB 原边功能，按 `F28377S_Plat` 的六层结构组织。AnyEyes 使用参考工程 PcDebug 的命令、功能码地址格式、波形通道与状态索引格式；VOFA 是可选构建。

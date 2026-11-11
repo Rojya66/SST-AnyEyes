@@ -31,6 +31,7 @@
 //###########################################################################
 #include "DPRAM.h"
 #include "X1226_RW.h"
+#include "SstDpramProtocol.h"
 #include "FaultCheck.h"
 #include "hw_types.h"
 /***********************Function declaration*********************************/
@@ -182,7 +183,7 @@ void DPRAM_Write(ushort Flag_R)
         case WriteBlock_remMeaSig:
         {
             tt = 1;
-            RemoteSig_Dispose();
+            SstDpramTelemetry_Build(PORT_RealTime_DATA_buf.DPRAM_Block3Buf);
             MemDataCopy_1(&PORT_RealTime_DATA_buf.DPRAM_Block3Buf[0],
                           DPRAMBlock3_Length,
                           &DPRAM_Block3_remMeaSig.DPRAM_Block3Buf[0]);

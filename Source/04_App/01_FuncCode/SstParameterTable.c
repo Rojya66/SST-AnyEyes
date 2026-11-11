@@ -233,3 +233,24 @@ void SstParameterTable_SnapshotApply(const uint16_t *snapshot)
         WriteEntry(&commands[n], snapshot[i]);
     }
 }
+
+/*==================================================================
+ * 函数功能: 已整体校验后，只写入线上编码发生变化的参数
+ * 输入参数: snapshot：通过SnapshotValidate的42字镜像
+ * 输出参数: 变化参数；未变化浮点值保留原精度，不发生回读量化漂移
+ * 返回值: 无
+ * 执行说明: 后台完全停机调用；负PI由WriteEntry按int16解释，保留符号。
+ *================================================================*/
+void SstParameterTable_SnapshotApplyChanged(const uint16_t *snapshot)
+{
+    uint16_t index; /* 快照字索引。 */
+    for (index = 1U; index < 42U; ++index)
+    {
+        if (snapshot[index] == SstParameterTable_SnapshotRead(index))
+            continue;
+        if (index < 37U)
+            WriteEntry(&parameters[index], snapshot[index]);
+        else
+            WriteEntry(&commands[index == 37U ? 2U : index - 34U], snapshot[index]);
+    }
+}

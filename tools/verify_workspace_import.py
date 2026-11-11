@@ -12,7 +12,7 @@ LOGDIR = ROOT / 'build/workspace_import_validation'
 LOGDIR.mkdir(parents=True, exist_ok=True)
 before = fingerprint(ROOT)
 workspace = Path(tempfile.mkdtemp(prefix='SST_direct_child_'))
-project = workspace / 'AnyEyesVersion'
+project = workspace / 'AnyEyesVersion_DpramCompat'
 project.mkdir()
 for name in ('Source', 'targetConfigs'):
     shutil.copytree(ROOT / name, project / name)
@@ -30,22 +30,22 @@ def run(label, extra):
     return result.returncode, output
 
 path = project / '.project'
-path.write_text(path.read_text(encoding='utf-8').replace('<name>AnyEyesVersion</name>', '<name>SST_AnyEyes</name>'), encoding='utf-8')
+path.write_text(path.read_text(encoding='utf-8').replace('<name>AnyEyesVersion_DpramCompat</name>', '<name>SST_DpramCompat</name>'), encoding='utf-8')
 command = ['-application', 'com.ti.ccstudio.apps.projectImport', '-ccs.location', str(project)]
 code, log = run('before', command)
 assert code != 0 and 'overlaps the location of another project' in log, log
 path = project / '.project'
-path.write_text(path.read_text(encoding='utf-8').replace('<name>SST_AnyEyes</name>',
-                                                      '<name>AnyEyesVersion</name>'), encoding='utf-8')
+path.write_text(path.read_text(encoding='utf-8').replace('<name>SST_DpramCompat</name>',
+                                                      '<name>AnyEyesVersion_DpramCompat</name>'), encoding='utf-8')
 path = project / '.cproject'
-path.write_text(path.read_text(encoding='utf-8').replace('${ProjName}', 'SST_AnyEyes'), encoding='utf-8')
+path.write_text(path.read_text(encoding='utf-8').replace('${ProjName}', 'SST_DpramCompat'), encoding='utf-8')
 code, log = run('after', command)
 assert code == 0, log
 for mode in ('Debug', 'Release'):
     code, log = run(mode, ['-application', 'com.ti.ccstudio.apps.projectBuild',
-                          '-ccs.projects', 'AnyEyesVersion', '-ccs.configuration', mode])
+                          '-ccs.projects', 'AnyEyesVersion_DpramCompat', '-ccs.configuration', mode])
     assert code == 0, log
-    assert (project / mode / 'SST_AnyEyes.out').is_file()
+    assert (project / mode / 'SST_DpramCompat.out').is_file()
 after = fingerprint(ROOT)
 assert before == after, 'Firmware inputs changed during direct-child workspace validation'
 report = dict(workspace=str(workspace), project=str(project), results=results,

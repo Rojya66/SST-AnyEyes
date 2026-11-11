@@ -2426,3 +2426,68 @@ void ChbDabControl_FastStep(void)
         }
     }
 }
+
+/*==================================================================
+ * 函数功能: 完全停机的手动开关维护；不绕过核心直接解锁PWM
+ * 输入参数: close_mask/open_mask：bit0旁路、bit1进线；OFF优先
+ * 输出参数: 启用真实输出宏时，修改DOUT、脉冲截止时间和命令镜像
+ * 返回值: SST_PARAM_*；输出宏关闭返回DENIED，不伪报硬件动作成功
+ * 执行说明: 仅后台；最终重检和DOUT提交使用原短临界区，未修改FastStep。
+ *================================================================*/
+unsigned short ChbDabControl_MaintenanceSwitch(unsigned short close_mask, unsigned short open_mask)
+{
+#if SST_ENABLE_SWITCH_OUTPUT
+    unsigned int interrupt_state; /* 最终检查和提交的原中断状态。 */
+    close_mask &= (unsigned short)~open_mask;
+    interrupt_state = IntGlobalDisable();
+    if (g_chb_dab_command.run_enable || g_chb_dab_command.dab_enable || g_chb_dab_status.ac_pwm_enabled ||
+        g_chb_dab_status.dab_pwm_enabled ||
+        (g_chb_dab_status.state != CHB_STATE_STOPPED && g_chb_dab_status.state != CHB_STATE_FAULT))
+    {
+        IntGlobalRestore(interrupt_state);
+        return CHB_SWITCH_BUSY;
+    }
+    if (close_mask && (g_chb_dab_status.state == CHB_STATE_FAULT || g_chb_dab_status.fault_code != CHB_FAULT_NONE ||
+                       Port_RealFault.PORT_FAULT16 || FaultTypeFLAG.FaultTypeFLAG16))
+    {
+        IntGlobalRestore(interrupt_state);
+        return CHB_SWITCH_DENIED;
+    }
+    if ((close_mask & 1U) && !g_chb_dab_status.ac_input_closed)
+    {
+        IntGlobalRestore(interrupt_state);
+        return CHB_SWITCH_DENIED; /* 进线未合，不允许手动旁路预充电阻。 */
+    }
+#if SST_ENABLE_SWITCH_FEEDBACK
+    if ((close_mask & 1U) && !g_chb_dab_status.ac_input_feedback)
+    {
+        IntGlobalRestore(interrupt_state);
+        return CHB_SWITCH_DENIED; /* 启用反馈时，必须等进线真实合闸后才可旁路。 */
+    }
+#endif
+    if ((open_mask & 2U) || (open_mask & 1U))
+        Chb_SetPrechargeBypass(0U);
+    if ((open_mask & 2U) && g_chb_dab_status.ac_input_closed)
+        Chb_SetAcInput(0U);
+    /* 重复同一命令不重触发断路器线圈脉冲。 */
+    if ((close_mask & 2U) && !g_chb_dab_status.ac_input_closed)
+    {
+        Port_DOUT.Bbits.Breaker_InnerOn = 1U;
+        Port_DOUT.Bbits.Breaker_InnerOff = 0U;
+        g_chb_dab_status.ac_input_closed = 1U;
+        s_breaker_pulse_end_tick = g_chb_dab_status.tick_10ms + g_chb_dab_params.breaker_pulse_10ms;
+    }
+    if (close_mask & 1U)
+    {
+        Port_DOUT.Bbits.Contactor_Inner = 1U;
+        g_chb_dab_status.precharge_bypassed = 1U;
+    }
+    Port_IO_Out();
+    IntGlobalRestore(interrupt_state);
+    return CHB_SWITCH_OK;
+#else
+    (void)close_mask;
+    (void)open_mask;
+    return CHB_SWITCH_DENIED;
+#endif
+}

@@ -137,7 +137,8 @@ MEMORY
     CS5_SST_RESPONSE         o = 0x66002D00  l = 0x00000100
     CS5_SST_TELEMETRY        o = 0x66002E00  l = 0x00000100
     CS5_SST_HISTORY          o = 0x66002F00  l = 0x00000400
-    CS5_DPRAMBLOCK_BACK      o = 0x66003300  l = 0x00000D00
+    CS5_SST_SCREEN          o = 0x66003300  l = 0x00000320
+    CS5_DPRAMBLOCK_BACK      o = 0x66003620  l = 0x000009E0
 		
 		EMIFACS5_BACK_END         o = 0x66004000  l = 0x1ffc000
 
@@ -297,6 +298,7 @@ SECTIONS
     .DPRAM_SstResponse  > CS5_SST_RESPONSE, type = NOINIT
     .DPRAM_SstTelemetry > CS5_SST_TELEMETRY, type = NOINIT
     .DPRAM_SstHistory   > CS5_SST_HISTORY, type = NOINIT
+    .DPRAM_SstScreen    > CS5_SST_SCREEN, type = NOINIT
 }
 
 

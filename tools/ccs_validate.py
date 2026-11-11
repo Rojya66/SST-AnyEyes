@@ -9,14 +9,14 @@ ROOT = Path(__file__).resolve().parents[1]
 ECLIPSE = Path('E:/Applications/ti/ccs1250/ccs/eclipse/eclipsec.exe')
 LOGDIR = ROOT / 'build/ccs_validation'
 LOGDIR.mkdir(parents=True, exist_ok=True)
-workspace = Path(tempfile.mkdtemp(prefix='SST_AnyEyes_ccs_'))
+workspace = Path(tempfile.mkdtemp(prefix='SST_DpramCompat_ccs_'))
 results = []
 input_sha256 = fingerprint(ROOT)
 for action, extra in [
     ('import', ['-application', 'com.ti.ccstudio.apps.projectImport', '-ccs.location', str(ROOT)]),
-    ('Debug', ['-application', 'com.ti.ccstudio.apps.projectBuild', '-ccs.projects', 'AnyEyesVersion',
+    ('Debug', ['-application', 'com.ti.ccstudio.apps.projectBuild', '-ccs.projects', 'AnyEyesVersion_DpramCompat',
                '-ccs.configuration', 'Debug']),
-    ('Release', ['-application', 'com.ti.ccstudio.apps.projectBuild', '-ccs.projects', 'AnyEyesVersion',
+    ('Release', ['-application', 'com.ti.ccstudio.apps.projectBuild', '-ccs.projects', 'AnyEyesVersion_DpramCompat',
                  '-ccs.configuration', 'Release'])]:
     clean_log = ''
     if action != 'import':
@@ -32,7 +32,7 @@ for action, extra in [
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     log = clean_log + '\n' + run.stdout.decode('utf-8', errors='replace')
     (LOGDIR / (action + '.log')).write_text(log, encoding='utf-8')
-    artifact = ROOT / action / 'SST_AnyEyes.out' if action != 'import' else None
+    artifact = ROOT / action / 'SST_DpramCompat.out' if action != 'import' else None
     success = run.returncode == 0 and (artifact is None or artifact.is_file())
     results.append(dict(action=action, exit_code=run.returncode if success else 1,
                         clean_exit_code=0 if action != 'import' else None))

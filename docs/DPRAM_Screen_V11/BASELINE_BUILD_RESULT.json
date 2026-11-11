@@ -1,0 +1,14 @@
+{
+  "configuration": "Debug",
+  "variant": "before-dpram",
+  "defines": [],
+  "compiler": "E:\\Applications\\ti\\ccs1250\\ccs\\tools\\compiler\\ti-cgt-c6000_8.3.12\\bin\\cl6x.exe",
+  "source_count": 91,
+  "compile_failures": [],
+  "link_status": 0,
+  "elapsed_s": 29.22,
+  "warnings": 17,
+  "firmware_input_sha256": "36b39ee8a94ebb937538bff19d39858e0e1c99586f77f96f212a374987df7977",
+  "firmware_unchanged_during_build": true,
+  "executable": "D:\\Code\\SST\\AnyEyesVersionV1\\build\\Debug\\before-dpram\\SST_AnyEyes.out"
+}

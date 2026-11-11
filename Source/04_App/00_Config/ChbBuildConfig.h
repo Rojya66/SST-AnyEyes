@@ -11,12 +11,12 @@
 #define SST_DEBUG_PROTOCOL SST_DEBUG_PROTOCOL_VOFA//SST_DEBUG_PROTOCOL_ANYEYES//
 #endif
 #ifndef SST_ENABLE_DPRAM
-/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；当前单UNIT调试默认0。 */
-#define SST_ENABLE_DPRAM 0U
+/* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；本兼容工程默认1；0时不访问并口。 */
+#define SST_ENABLE_DPRAM 1U
 #endif
 #ifndef SST_SIMULATOR_MODE
-/* SST_SIMULATOR_MODE：当前默认1由仿真器控制；0允许所选通信源远控，急停仍有效。 */
-#define SST_SIMULATOR_MODE 1U
+/* SST_SIMULATOR_MODE：本兼容工程默认0允许DPRAM远控；1由仿真器控制，急停仍有效。 */
+#define SST_SIMULATOR_MODE 0U
 #endif
 #ifndef SST_BENCH_INPUT_SIM
 /* SST_BENCH_INPUT_SIM：临时无主回路输入注入；0 使用真实采样，1 生成测试采样。

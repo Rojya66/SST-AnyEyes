@@ -1,6 +1,20 @@
 #ifndef CHB_DAB_CONTROL_H_
 #define CHB_DAB_CONTROL_H_
 
+/* 开关维护结果与SST_PARAM数值一致；控制层不依赖通讯参数模块。 */
+#define CHB_SWITCH_OK 0U /* 请求已受理。 */
+#define CHB_SWITCH_BUSY 4U /* 尚未完全停机。 */
+#define CHB_SWITCH_DENIED 5U /* 输出关闭或联锁不满足。 */
+
+/*==================================================================
+ * 函数功能: 完全停机的手动开关维护；不绕过核心直接解锁PWM
+ * 输入参数: close_mask/open_mask：bit0旁路、bit1进线；OFF优先
+ * 输出参数: 启用真实输出宏时，修改DOUT、脉冲截止时间和命令镜像
+ * 返回值: SST_PARAM_*；输出宏关闭返回DENIED，不伪报硬件动作成功
+ * 执行说明: 仅后台；最终重检和DOUT提交使用原短临界区，未修改FastStep。
+ *================================================================*/
+unsigned short ChbDabControl_MaintenanceSwitch(unsigned short close_mask, unsigned short open_mask);
+
 /*
  * FPGA501 module channel maps. Change these six masks when the installed
  * CHB module count changes. NUM and the modulation reference scale are

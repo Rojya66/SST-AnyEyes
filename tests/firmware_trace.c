@@ -43,7 +43,7 @@ static void reset_events(void) { event_count=0; }
 static int index_of(const char *name) { unsigned int i; for(i=0;i<event_count;i++) if(!strcmp(events[i],name)) return (int)i; return -1; }
 static unsigned int count_of(const char *name) { unsigned int i,count=0; for(i=0;i<event_count;i++) if(!strcmp(events[i],name)) count++; return count; }
 static void before(const char *first,const char *second) { check(index_of(first)>=0 && index_of(second)>index_of(first),"required call order"); }
-static void exact(const char *const *expected,unsigned int count) { unsigned int i; check(event_count==count,"unexpected call count"); for(i=0;i<count;i++) { if(strcmp(events[i],expected[i])) { fprintf(stderr,"at %u expected %s got %s\n",i,expected[i],events[i]); fail("unexpected call trace"); } } scenarios++; }
+static void exact(const char *const *expected,unsigned int count) { unsigned int i; if(event_count!=count) { fprintf(stderr,"expected %u events, got %u\n",count,event_count); for(i=0;i<event_count;++i) fprintf(stderr,"%s ",events[i]); fprintf(stderr,"\n"); } check(event_count==count,"unexpected call count"); for(i=0;i<count;i++) { if(strcmp(events[i],expected[i])) { fprintf(stderr,"at %u expected %s got %s\n",i,expected[i],events[i]); fail("unexpected call trace"); } } scenarios++; }
 
 volatile uint32_t *TraceRegister32(uintptr_t address) { event("HWREG32"); return &registers32[(address>>2)&7]; }
 volatile uint16_t *TraceRegister16(uintptr_t address) { (void)address; event("mailbox"); return &register16; }
@@ -76,6 +76,9 @@ STUB(SstParameters_LoadPersistent,"sst_load")
 void ChbDabControl_Init(void) { event("core_init"); core_ready=1; }
 void SstFault_Init(void) { event("fault_init"); fault_ready=1; }
 STUB(SstDpramMaintenance_Init,"dpram_maintenance_init")
+STUB(SstDpramScreen_Init,"dpram_screen_init")
+STUB(SstDpramHost_Init,"dpram_host_init")
+STUB(SstDpramScreen_Service,"dpram_screen_service")
 STUB(SstDpramMaintenance_Service,"dpram_maintenance_service")
 void SstDebug_Init(void) { event("debug_init"); debug_ready=1; }
 void FaultLatch_Clear(unsigned char run,unsigned char reset) { (void)reset; event(run?"latch_runtime_clear":"latch_boot_clear"); }
@@ -84,7 +87,7 @@ STUB(ChbDabControl_Service,"core_service")
 STUB(SstFault_Service,"fault_service")
 STUB(SstDpramHost_ServiceRemoteControl,"dpram_control")
 STUB(SstDpramHost_ServiceTelemetry,"dpram_telemetry")
-uint32_t SstDebug_GetTick10ms(void) { event("tick_capture"); return (uint32_t)g_chb_dab_status.tick_10ms; }
+uint32_t SstDebug_GetTick1ms(void) { event("tick_capture"); return (uint32_t)g_chb_dab_status.tick_10ms; }
 STUB(SstSerial_TxService,"tx")
 STUB(SstDebug_ReceiveService,"rx")
 void SstDebug_ProtocolService(uint32_t now) { check(now==(uint32_t)g_chb_dab_status.tick_10ms,"captured scheduler time"); event("protocol"); }
@@ -119,13 +122,13 @@ static void reset_fast(void) {
 
 int main(void) {
     unsigned int i;
-    static const char *open_trace[]={"bank4off","event_clear","pending","gpio_clear","pin43on","pin45on","state_read","sample","rms","udc_average","fast_step","state_write","ft3_write","ft3_read","dac","pin43off","pin45off","bank4on"};
+    static const char *open_trace[]={"bank4off","event_clear","pending","gpio_clear","pin43on","pin45on","state_read","sample","rms","udc_average","fast_step","state_write","dac","pin43off","pin45off","bank4on"};
     static const char *timer_trace[]={"timer_off","event_clear","timer_clear","timer_on","core_tick"};
     static const char *fault_trace[]={"bank8off","event_clear","pending","gpio_clear","fault_step1","fault_dispose","force_fault","bank8on"};
     static const char *dpram_trace[]={"bank6off","event_clear","pending","gpio_clear","bank6on"};
     static const char *background[]={"core_service","fault_service",
 #if SST_ENABLE_DPRAM
-      "dpram_control","dpram_telemetry","dpram_maintenance_service",
+      "dpram_control","dpram_telemetry","dpram_maintenance_service","dpram_screen_service",
 #endif
       "tick_capture","tx","rx","protocol","store","tx","realtime_background"};
     CpuTask_InitBootFlags(); SystemInit_Hardware();

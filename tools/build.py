@@ -54,14 +54,14 @@ def main():
     for path, obj, status, log in results:
         logs.append(str(path.relative_to(ROOT)) + '\n' + log)
         if status: failures.append(str(path.relative_to(ROOT)))
-    executable = output / 'SST_AnyEyes.out'
+    executable = output / 'SST_DpramCompat.out'
     link_status = None
     if not failures:
-        link_flags = ['-mv6740', '-z', '--map_file=' + str(output / 'SST_AnyEyes.map'),
+        link_flags = ['-mv6740', '-z', '--map_file=' + str(output / 'SST_DpramCompat.map'),
                       '--heap_size=0x800', '--stack_size=0x800',
                       '--search_path=' + str(Path(args.tool_root) / 'lib'), '--reread_libs',
                       '--warn_sections', '--rom_model', '--display_error_number',
-                      '--xml_link_info=' + str(output / 'SST_AnyEyes_linkInfo.xml'),
+                      '--xml_link_info=' + str(output / 'SST_DpramCompat_linkInfo.xml'),
                       '--output_file=' + str(executable)]
         link_cmd = [str(compiler)] + link_flags + [str(r[1]) for r in results]
         link_cmd += [str(ROOT / 'C6748.cmd'), '-llibc.a']
