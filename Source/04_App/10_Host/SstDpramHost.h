@@ -12,7 +12,7 @@ extern "C"
  * 返回值: 无
  * 执行说明: 仅由主循环调用；SST_ENABLE_DPRAM=0 时不访问并口。
  *================================================================*/
-    void SstDpramHost_ServiceRemoteControl(void);
+    void SstDpramHost_ProcessIncomingBlocks(void);
     /*==================================================================
  * 函数功能: 开放DPRAM通知前发布原块2实际初值
  * 输入参数: 无
@@ -20,7 +20,7 @@ extern "C"
  * 返回值: 无
  * 执行说明: 仅初始化调用；后续只有接收邮箱2才回写该共享区域。
  *================================================================*/
-    void SstDpramHost_Init(void);
+    void SstDpramHost_Initialize(void);
     /*==================================================================
  * 函数功能: 按轮询顺序回写可选 DPRAM 端口遥测及有效插件块
  * 输入参数: 无
@@ -28,7 +28,7 @@ extern "C"
  * 返回值: 无
  * 执行说明: 主循环消费遥测节拍标志；每次回写公共块和一个轮询块。
  *================================================================*/
-    void SstDpramHost_ServiceTelemetry(void);
+    void SstDpramHost_PublishTelemetry(void);
 #ifdef __cplusplus
 }
 #endif

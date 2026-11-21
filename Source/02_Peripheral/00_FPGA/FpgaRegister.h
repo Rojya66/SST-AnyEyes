@@ -87,29 +87,32 @@ extern "C"
         ushort PM_CTL16; /* PM_CTL16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
     } XXG_PM_CTL;
 
+    /* S301开关量板：按整机图纸第11、13页及301板第12~14页定义。
+     * Dout与Din共用16位寄存器类型，但含义不同，必须使用对应视图。 */
     typedef union _XXG_SwitchINOUT
     {
-        struct _SwitchINOUT
-        { //四个端口的开关配置情况：四个端口均有1个接触器；HVAC端口有1个内部断路器和1个外部断路器；HVDC端口有1个内部断路器和2个故障电流控制器；LVDC端口有2个故障电流控制器；LVAC端口有1个外部断路器；
-            ushort Breaker_OuterOff : 1;
-            /* Breaker_OuterOff：外部断路器关；HVAC端口：0表示外部断路器合，1表示外部断路器分；HVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVAC端口：0表示外部断路器合，1表示外部断路器分；。 */ //外部断路器关；HVAC端口：0表示外部断路器合，1表示外部断路器分；HVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVDC端口：1表示负极故障电流控制器合，0表示负极故障电流控制器分；LVAC端口：0表示外部断路器合，1表示外部断路器分；
-            ushort Breaker_OuterOn : 1;
-            /* Breaker_OuterOn：外部断路器合；HVAC端口：1表示外部断路器合，0表示外部断路器分；HVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVAC端口：1表示外部断路器合，0表示外部断路器分；。 */ //外部断路器合；HVAC端口：1表示外部断路器合，0表示外部断路器分；HVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVDC端口：1表示正极故障电流控制器合，0表示正极故障电流控制器分；LVAC端口：1表示外部断路器合，0表示外部断路器分；
-            ushort Breaker2_OuterOff : 1; /* Breaker2_OuterOff：外部断路器2。 */ //外部断路器2
-            ushort Breaker2_OuterOn : 1; /* Breaker2_OuterOn：原第二外部断路器/故障电流控制器合闸控制位。 */
-            ushort Breaker_InnerOff : 1;
-            /* Breaker_InnerOff：内部断路器关；HVAC端口：0表示内部断路器合，1表示内部断路器分；HVDC端口：0表示内部断路器合，1表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；。 */ //内部断路器关；HVAC端口：0表示内部断路器合，1表示内部断路器分；HVDC端口：0表示内部断路器合，1表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；
-            ushort Breaker_InnerOn : 1;
-            /* Breaker_InnerOn：内部断路器合；HVAC端口：1表示内部断路器合，0表示内部断路器分；HVDC端口：1表示内部断路器合，0表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；。 */ //内部断路器合；HVAC端口：1表示内部断路器合，0表示内部断路器分；HVDC端口：1表示内部断路器合，0表示内部断路器分；LVDC端口无内部断路器；LVAC端口：无内部断路器；
-
-            ushort Reservedbit : 1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
-            ushort Contactor_Inner : 1;
-            /* Contactor_Inner：内部接触器，0表示断；1表示合；。 */ //内部接触器，0表示断；1表示合；
-
-            ushort Invalidbit : 8; /* Invalidbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
-        } Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
-
-        ushort SwitchINOUT16; /* SwitchINOUT16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
+        struct
+        {
+            ushort Qf1ClosePulse : 1; /* DO1 / X2_1、2：QF1合闸脉冲，1吸合。 */
+            ushort Qf1OpenPulse : 1;  /* DO2 / X2_3、4：QF1分闸脉冲，1吸合。 */
+            ushort Kt1Hold : 1;      /* DO3 / X2_5、6：KT1预充电阻旁路，1持续吸合。 */
+            ushort AcRunning : 1;    /* DO4 / X2_7、8：AC运行指示。 */
+            ushort AcFault : 1;      /* DO5 / X3_1、2：AC故障指示。 */
+            ushort Reserved : 11;    /* DO6~8及高8位未分配，不作为开关控制。 */
+        } Dout;
+        struct
+        {
+            ushort EmergencyStop : 1; /* DI1 / X1_2：紧急停机触点。 */
+            ushort FaultReset : 1;    /* DI2 / X1_3：信号复归触点。 */
+            ushort RemoteControl : 1; /* DI3 / X1_4：远方控制选择触点。 */
+            ushort Start : 1;         /* DI4 / X1_5：开机按钮触点。 */
+            ushort Stop : 1;          /* DI5 / X1_6：停机按钮触点。 */
+            ushort Kt1Closed : 1;     /* DI6 / X1_7：KT1辅助常开触点闭合。 */
+            ushort Qf1Closed : 1;     /* DI7 / X1_8：QF1合位辅助触点闭合。 */
+            ushort Qf1Open : 1;       /* DI8 / X1_9：QF1分位辅助触点闭合。 */
+            ushort Reserved : 8;      /* 301板只提供8路开入。 */
+        } Din;
+        ushort SwitchINOUT16; /* 原始16位字；FPGA寄存器及DPRAM镜像布局不变。 */
     } XXG_SwitchINOUT;
 
     typedef union _XXG_INV_CTL

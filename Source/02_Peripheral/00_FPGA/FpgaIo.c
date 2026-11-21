@@ -110,12 +110,12 @@ void Module_Control_Write(void)
  *================================================================*/
 void TX_EN_Control_Write(void)
 {
-    FPGA_Interface[Com_A1_PluginUnit_5 - 2].TX_EN = 0XFFFF;
-    FPGA_Interface[Com_A2_PluginUnit_6 - 2].TX_EN = 0XFFFF;
-    FPGA_Interface[Com_B1_PluginUnit_9 - 2].TX_EN = 0XFFFF;
-    FPGA_Interface[Com_B2_PluginUnit_10 - 2].TX_EN = 0XFFFF;
-    FPGA_Interface[Com_C1_PluginUnit_13 - 2].TX_EN = 0XFFFF;
-    FPGA_Interface[Com_C2_PluginUnit_14 - 2].TX_EN = 0XFFFF;
+    FPGA_Interface[Com_A1_PluginUnit_5 - 2].TX_EN = HA_PM_A1;
+    FPGA_Interface[Com_A2_PluginUnit_6 - 2].TX_EN = HA_PM_A2;
+    FPGA_Interface[Com_B1_PluginUnit_9 - 2].TX_EN = HA_PM_B1;
+    FPGA_Interface[Com_B2_PluginUnit_10 - 2].TX_EN = HA_PM_B2;
+    FPGA_Interface[Com_C1_PluginUnit_13 - 2].TX_EN = HA_PM_C1;
+    FPGA_Interface[Com_C2_PluginUnit_14 - 2].TX_EN = HA_PM_C2;
 }
 #endif /* HVAC_online */
 #ifdef HVDC_online
@@ -541,31 +541,18 @@ void Module_TestMode(uchar TestMode)
 }
 
 /*==================================================================
- * 函数功能: 将 Port_DOUT 开关控制字写入端口 FPGA 数字输出寄存器
- * 输入参数: 无
- * 输出参数: 输出宏启用时写 DOUT；仅三路线圈按极性转换，其余位原样保留；逻辑 Port_DOUT 不变。
+ * 函数功能: 将S301输出字提交到开关量板FPGA
+ * 输入参数: 无；读取Port_DOUT.Dout，bit0/1/2分别为QF1合/分脉冲及KT1保持
+ * 输出参数: IO_PluginUnit_2对应的DOUT寄存器，DSP字节地址0x60000240
  * 返回值: 无
- * 执行说明: 底层 FPGA 寄存器访问；插件编号沿用原工程，不能改变地址或结构体布局。
+ * 执行说明: 301 FPGA已将reg_DOUT取反驱动低有效光耦，DSP写1即继电器吸合，
+ *           因此直接写入，不在DSP再次取反。输出宏关闭时不写寄存器。
  *================================================================*/
 void Port_IO_Out(void)
 {
 #if SST_ENABLE_SWITCH_OUTPUT
-    XXG_SwitchINOUT physical_output; /* physical_output：按现场线圈极性转换的输出字，不改变逻辑命令缓存。 */
-
-    physical_output = Port_DOUT;
-    if (SST_SWITCH_CLOSE_ACTIVE_HIGH == 0U)
-    {
-        physical_output.Bbits.Breaker_InnerOn = !Port_DOUT.Bbits.Breaker_InnerOn;
-    }
-    if (SST_SWITCH_OPEN_ACTIVE_HIGH == 0U)
-    {
-        physical_output.Bbits.Breaker_InnerOff = !Port_DOUT.Bbits.Breaker_InnerOff;
-    }
-    if (SST_SWITCH_BYPASS_ACTIVE_HIGH == 0U)
-    {
-        physical_output.Bbits.Contactor_Inner = !Port_DOUT.Bbits.Contactor_Inner;
-    }
-    FPGA_Interface[IO_PluginUnit_2 - 2].DOUT.SwitchINOUT16 = physical_output.SwitchINOUT16;
+    /* IO_PluginUnit_2=3，数组下标1；DO1~DO5与图纸S301端子一一对应。 */
+    FPGA_Interface[IO_PluginUnit_2 - 2].DOUT.SwitchINOUT16 = Port_DOUT.SwitchINOUT16;
 #endif
 }
 
@@ -630,6 +617,65 @@ void Port_ModuleShutdown(
     }
 }
 
+#ifdef HVAC_online
+/* 同相第一张501占位0~7，第二张占位8~15。保留各组的实际插口位置。 */
+static ushort PhaseModuleMask(ushort first_group, ushort second_group)
+{
+    return (ushort)(first_group | (second_group << 8U));
+}
+
+void Port_ApplyModuleShutdownMask(void)
+{
+    Port_ModuleShutdown(3U,
+                        (ushort)~PhaseModuleMask(HA_PM_A1, HA_PM_A2),
+                        (ushort)~PhaseModuleMask(HA_PM_B1, HA_PM_B2),
+                        (ushort)~PhaseModuleMask(HA_PM_C1, HA_PM_C2), 0U, 0U);
+}
+#endif /* HVAC_online */
+
+ushort Port_EffectiveFOEnable(ushort input_plugin)
+{
+    switch (input_plugin)
+    {
+        case Input_A_PluginUnit_8:
+#ifdef HVAC_online
+            return Port_FO_1_EN & PhaseModuleMask(HA_PM_A1, HA_PM_A2);
+#else
+            return Port_FO_1_EN;
+#endif
+        case Input_B_PluginUnit_12:
+#ifdef HVAC_online
+            return Port_FO_2_EN & PhaseModuleMask(HA_PM_B1, HA_PM_B2);
+#else
+            return Port_FO_2_EN;
+#endif
+        case Input_C_PluginUnit_16:
+#ifdef HVAC_online
+            return Port_FO_3_EN & PhaseModuleMask(HA_PM_C1, HA_PM_C2);
+#else
+            return Port_FO_3_EN;
+#endif
+        default:
+            return 0U;
+    }
+}
+
+ushort Port_EffectiveFBEnable(void)
+{
+    ushort enabled = Port_FB_EN;
+
+#ifdef HVAC_online
+    /* 仅裁剪三块701的汇总FB，保留主控其余插件的独立配置。 */
+    if (Port_EffectiveFOEnable(Input_A_PluginUnit_8) == 0U)
+        enabled &= ~(1U << (Input_A_PluginUnit_8 - 2U));
+    if (Port_EffectiveFOEnable(Input_B_PluginUnit_12) == 0U)
+        enabled &= ~(1U << (Input_B_PluginUnit_12 - 2U));
+    if (Port_EffectiveFOEnable(Input_C_PluginUnit_16) == 0U)
+        enabled &= ~(1U << (Input_C_PluginUnit_16 - 2U));
+#endif
+    return enabled;
+}
+
 /*==================================================================
  * 函数功能: 设置光纤故障输入的各相使能位图
  * 输入参数: OpticalNum：光纤插件/组编号
@@ -643,12 +689,11 @@ void Port_ModuleShutdown(
  *================================================================*/
 void Port_FO_EN_Set(ushort OpticalNum, ushort INV_A_FOEN, ushort INV_B_FOEN, ushort INV_C_FOEN, ushort INV_N_FOEN)
 {
-    FPGA_Interface[Input_A_PluginUnit_8 - 2].FO_EN = Port_FO_1_EN;
-
-    if (OpticalNum == 3)
+    FPGA_Interface[Input_A_PluginUnit_8 - 2].FO_EN = Port_EffectiveFOEnable(Input_A_PluginUnit_8);
+    if (OpticalNum == 3U)
     {
-        FPGA_Interface[Input_B_PluginUnit_12 - 2].FO_EN = Port_FO_2_EN;
-        FPGA_Interface[Input_C_PluginUnit_16 - 2].FO_EN = Port_FO_3_EN;
+        FPGA_Interface[Input_B_PluginUnit_12 - 2].FO_EN = Port_EffectiveFOEnable(Input_B_PluginUnit_12);
+        FPGA_Interface[Input_C_PluginUnit_16 - 2].FO_EN = Port_EffectiveFOEnable(Input_C_PluginUnit_16);
     }
     else if (OpticalNum == 4)
     {
@@ -730,7 +775,7 @@ void Port_BKU_Send(uchar LatchValue)
  *================================================================*/
 void Port_FB_EN_Set(void)
 {
-    FPGA_Interface[MainControl_PluginUnit_4 - 2].FB_EN = Port_FB_EN;
+    FPGA_Interface[MainControl_PluginUnit_4 - 2].FB_EN = Port_EffectiveFBEnable();
 }
 
 /*==================================================================
@@ -821,102 +866,20 @@ ushort Module_TotalStatusRead(uchar CJ_index, uchar latch)
 }
 
 /*==================================================================
- * 函数功能: 读取端口数字输入的实时或锁存值
- * 输入参数: latch：0 读取实时寄存器，非零读取锁存寄存器
- * 输出参数: 无指针输出；读取原 FPGA 实时或锁存寄存器，结果通过返回值提供。
- * 返回值: 16 位数字输入位图
- * 执行说明: 底层 FPGA 寄存器访问；插件编号沿用原工程，不能改变地址或结构体布局。
+ * 函数功能: 读取S301的8路开入原始字
+ * 输入参数: latch：0读实时DIN，1读故障时锁存DIN_LATCH
+ * 输出参数: 无；不改写运行命令或其他开关状态
+ * 返回值: bit0~7依次为急停、复归、远方、开机、停机、KT1合位、QF1合位、QF1分位
+ * 执行说明: 301 FPGA已完成输入反相及滤波，寄存器1表示触点闭合。
+ *           实时DSP字节地址0x600003C0，锁存地址0x600003C2。
  *================================================================*/
 ushort Port_DINRead(uchar latch)
 {
-    XXG_SwitchINOUT DIN_Temp; /* DIN_Temp：读取的端口数字输入原始位图。 */
-    if (latch == 0)
+    if (latch == 0U)
     {
-        DIN_Temp = FPGA_Interface[IO_PluginUnit_2 - 2].DIN;
+        return FPGA_Interface[IO_PluginUnit_2 - 2].DIN.SwitchINOUT16;
     }
-    else
-    {
-        DIN_Temp = FPGA_Interface[IO_PluginUnit_2 - 2].DIN_LATCH;
-    }
-
-#ifdef LVDC_online
-    if (DIN_Temp.Bbits.Reservedbit)
-    {
-        SW.Bbits.S_CONTACTOR = 1;
-    }
-    else
-    {
-        SW.Bbits.S_CONTACTOR = 0;
-    }
-#endif
-
-#ifdef HVAC_online
-    if (DIN_Temp.Bbits.Reservedbit)
-    {
-        SW.Bbits.S_CONTACTOR = 1;
-    }
-    else
-    {
-        SW.Bbits.S_CONTACTOR = 0;
-    }
-
-    if (DIN_Temp.Bbits.Breaker_InnerOff)
-    {
-        ISO_counter_off = 0;
-        if (ISO_counter_on == 500)
-        {
-            ISOSwitch = 1;
-        }
-    }
-    else
-    {
-        ISO_counter_on = 0;
-        if (ISO_counter_off == 500)
-        {
-            ISOSwitch = 0;
-        }
-    }
-
-    if (DIN_Temp.Bbits.Breaker_InnerOn)
-    {
-        GNDSwitch = 1;
-    }
-    else
-    {
-        GNDSwitch = 0;
-    }
-#endif
-
-#ifdef HVDC_online
-    if (DIN_Temp.Bbits.Breaker2_OuterOff)
-    {
-        SW.Bbits.S_INT_CB = 0;
-    }
-    else
-    {
-        SW.Bbits.S_INT_CB = 1;
-    }
-#else
-    if (DIN_Temp.Bbits.Breaker2_OuterOn)
-    {
-        SW.Bbits.S_INT_CB = 0;
-    }
-    else
-    {
-        SW.Bbits.S_INT_CB = 1;
-    }
-#endif
-
-    if (DIN_Temp.Bbits.Breaker_OuterOff)
-    {
-        SW.Bbits.S_EXT_CB = 0;
-    }
-    else
-    {
-        SW.Bbits.S_EXT_CB = 1;
-    }
-
-    return DIN_Temp.SwitchINOUT16;
+    return FPGA_Interface[IO_PluginUnit_2 - 2].DIN_LATCH.SwitchINOUT16;
 }
 
 /*==================================================================

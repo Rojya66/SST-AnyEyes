@@ -1,4 +1,4 @@
-#include "SstControlConfig.h"
+﻿#include "SstControlConfig.h"
 /* 文件职责: ControlDefaults 所属数据域的默认初始化；保持原连续语句段。 */
 #include "ControlDefaults.h"
 #include "SstTypes.h"
@@ -52,20 +52,6 @@ void ControlDefaults_InitLimits(void)
     StandardValue = 1.0;
 #endif
 
-#if SST_LOW_VOLTAGE_100V_TEST
-    /*
-     * 100 Vac 单相台架覆盖现场高压默认值：
-     * PORT_V_A 是 AN 输入有效值，6 个 A 相模块每个以 35 V 为目标，
-     * 预充和快速过压均检查相模块均压，非逐模块最大电压。
-     */
-    Ust_HVAC_Port = SST_LV100_INPUT_PRESENT_V;
-    HA_L_Voltage_Precharge = SST_LV100_PRECHARGE_V;
-    HA_H_Voltage = SST_LV100_MODULE_OV_V;
-    OverVolt_AlarmLevel2 = SST_LV100_MODULE_OV_V;
-    VoltLevel_1 = SST_LV100_INPUT_LEVEL1_V;
-    VoltLevel_2 = SST_LV100_INPUT_LEVEL2_V;
-    StandardValue = 1.0;
-#endif
     Udc_Check_Index = 0;
     Udc_Checked_Num = 0;
 
@@ -82,13 +68,6 @@ void ControlDefaults_InitLimits(void)
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET = 680;
     UstOK_HVAC_Port = HA_Module_RefUdc;
 
-#if SST_LOW_VOLTAGE_100V_TEST
-    Ust_add = SST_LV100_UST_ADD_V;
-    HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
-        (ushort)SST_LV100_PORT_V_DEFAULT;
-    UstOK_HVAC_Port = HA_Module_RefUdc;
-#endif
 
     if (NHA_module_A == 0)
     {
@@ -111,11 +90,6 @@ void ControlDefaults_InitLimits(void)
 
     Idst_Max = 95.0;
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] = 95;
-#if SST_LOW_VOLTAGE_100V_TEST
-    Idst_Max = SST_LV100_CURRENT_MAX_A;
-    PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
-        (ushort)SST_LV100_CURRENT_MAX_A;
-#endif
     Idst_Min = (-1.0) * Idst_Max;
     Iqst_Max = Idst_Max;
     Iqst_Min = Idst_Min;
@@ -133,7 +107,7 @@ void ControlDefaults_InitLimits(void)
 }
 
 /*==================================================================
- * 函数功能: 初始化PLL/电压/电流/谐波系数并保留页1至3恢复顺序
+ * 函数功能: 建立PLL/电压/电流/谐波源码默认值，统一镜像在系统初始化末段恢复
  * 输入参数: 无
  * 输出参数: 更新所属数据域及原硬件寄存器；语句顺序保持原初始化段。
  * 返回值: 无
@@ -197,18 +171,8 @@ void ControlDefaults_InitCoefficients(void)
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_I_P_3 = 0;
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_I_I_3 = 0;
 
-#ifdef EEPROM_FirstW
-    DSP_2_EEPROM_Page1();
-    DSP_2_EEPROM_Page2();
-    DSP_2_EEPROM_Page3();
-#endif
-
-#ifdef EEPROM_ON
-    EEPROM_Page1_2_DSP();
-    EEPROM_Page2_2_DSP();
-    EEPROM_Page3_2_DSP();
-#endif
-
+    /* EEPROM只由SystemInit_Runtime中的SstParameterStore恢复一次。
+     * 此处先提交源码默认值，禁止旧页1/2/3覆盖PM位图、PI和保护使能。 */
     RemoteRegulate_Dispose(1);
     FLAG_RemRegulate_SetOver = 1;
 }

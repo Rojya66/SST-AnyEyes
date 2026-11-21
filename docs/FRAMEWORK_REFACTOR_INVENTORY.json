@@ -1750,9 +1750,9 @@
       "sha256": "2b7fac80154b1ff933fd8a1c81789c55a48a300b9d861ec703e20ec66087f682",
       "functions": [
         {
-          "name": "SstCommand_ApplyDpram",
+          "name": "SstControlCommand_ApplyRequests",
           "line": 17,
-          "declaration": "void SstCommand_ApplyDpram(unsigned short start, unsigned short stop,\n                          unsigned short pulse_on, unsigned short pulse_off,\n                          unsigned short reset)"
+          "declaration": "void SstControlCommand_ApplyRequests(unsigned short start, unsigned short stop,\n                          unsigned short pulse_on, unsigned short pulse_off,\n                          unsigned short reset)"
         }
       ]
     },

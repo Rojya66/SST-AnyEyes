@@ -1,4 +1,5 @@
 #include "FpgaIo.h"
+#include "FpgaInit.h"
 #include "SstPortStatus.h"
 #include "PwmGate.h"
 #include "ControlData.h"
@@ -62,22 +63,6 @@ void DPRAM_Write(ushort Flag_R);
  *================================================================*/
 void DPRAM_Read(void);
 /*==================================================================
- * 函数功能: 分派 DPRAM 缓存中的遥控、遥调数据处理
- * 输入参数: 无
- * 输出参数: 按 FLAG_NEW_L 更新旧控制状态或遥调参数。
- * 返回值: 无
- * 执行说明: 旧版兼容分派入口；当前控制主流程由 SstDpramHost 接入 SstCommand。
- *================================================================*/
-void DPRAM_ReadDataDispose(void);
-/*==================================================================
- * 函数功能: 按旧版遥控块处理启动、停止、脉冲、开关及复位控制
- * 输入参数: 无
- * 输出参数: 旧端口启停、开关及 PWM 标志；符合条件时操作 FPGA 和故障复位。
- * 返回值: 无
- * 执行说明: 保留的旧控制入口；当前迁移主流程使用 SstCommand_ApplyDpram 提交受控命令。
- *================================================================*/
-void RemoteControl_Dispose(void);
-/*==================================================================
  * 函数功能: 把遥调块定点值换算为浮点给定及控制器参数
  * 输入参数: Inital_Y：0 执行接收后的完成处理，非零仅应用参数；HVAC 的 _2 接口不自动保存
  * 输出参数: PORT_Regulate_DATA、旧控制系数和对应 FPGA 配置；Inital_Y=0 时保存遥调缓存。
@@ -93,14 +78,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y);
  * 执行说明: 当前主循环只在遥调获准且已停机、存储空闲时调用。
  *================================================================*/
 void RemoteRegulate_Dispose_2(uchar Inital_Y);
-/*==================================================================
- * 函数功能: 把端口浮点遥测及状态换算为 DPRAM 16 位上报缓存
- * 输入参数: 无
- * 输出参数: PORT_RealTime_DATA_buf 中的 16 位状态及量测；由 DPRAM_Write 复制到块 3。
- * 返回值: 无
- * 执行说明: 按端口编译分支打包；不在本函数内通知主机。
- *================================================================*/
-void RemoteSig_Dispose(void);
 
 /****************************************************************************/
 /*                                                                          */
@@ -183,7 +160,7 @@ void DPRAM_Write(ushort Flag_R)
         case WriteBlock_remMeaSig:
         {
             tt = 1;
-            SstDpramTelemetry_Build(PORT_RealTime_DATA_buf.DPRAM_Block3Buf);
+            SstDpramTelemetry_BuildLegacyBlock(PORT_RealTime_DATA_buf.DPRAM_Block3Buf);
             MemDataCopy_1(&PORT_RealTime_DATA_buf.DPRAM_Block3Buf[0],
                           DPRAMBlock3_Length,
                           &DPRAM_Block3_remMeaSig.DPRAM_Block3Buf[0]);
@@ -335,13 +312,14 @@ void DPRAM_Write(ushort Flag_R)
 
         case WriteBlock_remRegulate:
         {
+            /* 原43字遥调的实际值返回路径：Host先ReadLegacy重建RAM缓冲并置此标志。
+             * 只有ready=1才复制到Modbus 01FF..0229；本分支消费标志，末尾通知右邮箱20。
+             * “实际值已回读”不等于遥调成功，结果仍看1987。 */
             if (FLAG_RemRegulate_SetOver == 1)
             {
                 tt = 1;
 
-#ifdef EEPROM_ON
                 /* 旧Block2回读使用当前RAM，避免EEPROM旧PI覆盖本次遥调缓存。 */
-#endif
                 MemDataCopy_1(&PORT_Regulate_DATA_Buf.DPRAM_Block2Buf[0],
                               DPRAMBlock2_Length,
                               &DPRAM_Block2_remRegulate.DPRAM_Block2Buf[0]);
@@ -374,12 +352,17 @@ void DPRAM_Write(ushort Flag_R)
  *================================================================*/
 void DPRAM_Read(void)
 {
+    /* 屏幕最后写Modbus 1FFE=1/2，ARM经并口写入；这里读DSP字节地址66003FFC。
+     * 读邮箱取得本笔块号并清硬件通知，随后只做16位字复制，不在这里执行控制。 */
     FLAG_NEW_L = HWREGH(DPRAM_Maibox_Left);
 
     switch (FLAG_NEW_L)
     {
         case ReadBlock_remControl:
         {
+            /* 邮箱1：共享区Modbus 00F0..00FF / DSP 660001E0..660001FE，16字。
+             * 原始字复制到本地PORT_Control_DATA_Buf；例如COM_START_PORT16在word2。
+             * 返回Host后由SstDpramCommand_ProcessControlBlock提取掩码，再由SstControlCommand_ApplyRequests赋值。 */
             MemDataCopy_2(&DPRAM_Block1_remControl.DPRAM_Block1Buf[0],
                           DPRAMBlock1_Length,
                           &PORT_Control_DATA_Buf.DPRAM_Block1Buf[0]);
@@ -388,6 +371,9 @@ void DPRAM_Read(void)
 
         case ReadBlock_remRegulate:
         {
+            /* 邮箱2：共享区Modbus 01FF..0229 / DSP 660003FE..66000452，43字。
+             * 只复制原始线上编码；返回Host后ApplyLegacy完成映射/换算及整组提交。
+             * 本层只复制数据，遥调解析统一由SstDpramParameter执行。 */
             MemDataCopy_2(&DPRAM_Block2_remRegulate.DPRAM_Block2Buf[0],
                           DPRAMBlock2_Length,
                           &PORT_Regulate_DATA_Buf.DPRAM_Block2Buf[0]);
@@ -396,604 +382,6 @@ void DPRAM_Read(void)
 
         default:
             break;
-    }
-}
-
-/****************************************************************************/
-/*                                                                          */
-/*                    Data Dispose                                          */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 分派 DPRAM 缓存中的遥控、遥调数据处理
- * 输入参数: 无
- * 输出参数: 按 FLAG_NEW_L 更新旧控制状态或遥调参数。
- * 返回值: 无
- * 执行说明: 旧版兼容分派入口；当前控制主流程由 SstDpramHost 接入 SstCommand。
- *================================================================*/
-void DPRAM_ReadDataDispose(void)
-{
-    switch (FLAG_NEW_L)
-    {
-        case ReadBlock_remControl:
-        {
-            RemoteControl_Dispose(); //Remote Control
-        }
-        break;
-
-        case ReadBlock_remRegulate:
-        {
-            RemoteRegulate_Dispose_2(0); //Remote Regulate, need for storage
-        }
-        break;
-
-        default:
-            break;
-    }
-}
-
-/****************************************************************************/
-/*                                                                          */
-/*              Control command dispose                                     */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 按旧版遥控块处理启动、停止、脉冲、开关及复位控制
- * 输入参数: 无
- * 输出参数: 旧端口启停、开关及 PWM 标志；符合条件时操作 FPGA 和故障复位。
- * 返回值: 无
- * 执行说明: 保留的旧控制入口；当前迁移主流程使用 SstCommand_ApplyDpram 提交受控命令。
- *================================================================*/
-void RemoteControl_Dispose(void)
-{
-    uchar tt_flag, /* tt_flag：原遥控处理的临时状态字。 */
-        i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-
-    if (Port_RunStatus == PortStatusNum_Nonvaild)
-    {
-        return;
-    }
-
-    if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.COM_START_PORT16 != 0)) //start
-    {
-        if ((ControlFLAG.Bbits.Port_Stop) &&
-            ((Port_RunStatus == PortStatusNum_Standby) || (Port_RunStatus == PortStatusNum_Initial)) &&
-            (!PortRunFLAG.Bbits.Stop_AllPort))
-        {
-            if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.Bbits.HVAC_Start == 1) &&
-                (PORT_Index == 1)) //&&(PortRunFLAG.Bbits.PhaseSquence_Error==0))
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x00;
-                ControlFLAG.Bbits.Port_Start = 0x01;
-                Port_RunStatus = PortStatusNum_Start;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.Bbits.HVDC_Start == 1) && (PORT_Index == 2))
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x00;
-                ControlFLAG.Bbits.Port_Start = 0x01;
-                Port_RunStatus = PortStatusNum_Start;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.Bbits.LVDC_Start == 1) && (PORT_Index == 3))
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x00;
-                ControlFLAG.Bbits.Port_Start = 0x01;
-                Port_RunStatus = PortStatusNum_Start;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.Bbits.LVAC_Start == 1) && (PORT_Index == 4))
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x00;
-                ControlFLAG.Bbits.Port_Start = 0x01;
-                Port_RunStatus = PortStatusNum_Start;
-            }
-            else
-            {
-                Port_COM_START.COM_START_PORT16 =
-                    PORT_Control_DATA_Buf.DPRAM_RemControl.COM_START_PORT.COM_START_PORT16;
-            }
-        }
-        return;
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.COM_STOP_PORT16 != 0) //stop
-    {
-        if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.Bbits.HVAC_STOP == 1) && (PORT_Index == 1))
-        {
-            //			if(Port_RunStatus==PortStatusNum_Run)
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x01;
-                ControlFLAG.Bbits.Port_Start = 0x00;
-                Port_RunStatus = PortStatusNum_Stop;
-
-                ControlFLAG.Bbits.SVG_Start = 0;
-                FaultDisposeFLAG.Bbits.FaultDisposeType =
-                    2; //0--no fault;      1--PWM pluse disable;   2--port shutdown
-                FaultDisposeFLAG.Bbits.PWMPulseState =
-                    3; //0--no pulse disable； 1--50Hz H-Bridge/Module pulse disable；2--DAB H-Bridge pulse disable; 3--port pulse disable
-                FaultDisposeFLAG.Bbits.Port_StopType =
-                    3; //000: non-stop   001:normal shutdown  002: system shutdown   003: Remote-control shutdown
-            }
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.Bbits.HVDC_STOP == 1) && (PORT_Index == 2))
-        {
-            //			if(Port_RunStatus==PortStatusNum_Run)
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x01;
-                ControlFLAG.Bbits.Port_Start = 0x00;
-                Port_RunStatus = PortStatusNum_Stop;
-
-                ControlFLAG.Bbits.SVG_Start = 0;
-                FaultDisposeFLAG.Bbits.FaultDisposeType =
-                    2; //0--no fault;      1--PWM pluse disable;   2--port shutdown
-                FaultDisposeFLAG.Bbits.PWMPulseState =
-                    3; //0--no pulse disable； 1--50Hz H-Bridge/Module pulse disable；2--DAB H-Bridge pulse disable; 3--port pulse disable
-                FaultDisposeFLAG.Bbits.Port_StopType =
-                    3; //000: non-stop   001:normal shutdown  002: system shutdown   003: Remote-control shutdown
-
-                if (Flag_DC_VoltSource == 1)
-                {
-                    FaultDisposeFLAG.Bbits.Port_StopAll = 1;
-                    PortRunFLAG.Bbits.Stop_AllPort = 1; // 请求全端口停机。
-                    Port_StateUpdate_Write();
-                }
-            }
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.Bbits.LVDC_STOP == 1) && (PORT_Index == 3))
-        {
-            //			if(Port_RunStatus==PortStatusNum_Run)
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x01;
-                ControlFLAG.Bbits.Port_Start = 0x00;
-                Port_RunStatus = PortStatusNum_Stop;
-
-                ControlFLAG.Bbits.SVG_Start = 0;
-                FaultDisposeFLAG.Bbits.FaultDisposeType =
-                    2; //0--no fault;      1--PWM pluse disable;   2--port shutdown
-                FaultDisposeFLAG.Bbits.PWMPulseState =
-                    3; //0--no pulse disable； 1--50Hz H-Bridge/Module pulse disable；2--DAB H-Bridge pulse disable; 3--port pulse disable
-                FaultDisposeFLAG.Bbits.Port_StopType =
-                    3; //000: non-stop   001:normal shutdown  002: system shutdown   003: Remote-control shutdown
-
-                if (Flag_DC_VoltSource == 1)
-                {
-                    FaultDisposeFLAG.Bbits.Port_StopAll = 1;
-                    PortRunFLAG.Bbits.Stop_AllPort = 1; // 请求全端口停机。
-                    Port_StateUpdate_Write();
-                }
-            }
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.Bbits.LVAC_STOP == 1) && (PORT_Index == 4))
-        {
-            if (Port_RunStatus == PortStatusNum_Run)
-            {
-                ControlFLAG.Bbits.Port_Stop = 0x01;
-                ControlFLAG.Bbits.Port_Start = 0x00;
-                Port_RunStatus = PortStatusNum_Stop;
-
-                FaultDisposeFLAG.Bbits.FaultDisposeType =
-                    2; //0--no fault;      1--PWM pluse disable;   2--port shutdown
-                FaultDisposeFLAG.Bbits.PWMPulseState =
-                    3; //0--no pulse disable； 1--50Hz H-Bridge/Module pulse disable；2--DAB H-Bridge pulse disable; 3--port pulse disable
-                FaultDisposeFLAG.Bbits.Port_StopType =
-                    3; //000: non-stop   001:normal shutdown  002: system shutdown   003: Remote-control shutdown
-            }
-        }
-        else
-        {
-            Port_COM_STOP.COM_STOP_PORT16 = PORT_Control_DATA_Buf.DPRAM_RemControl.COM_STOP_PORT.COM_STOP_PORT16;
-        }
-        return;
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 != 0) //mode
-    {
-        tt_flag = 0;
-        if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x000f) == 0x0001)
-        {
-            Port_Main_WorkMode = 0; //v/f
-            tt_flag = 1;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x000f) == 0x0002)
-        {
-            Port_Main_WorkMode = 1; //P/Q
-            tt_flag = 1;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x000f) == 0x0004)
-        {
-            Port_Main_WorkMode = 2; //Droop
-            tt_flag = 1;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x000f) == 0x0008)
-        {
-            Port_Main_WorkMode = 3; //Follow
-            tt_flag = 1;
-        }
-        else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x000f)
-        {
-        }
-
-        else
-        {
-            //STATCOM
-            if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x1000)
-            {
-                if (Port_STATCOM_WorkMode == 0x00)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x01; //Q mode
-                }
-            }
-            else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x2000)
-            {
-                if (Port_STATCOM_WorkMode == 0x01)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x00;
-                }
-            }
-            else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0400)
-            {
-                if (Port_STATCOM_WorkMode == 0x00)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x02; //PF mode
-                }
-            }
-            else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0800)
-            {
-                if (Port_STATCOM_WorkMode == 0x02)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x00;
-                }
-            }
-            else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0100)
-            {
-                if (Port_STATCOM_WorkMode == 0x00)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x03; //V mode
-                }
-            }
-            else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0200)
-            {
-                if (Port_STATCOM_WorkMode == 0x03)
-                {
-                    tt_flag = 2;
-                    Port_STATCOM_WorkMode = 0x00;
-                }
-            }
-            else
-            {
-                //APF
-                if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0040)
-                {
-                    if (Port_APF_WorkMode == 0x00)
-                    {
-                        tt_flag = 3;
-                        Port_APF_WorkMode = 0x02; // Treatment
-                    }
-                }
-                else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0080)
-                {
-                    if (Port_APF_WorkMode == 0x02)
-                    {
-                        tt_flag = 3;
-                        Port_APF_WorkMode = 0x00;
-                    }
-                }
-                else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0010)
-                {
-                    if (Port_APF_WorkMode == 0x00)
-                    {
-                        tt_flag = 3;
-                        Port_APF_WorkMode = 0x01; // inject
-                    }
-                }
-                else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PORT_MODE.COM_PORT_MODE16 & 0x0020)
-                {
-                    if (Port_APF_WorkMode == 0x01)
-                    {
-                        tt_flag = 3;
-                        Port_APF_WorkMode = 0x00;
-                    }
-                }
-                else
-                {
-                }
-            }
-        }
-
-        if (tt_flag == 1)
-        {
-            //切换主工作模式后的变量预处理预留位置。
-            DSP_2_EEPROM_Page0();
-            return;
-        }
-        else if (tt_flag == 2)
-        {
-            //切换 STATCOM 模式后的变量预处理预留位置。
-            DSP_2_EEPROM_Page0();
-            return;
-        }
-        else if (tt_flag == 3)
-        {
-            //切换 APF 模式后的变量预处理预留位置。
-#ifdef HVAC_online
-            for (i = 0; i < 4; i++) //I_load
-            {
-                I_d_Load_H6_100_Filter.H_Filter_BUF[i] = 0.0;
-                I_d_Load_H12_100_Filter.H_Filter_BUF[i] = 0.0;
-                I_d_Load_H2_20_Filter.H_Filter_BUF[i] = 0.0;
-
-                I_q_Load_H6_100_Filter.H_Filter_BUF[i] = 0.0;
-                I_q_Load_H12_100_Filter.H_Filter_BUF[i] = 0.0;
-                I_q_Load_H2_20_Filter.H_Filter_BUF[i] = 0.0;
-            }
-#endif
-            DSP_2_EEPROM_Page0();
-            return;
-        }
-        else
-        {
-        }
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_ON.COM_SWITCH16 != 0)
-    {
-        if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_ON.COM_SWITCH16 & 0x0001)
-        {
-            SW.Bbits.Flag_Switch = 1; //1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2
-            SW.Bbits.Flag_SwitchZhi = 1; //0:断；1：合
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-
-            SWTable_TotalTime = SwitchTotalNum;
-
-            return;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_ON.COM_SWITCH16 & 0x0002) &&
-                 ((PORT_Index == 1) || (PORT_Index == 2)))
-        {
-            SW.Bbits.Flag_Switch = 2;
-            SW.Bbits.Flag_SwitchZhi = 1;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_ON.COM_SWITCH16 & 0x0004) &&
-                 (SW.Bbits.S_EXT_CB_ON_EN))
-        {
-            SW.Bbits.Flag_Switch = 3;
-            SW.Bbits.Flag_SwitchZhi = 1;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_ON.COM_SWITCH16 & 0x0008) &&
-                 (SW.Bbits.S_EXT_CB_ON_EN) && ((PORT_Index == 2) || (PORT_Index == 3)))
-        {
-            SW.Bbits.Flag_Switch = 3;
-            SW.Bbits.Flag_SwitchZhi = 1;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else
-        {
-        }
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_OFF.COM_SWITCH16 != 0)
-    {
-        if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_OFF.COM_SWITCH16 & 0x0001)
-        {
-            SW.Bbits.Flag_Switch = 1; //1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2
-            SW.Bbits.Flag_SwitchZhi = 0; //0:断；1：合
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_OFF.COM_SWITCH16 & 0x0002) &&
-                 ((PORT_Index == 1) || (PORT_Index == 2)))
-        {
-            SW.Bbits.Flag_Switch = 2;
-            SW.Bbits.Flag_SwitchZhi = 0;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_OFF.COM_SWITCH16 & 0x0004)
-        {
-            SW.Bbits.Flag_Switch = 3;
-            SW.Bbits.Flag_SwitchZhi = 0;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_SWITCH_OFF.COM_SWITCH16 & 0x0008) &&
-                 ((PORT_Index == 2) || (PORT_Index == 3)))
-        {
-            SW.Bbits.Flag_Switch = 3;
-            SW.Bbits.Flag_SwitchZhi = 0;
-            SW.Bbits.Flag_SwitchRun = 0;
-            SW.Bbits.Flag_SwitchSuccess = 0;
-            SW.Bbits.Flag_SwitchTable = 3;
-            SWTable_TotalTime = SwitchTotalNum;
-            return;
-        }
-        else
-        {
-        }
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 != 0)
-    {
-        if ((PORT_Index == 1) || (PORT_Index == 4))
-        {
-            FaultLatch_Clear(0, 1);
-            if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 & 0x0003) == 0x01)
-            {
-                flag_DABOPEN = 1;
-                //			PWMPluse_Enable(2);  //Enable DAB H-bridge
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 & 0x0003) == 0x02)
-            {
-                flag_SVGOPEN = 1;
-
-                //				if(PORT_Index==1)
-                //				{
-                //					Udc_Ref=SVG_Udc_Ave+20.0;
-                //				}
-                //				PWMPluse_Enable(1);  //Enable 50Hz H-bridge
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 & 0x0003) == 0x03)
-            {
-                PWMPluse_Enable(3); //Enable Port H-bridge
-                return;
-            }
-            else
-            {
-            }
-        }
-        else if ((PORT_Index == 2) || (PORT_Index == 3))
-        {
-            if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 & 0x0003) == 0x01)
-            {
-                Port_DINRead(0);
-                //			if(SW.Bbits.S_CONTACTOR==1)
-                {
-                    FaultLatch_Clear(0, 1);
-                    flag_DABOPEN = 1;
-                }
-
-                //				PWMPluse_Enable(3);  //Enable DAB H-bridge
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_ON.COM_PLUSE16 & 0x0003) == 0x02)
-            {
-                //				PWMPluse_Enable(3);  //Enable Port H-bridge
-                Port_DINRead(0);
-                //				if(SW.Bbits.S_CONTACTOR==1)
-                {
-                    FaultLatch_Clear(0, 1);
-                    flag_SVGOPEN = 1;
-                    //				Variable_RST();
-                }
-                return;
-            }
-            else
-            {
-            }
-        }
-        else
-        {
-        }
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 != 0)
-    {
-        if ((PORT_Index == 1) || (PORT_Index == 4))
-        {
-            if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 & 0x0003) == 0x01)
-            {
-                FaultDisposeFLAG.Bbits.PWMPulseState = 0x02; //Dab H-bridge PWM disable
-                PWMPluse_Disable(0);
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 & 0x0003) == 0x02)
-            {
-                FaultDisposeFLAG.Bbits.PWMPulseState = 0x01; //50Hz H-bridge PWM disable
-                PWMPluse_Disable(0);
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 & 0x0003) == 0x03)
-            {
-                FaultDisposeFLAG.Bbits.PWMPulseState = 0x03; //Port H-bridge PWM disable
-                PWMPluse_Disable(0);
-                return;
-            }
-            else
-            {
-            }
-        }
-        else if ((PORT_Index == 2) || (PORT_Index == 3))
-        {
-            if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 & 0x0003) == 0x01)
-            {
-                //				FaultDisposeFLAG.Bbits.PWMPulseState=0x03;//Port H-bridge PWM disable
-                //				PWMPluse_Disable(0);
-
-                FaultDisposeFLAG.Bbits.PWMPulseState = 0x02;
-                PWMPluse_Disable(0);
-
-                if (Flag_DC_VoltSource == 1)
-                {
-                    FaultDisposeFLAG.Bbits.Port_StopAll = 1;
-                    PortRunFLAG.Bbits.Stop_AllPort = 1; // 请求全端口停机。
-                    Port_StateUpdate_Write();
-                }
-
-                return;
-            }
-            else if ((PORT_Control_DATA_Buf.DPRAM_RemControl.COM_PLUSE_OFF.COM_PLUSE16 & 0x0003) == 0x03)
-            {
-                FaultDisposeFLAG.Bbits.PWMPulseState = 0x03; //Port H-bridge PWM disable
-                PWMPluse_Disable(0);
-                return;
-            }
-            else
-            {
-            }
-        }
-        else
-        {
-        }
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.COM_FAULT_CLEAR.COM_FAULT_CLEAR16 & 0x0001) //Fault Clear
-    {
-        FaultLatch_Clear(0, 1); //clear latch & fault flag
-        return;
-    }
-
-    if (PORT_Control_DATA_Buf.DPRAM_RemControl.PORT_SWITCH_EN.PORT_SWITCH_EN16 != 0)
-    {
-        if (PORT_Control_DATA_Buf.DPRAM_RemControl.PORT_SWITCH_EN.PORT_SWITCH_EN16 & 0x0001)
-        {
-            if (SW.Bbits.S_EXT_CB_ON_EN == 0)
-            {
-                SW.Bbits.S_EXT_CB_ON_EN = 1;
-                DSP_2_EEPROM_Page0();
-                return;
-            }
-        }
-        else if (PORT_Control_DATA_Buf.DPRAM_RemControl.PORT_SWITCH_EN.PORT_SWITCH_EN16 & 0x0002)
-        {
-            if (SW.Bbits.S_EXT_CB_ON_EN == 1)
-            {
-                SW.Bbits.S_EXT_CB_ON_EN = 0;
-                DSP_2_EEPROM_Page0();
-                return;
-            }
-        }
-        else
-        {
-        }
     }
 }
 
@@ -1015,7 +403,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     float ParameterTemp, /* ParameterTemp：原遥调/遥测的定点与浮点转换缓存。 */
         InitialTempFloat; /* InitialTempFloat：原控制系数和给定初始化的浮点计算缓存。 */
     ushort i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-    ushort InitialTemp; /* InitialTemp：原模块配置/控制字初始化的整字计算缓存。 */
 
     PORT_Regulate_DATA.COM_SYS_MODE.COM_SYS_MODE16 =
         PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.COM_SYS_MODE.COM_SYS_MODE16;
@@ -1057,10 +444,7 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     Port_FO_1_EN = PORT_Regulate_DATA.FO_1_EN.FO_EN16;
     Port_FO_2_EN = PORT_Regulate_DATA.FO_2_EN.FO_EN16;
     Port_FO_3_EN = PORT_Regulate_DATA.FO_3_EN.FO_EN16;
-    Port_FO_EN_Set(3, 0, 0, 0, 0);
-
     Port_FB_EN = PORT_Regulate_DATA.FB_EN.FB_EN16;
-    Port_FB_EN_Set();
 
     /**********************端口参数设置**********************/
     ParameterTemp = (float)PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_P_SET; //1kw=10
@@ -1135,20 +519,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     HWREGH(0x6000062c) = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.STATCOM_Q_SET / 200;
 
     /**************************电压参考**********************/
-#if SST_LOW_VOLTAGE_100V_TEST
-    if ((PORT_Regulate_DATA.PORT_V_SET > SST_LV100_PORT_V_MAX) ||
-        (PORT_Regulate_DATA.PORT_V_SET < SST_LV100_PORT_V_MIN))
-    {
-        PORT_Regulate_DATA.PORT_V_SET = SST_LV100_PORT_V_DEFAULT;
-        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
-            (ushort)SST_LV100_PORT_V_DEFAULT;
-        HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
-    }
-    else
-    {
-        HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
-    }
-#else
     if (PORT_Regulate_DATA.PORT_V_SET > 750.0)
     {
         PORT_Regulate_DATA.PORT_V_SET = 700.0;
@@ -1165,7 +535,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     {
         HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
     }
-#endif
 
     HWREGH(0x6000062A) = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET;
 
@@ -1198,26 +567,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
 
     /**************************电流范围**********************/
 
-#if SST_LOW_VOLTAGE_100V_TEST
-    if (PORT_Regulate_DATA.Reserved_1[3] > SST_LV100_CURRENT_MAX_A)
-    {
-        PORT_Regulate_DATA.Reserved_1[3] = SST_LV100_CURRENT_MAX_A;
-        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
-            (ushort)SST_LV100_CURRENT_MAX_A;
-        Idst_Max = SST_LV100_CURRENT_MAX_A;
-    }
-    else if (PORT_Regulate_DATA.Reserved_1[3] < SST_LV100_CURRENT_MIN_A)
-    {
-        PORT_Regulate_DATA.Reserved_1[3] = SST_LV100_CURRENT_MIN_A;
-        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[3] =
-            (ushort)SST_LV100_CURRENT_MIN_A;
-        Idst_Max = SST_LV100_CURRENT_MIN_A;
-    }
-    else
-    {
-        Idst_Max = PORT_Regulate_DATA.Reserved_1[3];
-    }
-#else
     if (PORT_Regulate_DATA.Reserved_1[3] > 95.0)
     {
         PORT_Regulate_DATA.Reserved_1[3] = 95.0;
@@ -1234,7 +583,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     {
         Idst_Max = PORT_Regulate_DATA.Reserved_1[3];
     }
-#endif
 
     Idst_Min = (-1.0) * Idst_Max;
     Iqst_Max = Idst_Max;
@@ -1244,88 +592,21 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
     Id_Positive_Min = Idst_Min;
     Iq_Positive_Max = Iqst_Max;
     Iq_Positive_Min = Iqst_Min;
-    /**************************光纤插件模块配置**********************/
-    HA_PM_A1 = (ushort)PORT_Regulate_DATA.Reserved_1[0];
-    HA_PM_A2 = (ushort)PORT_Regulate_DATA.Reserved_1[1];
-    HA_PM_B1 = (ushort)PORT_Regulate_DATA.PORT_V0_SET;
-    HA_PM_B2 = (ushort)PORT_Regulate_DATA.PORT_F0_SET;
-    HA_PM_C1 = (ushort)PORT_Regulate_DATA.PORT_KF_SET;
-    HA_PM_C2 = (ushort)PORT_Regulate_DATA.PORT_KV_SET;
-
-    NHA_module_A = 0;
-    NHA_module_B = 0;
-    NHA_module_C = 0;
-
-    for (i = 0; i < 8; i++)
+    /* 上电位图在FpgaInit中已写入，FO/FB待EEPROM恢复完成再统一开启。 */
+    if (Inital_Y == 0U)
     {
-        InitialTemp = HA_PM_A1;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_A++;
-        }
-        InitialTemp = HA_PM_A2;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_A++;
-        }
+        const ushort module_masks[6] = {
+            (ushort)PORT_Regulate_DATA.Reserved_1[0],
+            (ushort)PORT_Regulate_DATA.Reserved_1[1],
+            (ushort)PORT_Regulate_DATA.PORT_V0_SET,
+            (ushort)PORT_Regulate_DATA.PORT_F0_SET,
+            (ushort)PORT_Regulate_DATA.PORT_KF_SET,
+            (ushort)PORT_Regulate_DATA.PORT_KV_SET
+        };
+        FpgaInit_ApplyModuleLayout(module_masks);
+        Port_FO_EN_Set(3U, 0U, 0U, 0U, 0U);
+        Port_FB_EN_Set();
     }
-
-    for (i = 0; i < 8; i++)
-    {
-        InitialTemp = HA_PM_B1;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_B++;
-        }
-        InitialTemp = HA_PM_B2;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_B++;
-        }
-    }
-
-    for (i = 0; i < 8; i++)
-    {
-        InitialTemp = HA_PM_C1;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_C++;
-        }
-        InitialTemp = HA_PM_C2;
-        if (InitialTemp & (0x0001 << i))
-        {
-            NHA_module_C++;
-        }
-    }
-
-    FPGA_Interface[Com_A1_PluginUnit_5 - 2].PM = HA_PM_A1;
-    FPGA_Interface[Com_A2_PluginUnit_6 - 2].PM = HA_PM_A2;
-    FPGA_Interface[Com_B1_PluginUnit_9 - 2].PM = HA_PM_B1;
-    FPGA_Interface[Com_B2_PluginUnit_10 - 2].PM = HA_PM_B2;
-    FPGA_Interface[Com_C1_PluginUnit_13 - 2].PM = HA_PM_C1;
-    FPGA_Interface[Com_C2_PluginUnit_14 - 2].PM = HA_PM_C2;
-
-    FPGA_Interface[Com_A1_PluginUnit_5 - 2].NUM = NHA_module_A;
-    FPGA_Interface[Com_A2_PluginUnit_6 - 2].NUM = NHA_module_A;
-    FPGA_Interface[Com_B1_PluginUnit_9 - 2].NUM = NHA_module_B;
-    FPGA_Interface[Com_B2_PluginUnit_10 - 2].NUM = NHA_module_B;
-    FPGA_Interface[Com_C1_PluginUnit_13 - 2].NUM = NHA_module_C;
-    FPGA_Interface[Com_C2_PluginUnit_14 - 2].NUM = NHA_module_C;
-
-    InitialTemp = NHA_module_A;
-    HA_ReferenceDEF_A = (float)InitialTemp;
-    InitialTempFloat = ReferenceDEF;
-    HA_ReferenceDEF_A = HA_ReferenceDEF_A * InitialTempFloat;
-
-    InitialTemp = NHA_module_B;
-    HA_ReferenceDEF_B = (float)InitialTemp;
-    InitialTempFloat = ReferenceDEF;
-    HA_ReferenceDEF_B = HA_ReferenceDEF_B * InitialTempFloat;
-
-    InitialTemp = NHA_module_C;
-    HA_ReferenceDEF_C = (float)InitialTemp;
-    InitialTempFloat = ReferenceDEF;
-    HA_ReferenceDEF_C = HA_ReferenceDEF_C * InitialTempFloat;
 
     Port_OnState = PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.Reserved_1[2];
     HWREGH(0x6000062e) = Port_OnState;
@@ -1610,20 +891,6 @@ void RemoteRegulate_Dispose_2(uchar Inital_Y)
 
     /**************************电压参考**********************/
 
-#if SST_LOW_VOLTAGE_100V_TEST
-    if ((PORT_Regulate_DATA.PORT_V_SET > SST_LV100_PORT_V_MAX) ||
-        (PORT_Regulate_DATA.PORT_V_SET < SST_LV100_PORT_V_MIN))
-    {
-        PORT_Regulate_DATA.PORT_V_SET = SST_LV100_PORT_V_DEFAULT;
-        PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_SET =
-            (ushort)SST_LV100_PORT_V_DEFAULT;
-        HA_Module_RefUdc = SST_LV100_MODULE_REF_UDC_V;
-    }
-    else
-    {
-        HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
-    }
-#else
     if (PORT_Regulate_DATA.PORT_V_SET > 750.0)
     {
         PORT_Regulate_DATA.PORT_V_SET = 700.0;
@@ -1640,7 +907,6 @@ void RemoteRegulate_Dispose_2(uchar Inital_Y)
     {
         HA_Module_RefUdc = PORT_Regulate_DATA.PORT_V_SET;
     }
-#endif
 
     UstOK_HVAC_Port = HA_Module_RefUdc;
     Udc_Ref = HA_Module_RefUdc;
@@ -3019,406 +2285,6 @@ void RemoteRegulate_Dispose(uchar Inital_Y)
         DSP_2_EEPROM_Page3();
 
         FLAG_RemRegulate_SetOver = 1;
-    }
-}
-#endif
-
-#ifdef HVAC_online
-/****************************************************************************/
-/*                                                                          */
-/*              Remote signal dispose                                     */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 把端口浮点遥测及状态换算为 DPRAM 16 位上报缓存
- * 输入参数: 无
- * 输出参数: PORT_RealTime_DATA_buf 中的 16 位状态及量测；由 DPRAM_Write 复制到块 3。
- * 返回值: 无
- * 执行说明: 按端口编译分支打包；不在本函数内通知主机。
- *================================================================*/
-void RemoteSig_Dispose(void)
-{
-    float ParameterTemp; /* ParameterTemp：原遥调/遥测的定点与浮点转换缓存。 */
-    ushort i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_RUN_STATUS.MainStatus16 = Port_MainStatus.MainStatus16;
-
-    Port_DINRead(0);
-    Port_RealStatus.Bbits.Contactor_Inner = SW.Bbits.S_CONTACTOR;
-    if (SW.Bbits.S_INT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 1;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 0;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 1;
-    }
-    //if(SW.Bbits.S_EXT_CB)
-    //{
-    //	Port_RealStatus.Bbits.Breaker_OuterOn=1;
-    //	Port_RealStatus.Bbits.Breaker_OuterOff=0;
-    //}
-    //else
-    //{
-    //	Port_RealStatus.Bbits.Breaker_OuterOn=0;
-    //	Port_RealStatus.Bbits.Breaker_OuterOff=1;
-    //}
-    //edited by shiqi
-    if (GNDSwitch == 1)
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 1;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 0;
-    }
-    if (ISOSwitch == 1)
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOff = 1;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOff = 0;
-    }
-    //end
-    Port_RealStatus.Bbits.Module_Hbridge = PortRunFLAG.Bbits.PWMState_Module;
-    Port_RealStatus.Bbits.LF_Hbridge = PortRunFLAG.Bbits.PWMState_50Hz;
-    Port_RealStatus.Bbits.HF_Hbridge = PortRunFLAG.Bbits.PWMState_Dab;
-    Port_RealStatus.Bbits.SWITCH_ON_EN = SW.Bbits.S_EXT_CB_ON_EN;
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_STATUS.PORT_STATUS16 = Port_RealStatus.PORT_STATUS16;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16 = Port_RealFault.PORT_FAULT16;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_P;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_P = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_Q;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_Q = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_A = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_B;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_B = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_C;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_C = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_B;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_B = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_C;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_C = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.I_A_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.I_A_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.I_B_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.I_B_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.I_C_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.I_C_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.RMS_CURRENT_5TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.RMS_CURRENT_5TH = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.RMS_CURRENT_7TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.RMS_CURRENT_7TH = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.RMS_CURRENT_11TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.RMS_CURRENT_11TH = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PHA_CURRENT_5TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PHA_CURRENT_5TH = (short)(ParameterTemp * 1000.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PHA_CURRENT_7TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PHA_CURRENT_7TH = (short)(ParameterTemp * 1000.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PHA_CURRENT_11TH;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PHA_CURRENT_11TH = (short)(ParameterTemp * 1000.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_PF;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_PF = (short)(ParameterTemp * 100.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V0 = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_F0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_F0 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KF;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KF = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KV;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KV = (short)(ParameterTemp * 10.0);
-
-    for (i = 0; i < 3; i++)
-    {
-        ParameterTemp = PORT_RealTime_DATA.Reserved_1[i];
-        PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.Reserved_1[i] = (short)ParameterTemp;
-    }
-}
-#endif
-
-#ifdef HVDC_online
-/****************************************************************************/
-/*                                                                          */
-/*              Remote signal dispose                                     */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 把端口浮点遥测及状态换算为 DPRAM 16 位上报缓存
- * 输入参数: 无
- * 输出参数: PORT_RealTime_DATA_buf 中的 16 位状态及量测；由 DPRAM_Write 复制到块 3。
- * 返回值: 无
- * 执行说明: 按端口编译分支打包；不在本函数内通知主机。
- *================================================================*/
-void RemoteSig_Dispose(void)
-{
-    float ParameterTemp; /* ParameterTemp：原遥调/遥测的定点与浮点转换缓存。 */
-    ushort i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_RUN_STATUS.MainStatus16 = Port_MainStatus.MainStatus16;
-
-    Port_DINRead(0);
-    Port_RealStatus.Bbits.Contactor_Inner = SW.Bbits.S_CONTACTOR;
-    if (SW.Bbits.S_INT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 1;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 0;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 1;
-    }
-    if (SW.Bbits.S_EXT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 1;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 0;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 1;
-    }
-
-    Port_RealStatus.Bbits.Module_Hbridge = PortRunFLAG.Bbits.PWMState_Module;
-    Port_RealStatus.Bbits.LF_Hbridge = PortRunFLAG.Bbits.PWMState_50Hz;
-    Port_RealStatus.Bbits.HF_Hbridge = PortRunFLAG.Bbits.PWMState_Dab;
-    Port_RealStatus.Bbits.SWITCH_ON_EN = SW.Bbits.S_EXT_CB_ON_EN;
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_STATUS.PORT_STATUS16 = Port_RealStatus.PORT_STATUS16;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16 = Port_RealFault.PORT_FAULT16;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_P;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_P = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_A = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V0 = (short)ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KV;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KV = (short)(ParameterTemp * 10.0);
-
-    for (i = 0; i < 3; i++)
-    {
-        ParameterTemp = PORT_RealTime_DATA.Reserved_1[i];
-        PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.Reserved_1[i] = (short)ParameterTemp;
-    }
-}
-#endif
-
-#ifdef LVDC_online
-/****************************************************************************/
-/*                                                                          */
-/*              Remote signal dispose                                     */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 把端口浮点遥测及状态换算为 DPRAM 16 位上报缓存
- * 输入参数: 无
- * 输出参数: PORT_RealTime_DATA_buf 中的 16 位状态及量测；由 DPRAM_Write 复制到块 3。
- * 返回值: 无
- * 执行说明: 按端口编译分支打包；不在本函数内通知主机。
- *================================================================*/
-void RemoteSig_Dispose(void)
-{
-    float ParameterTemp; /* ParameterTemp：原遥调/遥测的定点与浮点转换缓存。 */
-    ushort i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_RUN_STATUS.MainStatus16 = Port_MainStatus.MainStatus16;
-
-    Port_DINRead(0);
-    Port_RealStatus.Bbits.Contactor_Inner = SW.Bbits.S_CONTACTOR;
-    if (SW.Bbits.S_INT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 1;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 0;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 1;
-    }
-    if (SW.Bbits.S_EXT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 1;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 0;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 1;
-    }
-
-    Port_RealStatus.Bbits.Module_Hbridge = PortRunFLAG.Bbits.PWMState_Module;
-    Port_RealStatus.Bbits.LF_Hbridge = PortRunFLAG.Bbits.PWMState_50Hz;
-    Port_RealStatus.Bbits.HF_Hbridge = PortRunFLAG.Bbits.PWMState_Dab;
-    Port_RealStatus.Bbits.SWITCH_ON_EN = SW.Bbits.S_EXT_CB_ON_EN;
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_STATUS.PORT_STATUS16 = Port_RealStatus.PORT_STATUS16;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16 = Port_RealFault.PORT_FAULT16;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_P;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_P = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V0 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KV;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KV = (short)(ParameterTemp * 10.0);
-
-    for (i = 0; i < 3; i++)
-    {
-        ParameterTemp = PORT_RealTime_DATA.Reserved_1[i];
-        PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.Reserved_1[i] = (short)ParameterTemp;
-    }
-}
-#endif
-
-#ifdef LVAC_online
-/****************************************************************************/
-/*                                                                          */
-/*              Remote signal dispose                                     */
-/*                                                                          */
-/****************************************************************************/
-/*==================================================================
- * 函数功能: 把端口浮点遥测及状态换算为 DPRAM 16 位上报缓存
- * 输入参数: 无
- * 输出参数: PORT_RealTime_DATA_buf 中的 16 位状态及量测；由 DPRAM_Write 复制到块 3。
- * 返回值: 无
- * 执行说明: 按端口编译分支打包；不在本函数内通知主机。
- *================================================================*/
-void RemoteSig_Dispose(void)
-{
-    float ParameterTemp; /* ParameterTemp：原遥调/遥测的定点与浮点转换缓存。 */
-    ushort i; /* i：复制字序号或当前编译端口内的模块位索引。 */
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_RUN_STATUS.MainStatus16 = Port_MainStatus.MainStatus16;
-
-    Port_DINRead(0);
-    Port_RealStatus.Bbits.Contactor_Inner = SW.Bbits.S_CONTACTOR;
-    if (SW.Bbits.S_INT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 1;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_InnerOn = 0;
-        Port_RealStatus.Bbits.Breaker_InnerOff = 1;
-    }
-    if (SW.Bbits.S_EXT_CB)
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 1;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 0;
-    }
-    else
-    {
-        Port_RealStatus.Bbits.Breaker_OuterOn = 0;
-        Port_RealStatus.Bbits.Breaker_OuterOff = 1;
-    }
-
-    Port_RealStatus.Bbits.Module_Hbridge = PortRunFLAG.Bbits.PWMState_Module;
-    Port_RealStatus.Bbits.LF_Hbridge = PortRunFLAG.Bbits.PWMState_50Hz;
-    Port_RealStatus.Bbits.HF_Hbridge = PortRunFLAG.Bbits.PWMState_Dab;
-    Port_RealStatus.Bbits.SWITCH_ON_EN = SW.Bbits.S_EXT_CB_ON_EN;
-
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_STATUS.PORT_STATUS16 = Port_RealStatus.PORT_STATUS16;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_FAULT.PORT_FAULT16 = Port_RealFault.PORT_FAULT16;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_P;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_P = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_Q;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_Q = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_B;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_B = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V_C;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V_C = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_A;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_A = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_B;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_B = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_I_C;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_I_C = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.V_A_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.V_A_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.V_B_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.V_B_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.V_C_2;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.V_C_2 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.DC_V;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.DC_V = ParameterTemp;
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_PF;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_PF = (short)(ParameterTemp * 100.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_V0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_V0 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_F0;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_F0 = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KF;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KF = (short)(ParameterTemp * 10.0);
-
-    ParameterTemp = PORT_RealTime_DATA.PORT_KV;
-    PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.PORT_KV = (short)(ParameterTemp * 10.0);
-
-    for (i = 0; i < 3; i++)
-    {
-        ParameterTemp = PORT_RealTime_DATA.Reserved_1[i];
-        PORT_RealTime_DATA_buf.DPRAM_RemMeaSig.Reserved_1[i] = (short)ParameterTemp;
     }
 }
 #endif

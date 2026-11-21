@@ -38,19 +38,18 @@ extern "C"
  * 执行说明: SstParams已按原顺序处理存储忙互锁；本接口保持原F0权限及复位检查。
  *================================================================*/
     uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value);
-    /* Map the existing DPRAM words to the retained controller; no MMIO bypass. */
     /*==================================================================
- * 函数功能: 按停止和关脉冲优先规则将 DPRAM 字段接入统一控制命令
- * 输入参数: start：DPRAM启动位图，停止/关脉冲优先
- *           stop：DPRAM停止位图，停止优先于启动
+ * 函数功能: 将DPRAM启动、脉冲及复位有效位赋给实际控制命令
+ * 输入参数: start：块1 word2 / 00F2，bit0仅请求HVAC/CHB运行
+ *           stop：块1 word3 / 00F3，bit0整机停止，优先撤销两路请求
  *           pulse_on：脉冲使能位图，bit0 为 DAB、bit1 为 CHB
  *           pulse_off：脉冲禁用位图，bit0 为 DAB、bit1 为 CHB，优先于使能
- *           reset：故障复位请求位图，仅停机时接受
- * 输出参数: g_chb_dab_command 的启停、DAB 使能及故障复位字段；只提交命令。
+ *           reset：块1 word10 / 00FA，bit0请求故障复位，仅完全停机时接受
+ * 输出参数: g_chb_dab_command.run_enable、dab_enable、fault_reset
  * 返回值: 无
- * 执行说明: 后台DPRAM控制入口；只提交请求，实际PWM动作由原控制核心执行。
+ * 执行说明: 后台赋值入口。HVAC START不修改dab_enable；实际发波由原状态机决定。
  *================================================================*/
-    void SstCommand_ApplyDpram(unsigned short start,
+    void SstControlCommand_ApplyRequests(unsigned short start,
                                unsigned short stop,
                                unsigned short pulse_on,
                                unsigned short pulse_off,

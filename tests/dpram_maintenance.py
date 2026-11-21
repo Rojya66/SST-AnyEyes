@@ -19,6 +19,7 @@ def main():
                app / "01_FuncCode/SstParams.c",
                app / "01_FuncCode/SstParameterTable.c",
                app / "01_FuncCode/SstParameterStore.c",
+               app / "01_FuncCode/SstHardwareParameters.c",
                app / "04_Control/SstCommand.c"]
     control = (app / "04_Control/ChbDabControl.c").read_text(encoding="utf-8-sig")
     defaults = "\n".join(re.search(r"volatile " + kind + r" " + name + r"\s*=\s*\{.*?\};",
@@ -41,7 +42,17 @@ def main():
             'volatile uint16_t *HostHalfword(uint32_t address);\n'
             '#define HWREGH(address) (*HostHalfword((uint32_t)(address)))\n'
             'uint8_t r_eeprom_byte_read(uint8_t page,uint8_t offset);\n'
-            'uint8_t r_eeprom_byte_write(uint8_t page,uint8_t offset,uint8_t value);\n',
+            'uint8_t r_eeprom_byte_write(uint8_t page,uint8_t offset,uint8_t value);\n'
+            'uint8_t r_eeprom_section_read(uint8_t,uint8_t,uint8_t,uint8_t *);\n'
+            'typedef struct {struct {uint16_t Port_RunOrTest,Port_AutoOrManual;} Bbits;} HOST_PORT_RUN_FLAG;\n'
+            'extern HOST_PORT_RUN_FLAG PortRunFLAG;\n'
+            'extern uint16_t Port_AD_PORT_EN,Port_FO_1_EN,Port_FO_2_EN,Port_FO_3_EN,Port_FB_EN;\n'
+            'extern uint16_t HA_PM_A1,HA_PM_A2,HA_PM_B1,HA_PM_B2,HA_PM_C1,HA_PM_C2;\n'
+            'extern uint16_t Port_OnState,Port_Main_WorkMode,Port_STATCOM_WorkMode,Port_APF_WorkMode;\n'
+            'void FpgaInit_ApplyModuleLayout(const uint16_t *);\n'
+            'void Port_ADProtect_EN(void);\n'
+            'void Port_FO_EN_Set(uint16_t,uint16_t,uint16_t,uint16_t,uint16_t);\n'
+            'void Port_FB_EN_Set(void);\nvoid Port_StateUpdate_Write(void);\n',
             encoding="utf-8")
         units = []
         for path in sources:

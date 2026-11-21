@@ -1,4 +1,5 @@
 #include "SstBoardConfig.h"
+#include "EepromConfig.h"
 #include "soc_C6748.h"
 /*
  * C6748 板级初始化
@@ -124,8 +125,9 @@ void GPIOBankPinInit(void)
     GPIODirModeSet(SOC_GPIO_0_REGS, 3, GPIO_DIR_OUTPUT);
     GPIODirModeSet(SOC_GPIO_0_REGS, 4, GPIO_DIR_OUTPUT);
 
-    GPIODirModeSet(SOC_GPIO_0_REGS, 9, GPIO_DIR_OUTPUT);
-    GPIODirModeSet(SOC_GPIO_0_REGS, 10, GPIO_DIR_OUTPUT);
+    /* EEPROM软件I2C上电先释放，由外部上拉保持空闲；不以推挽输出驱动总线。 */
+    GPIODirModeSet(SOC_GPIO_0_REGS, SST_EEPROM_SDA_PIN, GPIO_DIR_INPUT);
+    GPIODirModeSet(SOC_GPIO_0_REGS, SST_EEPROM_SCL_PIN, GPIO_DIR_INPUT);
 
     GPIODirModeSet(SOC_GPIO_0_REGS, 40, GPIO_DIR_OUTPUT);
     GPIODirModeSet(SOC_GPIO_0_REGS, 43, GPIO_DIR_OUTPUT);
@@ -145,7 +147,7 @@ void GPIOBankPinInit(void)
 
     GPIODirModeSet(SOC_GPIO_0_REGS, 139, GPIO_DIR_OUTPUT);
     GPIODirModeSet(SOC_GPIO_0_REGS, 140, GPIO_DIR_OUTPUT);
-    GPIODirModeSet(SOC_GPIO_0_REGS, 142, GPIO_DIR_OUTPUT);
+    GPIODirModeSet(SOC_GPIO_0_REGS, 142, GPIO_DIR_INPUT); /* 主控 FPGA 的 DSP_INT_FAULT 输入。 */
     GPIODirModeSet(SOC_GPIO_0_REGS, 144, GPIO_DIR_OUTPUT);
 }
 
@@ -157,13 +159,13 @@ void GPIOBankPinInit(void)
 /*==================================================================
  * 函数功能: 配置 FPGA/DPRAM 所用 EMIFA 时序及总线引脚
  * 输入参数: 无
- * 输出参数: 相关芯片配置寄存器；毫秒读函数只读取计数及维护本地单调结果。
+ * 输出参数: EMIFA 引脚复用、CS2/CS5 配置和 WAIT1 极性寄存器。
  * 返回值: 无
- * 执行说明: 板级初始化或后台时基服务；不引入新的实时 ISR 工作。
+ * 执行说明: 仅在上电硬件初始化时调用；不在 10 kHz 实时中断中执行。
  *================================================================*/
 void EMIFASetup(void)
 {
-    /* CS2连接FPGA控制区，CS5连接插件/模块区，两者均为16位异步访问。 */
+    /* CS2 连接 FPGA 控制和插件访问区，CS5 连接 DPRAM；两者均为 16 位异步访问。 */
     EMIFAPinMuxSetup();
 
     EMIFAAsyncDevDataBusWidthSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_2, EMIFA_DATA_BUSWITTH_16BIT);
@@ -184,9 +186,17 @@ void EMIFASetup(void)
     EMIFAWaitTimingConfig(
         SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_ASYNC_WAITTIME_CONFIG(1, 4, 1, 1, 4, 1, 2)); //2, 3, 2, 2, 3, 2, 0
 
+    /* DPRAM 的 BUSYL# 低有效，经过主控 FPGA 接到 DSP 的 WAIT1。
+     * 官方极性接口使用按位或写入；低有效参数为 0，不能清除原有的 WP1=1。
+     * 因此在板级先清除 WP1，再调用原接口，避免把空闲高电平误判为等待。
+     * 此处仅改 WAIT1 极性，保留 WAIT0、各片选等待选择及既有 CS2/CS5 时序。 */
+    HWREG(SOC_EMIFA_0_REGS + EMIFA_AWCC) &= ~EMIFA_AWCC_WP1;
     EMIFAWaitPinPolaritySet(SOC_EMIFA_0_REGS, EMIFA_EMA_WAIT_PIN1, EMIFA_EMA_WAIT_PIN_POLARITY_LOW);
     EMIFACSWaitPinSelect(SOC_EMIFA_0_REGS, EMIFA_CHIP_SELECT_5, EMIFA_EMA_WAIT_PIN1);
     EMIFAMaxExtWaitCycleSet(SOC_EMIFA_0_REGS, 0);
+
+    /* 读回 AWCC，确保配置写入完成后再进行后续外设访问。 */
+    (void)HWREG(SOC_EMIFA_0_REGS + EMIFA_AWCC);
 }
 
 /****************************************************************************/

@@ -12,10 +12,9 @@
 #define SST_SCREEN_TRANSACTION 384U /* 事务区相对字偏移384。 */
 /* 42现代快照+8原保护+快速保护开关+系统方式+AD/FO/FB，共57项。 */
 #define SST_SCREEN_PARAMETERS 57U
-/* 新增结果：不支持、事务冲突；0..6沿用SST_PARAM_*。 */
+/* 新增结果：不支持；0..6沿用SST_PARAM_*。 */
 #define SST_SCREEN_UNSUPPORTED 7U
-#define SST_SCREEN_CONFLICT 8U /* 重复序号但操作不同或序号0，结果8。 */
-/* 普通寄存器事务操作；先写序号，再最后写操作字，无串口帧/CRC。 */
+/* 直接操作字：1B00保留，屏幕只写1B01即可提交；DSP受理后清0，无需请求序号。 */
 #define SST_SCREEN_APPLY 1U
 #define SST_SCREEN_SAVE 2U /* 保存当前活动参数至EEPROM，操作2。 */
 #define SST_SCREEN_LOAD 3U /* 从EEPROM整体校验并恢复，操作3。 */
@@ -30,6 +29,7 @@ typedef struct
     uint16_t regulate_result; /* 最近块2整组校验/应用结果。 */
     uint16_t error_word; /* 被拒字段的块内字号或参数号；FFFF=非单字段错误。 */
     uint16_t switch_permission; /* 外部合闸许可，默认0；不冒充实际触点反馈。 */
+    uint16_t ignored_control_words; /* 最近控制块未接入字段位图，bitN对应wordN；仅诊断，不拒绝。 */
 } SST_DPRAM_SCREEN_RESULT;
 
 extern SST_DPRAM_SCREEN_RESULT g_sst_dpram_screen_result; /* 后台拥有的旧块执行结果。 */
@@ -37,21 +37,23 @@ extern volatile uint16_t DPRAM_SstScreen[SST_SCREEN_WORDS]; /* 固定NOINIT并�
 
 /*==================================================================
  * 函数功能: 解释旧16字控制块，把合法命令送入现有控制核心
- * 输入参数: words：完整块1；未动作字段应清零，PORT_NAME可为0或HVAC bit0
+ * 输入参数: words：完整块1；仅解析协议有效位，保留位/保留字忽略
  * 输出参数: 启停请求、复位请求、许可或受控开关请求；重复START不重置启动
  * 返回值: 受理结果；表示请求通过检查，实际运行仍须读状态机及故障
- * 执行说明: 仅后台；STOP/OFF优先，即使存储忙也允许撤销请求。
+ * 执行说明: 仅后台；未接入位忽略并记录，不拒绝正常本机命令；STOP/OFF优先。
+ * 调用关系: Host读邮箱1并复制块1 -> 本函数提取/校验 -> SstControlCommand_ApplyRequests赋值。
+ *           本函数不直接置1任何使能，也不写PWM；成功只代表请求已提交。
  *================================================================*/
-uint16_t SstDpramCommand_Apply(const uint16_t *words);
+uint16_t SstDpramCommand_ProcessControlBlock(const uint16_t *words);
 
 /*==================================================================
  * 函数功能: 停机后先整体校验，再只提交变化项，避免未修改浮点PI被量化
- * 输入参数: words：57字完整候选，顺序见Read；error_word输出到执行结果
+ * 输入参数: words：57字完整候选，顺序见SstDpramParameter_EncodeParameterSnapshot；error_word输出到执行结果
  * 输出参数: 成功才更新活动对象及实际硬件保护使能；不自动保存EEPROM
  * 返回值: SST_PARAM_*；不支持/越界/忙时活动值不变
- * 执行说明: 仅后台，所有校验在首次写入前完成；停机ISR不会运行PI。
+ * 执行说明: 仅供57项扩展区，所有校验在首次写入前完成；原43字不走本入口。
  *================================================================*/
-uint16_t SstDpramParameter_Apply(const uint16_t *words);
+uint16_t SstDpramParameter_ApplyParameterSnapshot(const uint16_t *words);
 
 /*==================================================================
  * 函数功能: 读取57项实际参数编码，符号/比例与唯一参数表一致
@@ -60,34 +62,36 @@ uint16_t SstDpramParameter_Apply(const uint16_t *words);
  * 返回值: 无
  * 执行说明: 主循环调用；不访问DPRAM，不改变控制参数。
  *================================================================*/
-void SstDpramParameter_Read(uint16_t *words);
+void SstDpramParameter_EncodeParameterSnapshot(uint16_t *words);
 
 /*==================================================================
  * 函数功能: 原43字遥调块回读实际生效值，未支持字段固定0
  * 输入参数: words：43字RAM输出；PI比例分别1e5、100、1000、1000
  * 输出参数: 原地址的实际编码；V_SET=1V/count，F_SET=0.1Hz/count
  * 返回值: 无
- * 执行说明: 后台；负PI直接沿用唯一参数表二补码，无abs或额外反号。
+ * 执行说明: 直接读取实际成员，PI借用参数表舍入编码；不构造57项快照。
  *================================================================*/
-void SstDpramParameter_ReadLegacy(uint16_t *words);
+void SstDpramParameter_EncodeLegacyBlock(uint16_t *words);
 
 /*==================================================================
- * 函数功能: 旧块2接入当前Udc/F/组1PI和保护使能，整块拒绝未支持的更改
+ * 函数功能: 旧块2按协议有效位接入Udc/F/组1PI和保护使能
  * 输入参数: words：旧43字候选；建议先读实际块，再改所需字段、最后写邮箱2
  * 输出参数: 成功才应用；未改V/F保持其原小数，错误字段号供屏幕查询
  * 返回值: SST_PARAM_*或SST_SCREEN_UNSUPPORTED
- * 执行说明: 不恢复旧缩放因子算法；PI组2/3、PQ/下垂/谐波尚无控制对象。
+ * 执行说明: 位图保留位及word23..26保留字忽略；数值不裁剪，有效未实现项仍拒绝。
+ * 调用关系: Host读邮箱2复制43字 -> 本函数检查本块字段 -> 直接写实际成员/FPGA保护使能。
+ *           PI最终赋值明写在本函数内；不经过57项扩展区或通用参数表写入口。
  *================================================================*/
-uint16_t SstDpramParameter_ApplyLegacy(const uint16_t *words);
+uint16_t SstDpramParameter_DecodeAndApplyLegacyBlock(const uint16_t *words);
 
 /*==================================================================
  * 函数功能: 将当前核心状态和实际量测打包为旧33字遥测
  * 输入参数: words：33字RAM输出区
- * 输出参数: 按V1.1位定义、有效值和比例编码；未支持通道固定0并另报有效性
+ * 输出参数: 原33字遥测；word30..32为A/B/C相701的FO_LATCH & 当前FO使能
  * 返回值: 无
- * 执行说明: 后台近实时镜像，各标量不是同一TAD采样的原子快照。
+ * 执行说明: 后台最多三次701锁存读取；不在10kHz中断内执行，不清除硬件锁存。
  *================================================================*/
-void SstDpramTelemetry_Build(uint16_t *words);
+void SstDpramTelemetry_BuildLegacyBlock(uint16_t *words);
 
 /*==================================================================
  * 函数功能: 原内部故障来源转换为Word PORT_FAULT；内部位域不改
@@ -96,7 +100,7 @@ void SstDpramTelemetry_Build(uint16_t *words);
  * 返回值: Word16位故障字；bit13通信、bit14同步，bit15任一实际故障
  * 执行说明: 只读锁存结果，不重复判断阈值，不清除任何故障。
  *================================================================*/
-uint16_t SstDpramTelemetry_Fault(void);
+uint16_t SstDpramTelemetry_GetFaultWord(void);
 
 /*==================================================================
  * 函数功能: 给出配置中有真实生产者的插件镜像位图
@@ -105,7 +109,7 @@ uint16_t SstDpramTelemetry_Fault(void);
  * 返回值: bit0..15对应U2..U17；不代表光链路实时健康
  * 执行说明: 后台配置能力查询，U7/11/15输出卡和U17录波卡不冒充采样镜像。
  *================================================================*/
-uint16_t SstDpramTelemetry_PluginMask(void);
+uint16_t SstDpramTelemetry_GetPluginMask(void);
 
 /*==================================================================
  * 函数功能: 上电建立补充寄存器，不执行DPRAM残留的命令
@@ -114,7 +118,7 @@ uint16_t SstDpramTelemetry_PluginMask(void);
  * 返回值: 无
  * 执行说明: 运行对象初始化后、DPRAM中断开放前调用；禁用DPRAM时无访问。
  *================================================================*/
-void SstDpramScreen_Init(void);
+void SstDpramScreen_Initialize(void);
 
 /*==================================================================
  * 函数功能: 后台处理最后写入的操作字，每轮发布最多16个只读字
@@ -123,7 +127,7 @@ void SstDpramScreen_Init(void);
  * 返回值: 无
  * 执行说明: 不等待主机、不屏蔽TAD；主机提交后直到ACK不得修改候选区。
  *================================================================*/
-void SstDpramScreen_Service(void);
+void SstDpramScreen_ProcessTransactions(void);
 
 /*==================================================================
  * 函数功能: 每个遥测节拍构建补充状态、全部详细故障码和参数实际值
@@ -132,5 +136,5 @@ void SstDpramScreen_Service(void);
  * 返回值: 无
  * 执行说明: 不关中断；版本戳仅保证后台发布一致性，非同步TAD锁存。
  *================================================================*/
-void SstDpramScreen_Publish(void);
+void SstDpramScreen_PublishStatus(void);
 #endif

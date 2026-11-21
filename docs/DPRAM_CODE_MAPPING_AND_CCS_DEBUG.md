@@ -52,20 +52,20 @@ ARM 写数据区，最后写左邮箱（旧控制块=1，扩展维护=21）
   ↓ DPRAM 通知 DSP GPIO101
 DPRAMIsr → Flag_RemoteControlRegulate = 1
   ↓ 主循环 TaskSlice_Service
-SstDpramHost_ServiceRemoteControl → DPRAM_Read → FLAG_NEW_L
-  ├─ 块号 1：SstCommand_ApplyDpram → g_chb_dab_command
-  └─ 块号 21：SstDpramMaintenance_Request → request_pending = 1
-              ↓ SstDpramMaintenance_Service
-             ProcessRequest：帧/CRC/序号校验
+SstDpramHost_ProcessIncomingBlocks → DPRAM_Read → FLAG_NEW_L
+  ├─ 块号 1：SstControlCommand_ApplyRequests → g_chb_dab_command
+  └─ 块号 21：SstDpramMaintenance_MarkRequestPending → request_pending = 1
+              ↓ SstDpramMaintenance_ProcessPendingRequest
+             ProcessMaintenanceRequest：帧/CRC/序号校验
               ├─ op=0：读取点表
-              ├─ op=1：WritePoint → 参数权限/范围校验 → 实际变量
-              ├─ op=2：ApplyCommand → SstCommand_ApplyDpram
+              ├─ op=1：WriteMaintenancePoint → 参数权限/范围校验 → 实际变量
+              ├─ op=2：ApplyMaintenanceCommand → SstControlCommand_ApplyRequests
               └─ op=3/4：参数保存/加载
-              ↓ BuildResponse → 分片发布 → 右邮箱=21
+              ↓ BuildMaintenanceResponse → 分片发布 → 右邮箱=21
 
 实际启停/复位：ChbDabControl_Service 消费 g_chb_dab_command
 实际保护：原 FaultCheck + 闭环 FastStep 的快速保护
-故障报告：SstFault_Service → SstDpramMaintenance_Publish → 0x66002E00
+故障报告：SstFault_Service → SstDpramMaintenance_PublishSnapshots → 0x66002E00
 ```
 
 | 路径节点 | 实际代码位置 | 应观察什么 |
@@ -118,7 +118,7 @@ CRC、参数处理、EEPROM 服务和扩展回复均在后台，未放入 10 kHz
 
 ### 3.2 扩展 op=2：相同控制核心，有受理回复
 
-在扩展请求内写 `operation=2`，word6/7/8/9/10 分别是 START/STOP/ON/OFF/RESET。具体位定义与上表相同。处理函数：[SstDpramMaintenance.c:139](/D:/Code/SST/AnyEyesVersionV1/Source/04_App/10_Host/SstDpramMaintenance.c:139)，第 151 行仍调用 `SstCommand_ApplyDpram()`。
+在扩展请求内写 `operation=2`，word6/7/8/9/10 分别是 START/STOP/ON/OFF/RESET。具体位定义与上表相同。处理函数：[SstDpramMaintenance.c:139](/D:/Code/SST/AnyEyesVersionV1/Source/04_App/10_Host/SstDpramMaintenance.c:139)，第 151 行仍调用 `SstControlCommand_ApplyRequests()`。
 
 首次联调优先用 op=2，便于区分“权限/忙拒绝”与“已受理但状态机尚未运行”。ACK=0 仍只表示受理，不保证预充、PLL 或物理开关已经成功。
 
@@ -198,7 +198,7 @@ PI 写入链逐行对应：
 
 逐模块高低压实际判断：[ModuleVoltageCheck.c:88](/D:/Code/SST/AnyEyesVersionV1/Source/04_App/08_Fault/ModuleVoltageCheck.c:88)。点 50、点 40、点 53 的比较对象/确认方式不同，修改其中一项不会同步修改另外两项，也不会自动修改 UNIT/FPGA 内部硬件阈值。
 
-额外核对：点 8 `g_chb_dab_protection_enable` 在当前代码中**允许停机请求写入**，不是只读；实现见 `WritePoint()` 第 117 行转 `SstParams_Write(0,8,...)`，及 [SstParams.c:163](/D:/Code/SST/AnyEyesVersionV1/Source/04_App/01_FuncCode/SstParams.c:163)。本次调试不需要修改该点。点 9 `sample_period_s` 才是明确只读，写入返回 `2`。
+额外核对：点 8 `g_chb_dab_protection_enable` 在当前代码中**允许停机请求写入**，不是只读；实现见 `WriteMaintenancePoint()` 第 117 行转 `SstParams_Write(0,8,...)`，及 [SstParams.c:163](/D:/Code/SST/AnyEyesVersionV1/Source/04_App/01_FuncCode/SstParams.c:163)。本次调试不需要修改该点。点 9 `sample_period_s` 才是明确只读，写入返回 `2`。
 
 ## 5. 故障时到底读哪里
 

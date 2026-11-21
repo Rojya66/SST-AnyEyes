@@ -13,6 +13,11 @@ def read(path):
 
 
 def host_source(path):
+    if path.name == "SstHardwareParameters.c":
+        # The real adapter executes against the fake FPGA/port variables declared
+        # by the fixture, without importing absolute-register hardware headers.
+        return re.sub(r'^\s*#\s*include\s*"(?!SstHardwareParameters.h)[^"\n]+"[^\n]*$',
+                      "", read(path), flags=re.MULTILINE)
     return re.sub(r'^\s*#\s*include\s*"([^"\n]+)"[^\n]*$',
                   lambda match: "" if match[1] in HARDWARE_HEADERS else match[0],
                   read(path), flags=re.MULTILINE)
@@ -31,6 +36,7 @@ def protocol_modules(project):
     sources = [app / "00_Version/SoftVersion.c", app / "01_FuncCode/SstParams.c", app / "03_PcDebug/SstDebug.c",
                app / "03_PcDebug/Comm2PcDebug.cpp", app / "03_PcDebug/vofa.c"]
     additions = [app / "01_FuncCode/SstParameterTable.c", app / "01_FuncCode/SstParameterStore.c",
+                 app / "01_FuncCode/SstHardwareParameters.c",
                  app / "01_FuncCode/SstLegacyParameters.c",
                  app / "03_PcDebug/PcDebugDispData.c", app / "04_Control/SstCommand.c",
                  project / "Source/02_Peripheral/03_Serial/SstSerial.c"]

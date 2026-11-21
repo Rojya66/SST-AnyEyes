@@ -195,7 +195,7 @@ INTENTIONAL_CONTROL_FUNCTIONS = {
     "Chb_GetClosedLoopIdReference", "Chb_RunClosedLoop",
     "Chb_ConfigurationValid", "ChbDabControl_Init",
     "Chb_EnterState", "ChbDabControl_Service", "ChbDabControl_ForceFault",
-    "Chb_WrapAngle", "Chb_SetAcInput", "Chb_SetPrechargeBypass",
+    "Chb_WrapAngle", "Chb_SetQf1", "Chb_SetKt1",
     "Chb_DisableAllPwm", "Chb_SetLegacyStatus", "Chb_ServiceOpenLoop",
     "Chb_UpdatePll", "ChbDabControl_FastStep", "Chb_WriteNormalizedReferences",
 }
@@ -497,7 +497,7 @@ def main() -> None:
     # entire masked regions plus their helpers remain bounded register/state
     # operations.  Variable_RST is deliberately outside the enable region.
     critical_functions = {
-        "Chb_SetAcInput", "Chb_SetPrechargeBypass", "Chb_EnablePwm",
+        "Chb_SetQf1", "Chb_SetKt1", "Chb_EnablePwm",
         "Chb_DisablePwm", "Chb_SetLegacyStatus", "Chb_EnterState",
         "ChbDabControl_ForceFault", "ChbDabControl_Service",
     }
@@ -507,7 +507,7 @@ def main() -> None:
           f"global masking is confined to exact reviewed control transactions: {sorted(actual_critical)}")
     allowed_critical_calls = {
         "IntGlobalDisable", "IntGlobalRestore", "Chb_GateBlocked", "Chb_DcBusReady",
-        "Chb_ClearAcInputPulse", "Port_IO_Out", "Module_PWMEN", "Module_50Hz_PWMEN",
+        "Chb_ClearQf1Pulse", "Port_IO_Out", "Module_PWMEN", "Module_50Hz_PWMEN",
         "Module_ENdab_PWMEN", "Module_Control_Write", "Port_DSPControl_AllShutdown",
     }
     critical_failures = []

@@ -32,8 +32,8 @@ CHANGED = {
     CONTROL: ["Chb_WriteNormalizedReferences", "Chb_ConfigurationValid", "ChbDabControl_Init",
               "Chb_Min3", "Chb_RunClosedLoop", "Chb_CheckSoftwareProtection", "ChbDabControl_FastStep",
               "Chb_EnterState", "ChbDabControl_Service", "ChbDabControl_ForceFault", "Chb_DisableAllPwm",
-              "Chb_GetClosedLoopIdReference", "Chb_RunOpenLoop", "Chb_ServiceOpenLoop", "Chb_SetAcInput",
-              "Chb_SetLegacyStatus", "Chb_SetPrechargeBypass", "Chb_UpdatePll",
+              "Chb_GetClosedLoopIdReference", "Chb_RunOpenLoop", "Chb_ServiceOpenLoop", "Chb_SetQf1",
+              "Chb_SetLegacyStatus", "Chb_SetKt1", "Chb_UpdatePll",
               "Chb_WrapAngle"],
     "Source/04_App/02_Measurement/ADC_Sample.C": ["HVAC_RealTimeParameter", "Port_AD_Sample"],
     "Source/04_App/02_Measurement/MeasurementService.c": ["Port_RealTimeParameter"],
@@ -46,7 +46,8 @@ ISR_NAMES = ("FPGAIsr", "FAULTIsr", "Timer2Isr", "DPRAMIsr")
 def switches(phase_a: int) -> dict[str, int]:
     return {"SST_BENCH_INPUT_SIM": 0, "SST_SIMULATOR_MODE": 1,
             "SST_ENABLE_DPRAM": 0, "CHB_LOAD_EEPROM_PARAMETERS": 0,
-            "SST_PHASE_A_ONLY_TEST": phase_a, "SST_LOW_VOLTAGE_100V_TEST": 0}
+            "SST_ENABLE_SWITCH_OUTPUT": 0, "SST_ENABLE_SWITCH_FEEDBACK": 0,
+            "SST_PHASE_A_ONLY_TEST": phase_a}
 
 
 def normalize_named_declarations(items: list[str]) -> tuple[list[str], int]:

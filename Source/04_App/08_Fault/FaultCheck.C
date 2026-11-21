@@ -463,7 +463,7 @@ void FaultCheckAndDispose_StepOne(void)
     ControlFLAG.Bbits.Port_FaultDispose = 1;
     //check
     FBLatch_Temp = Port_FBStatusRead(1); //读主FPGA的FB锁存
-    FBLatch_Temp = (FBLatch_Temp & PORT_Regulate_DATA.FB_EN.FB_EN16);
+    FBLatch_Temp &= Port_EffectiveFBEnable();
     FBLatch_TAD = FBLatch_Temp;
 
     /* Analog 插件对应的 FB 位表示端口级保护触发。 */
@@ -471,7 +471,7 @@ void FaultCheckAndDispose_StepOne(void)
     if (PortLatch_TAD) //端口故障
     {
         ADProtect_Temp = Port_AD_ProtectStatusRead(1);
-        ADProtect_Temp = ADProtect_Temp & PORT_Regulate_DATA.AD_PROT_EN.AD_PORT_EN16;
+        ADProtect_Temp = ADProtect_Temp & Port_AD_PORT_EN;
 
 #ifdef FaultOutTest
         Flag_DC_FAULT = 1;
@@ -543,21 +543,21 @@ void FaultCheckAndDispose_StepOne(void)
             if (FBLatch_Temp & (0x0001 << (Input_A_PluginUnit_8 - 2)))
             {
                 FOLatch_A_TAD = Port_FOStatusRead(Input_A_PluginUnit_8, 1);
-                FOLatch_A_TAD = FOLatch_A_TAD & PORT_Regulate_DATA.FO_1_EN.FO_EN16;
+                FOLatch_A_TAD &= Port_EffectiveFOEnable(Input_A_PluginUnit_8);
             }
 
             FBLatch_Temp = FBLatch_TAD;
             if (FBLatch_Temp & (0x0001 << (Input_B_PluginUnit_12 - 2)))
             {
                 FOLatch_B_TAD = Port_FOStatusRead(Input_B_PluginUnit_12, 1);
-                FOLatch_B_TAD = FOLatch_B_TAD & PORT_Regulate_DATA.FO_2_EN.FO_EN16;
+                FOLatch_B_TAD &= Port_EffectiveFOEnable(Input_B_PluginUnit_12);
             }
 
             FBLatch_Temp = FBLatch_TAD;
             if (FBLatch_Temp & (0x0001 << (Input_C_PluginUnit_16 - 2)))
             {
                 FOLatch_C_TAD = Port_FOStatusRead(Input_C_PluginUnit_16, 1);
-                FOLatch_C_TAD = FOLatch_C_TAD & PORT_Regulate_DATA.FO_3_EN.FO_EN16;
+                FOLatch_C_TAD &= Port_EffectiveFOEnable(Input_C_PluginUnit_16);
             }
 
             if (FOLatch_A_TAD || FOLatch_B_TAD || FOLatch_C_TAD)
@@ -576,7 +576,7 @@ void FaultCheckAndDispose_StepOne(void)
             if (FBLatch_Temp & (0x0001 << (Input_A_PluginUnit_8 - 2)))
             {
                 FOLatch_A_TAD = Port_FOStatusRead(Input_A_PluginUnit_8, 1);
-                FOLatch_A_TAD = FOLatch_A_TAD & PORT_Regulate_DATA.FO_1_EN.FO_EN16;
+                FOLatch_A_TAD &= Port_EffectiveFOEnable(Input_A_PluginUnit_8);
             }
 
             if (FOLatch_A_TAD)
@@ -602,7 +602,7 @@ void FaultCheckAndDispose_StepOne(void)
             if (FBLatch_Temp & (0x0001 << (Input_A_PluginUnit_8 - 2)))
             {
                 FOLatch_A_TAD = Port_FOStatusRead(Input_A_PluginUnit_8, 1);
-                FOLatch_A_TAD = FOLatch_A_TAD & PORT_Regulate_DATA.FO_1_EN.FO_EN16;
+                FOLatch_A_TAD &= Port_EffectiveFOEnable(Input_A_PluginUnit_8);
             }
 
             FBLatch_Temp = FBLatch_TAD;

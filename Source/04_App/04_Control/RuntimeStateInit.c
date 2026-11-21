@@ -37,8 +37,6 @@ void RuntimeStateInit_ResetObservationAndModes(void)
     Breaker_err = 0;
     SM_write_flag = 0;
     SM_write_count = 0;
-    ISO_counter_on = 0;
-    ISO_counter_off = 0;
 
 #ifdef COM_TEST_PluginUnit
     WrongTimes_LEFT = 0;

@@ -1,5 +1,10 @@
 # 50 A 峰值带载限流与开关量板控制修改记录
 
+> 2026-11-18：本文第4节及后续开关地址、名称、电平、宏配置均为历史定义，已由实际S301图纸替代。当前QF1/KT1定义、启动反馈及调试以 [S301开关修改记录](SWITCH_301_QF1_KT1_20261118.md) 为准。
+
+
+> 2026-11-16：100 Vac专用宏和程序已移除。本文低压配置、限流步骤及证据属于历史版本；当前配置和本次验证见 [移除记录](REMOVE_LV100_PROFILE_20261116.md)，VOFA通道见 [运行遥测](VOFA_TELEMETRY.md)。
+
 日期：2026-10-19。工程：`D:/Code/SST/AnyEyesVersion`。本轮基于提交 `248cff0`（标签 `low-voltage-100vac-20261019`）。本轮标签为 `load-current-switch-io-20261019`；构建和主机检查证据另存 `evidence/load_current_switch_validation.json`，不覆盖历史证据。
 
 ## 1. 运行配置与试验边界

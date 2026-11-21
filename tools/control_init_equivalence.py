@@ -19,47 +19,6 @@ from annotate_source import token_stream
 PARSER = Parser(Language(tree_sitter_c.language()))
 
 
-def select_high_voltage_profile(text):
-    """Drop intentional low-voltage profile branches for baseline comparison.
-
-    The initialization audit compares the original high-voltage statement order.
-    Low-voltage defaults are reviewed configuration extensions; selecting the
-    original ``#else`` branch (or dropping an extension-only block) preserves
-    the audit's purpose without hiding unrelated initialization changes.
-    """
-    lines = text.splitlines(True)
-    output = []
-    index = 0
-    while index < len(lines):
-        if not re.match(r'^\s*#\s*if\s+SST_LOW_VOLTAGE_100V_TEST\s*$', lines[index]):
-            output.append(lines[index])
-            index += 1
-            continue
-        index += 1
-        yes, no = [], []
-        branch = yes
-        depth = 1
-        while index < len(lines) and depth:
-            line = lines[index]
-            directive = re.match(r'^\s*#\s*(if|ifdef|ifndef|else|elif|endif)\b', line)
-            if directive and directive[1] in ('if', 'ifdef', 'ifndef'):
-                depth += 1
-                branch.append(line)
-            elif directive and directive[1] == 'endif':
-                depth -= 1
-                if depth:
-                    branch.append(line)
-            elif directive and directive[1] == 'else' and depth == 1:
-                branch = no
-            else:
-                branch.append(line)
-            index += 1
-        if depth:
-            raise AssertionError('Unbalanced SST_LOW_VOLTAGE_100V_TEST block')
-        output.extend(select_high_voltage_profile(''.join(no)) if no else [])
-    return ''.join(output)
-
-
 def repair_reviewed_baseline_semicolon(text):
     """Register only the known SVG_380V baseline syntax correction.
 
@@ -175,7 +134,7 @@ def verify():
         if name == 'Initial_Variable':
             original_text = repair_reviewed_baseline_semicolon(original_text)
         before = token_stream(original_text)
-        after = token_stream(select_high_voltage_profile(expanded.decode()))
+        after = token_stream(expanded.decode())
         if before != after:
             comparison = 0 if before[0] != after[0] else 1
             left, right = before[comparison], after[comparison]

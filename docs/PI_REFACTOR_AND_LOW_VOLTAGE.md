@@ -1,5 +1,7 @@
 # PI 重构与 100 Vac 单相低压试验修改记录
 
+> 2026-11-16：100 Vac专用宏和程序已移除。本文低压配置、限流步骤及证据属于历史版本；当前配置和本次验证见 [移除记录](REMOVE_LV100_PROFILE_20261116.md)，VOFA通道见 [运行遥测](VOFA_TELEMETRY.md)。
+
 ## 1. 版本与适用范围
 
 工程路径：`D:\Code\SST\AnyEyesVersion`。

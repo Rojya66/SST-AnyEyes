@@ -360,8 +360,7 @@ float Iin_d_Positive_last, /* Iin_d_Positive_last：端口电流 d 轴/分量的
 #endif
 
 #ifdef HVAC_online
-ushort GNDSwitch, /* GNDSwitch：原接地开关状态。 */
-    ISOSwitch; /* ISOSwitch：原隔离开关状态。 */
+
 #endif
 
 #ifdef HVAC_online
@@ -373,8 +372,7 @@ ushort SM_write_count; /* SM_write_count：旧维护存储写入的累计计数�
 #endif
 
 #ifdef HVAC_online
-ushort ISO_counter_on, /* ISO_counter_on：原隔离开关闭合确认计数。 */
-    ISO_counter_off; /* ISO_counter_off：原隔离开关断开确认计数。 */
+
 #endif
 
 #ifdef HVAC_online

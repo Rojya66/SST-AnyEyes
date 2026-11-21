@@ -46,8 +46,8 @@ Main.main
 CpuTask_ServiceHeartbeat
   → ChbDabControl_Service
   → SstFault_Service
-  → 可选 SstDpramHost_ServiceRemoteControl / ServiceTelemetry
-  → SstDpramMaintenance_Service                  后台16数据字分片
+  → 可选 SstDpramHost_ProcessIncomingBlocks / ServiceTelemetry
+  → SstDpramMaintenance_ProcessPendingRequest                  后台16数据字分片
   → 捕获原10ms节拍
   → SstSerial_TxService
   → SstDebug_ReceiveService
@@ -97,7 +97,7 @@ CpuTask_ServiceHeartbeat
 4. `RuntimeStateInit_ResetLegacySerial`
 5. `FpgaInit_SetSafeOutputs`
 6. `PortStatusInit_DefaultState`
-7. `DpramDefaults_InitRegulation`
+7. `DpramDefaults_InitializeRegulation`
 8. `FpgaInit_ConfigureModuleLayout`
 9. `ControlDefaults_InitLimits`
 10. `ControlDefaults_InitCoefficients`

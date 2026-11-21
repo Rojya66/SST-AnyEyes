@@ -1,0 +1,104 @@
+//###########################################################################
+// FILE: SstHardwareParameters.c
+// FUNCTION: 把EEPROM接线参数明确连接到501/701/主控的真实变量及FPGA写接口。
+//###########################################################################
+#include "SstHardwareParameters.h"
+#include "ControlData.h"
+#include "ProtectionData.h"
+#include "PortStatusData.h"
+#include "FpgaInit.h"
+#include "FpgaIo.h"
+#include "SstPortStatus.h"
+
+/*==================================================================
+ * 函数功能: 读取16个活动硬件配置字，作为v3镜像的最后一段
+ * 输入参数: words：调用者提供的16字缓存，顺序见头文件枚举
+ * 输出参数: 当前运行方式、AD/FO/FB使能、六组501位图和旧端口管理方式
+ * 返回值: 无
+ * 执行说明: 完全停机的后台保存调用；不从旧遥调缓存取值。
+ *================================================================*/
+void SstHardwareParameters_Read(uint16_t *words)
+{
+    words[SST_HW_SYSTEM_MODE] = PortRunFLAG.Bbits.Port_RunOrTest |
+                               (PortRunFLAG.Bbits.Port_AutoOrManual << 1U);
+    words[SST_HW_AD_ENABLE] = Port_AD_PORT_EN;
+    words[SST_HW_FO_A_ENABLE] = Port_FO_1_EN;
+    words[SST_HW_FO_B_ENABLE] = Port_FO_2_EN;
+    words[SST_HW_FO_C_ENABLE] = Port_FO_3_EN;
+    words[SST_HW_FB_ENABLE] = Port_FB_EN;
+    words[SST_HW_PM_A1] = HA_PM_A1;
+    words[SST_HW_PM_A2] = HA_PM_A2;
+    words[SST_HW_PM_B1] = HA_PM_B1;
+    words[SST_HW_PM_B2] = HA_PM_B2;
+    words[SST_HW_PM_C1] = HA_PM_C1;
+    words[SST_HW_PM_C2] = HA_PM_C2;
+    words[SST_HW_PORT_ON_STATE] = Port_OnState;
+    words[SST_HW_MAIN_MODE] = Port_Main_WorkMode;
+    words[SST_HW_STATCOM_MODE] = Port_STATCOM_WorkMode;
+    words[SST_HW_APF_MODE] = Port_APF_WorkMode;
+}
+
+/*==================================================================
+ * 函数功能: 校验硬件配置的有效位宽及方式范围，不修改活动对象
+ * 输入参数: words：Read定义的完整16字缓存
+ * 返回值: SST_PARAM_OK通过，SST_PARAM_RANGE表示格式/范围非法
+ * 执行说明: CRC通过后仍需校验内容；全0模块位图允许保留停机配置，
+ *           能否启动由控制器的单相/三相拓扑校验决定。
+ *================================================================*/
+uint16_t SstHardwareParameters_Validate(const uint16_t *words)
+{
+    uint16_t index; /* 当前FO或PM通道位图的固定索引。 */
+    if ((words[SST_HW_SYSTEM_MODE] > 3U) ||
+        ((words[SST_HW_AD_ENABLE] & 0x0FFFU) != 0U) ||
+        (words[SST_HW_PORT_ON_STATE] > 0x000FU) ||
+        (words[SST_HW_MAIN_MODE] > 3U) ||
+        (words[SST_HW_STATCOM_MODE] > 3U) ||
+        (words[SST_HW_APF_MODE] > 2U))
+        return SST_PARAM_RANGE;
+    /* 与屏幕协议一致：FO只使用低15位；FB的16位均有效。 */
+    for (index = SST_HW_FO_A_ENABLE; index <= SST_HW_FO_C_ENABLE; ++index)
+    {
+        if ((words[index] & 0x8000U) != 0U)
+            return SST_PARAM_RANGE;
+    }
+    /* 每张501只有8个串行通信口；不把701通道号压缩成连续UNIT编号。 */
+    for (index = SST_HW_PM_A1; index <= SST_HW_PM_C2; ++index)
+    {
+        if (words[index] > 0x00FFU)
+            return SST_PARAM_RANGE;
+    }
+    return SST_PARAM_OK;
+}
+
+/*==================================================================
+ * 函数功能: 将通过整幅校验的硬件配置应用至DSP变量和实际FPGA寄存器
+ * 输入参数: words：已通过Validate的16字缓存
+ * 输出参数: 501 PM/NUM、202 AD、三块701 FO、主控FB及端口方式
+ * 返回值: 无
+ * 执行说明: 初始化或完全停机调用；不产生任何启停命令或开关动作。
+ *================================================================*/
+void SstHardwareParameters_Apply(const uint16_t *words)
+{
+    /* PM -> 六张501的PM/NUM，同时重算NHA_module_*和每相参考基值。
+     * 不只恢复HA_PM_*变量，否则FPGA和DSP会使用不同的模块分布。 */
+    FpgaInit_ApplyModuleLayout(&words[SST_HW_PM_A1]);
+
+    /* 保护路径逐项明确写入：202 AD、三块701 FO、主控FB。 */
+    Port_AD_PORT_EN = words[SST_HW_AD_ENABLE];
+    Port_ADProtect_EN();
+    Port_FO_1_EN = words[SST_HW_FO_A_ENABLE];
+    Port_FO_2_EN = words[SST_HW_FO_B_ENABLE];
+    Port_FO_3_EN = words[SST_HW_FO_C_ENABLE];
+    Port_FB_EN = words[SST_HW_FB_ENABLE];
+    Port_FO_EN_Set(3U, 0U, 0U, 0U, 0U);
+    Port_FB_EN_Set();
+
+    PortRunFLAG.Bbits.Port_RunOrTest = words[SST_HW_SYSTEM_MODE] & 1U;
+    PortRunFLAG.Bbits.Port_AutoOrManual = (words[SST_HW_SYSTEM_MODE] >> 1U) & 1U;
+    Port_OnState = words[SST_HW_PORT_ON_STATE];
+    Port_Main_WorkMode = words[SST_HW_MAIN_MODE];
+    Port_STATCOM_WorkMode = words[SST_HW_STATCOM_MODE];
+    Port_APF_WorkMode = words[SST_HW_APF_MODE];
+    Port_StateUpdate_Write();
+    /* run_enable、dab_enable、fault_reset和物理QF1/KT1输出均不在存储对象中。 */
+}

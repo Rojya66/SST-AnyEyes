@@ -1,4 +1,4 @@
-#include "ChbDabControl.h"
+﻿#include "ChbDabControl.h"
 #include "SstBoardConfig.h"
 #include "ProtectionData.h"
 #include "SstControlConfig.h"
@@ -28,10 +28,10 @@ void FpgaInit_SetSafeOutputs(void)
     TX_EN_Control_Write();
     Module_PM_CTL.PM_CTL16 = 0x0F00;
     Module_Control_Write();
-    Port_BKU_Send(1);
-    Port_FB_EN = 0;
+    Port_FB_EN = 0U;
     Port_FB_EN_Set();
-    //  FaultLatch_Clear(0,1);
+    Port_FO_EN_Set(3U, 0U, 0U, 0U, 0U);
+    Port_BKU_Send(1);
 }
 
 /*==================================================================
@@ -43,9 +43,9 @@ void FpgaInit_SetSafeOutputs(void)
  *================================================================*/
 void FpgaInit_ConfigureModuleLayout(void)
 {
-    uchar i; /* i：本分域初始化的循环索引，每个循环均从0开始。 */
-    ushort InitialTemp; /* InitialTemp：模块位图和模块数量换算的原整字临时值。 */
-    float InitialTempFloat; /* InitialTempFloat：参考比例或控制限幅计算的原浮点临时值。 */
+    const ushort module_masks[6] = {CHB_PM_A1_MASK, CHB_PM_A2_MASK,
+                                    CHB_PM_B1_MASK, CHB_PM_B2_MASK,
+                                    CHB_PM_C1_MASK, CHB_PM_C2_MASK}; /* 六张501按A1/A2/B1/B2/C1/C2排列。 */
     //ID.ID16
     FPGA_Interface[0].ID.ID16 = 0x6050;
     FPGA_Interface[1].ID.ID16 = 0x6041;
@@ -75,13 +75,26 @@ void FpgaInit_ConfigureModuleLayout(void)
  * each module command by FPGA501.
  */
     //PM
-    HA_PM_A1 = CHB_PM_A1_MASK;
-    HA_PM_A2 = CHB_PM_A2_MASK;
-    HA_PM_B1 = CHB_PM_B1_MASK;
-    HA_PM_B2 = CHB_PM_B2_MASK;
-    HA_PM_C1 = CHB_PM_C1_MASK;
-    HA_PM_C2 = CHB_PM_C2_MASK;
+    FpgaInit_ApplyModuleLayout(module_masks);
+}
 
+/*==================================================================
+ * 函数功能: 将六组501端口位图写入FPGA，并重算每相模块数和参考基值
+ * 输入参数: module_masks：A1/A2/B1/B2/C1/C2六个低8位位图
+ * 输出参数: HA_PM_*、每相模块数量、501 PM/NUM/TX_EN、601 SHUTDOWN及旧参数镜像
+ * 执行说明: 只允许初始化或完全停机调用；EEPROM恢复也走这里，避免仅改RAM。
+ *================================================================*/
+void FpgaInit_ApplyModuleLayout(const ushort *module_masks)
+{
+    uchar i; /* 遍历501的8个物理通信口。 */
+    ushort InitialTemp; /* 当前模块位图或模块数量。 */
+    float InitialTempFloat; /* 每相参考基值计算中间值。 */
+    HA_PM_A1 = module_masks[0];
+    HA_PM_A2 = module_masks[1];
+    HA_PM_B1 = module_masks[2];
+    HA_PM_B2 = module_masks[3];
+    HA_PM_C1 = module_masks[4];
+    HA_PM_C2 = module_masks[5];
     FPGA_Interface[Com_A1_PluginUnit_5 - 2].PM = HA_PM_A1;
     FPGA_Interface[Com_A2_PluginUnit_6 - 2].PM = HA_PM_A2;
     FPGA_Interface[Com_B1_PluginUnit_9 - 2].PM = HA_PM_B1;
@@ -95,7 +108,8 @@ void FpgaInit_ConfigureModuleLayout(void)
      * and uses NUM as the total module count of the whole phase for
      * NLM+PWM allocation.
      *
-     * 模块位图集中定义在 ChbDabControl.h 的 CHB_PM_*_MASK；
+     * 源码默认位图定义在 ChbDabControl.h 的 CHB_PM_*_MASK；
+     * 有效v3 EEPROM镜像可在完全停机时覆盖，并统一经过本函数写入。
      * NUM 是同相两块 501 卡有效位的总数，不是物理桥臂数量。
      * 按置位数量计算各相NUM，保持修改位图后的对应关系。
      * The popcount form is kept so runtime
@@ -153,6 +167,10 @@ void FpgaInit_ConfigureModuleLayout(void)
     FPGA_Interface[Com_B2_PluginUnit_10 - 2].NUM = NHA_module_B;
     FPGA_Interface[Com_C1_PluginUnit_13 - 2].NUM = NHA_module_C;
     FPGA_Interface[Com_C2_PluginUnit_14 - 2].NUM = NHA_module_C;
+
+    Port_ApplyModuleShutdownMask();
+    Module_Control_Write();
+    TX_EN_Control_Write();
 
     /*
      * ReferenceDEF is a one-module reference scale. Multiplying by NUM
@@ -318,6 +336,7 @@ void FpgaInit_InitRecorderFanStatus(void)
 
     //  Port_RealStatus.Bbits.S_Mode=2;   //手动
 
+    /* 上电保持 FAN_OFF=0；SVG_EN/DAB_EN 未健康运行时，UNIT 按母线电压自治均压。 */
     Module_FAN_OFF(0);
 
     Port_OnState = 0x000B;

@@ -19,7 +19,7 @@ env['PYTHONPATH']=str(ROOT/'build/test_dependencies')+os.pathsep+env.get('PYTHON
 builds=[('Debug','default',[]),('Release','default',[]),
         ('Debug','anyeyes',['SST_DEBUG_PROTOCOL=1']),
         ('Debug','simulator',['SST_SIMULATOR_MODE=1','SST_ENABLE_DPRAM=0']),
-        ('Debug','three_phase',['SST_PHASE_A_ONLY_TEST=0','SST_LOW_VOLTAGE_100V_TEST=0','SST_DEBUG_PROTOCOL=1']),
+        ('Debug','three_phase',['SST_PHASE_A_ONLY_TEST=0','SST_DEBUG_PROTOCOL=1']),
         ('Debug','switch_io',['SST_ENABLE_SWITCH_OUTPUT=1','SST_ENABLE_SWITCH_FEEDBACK=1'])]
 checks=['dpram_screen','dpram_screen_layout','dpram_switch_maintenance','comment_coverage','firmware_trace','dpram_commands',
         'dpram_maintenance','parameter_precision','parameter_store_migration','protocol_regression',

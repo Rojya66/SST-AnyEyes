@@ -25,9 +25,6 @@ extern "C"
 
     extern unsigned char Flag_RemoteMeasure; /* Flag_RemoteMeasure：Timer2 更新、后台消费的遥测轮询到时标志。 */
 
-    extern unsigned char Flag_Switch500ms; /* Flag_Switch500ms：Timer2 更新、后台消费的开关操作等待 500 ms到时标志。 */
-
-    extern unsigned char Flag_Switch1s; /* Flag_Switch1s：Timer2 更新、后台消费的开关操作等待 1 s到时标志。 */
 
     extern unsigned char
         Flag_Precharge500ms; /* Flag_Precharge500ms：Timer2 更新、后台消费的预充等待 500 ms到时标志。 */
@@ -59,10 +56,6 @@ extern "C"
 
     extern unsigned short coutStopWait; /* coutStopWait：Timer2 原 停机等待计数；实际节拍沿用原判断式。 */
 
-    extern unsigned short
-        coutSwitch500ms; /* coutSwitch500ms：Timer2 原 开关操作等待 500 ms计数；实际节拍沿用原判断式。 */
-
-    extern unsigned short coutSwitch1s; /* coutSwitch1s：Timer2 原 开关操作等待 1 s计数；实际节拍沿用原判断式。 */
 
     extern unsigned short
         coutPrecharge500ms; /* coutPrecharge500ms：Timer2 原 预充等待 500 ms计数；实际节拍沿用原判断式。 */

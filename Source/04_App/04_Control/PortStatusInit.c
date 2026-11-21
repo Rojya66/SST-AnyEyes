@@ -1,4 +1,4 @@
-#include "SstControlConfig.h"
+﻿#include "SstControlConfig.h"
 /* 文件职责: PortStatusInit 所属数据域的默认初始化；保持原连续语句段。 */
 #include "PortStatusInit.h"
 #include "SstTypes.h"
@@ -12,7 +12,7 @@
 
 #ifdef HVAC_online
 /*==================================================================
- * 函数功能: 建立原端口主模式、停机状态、故障初值及页0恢复
+ * 函数功能: 建立原端口主模式、停机状态、故障初值；EEPROM恢复由统一镜像执行
  * 输入参数: 无
  * 输出参数: 更新所属数据域及原硬件寄存器；语句顺序保持原初始化段。
  * 返回值: 无
@@ -36,9 +36,6 @@ void PortStatusInit_DefaultState(void)
     Port_RunStatus = PortStatusNum_Nonvaild;
     ControlFLAG.ControlFLAG16 = 0;
 
-    SW.SwitchFLAG16 = 0x0040; //EXT_CB_ON_EN=1
-    SW.Bbits.S_EXT_CB_ON_EN = 1;
-
     PortRunFLAG.PortRunFLAG16 = 0x007c; //all port don't need shutdown
     Port_RealStatus.Bbits.S_Mode = 0; //Auto Run
 
@@ -46,14 +43,7 @@ void PortStatusInit_DefaultState(void)
     FaultTypeFLAG.FaultTypeFLAG16 = 0;
     FaultDisposeFLAG.FaultDisposeFLAG16 = 0;
 
-#ifdef EEPROM_FirstW
-    DSP_2_EEPROM_Page0();
-#endif
-
-#ifdef EEPROM_ON
-    EEPROM_Page0_2_DSP();
-#endif
-
+    /* 不再读取无CRC的旧页0；合法持久化端口方式由统一镜像恢复。 */
     Port_StateUpdate_Write();
 }
 

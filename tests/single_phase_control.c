@@ -243,7 +243,7 @@ static unsigned long start_single_phase_closed_loop(unsigned short startup_strat
     setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_params.startup_strategy = startup_strategy;
     g_chb_dab_params.precharge_stable_10ms = 2U;
-    g_chb_dab_params.bypass_delay_10ms = 2U;
+    g_chb_dab_params.kt1_settle_10ms = 2U;
     g_chb_dab_params.pll_lock_10ms = 2U;
     g_chb_dab_params.pll_timeout_10ms = 100U;
     g_chb_dab_params.startup_id_reference_a = 5.0F;
@@ -335,7 +335,7 @@ static void hash_single_phase_observables(void)
 
 #define H(member) hash_word((uint32_t)g_chb_dab_status.member)
 #define F(member) hash_test_float(g_chb_dab_status.member)
-    H(state); H(fault_code); H(ac_input_closed); H(precharge_bypassed);
+    H(state); H(fault_code); H(qf1_close_command); H(kt1_close_command);
     H(ac_pwm_enabled); H(dab_pwm_enabled); H(pll_locked); H(dab_duty_count);
     H(tick_10ms); H(startup_phase); H(startup_tad_count); H(voltage_loop_active);
     F(dc_voltage_average_v); F(dc_voltage_min_v); F(pll_angle_rad);

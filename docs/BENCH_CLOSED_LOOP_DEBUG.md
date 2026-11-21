@@ -1,5 +1,7 @@
 # 单UNIT、无主回路的闭环输入模拟与CCS操作指南
 
+> 2026-11-16：100 Vac专用宏和程序已移除。本文低压配置、限流步骤及证据属于历史版本；当前配置和本次验证见 [移除记录](REMOVE_LV100_PROFILE_20261116.md)，VOFA通道见 [运行遥测](VOFA_TELEMETRY.md)。
+
 > 2026-10-19 更新：下文的 300→680 V 和默认模式描述保留为历史高压流程。当前源码默认是 100 Vac 单相试验，输入发生器仍默认 300 V/module、325 V peak，不能直接启动。低压注入需先设 `dc_a_v=19`、`grid_peak_v=141.42136`、`current_peak_a=0`，预充时手动升至 23～25 V，运行后逐步升至 35 V；具体按 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 5 节。复现本文原高压三相流程须显式 LOW=0、PHASE=0，并按实际硬件核对三相模块位图。
 
 2026-10-14握手完善后的工作区保留用户手动设置`SST_BENCH_INPUT_SIM=1`，最新默认AnyEyes测试固件位于`build/Debug/anyeyes_identity/SST_AnyEyes.out`，电子标签见[ANYEYES_HANDSHAKE.md](ANYEYES_HANDSHAKE.md)。下述默认关闭说明及`bench_inputs`产物对应此前固定标签`bench-input-simulation-2026-10-14`；当前测试输入字段和启动操作仍相同。恢复真实采样应明确设置测试宏为0并重新构建。

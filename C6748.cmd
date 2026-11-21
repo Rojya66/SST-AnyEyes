@@ -249,7 +249,7 @@ SECTIONS
 	.Reg_GPIO		>  GPIO
 	.Reg_McBSP1		>  McBSP1
 	
-	.FPGA_InterfaceFile   > FPGA_SPACE  
+	.FPGA_InterfaceFile   > FPGA_SPACE, type = NOINIT /* FPGA MMIO */
 
 	.FT3_PTCT_Register           > FT3_PTCT_Register_U17
 	.FT3_FaultRecorder_Register  > FT3_FaultSwitch_Register_U17

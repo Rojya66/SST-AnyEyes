@@ -8,7 +8,7 @@
 
 /*==================================================================
  * 函数功能: 完全停机的手动开关维护；不绕过核心直接解锁PWM
- * 输入参数: close_mask/open_mask：bit0旁路、bit1进线；OFF优先
+ * 输入参数: close_mask/open_mask：协议bit0=KT1、bit1=QF1；分闸优先
  * 输出参数: 启用真实输出宏时，修改DOUT、脉冲截止时间和命令镜像
  * 返回值: SST_PARAM_*；输出宏关闭返回DENIED，不伪报硬件动作成功
  * 执行说明: 仅后台；最终重检和DOUT提交使用原短临界区，未修改FastStep。
@@ -21,9 +21,9 @@ unsigned short ChbDabControl_MaintenanceSwitch(unsigned short close_mask, unsign
  * derived from the masks by Initial_Variable().
  */
 /* CHB_PM_A1_MASK：A1 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A1_MASK 0x0007U //7U//0x007FU
+#define CHB_PM_A1_MASK 0x0001U //7U//0x007FU
 /* CHB_PM_A2_MASK：A2 组在线模块位图，决定模块数及参考尺度。 */
-#define CHB_PM_A2_MASK 0x0007U //0x003FU
+#define CHB_PM_A2_MASK 0x0000U //0x003FU
 /* CHB_PM_B1_MASK：B1 组在线模块位图，决定模块数及参考尺度。 */
 #define CHB_PM_B1_MASK 0x0000U
 /* CHB_PM_B2_MASK：B2 组在线模块位图，决定模块数及参考尺度。 */
@@ -58,7 +58,7 @@ typedef enum
 {
     /* CHB/DAB 状态机的停止状态编号。 */ CHB_STATE_STOPPED = 0,
     /* CHB/DAB 状态机的预充状态编号。 */ CHB_STATE_PRECHARGE = 1,
-    /* CHB/DAB 状态机的旁路等待状态编号。 */ CHB_STATE_BYPASS_DELAY = 2,
+    /* KT1吸合反馈及稳定等待；状态编号2保持原屏幕协议。 */ CHB_STATE_KT1_SETTLE = 2,
     /* CHB/DAB 状态机的等待 PLL状态编号。 */ CHB_STATE_WAIT_PLL = 3,
     /* CHB/DAB 状态机的运行状态编号。 */ CHB_STATE_RUNNING = 4,
     /* CHB/DAB 状态机的故障状态编号。 */ CHB_STATE_FAULT = 5
@@ -104,8 +104,8 @@ typedef struct
     /* precharge_voltage_v：三相时取各相模块均压最小值，单相时取 A 相均压的预充阈值，单位 V。 */
     unsigned short precharge_stable_10ms; /* precharge_stable_10ms：预充电压须持续达标的 10 ms 拍数。 */
     unsigned short precharge_timeout_10ms; /* precharge_timeout_10ms：预充允许的最大等待时间，单位 10 ms。 */
-    unsigned short bypass_delay_10ms; /* bypass_delay_10ms：投入预充旁路后的等待时间，单位 10 ms。 */
-    unsigned short breaker_pulse_10ms; /* breaker_pulse_10ms：交流输入断路器合/分闸脉冲宽度，单位 10 ms。 */
+    unsigned short kt1_settle_10ms; /* KT1吸合后的机械稳定等待时间，单位10ms。 */
+    unsigned short qf1_pulse_10ms; /* QF1合闸/分闸线圈脉冲宽度，单位10ms，默认50=500ms。 */
 
     float pll_nominal_frequency_hz; /* pll_nominal_frequency_hz：PLL 额定电网频率，单位 Hz。 */
     float pll_kp; /* pll_kp：PLL 归一化 q 轴误差比例系数。 */
@@ -119,7 +119,7 @@ typedef struct
     float voltage_kp;
     /* voltage_kp：直流电压外环比例系数，沿用原增量 PI 等效值。 */ /* Converted from source incremental PI */
     float voltage_ki; /* voltage_ki：直流电压外环积分系数，积分乘 sample_period_s。 */
-    float voltage_current_limit_a; /* voltage_current_limit_a：运行电流给定上限，单位 A峰值；低压启动动态收紧且约束dq矢量。 */
+    float voltage_current_limit_a; /* voltage_current_limit_a：电压外环输出及启动 Id 给定的幅值上限，单位 A峰值。 */
 
     unsigned short startup_strategy;
     /* startup_strategy：闭环启动策略，0 原版兼容、1 固定 Id 斜坡后移交电压环。 */ /* 0：兼容原版；1：Idref斜坡后接管 */
@@ -158,8 +158,8 @@ typedef struct
 {
     unsigned short state; /* state：CHB_STATE_* 运行状态编号。 */
     unsigned short fault_code; /* fault_code：CHB_FAULT_* 控制故障编号，区别于五位上报故障码。 */
-    unsigned short ac_input_closed; /* ac_input_closed：交流输入闭合状态镜像，非零表示闭合。 */
-    unsigned short precharge_bypassed; /* precharge_bypassed：预充旁路状态镜像，非零表示已旁路。 */
+    unsigned short qf1_close_command; /* QF1目标位置：1合闸、0分闸；不是实际反馈。 */
+    unsigned short kt1_close_command; /* KT1保持命令：1吸合、0释放；不是实际反馈。 */
     unsigned short ac_pwm_enabled; /* ac_pwm_enabled：CHB 工频桥 PWM 使能状态镜像。 */
     unsigned short dab_pwm_enabled; /* dab_pwm_enabled：DAB PWM 使能状态镜像。 */
     unsigned short pll_locked; /* pll_locked：PLL 连续锁定已确认标志。 */
@@ -178,14 +178,15 @@ typedef struct
     unsigned long startup_tad_count; /* startup_tad_count：启动斜坡已执行的 TAD 拍数。 */
     unsigned short voltage_loop_active; /* voltage_loop_active：电压外环已接管 Id 给定的标志。 */
     float modulation_actual; /* modulation_actual：当前各活动相调制指令的最大绝对值，单相只计 A 相。 */
-    float current_limit_active_a; /* current_limit_active_a：本拍实际采用的电流给定幅值上限，单位 A峰值。 */
-    unsigned short load_ready; /* load_ready：低压母线连续达到目标且启动完成后置1，本次运行锁存至停机。 */
-    unsigned short load_ready_count; /* load_ready_count：低压母线与最终给定连续达标的TAD计数。 */
+    float current_limit_active_a; /* current_limit_active_a：复位/启动时复制的电流限幅兼容镜像；实际限幅读取 params.voltage_current_limit_a，单位 A峰值。 */
+    unsigned short load_ready; /* load_ready：兼容保留字段，固定0；DPRAM状态字bit3保持原位，不再表示带载就绪。 */
+    unsigned short load_ready_count; /* load_ready_count：兼容保留字段，固定0；不再执行低压就绪计数。 */
     unsigned short switch_din_raw; /* switch_din_raw：开关板实时DIN原始字；反馈宏关闭时为0。 */
-    unsigned short ac_input_feedback; /* ac_input_feedback：按配置极性译码的实际进线已合反馈，非命令镜像。 */
-    unsigned short bypass_feedback; /* bypass_feedback：实际旁路已合反馈，非命令镜像。 */
+    unsigned short qf1_closed; /* S301 DI7：QF1合位辅助触点，1闭合。 */
+    unsigned short kt1_closed; /* S301 DI6：KT1合位辅助触点，1闭合。 */
     unsigned short switch_stable_count; /* switch_stable_count：当前命令的反馈连续一致10ms拍数。 */
     unsigned short switch_mismatch_count; /* switch_mismatch_count：命令与反馈连续不一致10ms拍数。 */
+    unsigned short qf1_open; /* S301 DI8：QF1分位辅助触点，1闭合；不能由合位取反得到。 */
 } CHB_DAB_STATUS;
 
 extern volatile CHB_DAB_COMMAND

@@ -61,33 +61,19 @@ static void Module_PWMEN(unsigned short enable)
                           strip_includes(path.read_text(encoding='utf-8-sig')) + '\n')
         unit = work / 'safety.c'
         unit.write_text('\n'.join(pieces), encoding='utf-8')
-        for phase, low in ((0, 0), (1, 0), (1, 1), (0, None), (1, None)):
-            expected_low = 0 if low is None else low  # Current checkout explicitly selects the high-voltage profile.
-            binary = work / f'safety_{phase}_{low}.exe'
+        for phase in (0, 1):
+            binary = work / f'safety_{phase}.exe'
             command = [compiler, '-std=c99', '-O2', '-Wall', '-Wextra',
                        '-DSST_SIMULATOR_MODE=1', '-DSST_ENABLE_DPRAM=0',
-                       '-DSST_BENCH_INPUT_SIM=0', f'-DSST_PHASE_A_ONLY_TEST={phase}',
-                       f'-DSST_HOST_EXPECT_LOW_PROFILE={expected_low}']
-            if low is not None:
-                command.append(f'-DSST_LOW_VOLTAGE_100V_TEST={low}')
+                       '-DSST_ENABLE_SWITCH_OUTPUT=0', '-DSST_ENABLE_SWITCH_FEEDBACK=0', '-DSST_BENCH_INPUT_SIM=0', f'-DSST_PHASE_A_ONLY_TEST={phase}']
             command.extend([str(unit), '-lm', '-o', str(binary)])
             result = subprocess.run(command, capture_output=True, text=True)
             if result.returncode:
                 raise SystemExit(result.stdout + result.stderr)
             result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=30)
-            profile_label = str(low) if low is not None else f'auto({expected_low})'
-            print(f'PROFILE phase_a={phase} low_voltage={profile_label}\n{result.stdout}', end='')
+            print(f'PROFILE phase_a={phase}\n{result.stdout}', end='')
             if result.returncode:
                 raise SystemExit(result.stderr or result.returncode)
-        # The low-voltage settings describe one physical A-phase fixture.
-        invalid_command = [part for part in command[:command.index(str(unit))]
-                           if not part.startswith(('-DSST_PHASE_A_ONLY_TEST=',
-                                                   '-DSST_LOW_VOLTAGE_100V_TEST='))]
-        invalid = subprocess.run(invalid_command + ['-DSST_PHASE_A_ONLY_TEST=0',
-                                 '-DSST_LOW_VOLTAGE_100V_TEST=1', '-fsyntax-only', str(unit)],
-                                 capture_output=True, text=True)
-        assert invalid.returncode != 0 and 'requires SST_PHASE_A_ONLY_TEST' in invalid.stderr
-        print('PASS unsupported low-voltage three-phase combination rejected')
 
 
 if __name__ == '__main__':

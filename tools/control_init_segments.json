@@ -34,7 +34,7 @@
       "purpose": "建立原端口主模式、停机状态、故障初值及页0恢复"
     },
     {
-      "name": "DpramDefaults_InitRegulation",
+      "name": "DpramDefaults_InitializeRegulation",
       "file": "Source/04_App/10_Host/DpramDefaults.c",
       "purpose": "建立原DPRAM遥调缓存的默认保护使能和给定"
     },

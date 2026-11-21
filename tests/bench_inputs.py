@@ -43,9 +43,9 @@ def run(project: Path, compiler: str, enabled: bool, template: str) -> str:
         unit.write_text(code, encoding="utf-8")
         binary = work / "bench_test.exe"
         command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
-                   f"-DSST_BENCH_INPUT_SIM={int(enabled)}",
+                   "-DSST_ENABLE_SWITCH_OUTPUT=0", "-DSST_ENABLE_SWITCH_FEEDBACK=0", f"-DSST_BENCH_INPUT_SIM={int(enabled)}",
                    "-DSST_SIMULATOR_MODE=1", "-DSST_ENABLE_DPRAM=0",
-                   "-DSST_PHASE_A_ONLY_TEST=0", "-DSST_LOW_VOLTAGE_100V_TEST=0",
+                   "-DSST_PHASE_A_ONLY_TEST=0",
                    str(unit), "-lm", "-o", str(binary)]
         subprocess.run(command, check=True, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")

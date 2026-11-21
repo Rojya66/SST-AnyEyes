@@ -165,7 +165,7 @@ void SstDebug_ReceiveService(void)
  * 输入参数: now：本轮 UART 发送前采集的 10 ms 节拍。
  * 输出参数: 协议状态更新；应答帧或 VOFA 波形帧加入 SstSerial 发送队列。
  * 返回值  : 无
- * 调用说明: VOFA 通道定义见 docs/VOFA_LOW_VOLTAGE.md；所有采样和编码均在后台完成。
+ * 调用说明: VOFA 通道定义见 docs/VOFA_TELEMETRY.md；所有采样和编码均在后台完成。
  *           本地数组只保证入队后帧内容不再变化；各通道可能来自相邻 TAD，未屏蔽中断。
  *================================================================*/
 void SstDebug_ProtocolService(uint32_t now)

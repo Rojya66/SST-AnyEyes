@@ -25,7 +25,7 @@ void Initial_Variable(void)
     RuntimeStateInit_ResetLegacySerial();
     FpgaInit_SetSafeOutputs();
     PortStatusInit_DefaultState();
-    DpramDefaults_InitRegulation();
+    DpramDefaults_InitializeRegulation();
     FpgaInit_ConfigureModuleLayout();
     ControlDefaults_InitLimits();
     ControlDefaults_InitCoefficients();

@@ -19,11 +19,12 @@ volatile CHB_DAB_COMMAND g_chb_dab_command;
 volatile CHB_DAB_STATUS g_chb_dab_status;
 volatile CHB_DAB_PARAMETERS g_chb_dab_params;
 static unsigned short s_active_ac_mode=CHB_AC_MODE_CLOSED_LOOP;
-static unsigned long s_breaker_pulse_end_tick;
+static unsigned long s_qf1_pulse_start_tick, s_switch_action_tick;
+static unsigned short s_switch_waiting_feedback;
 static unsigned short interrupts=1, disable_count, restore_count, outputs;
 static union { uint16_t PORT_FAULT16; struct {unsigned unused:15;unsigned PORT_FAULT_bit15:1;} Bbits;} Port_RealFault;
 static struct {uint16_t FaultTypeFLAG16;} FaultTypeFLAG;
-static struct {struct {unsigned short Breaker_InnerOn,Breaker_InnerOff,Contactor_Inner;}Bbits;}Port_DOUT;
+static struct {struct {unsigned short Qf1ClosePulse,Qf1OpenPulse,Kt1Hold;}Dout;}Port_DOUT;
 static unsigned IntGlobalDisable(void){unsigned old=interrupts;interrupts=0;++disable_count;return old;}
 static void IntGlobalRestore(unsigned old){interrupts=old;++restore_count;}
 static void Port_IO_Out(void){assert(!interrupts);++outputs;}
@@ -33,23 +34,28 @@ int main(void){
  unsigned long deadline;
  g_chb_dab_command.ac_mode=CHB_AC_MODE_CLOSED_LOOP;
  g_chb_dab_status.state=CHB_STATE_STOPPED;
- g_chb_dab_params.breaker_pulse_10ms=50;
+ g_chb_dab_params.qf1_pulse_10ms=50;
 #if SST_ENABLE_SWITCH_OUTPUT
  assert(ChbDabControl_MaintenanceSwitch(1,0)==CHB_SWITCH_DENIED);
  assert(ChbDabControl_MaintenanceSwitch(2,0)==CHB_SWITCH_OK);
- assert(g_chb_dab_status.ac_input_closed && Port_DOUT.Bbits.Breaker_InnerOn);
- deadline=s_breaker_pulse_end_tick;g_chb_dab_status.tick_10ms=10;
+ assert(g_chb_dab_status.qf1_close_command && Port_DOUT.Dout.Qf1ClosePulse);
+ deadline=s_qf1_pulse_start_tick;g_chb_dab_status.tick_10ms=10;
  assert(ChbDabControl_MaintenanceSwitch(2,0)==CHB_SWITCH_OK);
- assert(s_breaker_pulse_end_tick==deadline);
+ assert(s_qf1_pulse_start_tick==deadline);
 #if SST_ENABLE_SWITCH_FEEDBACK
  assert(ChbDabControl_MaintenanceSwitch(1,0)==CHB_SWITCH_DENIED);
- g_chb_dab_status.ac_input_feedback=1;
+ g_chb_dab_status.qf1_closed=1;
 #endif
  assert(ChbDabControl_MaintenanceSwitch(1,0)==CHB_SWITCH_OK);
- assert(g_chb_dab_status.precharge_bypassed && Port_DOUT.Bbits.Contactor_Inner);
+ assert(g_chb_dab_status.kt1_close_command && Port_DOUT.Dout.Kt1Hold);
+ assert(ChbDabControl_MaintenanceSwitch(1,2)==CHB_SWITCH_OK); /* QF1 OFF overrides KT1 ON. */
+ assert(g_chb_dab_status.kt1_close_command==0 && g_chb_dab_status.qf1_close_command==0);
+ deadline=s_qf1_pulse_start_tick;g_chb_dab_status.tick_10ms=20;
+ assert(ChbDabControl_MaintenanceSwitch(0,2)==CHB_SWITCH_OK);
+ assert(s_qf1_pulse_start_tick==deadline); /* Repeated OFF cannot stretch an active coil pulse. */
  assert(ChbDabControl_MaintenanceSwitch(3,3)==CHB_SWITCH_OK);
- assert(!g_chb_dab_status.precharge_bypassed && !g_chb_dab_status.ac_input_closed);
- assert(Port_DOUT.Bbits.Breaker_InnerOff && !Port_DOUT.Bbits.Contactor_Inner);
+ assert(!g_chb_dab_status.kt1_close_command && !g_chb_dab_status.qf1_close_command);
+ assert(Port_DOUT.Dout.Qf1OpenPulse && !Port_DOUT.Dout.Kt1Hold);
  FaultTypeFLAG.FaultTypeFLAG16=2;
  assert(ChbDabControl_MaintenanceSwitch(2,0)==CHB_SWITCH_DENIED);
  FaultTypeFLAG.FaultTypeFLAG16=0;g_chb_dab_status.state=CHB_STATE_FAULT;
@@ -62,7 +68,7 @@ int main(void){
 #else
  (void)deadline;
  assert(ChbDabControl_MaintenanceSwitch(2,0)==CHB_SWITCH_DENIED);
- assert(!outputs && !disable_count && !g_chb_dab_status.ac_input_closed);
+ assert(!outputs && !disable_count && !g_chb_dab_status.qf1_close_command);
 #endif
  puts("PASS manual switch: stopped/fault interlocks, real feedback, OFF priority, no pulse retrigger and no PWM writes");return 0;
 }
@@ -71,8 +77,12 @@ int main(void){
 
 def main():
     source=(ROOT/'Source/04_App/04_Control/ChbDabControl.c').read_text(encoding='utf-8-sig')
-    code=PREFIX+extract_function(source,'Chb_SetAcInput')+'\n'+extract_function(source,'Chb_SetPrechargeBypass')+'\n'
-    code+=source[source.index('unsigned short ChbDabControl_MaintenanceSwitch('):]+TEST
+    code=(PREFIX+'#define CHB_MANUAL_KT1_MASK 1U\n'
+          +'#define CHB_MANUAL_QF1_MASK 2U\n'
+          +extract_function(source,'Chb_SetQf1')+'\n'
+          +extract_function(source,'Chb_SetKt1')+'\n'
+)
+    code+=extract_function(source,'ChbDabControl_MaintenanceSwitch')+TEST
     with tempfile.TemporaryDirectory(prefix='sst_manual_switch_') as folder:
         work=Path(folder)
         for path in ['00_Config/ChbBuildConfig.h','04_Control/ChbDabControl.h']:
@@ -81,7 +91,7 @@ def main():
         for phase,output,feedback in [(p,o,f) for p in (0,1) for o in (0,1) for f in (0,1)]:
             binary=work/'sst_switch.exe'
             args=[shutil.which('gcc'),'-std=c99','-O2','-I'+str(work),f'-DSST_PHASE_A_ONLY_TEST={phase}',
-                  f'-DSST_LOW_VOLTAGE_100V_TEST={phase}',f'-DSST_ENABLE_SWITCH_OUTPUT={output}',
+                  f'-DSST_ENABLE_SWITCH_OUTPUT={output}',
                   f'-DSST_ENABLE_SWITCH_FEEDBACK={feedback}',str(work/'switch.c'),'-o',str(binary)]
             result=subprocess.run(args,capture_output=True,text=True)
             if feedback and not output:

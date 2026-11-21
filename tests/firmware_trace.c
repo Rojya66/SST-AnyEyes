@@ -67,6 +67,7 @@ STUB(PSCInit,"psc")
 STUB(EMIFASetup,"emifa")
 STUB(GPIOBankPinMuxSet,"pinmux")
 STUB(GPIOBankPinInit,"gpio_init")
+STUB(Eeprom_Initialize,"eeprom_init")
 void IntDSPINTCInit(void) { event("interrupt_init"); }
 void IntGlobalEnable(void) { event("global_interrupts"); }
 STUB(TimerInit,"timer_init")
@@ -75,18 +76,18 @@ STUB(Variable_RST,"variable_reset")
 STUB(SstParameters_LoadPersistent,"sst_load")
 void ChbDabControl_Init(void) { event("core_init"); core_ready=1; }
 void SstFault_Init(void) { event("fault_init"); fault_ready=1; }
-STUB(SstDpramMaintenance_Init,"dpram_maintenance_init")
-STUB(SstDpramScreen_Init,"dpram_screen_init")
-STUB(SstDpramHost_Init,"dpram_host_init")
-STUB(SstDpramScreen_Service,"dpram_screen_service")
-STUB(SstDpramMaintenance_Service,"dpram_maintenance_service")
+STUB(SstDpramMaintenance_Initialize,"dpram_maintenance_init")
+STUB(SstDpramScreen_Initialize,"dpram_screen_init")
+STUB(SstDpramHost_Initialize,"dpram_host_init")
+STUB(SstDpramScreen_ProcessTransactions,"dpram_screen_service")
+STUB(SstDpramMaintenance_ProcessPendingRequest,"dpram_maintenance_service")
 void SstDebug_Init(void) { event("debug_init"); debug_ready=1; }
 void FaultLatch_Clear(unsigned char run,unsigned char reset) { (void)reset; event(run?"latch_runtime_clear":"latch_boot_clear"); }
 void ChbDabControl_Tick10ms(void) { event("core_tick"); g_chb_dab_status.tick_10ms++; }
 STUB(ChbDabControl_Service,"core_service")
 STUB(SstFault_Service,"fault_service")
-STUB(SstDpramHost_ServiceRemoteControl,"dpram_control")
-STUB(SstDpramHost_ServiceTelemetry,"dpram_telemetry")
+STUB(SstDpramHost_ProcessIncomingBlocks,"dpram_control")
+STUB(SstDpramHost_PublishTelemetry,"dpram_telemetry")
 uint32_t SstDebug_GetTick1ms(void) { event("tick_capture"); return (uint32_t)g_chb_dab_status.tick_10ms; }
 STUB(SstSerial_TxService,"tx")
 STUB(SstDebug_ReceiveService,"rx")
@@ -130,18 +131,18 @@ int main(void) {
 #if SST_ENABLE_DPRAM
       "dpram_control","dpram_telemetry","dpram_maintenance_service","dpram_screen_service",
 #endif
-      "tick_capture","tx","rx","protocol","store","tx","realtime_background"};
+      "store","realtime_background"};
     CpuTask_InitBootFlags(); SystemInit_Hardware();
-    before("psc","emifa"); before("emifa","pinmux"); before("gpio_init","interrupt_init"); before("timer_init","register_timer");
+    before("psc","emifa"); before("emifa","pinmux"); before("gpio_init","eeprom_init"); before("eeprom_init","interrupt_init"); before("timer_init","register_timer");
     check(handlers[C674X_MASK_INT8]==Timer2Isr && !handlers[C674X_MASK_INT5],"only timer registered during boot"); scenarios++;
     record_events=0; for(i=0;i<2000;i++) Timer2Isr(); record_events=1;
     check(Flag_20s==1 && g_chb_dab_status.tick_10ms==2000,"real timer 20 second flag and core ticks");
     SystemInit_WaitPowerOnDelay(); check(!Flag_20s && !Flag_WDI,"startup wait consumes elapsed flag"); scenarios++;
     reset_events(); SystemInit_Runtime();
-    before("variable_init","variable_reset"); before("variable_reset","latch_boot_clear");
-    before("latch_boot_clear","core_init"); before("core_init","fault_init"); before("fault_init","dpram_maintenance_init"); before("dpram_maintenance_init","debug_init"); before("debug_init","enable_tad");
+    before("variable_init","variable_reset"); before("variable_reset","core_init");
+    before("core_init","fault_init"); before("fault_init","dpram_maintenance_init"); before("dpram_maintenance_init","debug_init"); before("debug_init","latch_boot_clear"); before("latch_boot_clear","enable_tad");
 #if CHB_LOAD_EEPROM_PARAMETERS
-    before("debug_init","sst_load"); before("sst_load","enable_tad");
+    before("debug_init","sst_load"); before("sst_load","latch_boot_clear");
 #endif
     check(handlers[C674X_MASK_INT5]==FPGAIsr && handlers[C674X_MASK_INT4]==FAULTIsr,"TAD and fault handlers bound");
 #if SST_ENABLE_DPRAM

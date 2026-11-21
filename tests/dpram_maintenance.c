@@ -24,7 +24,18 @@ uint16_t OC_time_SET_L2 = 5U, OV_level_SET = 830U, OV_time_SET = 5U;
 float HA_L_Voltage_Precharge = 350.0F, HA_H_Voltage = 780.0F;
 static volatile uint16_t mailbox;
 static unsigned mailbox_accesses, remote_calls, eeprom_writes;
-static uint8_t eeprom[512];
+static uint8_t eeprom[1024];
+HOST_PORT_RUN_FLAG PortRunFLAG = {{1U,1U}};
+uint16_t Port_AD_PORT_EN=0x7000,Port_FO_1_EN=0x3F7F,Port_FO_2_EN=0x3F7F,Port_FO_3_EN=0x3F7F,Port_FB_EN=0x4441;
+uint16_t HA_PM_A1=7,HA_PM_A2=7,HA_PM_B1=0,HA_PM_B2=0,HA_PM_C1=0,HA_PM_C2=0;
+uint16_t Port_OnState=0xB,Port_Main_WorkMode=3,Port_STATCOM_WorkMode=0,Port_APF_WorkMode=0;
+void FpgaInit_ApplyModuleLayout(const uint16_t *m)
+{HA_PM_A1=m[0];HA_PM_A2=m[1];HA_PM_B1=m[2];HA_PM_B2=m[3];HA_PM_C1=m[4];HA_PM_C2=m[5];}
+void Port_ADProtect_EN(void) {}
+void Port_FO_EN_Set(uint16_t a,uint16_t b,uint16_t c,uint16_t d,uint16_t e)
+{(void)a;(void)b;(void)c;(void)d;(void)e;}
+void Port_FB_EN_Set(void) {}
+void Port_StateUpdate_Write(void) {}
 static SST_FAULT_RECORD history[32];
 static uint16_t fault_codes[32], fault_count, history_count;
 
@@ -35,9 +46,11 @@ volatile uint16_t *HostHalfword(uint32_t address)
     return &mailbox;
 }
 uint8_t r_eeprom_byte_read(uint8_t page, uint8_t offset)
-{ CHECK(page >= 6U && page <= 7U); return eeprom[page * 64U + offset]; }
+{ CHECK(page >= 6U && page <= 8U); return eeprom[page * 64U + offset]; }
+uint8_t r_eeprom_section_read(uint8_t page,uint8_t offset,uint8_t length,uint8_t *data)
+{ CHECK(page >= 6U && page <= 8U);memcpy(data,eeprom+page*64U+offset,length);return VALIDFLAG; }
 uint8_t r_eeprom_byte_write(uint8_t page, uint8_t offset, uint8_t value)
-{ CHECK(page >= 6U && page <= 7U); eeprom[page * 64U + offset] = value; ++eeprom_writes; return 1U; }
+{ CHECK(page >= 6U && page <= 8U); eeprom[page * 64U + offset] = value; ++eeprom_writes; return 1U; }
 void ChbDabControl_ApplyRemoteCommand(unsigned short start, unsigned short stop)
 {
     ++remote_calls;
@@ -98,7 +111,7 @@ static void StepBudget(void)
     CopyWords(before_response, DPRAM_SstResponse, 128U);
     CopyWords(before_telemetry, DPRAM_SstTelemetry, 128U);
     CopyWords(before_history, DPRAM_SstHistory, 512U);
-    SstDpramMaintenance_Service();
+    SstDpramMaintenance_ProcessPendingRequest();
     changed = Changed(before_response, DPRAM_SstResponse, 128U) +
               Changed(before_telemetry, DPRAM_SstTelemetry, 128U) +
               Changed(before_history, DPRAM_SstHistory, 512U);
@@ -118,7 +131,7 @@ static uint16_t SendFrame(uint16_t *data, unsigned regenerate_crc)
     unsigned i, before = mailbox_accesses;
     if(regenerate_crc) data[12] = RequestCrcReference(data);
     for(i = 0U; i < 16U; ++i) DPRAM_SstRequest[i] = data[i];
-    SstDpramMaintenance_Request(); StepBudget();
+    SstDpramMaintenance_MarkRequestPending(); StepBudget();
 #if SST_ENABLE_DPRAM
     CHECK(DPRAM_SstResponse[0] & 1U); /* Partial responses are visibly invalid. */
     CHECK(mailbox_accesses == before); /* No ACK before the complete response. */
@@ -137,7 +150,7 @@ static uint16_t SendFrame(uint16_t *data, unsigned regenerate_crc)
 static void FinishSave(void)
 {
     unsigned i;
-    for(i = 0U; i < 240U; ++i)
+    for(i = 0U; i < 300U; ++i)
     {
         unsigned before = eeprom_writes;
         ++g_chb_dab_status.tick_10ms; SstParameterStore_Service();
@@ -192,13 +205,13 @@ int main(void)
     CheckLegacy();
     memset(eeprom, 0xFF, sizeof(eeprom)); Stopped();
     for(i = 0U; i < 128U; ++i) DPRAM_SstRequest[i] = 0x55AAU;
-    SstDpramMaintenance_Init();
+    SstDpramMaintenance_Initialize();
     for(i = 0U; i < 128U; ++i) CHECK(DPRAM_SstRequest[i] == 0x55AAU); /* Initialization never overwrites host input. */
 #if !SST_ENABLE_DPRAM
     for(i = 0U; i < 128U; ++i) DPRAM_SstResponse[i] = DPRAM_SstTelemetry[i] = 0xCAFEU;
     for(i = 0U; i < 512U; ++i) DPRAM_SstHistory[i] = 0xCAFEU;
     Frame(data, 1U, 2U, 0U, 0U); data[6] = 1U; SendFrame(data, 1U);
-    SstDpramMaintenance_Init(); SstDpramMaintenance_Publish(); FinishPublication();
+    SstDpramMaintenance_Initialize(); SstDpramMaintenance_PublishSnapshots(); FinishPublication();
     CHECK(!mailbox_accesses && !remote_calls && !g_chb_dab_command.run_enable);
     for(i = 0U; i < 128U; ++i) CHECK(DPRAM_SstResponse[i] == 0xCAFEU && DPRAM_SstTelemetry[i] == 0xCAFEU);
     for(i = 0U; i < 512U; ++i) CHECK(DPRAM_SstHistory[i] == 0xCAFEU);
@@ -227,18 +240,20 @@ int main(void)
         uint16_t good[16];
         unsigned before;
         Frame(good, 3U, 2U, 0U, 0U); good[6] = 1U;
-        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && remote_calls == 1U);
-        Stopped(); CHECK(SendFrame(good, 1U) == SST_PARAM_OK && remote_calls == 1U && !g_chb_dab_command.run_enable);
+        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && !remote_calls);
+        CHECK(g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable);
+        /* 缓存命中的同序号重试不应再次赋值；手动撤销后重试仍须保持关闭。 */
+        Stopped(); CHECK(SendFrame(good, 1U) == SST_PARAM_OK && !remote_calls && !g_chb_dab_command.run_enable);
         memcpy(data, good, sizeof(data)); data[6] = 0U;
-        CHECK(SendFrame(data, 1U) == SST_DPRAM_FRAME_ERROR && remote_calls == 1U);
+        CHECK(SendFrame(data, 1U) == SST_DPRAM_FRAME_ERROR && !remote_calls && !g_chb_dab_command.run_enable);
         /* An invalid conflicting retry must not poison the valid request's cached result. */
-        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && remote_calls == 1U);
+        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && !remote_calls && !g_chb_dab_command.run_enable);
         memcpy(data, good, sizeof(data)); data[12] ^= 1U;
-        CHECK(SendFrame(data, 0U) == SST_DPRAM_FRAME_ERROR && remote_calls == 1U);
-        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && remote_calls == 1U);
+        CHECK(SendFrame(data, 0U) == SST_DPRAM_FRAME_ERROR && !remote_calls && !g_chb_dab_command.run_enable);
+        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && !remote_calls && !g_chb_dab_command.run_enable);
         memcpy(data, good, sizeof(data)); data[2] = data[13] = 0U;
-        CHECK(SendFrame(data, 1U) == SST_DPRAM_FRAME_ERROR && remote_calls == 1U);
-        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && remote_calls == 1U);
+        CHECK(SendFrame(data, 1U) == SST_DPRAM_FRAME_ERROR && !remote_calls && !g_chb_dab_command.run_enable);
+        CHECK(SendFrame(good, 1U) == SST_PARAM_OK && !remote_calls && !g_chb_dab_command.run_enable);
         before = remote_calls;
         Frame(data, 4U, 2U, 0U, 0U); data[6] = data[7] = data[10] = 1U; data[8] = 3U;
         CHECK(SendFrame(data, 1U) == SST_PARAM_OK && remote_calls == before);
@@ -294,10 +309,10 @@ int main(void)
     g_chb_dab_command.run_enable = g_chb_dab_command.dab_enable = 1U;
     Frame(data, 21U, 2U, 0U, 0U); data[7] = 1U;
     CHECK(SendFrame(data, 1U) == SST_PARAM_OK && !g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable);
-    FinishSave(); CHECK(eeprom_writes == 109U);
+    FinishSave(); CHECK(eeprom_writes == 141U);
     OC_level_SET = 77U;
     {
-        uint8_t saved_image[108];
+        uint8_t saved_image[140];
         memcpy(saved_image, &eeprom[6U * 64U], sizeof(saved_image));
         g_chb_dab_params.voltage_kp = 0.0F;
         for(i = 1U; i <= 5U; i += 2U)
@@ -306,9 +321,9 @@ int main(void)
             uint16_t crc;
             memcpy(&eeprom[6U * 64U], saved_image, sizeof(saved_image));
             eeprom[6U * 64U + offset] = eeprom[6U * 64U + offset + 1U] = 0xFFU;
-            crc = ImageCrcReference(&eeprom[6U * 64U], 106U);
-            eeprom[6U * 64U + 106U] = (uint8_t)crc;
-            eeprom[6U * 64U + 107U] = (uint8_t)(crc >> 8);
+            crc = ImageCrcReference(&eeprom[6U * 64U], 138U);
+            eeprom[6U * 64U + 138U] = (uint8_t)crc;
+            eeprom[6U * 64U + 139U] = (uint8_t)(crc >> 8);
             Frame(data, (uint16_t)(400U + i), 4U, 0U, SST_DPRAM_COMMIT);
             CHECK(SendFrame(data, 1U) == SST_PARAM_RANGE);
             CHECK(OC_level_SET == 77U && g_chb_dab_params.voltage_kp == 0.0F); /* No partial mirror apply. */
@@ -342,11 +357,11 @@ int main(void)
     }
     g_chb_dab_status.state = CHB_STATE_FAULT; g_chb_dab_status.fault_code = CHB_FAULT_AC_OVERCURRENT;
     g_chb_dab_status.tick_10ms = 0x1234ABCDUL; g_chb_dab_status.startup_tad_count = 0x7890EF12UL;
-    g_chb_dab_status.ac_input_closed = g_chb_dab_status.precharge_bypassed = 1U;
+    g_chb_dab_status.qf1_close_command = g_chb_dab_status.kt1_close_command = 1U;
     g_chb_dab_status.pll_locked = g_chb_dab_status.voltage_loop_active = 1U;
     g_chb_dab_status.dc_voltage_average_v = 710.25F; g_chb_dab_status.dc_voltage_min_v = 699.25F;
     g_chb_dab_status.id_feedback_a = -12.34F; g_chb_dab_status.iq_feedback_a = 400.0F;
-    SstDpramMaintenance_Publish();
+    SstDpramMaintenance_PublishSnapshots();
     CHECK((DPRAM_SstTelemetry[0] & 1U) && (DPRAM_SstHistory[0] & 1U));
     FinishPublication();
     CHECK(!(DPRAM_SstTelemetry[0] & 1U) && !(DPRAM_SstHistory[0] & 1U));
@@ -367,9 +382,9 @@ int main(void)
     CHECK(DPRAM_SstHistory[496] == 0U && DPRAM_SstHistory[511] == 0U);
     {
         uint16_t history_epoch = DPRAM_SstHistory[0];
-        SstDpramMaintenance_Publish(); FinishPublication();
+        SstDpramMaintenance_PublishSnapshots(); FinishPublication();
         CHECK(DPRAM_SstHistory[0] == history_epoch); /* Stable history is not republished. */
-        ++history[0].sequence; SstDpramMaintenance_Publish(); FinishPublication();
+        ++history[0].sequence; SstDpramMaintenance_PublishSnapshots(); FinishPublication();
         CHECK(DPRAM_SstHistory[0] != history_epoch && !(DPRAM_SstHistory[0] & 1U));
     }
 #if SST_ALLOW_REMOTE_COMMANDS

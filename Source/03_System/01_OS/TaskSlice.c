@@ -22,22 +22,25 @@
  *================================================================*/
 void TaskSlice_Service(void)
 {
-    uint32_t now; /* 本轮首次发送前捕获的 10 ms 节拍，供 VOFA 周期判断。 */
+    //uint32_t now; /* 本轮首次发送前捕获的 10 ms 节拍，供 VOFA 周期判断。 */
     CpuTask_ServiceHeartbeat();
     ChbDabControl_Service();
     SstFault_Service();
 #if SST_ENABLE_DPRAM
-    SstDpramHost_ServiceRemoteControl();
-    SstDpramHost_ServiceTelemetry();
-    SstDpramMaintenance_Service();
-    SstDpramScreen_Service();
+    SstDpramHost_ProcessIncomingBlocks();
+    SstDpramHost_PublishTelemetry();
+    SstDpramMaintenance_ProcessPendingRequest();
+    SstDpramScreen_ProcessTransactions();
 #endif
     //now = SstDebug_GetTick10ms(); /* 与协议初始化及周期参数保持同一时基。 */
+    /*
     now = SstDebug_GetTick1ms();
     SstSerial_TxService();
     SstDebug_ReceiveService();
     SstDebug_ProtocolService(now);
-    SstParameterStore_Service();
+
     SstSerial_TxService();
+    */
+    SstParameterStore_Service();
     Port_RealTimeParameter();
 }

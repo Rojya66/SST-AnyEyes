@@ -1,4 +1,4 @@
-#include "ControlData.h"
+﻿#include "ControlData.h"
 #include "DpramHostData.h"
 #include "PortStatusData.h"
 #include "SstControlConfig.h"
@@ -25,11 +25,10 @@
 /*                                                                          */
 /****************************************************************************/
 /*==================================================================
- * 函数功能: 读取旧版 EEPROM 第 0 页并恢复对应端口参数
+ * 函数功能: 显式读取旧页0的三个端口方式；不再从自动启动路径调用
  * 输入参数: 无
- * 输出参数: 参数全局量或指定 EEPROM 页。
  * 返回值: 无
- * 执行说明: 旧版存储兼容函数；页映射保持原项目定义。
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
 void EEPROM_Page0_2_DSP(void);
 /*==================================================================
@@ -101,10 +100,39 @@ void DSP_2_EEPROM_Page3(void);
  * 返回值: 无
  * 执行说明: 旧版存储兼容函数；页映射保持原项目定义。
  *================================================================*/
+/*==================================================================
+ * 函数功能: 读取显式旧格式页，失败或整段FF时不允许调用者解包
+ * 输入参数: page：原64字节逻辑页号
+ *           offset：页内起始偏移
+ *           length：连续读取字节数
+ *           data：至少length字节的原始接收缓存
+ * 返回值: VALIDFLAG读成功且非全FF；INVALIDFLAG失败/空白；旧格式仍无CRC
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+static Uint8 ReadLegacyPage(Uint8 page, Uint8 offset, Uint8 length, Uint8 *data)
+{
+    Uint8 index; /* 查找空白FF页之外的有效字节。 */
+    if (r_eeprom_section_read(page, offset, length, data) != VALIDFLAG)
+        return INVALIDFLAG;
+    for (index = 0U; index < length; ++index)
+    {
+        if (data[index] != 0xFFU)
+            return VALIDFLAG;
+    }
+    return INVALIDFLAG;
+}
+
+/*==================================================================
+ * 函数功能: 显式读取旧页0的端口方式，正常上电不再调用
+ * 输入参数: 无
+ * 返回值: 无
+ * 执行说明: 原始格式无CRC，读失败或空白时保留活动值。
+ *================================================================*/
 void EEPROM_Page0_2_DSP(void)
 {
     Uint8 DataTemp[4]; /* DataTemp：旧 EEPROM 页的原始字节打包/解包联合缓存。 */
-    r_eeprom_section_read(0, 8, 4, DataTemp);
+    if (ReadLegacyPage(0, 8, 4, DataTemp) != VALIDFLAG)
+        return;
     switch (DataTemp[0])
     {
         case 0:
@@ -181,23 +209,7 @@ void EEPROM_Page0_2_DSP(void)
             break;
         }
     }
-    switch (DataTemp[3])
-    {
-        case 0:
-        {
-            SW.Bbits.S_EXT_CB_ON_EN = 0;
-            break;
-        }
-        case 1:
-        {
-            SW.Bbits.S_EXT_CB_ON_EN = 1;
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
+    /* DataTemp[3]为旧外部断路器许可存储字，现保留并忽略。 */
 }
 
 /****************************************************************************/
@@ -217,7 +229,8 @@ void EEPROM_Page1_2_DSP(void)
     Uint8 DataTemp[54]; /* DataTemp：旧 EEPROM 页的原始字节打包/解包联合缓存。 */
     ushort EE_TEMP; /* EE_TEMP：旧 EEPROM 浮点参数的两字联合换算缓存。 */
     Uint8 i; /* i：本次数组、参数或模块遍历的索引。 */
-    r_eeprom_section_read(1, 0, 54, DataTemp);
+    if (ReadLegacyPage(1, 0, 54, DataTemp) != VALIDFLAG)
+        return;
 
     EE_TEMP = DataTemp[0];
 
@@ -338,7 +351,8 @@ void EEPROM_Page2_2_DSP(void)
     /************************PI参数************************/
     Uint8 DataTemp[24]; /* DataTemp：旧 EEPROM 页的原始字节打包/解包联合缓存。 */
     //	Uint8 i;
-    r_eeprom_section_read(2, 0, 24, DataTemp);
+    if (ReadLegacyPage(2, 0, 24, DataTemp) != VALIDFLAG)
+        return;
 
     EE_TEMP = DataTemp[0];
     PORT_Regulate_DATA_Buf.DPRAM_RemRegulate.PORT_V_P_1 = (EE_TEMP << 8);
@@ -407,7 +421,8 @@ void EEPROM_Page3_2_DSP(void)
     ushort EE_TEMP; /* EE_TEMP：旧 EEPROM 浮点参数的两字联合换算缓存。 */
     Uint8 DataTemp[8]; /* DataTemp：旧 EEPROM 页的原始字节打包/解包联合缓存。 */
     Uint8 i; /* i：本次数组、参数或模块遍历的索引。 */
-    r_eeprom_section_read(3, 0, 8, DataTemp);
+    if (ReadLegacyPage(3, 0, 8, DataTemp) != VALIDFLAG)
+        return;
 
     for (i = 0; i < 4; i++)
     {
@@ -508,23 +523,7 @@ void DSP_2_EEPROM_Page0(void)
             break;
         }
     }
-    switch (SW.Bbits.S_EXT_CB_ON_EN)
-    {
-        case 0:
-        {
-            DataTemp[3] = 0;
-            break;
-        }
-        case 1:
-        {
-            DataTemp[3] = 1;
-            break;
-        }
-        default:
-        {
-            break;
-        }
-    }
+    DataTemp[3] = 0U; /* 保留原存储位置；本机无旧外部断路器许可字段。 */
     r_eeprom_section_write(0, 8, 4, DataTemp);
 }
 

@@ -1,11 +1,10 @@
 """Run production switch output/control functions with host MMIO and DIN substitutes.
 
-The real register union is extracted from FpgaRegister.h. Covers all eight
-coil-polarity combinations, output-off, feedback-off and both control profiles.
+The real register union is extracted from FpgaRegister.h. Covers the drawing
+channel assignment, output-off, feedback-off and both phase configurations.
 No board electrical timing or C6748 WCET is measured.
 """
 from pathlib import Path
-import itertools
 import re
 import shutil
 import subprocess
@@ -26,6 +25,8 @@ def main():
     probe = ROOT / 'build/switch_register_probe.c'
     probe.parent.mkdir(parents=True, exist_ok=True)
     probe.write_text('#include <stddef.h>\n#include "FpgaRegister.h"\n'
+                     'typedef char check_union[(sizeof(XXG_SwitchINOUT)==2)?1:-1];\n'
+                     'typedef char check_block[(sizeof(FPGA_InterfaceBLOCK)==0x200)?1:-1];\n'
                      'typedef char check_dout[(offsetof(FPGA_InterfaceBLOCK,DOUT)==0x40)?1:-1];\n'
                      'typedef char check_din[(offsetof(FPGA_InterfaceBLOCK,DIN)==0x1C0)?1:-1];\n'
                      'typedef char check_latch[(offsetof(FPGA_InterfaceBLOCK,DIN_LATCH)==0x1C2)?1:-1];\n',
@@ -35,7 +36,11 @@ def main():
         'E:/Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-c6000_8.3.12'))
     result = compile_unit(ROOT, probe, cgt, {}, ROOT / 'build/switch_register_probe')
     assert result.returncode == 0, 'TI switch-register ABI probe failed'
-    print('PASS TI ABI: DOUT 0x60000040; DIN 0x600001C0; DIN_LATCH 0x600001C2')
+    board = read('Source/03_System/00_Board/SstBoardConfig.h')
+    io_plugin = int(re.search(r'#define IO_PluginUnit_2\s+(\d+)', board).group(1))
+    base = 0x60000000 + (io_plugin - 2) * 0x200
+    print(f'PASS TI ABI and actual plugin {io_plugin}: DOUT {base+0x40:08X}; '
+          f'DIN {base+0x1C0:08X}; DIN_LATCH {base+0x1C2:08X}')
     compiler = shutil.which('gcc')
     assert compiler, 'GCC required'
     registers = read('Source/02_Peripheral/00_FPGA/FpgaRegister.h')
@@ -44,15 +49,17 @@ def main():
     prefix = prefix.replace('typedef struct {\n    unsigned short Reference,',
                             'typedef unsigned short ushort;\n' + union +
                             '\ntypedef struct {\n    XXG_SwitchINOUT DOUT;\n    unsigned short Reference,')
-    prefix, count = re.subn(r'static struct \{ struct \{ unsigned short Breaker_InnerOn, Breaker_InnerOff,\s*'
-                           r'Contactor_Inner; } Bbits; } Port_DOUT;',
+    prefix, count = re.subn(r'static struct \{ struct \{ unsigned short Qf1ClosePulse, Qf1OpenPulse,\s*'
+                           r'Kt1Hold, AcRunning, AcFault; } Dout; } Port_DOUT;',
                            'static XXG_SwitchINOUT Port_DOUT;', prefix)
     assert count == 1
     prefix, count = re.subn(r'static void Port_IO_Out\(void\) \{.*?\}', '', prefix, flags=re.S)
     assert count == 1
     output = extract_function(read('Source/02_Peripheral/00_FPGA/FpgaIo.c'), 'Port_IO_Out')
     support = '''
-#define IO_PluginUnit_2 2
+#define IO_PluginUnit_2 IO_PLUGIN_NUMBER
+/* Host substitute for the fault word read by the production maintenance interlock. */
+static struct { unsigned short FaultTypeFLAG16; } FaultTypeFLAG;
 static unsigned short fake_din;
 static unsigned int din_reads;
 static unsigned short Port_DINRead(unsigned char latch)
@@ -63,6 +70,7 @@ static unsigned short Port_DINRead(unsigned char latch)
     return fake_din;
 }
 '''
+    support = support.replace('IO_PLUGIN_NUMBER', str(io_plugin))
     safety = read('tests/common_control_safety.c').replace('int main(void)', 'int unused_common_main(void)')
     pieces = [prefix, support, output, '#include "SstPi.h"\n#include "SstSinglePhase.h"']
     for relative in ('Source/01_ComLib/04_Pi/SstPi.c',
@@ -79,15 +87,10 @@ static unsigned short Port_DINRead(unsigned char latch)
             shutil.copy2(ROOT / relative, work / Path(relative).name)
         unit = work / 'switch_io.c'
         unit.write_text('\n'.join(pieces), encoding='utf-8')
-        cases = [(0, 0, 1, 1, 1), (1, 0, 1, 1, 1)]
-        cases += [(1, 1, *levels) for levels in itertools.product((0, 1), repeat=3)]
         for phase in (0, 1):
-            for output_on, feedback, close, open_, bypass in cases:
-                defines = dict(SST_PHASE_A_ONLY_TEST=phase, SST_LOW_VOLTAGE_100V_TEST=phase,
-                               SST_HOST_EXPECT_LOW_PROFILE=phase, SST_BENCH_INPUT_SIM=0,
-                               SST_ENABLE_SWITCH_OUTPUT=output_on, SST_ENABLE_SWITCH_FEEDBACK=feedback,
-                               SST_SWITCH_CLOSE_ACTIVE_HIGH=close, SST_SWITCH_OPEN_ACTIVE_HIGH=open_,
-                               SST_SWITCH_BYPASS_ACTIVE_HIGH=bypass)
+            for output_on, feedback in ((0, 0), (1, 0), (1, 1)):
+                defines = dict(SST_PHASE_A_ONLY_TEST=phase, SST_BENCH_INPUT_SIM=0,
+                               SST_ENABLE_SWITCH_OUTPUT=output_on, SST_ENABLE_SWITCH_FEEDBACK=feedback)
                 binary = work / 'switch_io.exe'
                 command = [compiler, '-std=c99', '-O2', '-Wall', '-Wextra',
                            *[f'-D{k}={v}' for k, v in defines.items()], str(unit), '-lm', '-o', str(binary)]
@@ -95,8 +98,9 @@ static unsigned short Port_DINRead(unsigned char latch)
                 assert result.returncode == 0, result.stdout + result.stderr
                 result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=15)
                 assert result.returncode == 0, str(defines) + '\n' + result.stdout + result.stderr
-                print(f'PASS switch_io phase={phase} output={output_on} feedback={feedback} '
-                      f'coil_levels={close}/{open_}/{bypass}: {result.stdout.strip()}')
+                print(f'PASS switch_io phase={phase} output={output_on} feedback={feedback}: '
+                      f'{result.stdout.strip()}')
+
 
 
 if __name__ == '__main__':

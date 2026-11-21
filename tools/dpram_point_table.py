@@ -49,7 +49,7 @@ TELEMETRY = {
     3: ('state', '0停机/1预充/2旁路延时/3等PLL/4运行/5故障'),
     4: ('control_fault', '0无/1预充超时/2PLL超时/3快速AC过流/4快速DC过压/5硬件/6非法配置'),
     5: ('startup_phase', '0空闲/1固定Id斜坡/2电压环平滑移交/3正常电压环运行'),
-    6: ('flags', 'bit0输入合/1旁路/2CHB PWM/3DAB PWM/4PLL锁定/5电压环/6快保使能/7CHB请求/8DAB请求；1有效'),
+    6: ('flags', 'bit0 QF1合闸目标/1 KT1保持/2CHB PWM/3DAB PWM/4PLL锁定/5电压环/6快保使能/7CHB请求/8DAB请求；1有效'),
     7: ('ac_mode', '0开环/1闭环'), 8: ('first_current_code', '五位故障码，当前表首项，0无故障'),
     9: ('fault_level', '0一级/1二级/2三级/3四级/4无故障'), 10: ('active_count', '0..32'),
     12: ('tick_10ms_low', '32位10ms节拍低16位'), 13: ('tick_10ms_high', '高16位'),
@@ -162,7 +162,7 @@ def main():
         reader = csv.DictReader(stream)
         bit_fields = reader.fieldnames
         bits = [row for row in reader if row['target'] != '0x66002E0C modern flags']
-    names = ['ac_input_closed', 'precharge_bypassed', 'ac_pwm_enabled', 'dab_pwm_enabled',
+    names = ['qf1_close_command', 'kt1_close_command', 'ac_pwm_enabled', 'dab_pwm_enabled',
              'pll_locked', 'voltage_loop_active', 'protection_enable', 'run_request', 'dab_request']
     for bit, name in enumerate(names):
         bits.append(dict(target='0x66002E0C modern flags', field=name, bit_low=bit, bit_high=bit,

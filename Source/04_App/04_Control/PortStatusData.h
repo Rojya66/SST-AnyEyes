@@ -33,8 +33,6 @@ extern "C"
 
     extern XXG_PORT_STATUS Port_RealStatus; /* Port_RealStatus：端口开关及桥状态的原位域缓存。 */
 
-    extern XXG_SwitchFLAG SW; /* SW：旧开关时序、动作状态及完成标志的位域缓存。 */
-
     extern XXG_PortRunFLAG PortRunFLAG; /* PortRunFLAG：旧端口运行、预充、PWM 及相序状态的位域缓存。 */
 
     extern XXG_ControlFLAG ControlFLAG; /* ControlFLAG：旧启动、停止、PWM、DAB 斜坡流程控制标志。 */
@@ -42,8 +40,6 @@ extern "C"
     extern unsigned char Flag_ComTest; /* Flag_ComTest：旧端口通信测试标志。 */
 
     extern unsigned short FourPortComZhi; /* FourPortComZhi：旧四端口通信测试状态字。 */
-
-    extern ushort SWTable_TotalTime; /* SWTable_TotalTime：旧开关动作表的总定时时间。 */
 
     extern ushort Port_OnState; /* Port_OnState：原端口已投入状态。 */
 

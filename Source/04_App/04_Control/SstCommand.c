@@ -13,8 +13,10 @@
 uint16_t SstCommand_IsStopped(void)
 {
     return (g_chb_dab_status.state == CHB_STATE_STOPPED || g_chb_dab_status.state == CHB_STATE_FAULT) &&
-           !g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable && !g_chb_dab_status.ac_pwm_enabled &&
-           !g_chb_dab_status.dab_pwm_enabled;
+           (g_chb_dab_command.run_enable == 0U) &&
+           (g_chb_dab_command.dab_enable == 0U) &&
+           (g_chb_dab_status.ac_pwm_enabled == 0U) &&
+           (g_chb_dab_status.dab_pwm_enabled == 0U);
 }
 
 /*==================================================================
@@ -66,7 +68,7 @@ uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value)
 #if SST_ALLOW_SERIAL_COMMANDS
     if (value > 1U)
         return SST_PARAM_RANGE;
-    if (index == 3U && !SstCommand_IsStopped())
+    if ((index == 3U) && (SstCommand_IsStopped() == 0U))
         return SST_PARAM_BUSY;
     if (index == 0U)
         g_chb_dab_command.run_enable = value;
@@ -85,44 +87,68 @@ uint16_t SstCommand_WriteSerialField(uint16_t index, uint16_t value)
 }
 
 /*==================================================================
- * 函数功能: 按停止和关脉冲优先规则将 DPRAM 字段接入统一控制命令
- * 输入参数: start：DPRAM启动位图，停止/关脉冲优先
- *           stop：DPRAM停止位图，停止优先于启动
+ * 函数功能: 将DPRAM启动、脉冲及复位有效位赋给实际控制命令
+ * 输入参数: start：块1 word2 / 00F2，bit0仅请求HVAC/CHB运行
+ *           stop：块1 word3 / 00F3，bit0整机停止，优先撤销两路请求
  *           pulse_on：脉冲使能位图，bit0 为 DAB、bit1 为 CHB
  *           pulse_off：脉冲禁用位图，bit0 为 DAB、bit1 为 CHB，优先于使能
- *           reset：故障复位请求位图，仅停机时接受
- * 输出参数: g_chb_dab_command 的启停、DAB 使能及故障复位字段；只提交命令。
+ *           reset：块1 word10 / 00FA，bit0请求故障复位，仅完全停机时接受
+ * 输出参数: g_chb_dab_command.run_enable、dab_enable、fault_reset
  * 返回值: 无
- * 执行说明: 后台DPRAM控制入口；只提交请求，实际PWM动作由原控制核心执行。
+ * 执行说明: 后台赋值入口。HVAC START不修改dab_enable；实际发波由原状态机决定。
  *================================================================*/
-void SstCommand_ApplyDpram(
+void SstControlCommand_ApplyRequests(
     unsigned short start, unsigned short stop, unsigned short pulse_on, unsigned short pulse_off, unsigned short reset)
 {
 #if SST_ALLOW_REMOTE_COMMANDS && SST_ENABLE_DPRAM
-    /* Only defined command bits participate; all other bits are reserved. */
+    /* 1. 再次限定脉冲有效位，兼容旧邮箱21调用；本函数不访问DPRAM或PWM寄存器。 */
     pulse_on &= 3U;
     pulse_off &= 3U;
     if (stop & 1U)
     {
+        /* 2. 保留原整机STOP语义；这是撤销两路请求，不是DAB启动联动。 */
         g_chb_dab_command.run_enable = 0U;
         g_chb_dab_command.dab_enable = 0U;
         return;
     }
-    /* Off always wins, including while parameter persistence is in progress. */
+    /* 3. word9 / 00F9：按桥独立撤销请求，保存参数忙时也必须允许关闭。 */
     if (pulse_off & 1U)
+    {
+        /* COM_PLUSE_OFF.bit0：仅关闭DAB请求，不修改CHB的run_enable。 */
         g_chb_dab_command.dab_enable = 0U;
+    }
     if (pulse_off & 2U)
+    {
+        /* COM_PLUSE_OFF.bit1：仅关闭CHB请求；闭环停机仍由核心关闭实际PWM。 */
         g_chb_dab_command.run_enable = 0U;
+    }
     if (SstParameterStore_IsBusy())
+    {
         return;
-    if ((start & 1U) && !pulse_off)
-        ChbDabControl_ApplyRemoteCommand(start, stop);
-    if ((pulse_on & 1U) && !(pulse_off & 1U))
-        g_chb_dab_command.dab_enable = 1U;
-    if ((pulse_on & 2U) && !(pulse_off & 2U))
+    }
+    if (((start & 1U) != 0U) && (pulse_off == 0U))
+    {
+        /* 4. COM_START_PORT.HVAC_Start：实际赋值在这里，只请求CHB运行。
+         * 不调用旧ChbDabControl_ApplyRemoteCommand，避免其把DAB也置1。
+         * dab_enable原为0就保持0，原为1也保持1；重复START不会重置状态机。 */
         g_chb_dab_command.run_enable = 1U;
+    }
+    if (((pulse_on & 1U) != 0U) && ((pulse_off & 1U) == 0U))
+    {
+        /* 5. word8 / 00F8 bit0：DPRAM旧控制块唯一的DAB置1入口。
+         * 只提交dab_enable；闭环必须到RUNNING且通过原联锁后才真正解DAB脉冲。 */
+        g_chb_dab_command.dab_enable = 1U;
+    }
+    if (((pulse_on & 2U) != 0U) && ((pulse_off & 2U) == 0U))
+    {
+        /* 6. word8 / 00F8 bit1：CHB解脉冲请求，写run_enable，不联动DAB。 */
+        g_chb_dab_command.run_enable = 1U;
+    }
     if ((reset & 1U) && SstCommand_IsStopped())
+    {
+        /* 7. word10 / 00FA bit0：只置复位请求；核心确认故障源后执行复位。 */
         g_chb_dab_command.fault_reset = 1U;
+    }
 #else
     (void)start;
     (void)stop;

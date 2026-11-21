@@ -18,7 +18,7 @@ AnyEyes 的 1 ms 时基沿用 `SstBoard_GetTick1ms` 接口，组合实现位于 
 | SST_TELEMETRY_PERIOD_10MS | 2 | VOFA默认50Hz |
 | CHB_LOAD_EEPROM_PARAMETERS | 0 | 可显式启用上电载入已保存SST参数 |
 
-当前默认输出 VOFA；切换 AnyEyes 使用 `SST_DEBUG_PROTOCOL=1`，不能同时在同一串口连续输出两种协议。VOFA模式使用12通道运行遥测：状态、故障、Udc均压、Idref、Id、Iq、启动阶段、启动电压参考、调制比、PLL锁定、AN瞬时电压和A相瞬时电流；每通道IEEE float32小端，尾00 00 80 7F，总52字节。完整通道定义见 `docs/VOFA_LOW_VOLTAGE.md`。原VOFA_Init/Process保留空兼容接口，不再直接访问UART。
+当前默认输出 VOFA；切换 AnyEyes 使用 `SST_DEBUG_PROTOCOL=1`，不能同时在同一串口连续输出两种协议。VOFA模式使用12通道运行遥测：状态、故障、Udc均压、Idref、Id、Iq、启动阶段、启动电压参考、调制比、PLL锁定、AN瞬时电压和A相瞬时电流；每通道IEEE float32小端，尾00 00 80 7F，总52字节。完整通道定义见 `docs/VOFA_TELEMETRY.md`。原VOFA_Init/Process保留空兼容接口，不再直接访问UART。
 
 ## 调度与帧仲裁
 
@@ -33,7 +33,7 @@ AnyEyes 的 1 ms 时基沿用 `SstBoard_GetTick1ms` 接口，组合实现位于 
   → SstSerial_TxService
 ```
 
-该通信段之前完成原DPRAM遥控/遥测服务，并调用 `SstDpramMaintenance_Service`；扩展发布每轮最多搬运16个数据字及两个版本标记，不忙等、不关闭中断。参数保存位于第二次串口发送之前。VOFA 使用首次发送前捕获的 `now`。该通信段之后才调用后台 `Port_RealTimeParameter`，保留本轮上报观察到的原测量顺序。
+该通信段之前完成原DPRAM遥控/遥测服务，并调用 `SstDpramMaintenance_ProcessPendingRequest`；扩展发布每轮最多搬运16个数据字及两个版本标记，不忙等、不关闭中断。参数保存位于第二次串口发送之前。VOFA 使用首次发送前捕获的 `now`。该通信段之后才调用后台 `Port_RealTimeParameter`，保留本轮上报观察到的原测量顺序。
 
 每轮最多读取 64 字节；每次发送服务向 FIFO 推进最多 16 字节，一轮调用两次，因此最多推进 32 字节，仍受 FIFO 可用空间和发送完成条件限制，不忙等 FIFO 或 TEMT。8 个整帧 TX 槽，每槽最多 260 字节。入队先完整复制；物理串口严格按整帧顺序发送，GPIO104 在整帧发完且 TEMT 置位后转接收，不在 VOFA、AnyEyes 中分别控制方向。队列满返回背压并计数，遥测为回复留至少一个槽；接收也在回复槽不足时停止本批读取。
 
