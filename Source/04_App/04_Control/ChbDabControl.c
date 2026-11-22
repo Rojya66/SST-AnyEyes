@@ -37,6 +37,16 @@
 #define CHB_UNIT_LINK_MISSING 1U
 #define CHB_UNIT_LINK_DROPPED 2U
 #define CHB_UNIT_LINK_UDC_STALE 4U
+
+/* 预充状态机当拍确认的项目，遥测按物理检查顺序显示。 */
+#define PRECHARGE_READY_SWITCH 0x01U
+#define PRECHARGE_READY_ONLINE 0x02U
+#define PRECHARGE_READY_UDC 0x04U
+#define PRECHARGE_READY_NO_TIMEOUT 0x08U
+#define PRECHARGE_READY_FO 0x10U
+#define PRECHARGE_READY_VOLTAGE 0x20U
+#define PRECHARGE_READY_ALL 0x3FU
+
 #define CHB_MODULE_FO_ALL_PHASES 7U
 #if SST_PHASE_A_ONLY_TEST
 #define CHB_REQUIRED_MODULE_GROUPS 2U
@@ -77,7 +87,7 @@ volatile CHB_DAB_COMMAND g_chb_dab_command = {
 /*
  * 控制参数默认值。结构体顺序必须与 ChbDabControl.h 完全一致：
  * 采样/调制 -> 预充/旁路 -> PLL -> 电压外环 -> 启动策略 -> 电流内环
- * -> 保护 -> DAB 占空比。在线协议和调试器均按这个结构访问。
+ * -> 保护 -> DAB 占空比 -> 开关反馈时间。
  */
 volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.0001F, /* sample_period_s: 10 kHz */
@@ -123,7 +133,10 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     350U, /* DAB initial duty (7% of 5000) */
     2500U, /* DAB target duty (50% of 5000) */
     1U, /* DAB ramp count per TAD */
-    1250U /* DAB phase start count */
+    1250U, /* DAB phase start count */
+
+    SST_SWITCH_FEEDBACK_STABLE_10MS,
+    SST_SWITCH_ACTION_TIMEOUT_10MS
 }; /* g_chb_dab_params：CHB/DAB 控制参数；调试器可观察，通信写入需停机校验。 */
 
 /* 运行状态只由控制程序更新，上位机/调试器只读观察。 */
@@ -154,6 +167,7 @@ static unsigned short s_switch_waiting_feedback; /* 1等待本次动作反馈，
 static unsigned long s_last_service_tick; /* s_last_service_tick：主循环上次推进状态机的 10 ms 节拍。 */
 static unsigned short s_open_loop_fo_pending; /* 初次开环布防后等下一拍再检查FO。 */
 static unsigned short s_precharge_stable_count; /* s_precharge_stable_count：预充连续达标的 10 ms 拍数。 */
+static unsigned short s_precharge_ready; /* 最近一拍 PRECHARGE 实际完成的判断。 */
 static unsigned short s_pll_lock_fast_count; /* s_pll_lock_fast_count：PLL 连续锁定的 TAD 样本计数。 */
 static unsigned short s_pll_lock_10ms_count; /* s_pll_lock_10ms_count：PLL 连续锁定的 10 ms 确认计数。 */
 static unsigned short s_ac_overcurrent_count; /* s_ac_overcurrent_count：新增交流过流连续超限样本数。 */
@@ -779,12 +793,12 @@ static void Chb_ReadSwitchFeedback(void)
     }
     if ((qf1_at_target != 0U) && (input.Din.Kt1Closed == g_chb_dab_status.kt1_close_command))
     {
-        if (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS)
+        if (g_chb_dab_status.switch_stable_count < g_chb_dab_params.switch_stable_10ms)
         {
             g_chb_dab_status.switch_stable_count++;
         }
         g_chb_dab_status.switch_mismatch_count = 0U;
-        if (g_chb_dab_status.switch_stable_count >= SST_SWITCH_FEEDBACK_STABLE_10MS)
+        if (g_chb_dab_status.switch_stable_count >= g_chb_dab_params.switch_stable_10ms)
         {
             s_switch_waiting_feedback = 0U;
         }
@@ -792,7 +806,7 @@ static void Chb_ReadSwitchFeedback(void)
     else
     {
         g_chb_dab_status.switch_stable_count = 0U;
-        if (g_chb_dab_status.switch_mismatch_count < SST_SWITCH_ACTION_TIMEOUT_10MS)
+        if (g_chb_dab_status.switch_mismatch_count < g_chb_dab_params.switch_timeout_10ms)
         {
             g_chb_dab_status.switch_mismatch_count++;
         }
@@ -1200,6 +1214,7 @@ static void Chb_EnterState(unsigned short state)
         case CHB_STATE_PRECHARGE: // 预充态：合QF1，KT1释放，电流经过预充电阻
         {
             s_precharge_stable_count = 0U;
+            s_precharge_ready = 0U;
             Chb_DisableAllPwm();
             (void)Chb_ReadUnitLinks(1U); /* 合QF1前丢弃上一次有意停机产生的事件。 */
             /*
@@ -1381,6 +1396,18 @@ static unsigned short Chb_ConfigurationValid(void)
 //        }
 //    }
     return 1U;
+}
+
+/* 遥测复用本状态机的模式和计数，不读取或清除硬件事件。 */
+void ChbDabControl_ReadStartupStatus(CHB_STARTUP_STATUS *status)
+{
+    unsigned short state = g_chb_dab_status.state;
+    status->active_mode = s_active_ac_mode;
+    status->precharge_stable_10ms = state == CHB_STATE_PRECHARGE ? s_precharge_stable_count : 0U;
+    status->pll_stable_10ms = state == CHB_STATE_WAIT_PLL ? s_pll_lock_10ms_count : 0U;
+    status->precharge_ready = state == CHB_STATE_PRECHARGE ? s_precharge_ready : 0U;
+    status->topology_valid = Chb_ConfigurationValid();
+    status->state_elapsed_10ms = g_chb_dab_status.tick_10ms - s_state_enter_tick;
 }
 
 /*==================================================================
@@ -1693,7 +1720,7 @@ void ChbDabControl_Service(void)
 #if SST_ENABLE_SWITCH_FEEDBACK
             /* 闭环故障复位前须实际断开进线和旁路，且反馈连续稳定。 */
             if ((mode == CHB_AC_MODE_CLOSED_LOOP) &&
-                (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS))
+                (g_chb_dab_status.switch_stable_count < g_chb_dab_params.switch_stable_10ms))
             {
                 return;
             }
@@ -1744,24 +1771,25 @@ void ChbDabControl_Service(void)
     }
 
 #if SST_ENABLE_SWITCH_FEEDBACK
-    /* QF1/KT1动作最多等待1s；RUNNING反馈丢失30ms即停机。
+    /* QF1/KT1动作有独立超时；运行中反馈持续丢失达确认时间即停机。
      * 动作从s_switch_action_tick计时，不能用STOPPED已经停留多久来算，
      * 否则停机很久后手动合QF1会在第一拍就误报超时。 */
     if (((state == CHB_STATE_RUNNING) &&
-         (g_chb_dab_status.switch_mismatch_count >= SST_SWITCH_FEEDBACK_STABLE_10MS)) ||
+         (g_chb_dab_status.switch_mismatch_count >= g_chb_dab_params.switch_stable_10ms)) ||
         ((state != CHB_STATE_RUNNING) &&
-         ((g_chb_dab_status.switch_mismatch_count >= SST_SWITCH_ACTION_TIMEOUT_10MS) ||
+         ((g_chb_dab_status.switch_mismatch_count >= g_chb_dab_params.switch_timeout_10ms) ||
           ((s_switch_waiting_feedback != 0U) &&
-           ((g_chb_dab_status.tick_10ms - s_switch_action_tick) >= SST_SWITCH_ACTION_TIMEOUT_10MS)))))
+           ((g_chb_dab_status.tick_10ms - s_switch_action_tick) >= g_chb_dab_params.switch_timeout_10ms)))))
     {
         ChbDabControl_ForceFault(CHB_FAULT_SWITCH_FEEDBACK);
         return;
     }
     /* QF1合位未到不累计预充电压；KT1合位未到不进入PLL等待及发波。 */
-    if (g_chb_dab_status.switch_stable_count < SST_SWITCH_FEEDBACK_STABLE_10MS)
+    if (g_chb_dab_status.switch_stable_count < g_chb_dab_params.switch_stable_10ms)
     {
         /* 触点不到位时连续确认作废；反馈恢复后，电压和PLL均须重新连续确认。 */
         s_precharge_stable_count = 0U;
+        s_precharge_ready = 0U;
         s_pll_lock_10ms_count = 0U;
         return;
     }
@@ -1802,10 +1830,23 @@ void ChbDabControl_Service(void)
              * 必须连续达到门槛才旁路，超时未达标进入故障。
              * 此字段不是相内最弱单模块电压；单模块保护仍沿用原 FaultCheck。
              */
+            unsigned short ready = PRECHARGE_READY_SWITCH;
+            if ((unit_link_flags & CHB_UNIT_LINK_MISSING) == 0U)
+                ready |= PRECHARGE_READY_ONLINE;
+            if ((unit_link_flags & CHB_UNIT_LINK_UDC_STALE) == 0U)
+                ready |= PRECHARGE_READY_UDC;
+            if ((unit_link_flags & CHB_UNIT_LINK_DROPPED) == 0U)
+                ready |= PRECHARGE_READY_NO_TIMEOUT;
             if ((unit_link_flags == 0U) &&
                 (Chb_SetModuleFOArmed(CHB_MODULE_FO_PHASES, CHB_STATE_PRECHARGE) == 0U) &&
-                (Chb_ModuleFOClear() != 0U) &&
-                (g_chb_dab_status.dc_voltage_min_v >= g_chb_dab_params.precharge_voltage_v))
+                (Chb_ModuleFOClear() != 0U))
+            {
+                ready |= PRECHARGE_READY_FO;
+                if (g_chb_dab_status.dc_voltage_min_v >= g_chb_dab_params.precharge_voltage_v)
+                    ready |= PRECHARGE_READY_VOLTAGE;
+            }
+            s_precharge_ready = ready;
+            if (ready == PRECHARGE_READY_ALL)
             {
                 if (s_precharge_stable_count < 0xFFFFU)
                 {

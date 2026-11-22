@@ -11,6 +11,7 @@
 #include "ControlData.h"
 #include "FpgaIo.h"
 #include "SstBoardConfig.h"
+#include "SstFaultSummary.h"
 
 /*==================================================================
  * 函数功能: 给出配置中有真实生产者的插件镜像位图
@@ -63,38 +64,9 @@ static uint16_t EncodeTelemetrySigned(float value)
  *================================================================*/
 uint16_t SstDpramTelemetry_GetFaultWord(void)
 {
-    uint16_t port; /* 内部故障原字，bit13/14在HVAC复用为软件OV/OC。 */
-    uint16_t type; /* 故障分类原字，通信bit12、同步bit11。 */
-    uint16_t fault; /* 按Word语义重新构造的外部故障字。 */
-    port = *(volatile unsigned short *)&Port_RealFault.PORT_FAULT16;
-    type = *(volatile unsigned short *)&FaultTypeFLAG.FaultTypeFLAG16;
-    fault = port & 0x1FFFU;
-    if (type & 0x0100U)
-        fault |= 0x0001U;
-    if (type & 0x0200U)
-        fault |= 0x0002U;
-    if (type & 0x0400U)
-        fault |= 0x0008U;
-    if (type & 0xE0F0U)
-        fault |= 0x0040U;
-    if (type & 0x000CU)
-        fault |= 0x0080U;
-    if ((port & 0x4000U) || (type & 0x0002U) || HVAC_OC_Fault ||
-        g_chb_dab_status.fault_code == CHB_FAULT_AC_OVERCURRENT)
-        fault |= 0x0400U;
-    if (type & 0x4000U)
-        fault |= 0x0800U;
-    if ((port & 0x2000U) || (type & 0x0001U) || HVAC_OV_Fault ||
-        g_chb_dab_status.fault_code == CHB_FAULT_DC_OVERVOLTAGE)
-        fault |= 0x1000U;
-    if (type & 0x1000U)
-        fault |= 0x2000U;
-    if (type & 0x0800U)
-        fault |= 0x4000U;
-    if (fault || port || type || g_chb_dab_status.fault_code != CHB_FAULT_NONE ||
-        g_chb_dab_status.state == CHB_STATE_FAULT)
-        fault |= 0x8000U;
-    return fault;
+    return SstFault_EncodeSummary(*(volatile uint16_t *)&Port_RealFault.PORT_FAULT16,
+        *(volatile uint16_t *)&FaultTypeFLAG.FaultTypeFLAG16, HVAC_OC_Fault, HVAC_OV_Fault,
+        g_chb_dab_status.fault_code, g_chb_dab_status.state);
 }
 
 static uint16_t ReadModuleFaultPositions(uint16_t input_plugin)

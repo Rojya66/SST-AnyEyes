@@ -1,6 +1,12 @@
 #ifndef SST_PARAMETER_STORE_H
 #define SST_PARAMETER_STORE_H
 #include "SstParamTypes.h"
+#include "SstHardwareParameters.h"
+
+/* 持久化载荷段索引。v4在v3的66字之后追加两项开关反馈时间。 */
+#define SST_STORE_LEGACY_OFFSET 42U
+#define SST_STORE_HARDWARE_OFFSET 50U
+#define SST_STORE_SWITCH_OFFSET (SST_STORE_HARDWARE_OFFSET + SST_HARDWARE_PARAMETER_WORDS)
 
 #ifdef __cplusplus
 extern "C"
@@ -51,6 +57,8 @@ extern "C"
  * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
  *================================================================*/
     uint16_t SstParameterStore_Request(uint16_t load);
+    /* 校验失败时返回持久化载荷中的下标，便于通讯层定位遥调字。 */
+    uint16_t SstParameterStore_RequestWithError(uint16_t load, uint16_t *error_index);
 
     /*==================================================================
  * 函数功能: 读取本参数镜像事务正在保存的标志

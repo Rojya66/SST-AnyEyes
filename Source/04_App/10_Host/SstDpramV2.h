@@ -1,0 +1,31 @@
+#ifndef SST_DPRAM_V2_H
+#define SST_DPRAM_V2_H
+
+#include <stdint.h>
+
+/* Modbus 零基 16 位字地址。 */
+#define SST_DPRAM_V2_PHASE_MASK 0x3FFFU
+#define SST_DPRAM_V2_CONTROL 0x0100U
+#define SST_DPRAM_V2_CONTROL_WORDS 4U
+#define SST_DPRAM_V2_PARAMETER_OP 0x01FFU
+#define SST_DPRAM_V2_SIGNATURE 0x0500U
+#define SST_DPRAM_V2_VERSION 0x0501U
+#define SST_DPRAM_V2_LIVE_EPOCH 0x0502U
+#define SST_DPRAM_V2_MODULE_EPOCH 0x0503U
+#define SST_DPRAM_V2_CONTROL_COUNT 0x0504U
+#define SST_DPRAM_V2_CONTROL_OP 0x0505U
+#define SST_DPRAM_V2_CONTROL_RESULT 0x0506U
+#define SST_DPRAM_V2_PARAMETER_COUNT 0x0507U
+#define SST_DPRAM_V2_PARAMETER_LAST 0x0508U
+#define SST_DPRAM_V2_PARAMETER_RESULT 0x0509U
+#define SST_DPRAM_V2_PARAMETER_ERROR 0x050AU
+#define SST_DPRAM_V2_PARAMETER_BUSY 0x050BU
+#define SST_DPRAM_V2_HISTORY_EPOCH 0x0800U
+#define SST_DPRAM_V2_NO_ERROR_ADDR 0xFFFFU
+
+/* 遥测只写发布区，邮箱和参数事务由主机服务管理。 */
+void SstDpramV2_WriteWord(uint16_t addr, uint16_t value);
+uint16_t SstDpramV2_ObservationMask(uint16_t phase);
+uint16_t SstDpramV2_SwitchPermission(void);
+
+#endif

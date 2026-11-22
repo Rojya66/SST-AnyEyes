@@ -35,6 +35,8 @@ extern "C"
  * 执行说明: 保护电流及过压阈值不得为0，计时允许0（沿用严格大于的计数判据）。
  *================================================================*/
     uint16_t SstLegacyParameters_ValidateSnapshot(const uint16_t *snapshot);
+    /* 同一校验，失败时给出本区8字的字段下标。 */
+    uint16_t SstLegacyParameters_ValidateSnapshotAt(const uint16_t *snapshot, uint16_t *error_index);
     /* 仅供已整体校验的EEPROM镜像恢复，调用者保证初始化或完全停机。 */
     /*==================================================================
  * 函数功能: 应用已整体校验的原保护/电压巡检镜像

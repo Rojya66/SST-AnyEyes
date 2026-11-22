@@ -96,6 +96,7 @@ typedef struct
     unsigned long tick_10ms;
     /* tick_10ms：10 ms 软件节拍；故障记录中为后台观察时刻，不是精确跳闸时间。 */ /* Background observation time, not trip time. */
     unsigned long sequence; /* sequence：维护协议请求序号，或详细故障记录的递增事件序号。 */
+    unsigned short unit_link_missing[3]; /* 预充超时/501失联时保存三相物理位置，其他原因置零。 */
 } SST_FAULT_RECORD;
 
 #ifdef __cplusplus
@@ -160,6 +161,8 @@ extern "C"
  * 执行说明: 纯后台报告服务；不重新读取 FPGA，不关中断，不改变原保护或 PWM 决策。
  *================================================================*/
     unsigned short SstFault_GetHistoryCount(void);
+    /* 最新历史序号，后台发布据此判断环形表是否已更新。 */
+    unsigned long SstFault_GetHistorySequence(void);
     /*==================================================================
  * 函数功能: 按新到旧读取详细历史故障码
  * 输入参数: newest_index：历史记录从新到旧的索引，0 为最新

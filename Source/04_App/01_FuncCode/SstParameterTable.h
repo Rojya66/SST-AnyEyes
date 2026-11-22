@@ -71,6 +71,10 @@ extern "C"
  * 执行说明: 主循环调用；不在 FPGA 10 kHz ISR 内运行。
  *================================================================*/
     uint16_t SstParameterTable_SnapshotValidate(const uint16_t *snapshot);
+    /* 同一校验，失败时给出42字快照中的字段下标。 */
+    uint16_t SstParameterTable_SnapshotValidateAt(const uint16_t *snapshot, uint16_t *error_index);
+    /* 0=确认时间错误，1=动作超时错误，SST_PARAM_NO_FIELD=校验通过。 */
+    uint16_t SstParameterTable_SwitchTimingError(uint16_t stable_10ms, uint16_t timeout_10ms);
 
     /*==================================================================
  * 函数功能: 将已整体校验镜像恢复到活动参数及5个命令给定

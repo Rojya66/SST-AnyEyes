@@ -106,7 +106,6 @@ void RuntimeStateInit_ResetTimeFlags(void)
     Flag_1s = 0;
     Flag_50ms = 0;
     Flag_100ms = 0;
-    Flag_RemoteMeasure = 0;
     Flag_Clear_0 = 0;
     Flag_Clear_1 = 0;
     Flag_StopWait = 0;
@@ -117,7 +116,6 @@ void RuntimeStateInit_ResetTimeFlags(void)
     cout20s = 0;
     cout50ms = 0;
     cout100ms = 0;
-    coutRemoteMeasure = 0;
     coutStopWait = 0;
 
     Flag_20s = 0;

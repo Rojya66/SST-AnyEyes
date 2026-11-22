@@ -22,7 +22,7 @@ extern "C"
 
     extern DPRAM_RemRegulateFloat PORT_Regulate_DATA; /* PORT_Regulate_DATA：旧遥调定点值换算后的浮点给定缓存。 */
 
-    extern unsigned char
+    extern volatile unsigned char
         Flag_RemoteControlRegulate; /* Flag_RemoteControlRegulate：DPRAM 通知 ISR 置位、后台消费的遥控/遥调待处理标志。 */
 
     extern ushort FLAG_NEW_R; /* FLAG_NEW_R：DPRAM 向对端发布的新数据块标识。 */

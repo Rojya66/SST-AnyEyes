@@ -139,12 +139,12 @@ static void test_simple_screen_operations(void)
         SstParameterStore_Service();
         SstDpramScreen_ProcessTransactions();
     }
-    assert(eeprom_write_attempts - attempts == 141U);
+    assert(eeprom_write_attempts - attempts == 145U);
     assert(DPRAM_SstScreen[386] == 4U && DPRAM_SstScreen[387] == SST_PARAM_OK);
     assert(DPRAM_SstScreen[388] == 0U && DPRAM_SstScreen[390] == SST_SCREEN_SAVE);
     count = DPRAM_SstScreen[386];
     finish_publication();
-    assert(DPRAM_SstScreen[386] == count && eeprom_write_attempts - attempts == 141U);
+    assert(DPRAM_SstScreen[386] == count && eeprom_write_attempts - attempts == 145U);
 
     /* 空闲后再次单写2，必须产生第二次完整保存，而非回放上次成功。 */
     submit_operation(SST_SCREEN_SAVE);
@@ -154,7 +154,7 @@ static void test_simple_screen_operations(void)
         SstParameterStore_Service();
         SstDpramScreen_ProcessTransactions();
     }
-    assert(eeprom_write_attempts - attempts == 282U && DPRAM_SstScreen[386] == 5U);
+    assert(eeprom_write_attempts - attempts == 290U && DPRAM_SstScreen[386] == 5U);
     g_chb_dab_params.current_kp = -2.0F;
     submit_operation(SST_SCREEN_LOAD);
     assert(g_chb_dab_params.current_kp == -1.7F && DPRAM_SstScreen[386] == 6U);

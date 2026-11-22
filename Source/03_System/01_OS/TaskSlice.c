@@ -3,8 +3,6 @@
 #include "ChbDabControl.h"
 #include "SstFault.h"
 #include "SstDpramHost.h"
-#include "SstDpramMaintenance.h"
-#include "SstDpramProtocol.h"
 #include "ChbBuildConfig.h"
 #include "SstDebug.h"
 #include "SstSerial.h"
@@ -27,10 +25,7 @@ void TaskSlice_Service(void)
     ChbDabControl_Service();
     SstFault_Service();
 #if SST_ENABLE_DPRAM
-    SstDpramHost_ProcessIncomingBlocks();
-    SstDpramHost_PublishTelemetry();
-    SstDpramMaintenance_ProcessPendingRequest();
-    SstDpramScreen_ProcessTransactions();
+    SstDpramHost_Service();
 #endif
     //now = SstDebug_GetTick10ms(); /* 与协议初始化及周期参数保持同一时基。 */
     /*

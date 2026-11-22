@@ -21,7 +21,7 @@ builds=[('Debug','default',[]),('Release','default',[]),
         ('Debug','simulator',['SST_SIMULATOR_MODE=1','SST_ENABLE_DPRAM=0']),
         ('Debug','three_phase',['SST_PHASE_A_ONLY_TEST=0','SST_DEBUG_PROTOCOL=1']),
         ('Debug','switch_io',['SST_ENABLE_SWITCH_OUTPUT=1','SST_ENABLE_SWITCH_FEEDBACK=1'])]
-checks=['dpram_screen','dpram_screen_layout','dpram_switch_maintenance','comment_coverage','firmware_trace','dpram_commands',
+checks=['dpram_host_reply','dpram_v2_telemetry','dpram_screen_layout','dpram_switch_maintenance','comment_coverage','firmware_trace','dpram_commands',
         'dpram_maintenance','parameter_precision','parameter_store_migration','protocol_regression',
         'serial_protocol_scope','pi_regression','fault_reporting','control_regression','vofa_telemetry']
 
@@ -56,7 +56,7 @@ with ThreadPoolExecutor(max_workers=2) as pool:
 artifacts=[]
 for config,variant,_ in builds:
     folder=ROOT/'build'/config/variant
-    for name in ['SST_DpramCompat.out','SST_DpramCompat.map','build.log','build_result.json']:
+    for name in ['SST_CHB_V1.0.out','SST_CHB_V1.0.map','build.log','build_result.json']:
         path=folder/name
         if path.is_file():artifacts.append(dict(path=str(path),sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
 report=dict(firmware_input_sha256=before,firmware_unchanged=before==fingerprint(ROOT),results=results,artifacts=artifacts,retried= retried)

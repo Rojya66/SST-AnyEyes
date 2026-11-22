@@ -1,10 +1,9 @@
-﻿# DPRAM Modbus屏幕兼容工程
+# SST_CHB_V1.0
 
-2026-11-19：已适配DSP侧BL24C512A（A0/A1/A2/WP接地），统一v3持久化包含501光纤位图及AD/FO/FB使能；初始化来源、具体地址和屏幕保存步骤见[EEPROM适配说明](docs/EEPROM_BL24C512A_ADAPTATION_20261119.md)。
+CCS 工程名为 **SST_CHB_V1.0**，生成 **SST_CHB_V1.0.out**。现场屏使用 [V2 Modbus TCP 通讯说明与点表](docs/DPRAM_Screen_V2/README.md)，也可通过 [Windows 联调界面](tools/hmi_v2/README.md) 连接现有 ARM。V1.1 兼容说明与旧点表留在 docs/DPRAM_Screen_V11，供追溯。
 
-本复制工程名为 **AnyEyesVersion_DpramCompat**，输出 **SST_DpramCompat.out**。本版生效接口以 [DPRAM兼容说明](docs/DPRAM_Screen_V11/README.md)、[2400行点表](docs/DPRAM_Screen_V11/DPRAM_MODBUS_POINTS.csv)、[联调步骤](docs/DPRAM_Screen_V11/DEBUG_STEPS.md) 和 [修改记录](docs/DPRAM_Screen_V11/MODIFICATION_RECORD.md) 为准。2026-11-16 已删除100 Vac专用宏及参数/限流分支，当前配置与恢复后的默认值见 [低压试验功能移除记录](docs/REMOVE_LV100_PROFILE_20261116.md)。下方保留原框架文档作为历史背景。
+## 控制框架背景
 
-# SST_AnyEyes 工程
 
 本工程在 C6748 + FPGA 硬件上迁移 `Chb_DabPrim_vofa` 的 HVAC/CHB 和 DAB 原边功能，按 `F28377S_Plat` 的六层结构组织。AnyEyes 使用参考工程 PcDebug 的命令、功能码地址格式、波形通道与状态索引格式；VOFA 是可选构建。
 
@@ -18,20 +17,20 @@
 
 ## 使用入口
 
-1. CCS 12.5 导入本目录，工程名 `AnyEyesVersion`（固件文件名仍为 `SST_AnyEyes.out`），目标 TMS320C6748，编译器 C6000 8.3.12。
+1. CCS 12.5 导入本目录，工程名 `SST_CHB_V1.0`（固件文件 `SST_CHB_V1.0.out`），目标 TMS320C6748，编译器 C6000 8.3.12。
 2. 编辑 `Source/04_App/00_Config/ChbBuildConfig.h`，或使用编译器 `--define` 覆盖宏。
 3. 构建 Debug 或 Release；上电默认停机，初始化保持原 20 秒等待。
 4. 仿真器查看或修改 `g_chb_dab_command`、`g_chb_dab_params`、`g_chb_dab_status`。开环/闭环由 `ac_mode` 选择。
 
-当前源码默认配置为 **AN单相 + 非低压参数 + 真实采样 + VOFA + DPRAM远控 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_BENCH_INPUT_SIM=0`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=0`、`SST_ENABLE_DPRAM=1`）。开关输出/反馈宏均为0。低压专用参数组已移除；A相单相算法仍可单独启停。上电 `run_enable=dab_enable=0`，默认 `ac_mode=OPEN_LOOP`，闭环需显式选择。UART2/485继续只使用AnyEyes或VOFA。
+当前源码默认配置为 **AN单相 + 非低压参数 + 真实采样 + VOFA + DPRAM远控 + EEPROM自动加载关闭**（`SST_PHASE_A_ONLY_TEST=1`、`SST_BENCH_INPUT_SIM=0`、`SST_DEBUG_PROTOCOL=2`、`SST_SIMULATOR_MODE=0`、`SST_ENABLE_DPRAM=1`）。开关输出和反馈均开启。低压专用参数组已移除；A相单相算法仍可单独启停。上电 `run_enable=dab_enable=0`，默认 `ac_mode=OPEN_LOOP`，闭环需显式选择。UART2/485继续只使用AnyEyes或VOFA。
 
-参数直接在 `ChbDabControl.c` 的命令/参数初始化表、`ControlDefaults.c` 和 `ProtectionConfig.h` 中设置，DPRAM屏幕仍按原点表修改实际参数。当前恢复的模块电压给定为680 V、核心预充门槛280 V、Id上限95 A；详见 [移除记录](docs/REMOVE_LV100_PROFILE_20261116.md)，不再使用100 Vac专用配置开关。
+参数直接在 `ChbDabControl.c` 的命令/参数初始化表、`ControlDefaults.c` 和 `ProtectionConfig.h` 中设置，DPRAM 屏幕按 V2 点表修改实际参数。当前恢复的模块电压给定为680 V、核心预充门槛280 V、Id上限95 A；详见 [移除记录](docs/REMOVE_LV100_PROFILE_20261116.md)，不再使用100 Vac专用配置开关。
 
 | 宏 | 值 | 行为 |
 |---|---|---|
 | `SST_DEBUG_PROTOCOL` | 1 / 2 | AnyEyes / VOFA，必须二选一 |
 | `SST_SIMULATOR_MODE` | 当前默认0 | 0=允许远程控制，1=仿真器直接控制 |
-| `SST_ENABLE_DPRAM` | 当前默认1 | 1=并口遥控、遥测与54点维护，0=不注册、不访问DPRAM |
+| `SST_ENABLE_DPRAM` | 当前默认1 | 1=启用 V2 并口控制、遥调和遥测，0=不注册、不访问DPRAM |
 | `SST_BENCH_INPUT_SIM` | 当前默认0 | 1仅允许仿真器控制、DPRAM关闭及EEPROM上电加载关闭；真实采样设0 |
 | `SST_PHASE_A_ONLY_TEST` | 当前默认1 | 1=AN 单相虚拟 dq 测试，仅允许 A 相模块；0=原三相算法 |
 | `CHB_LOAD_EEPROM_PARAMETERS` | 0 / 1 | 默认值启动 / 装载持久参数 |

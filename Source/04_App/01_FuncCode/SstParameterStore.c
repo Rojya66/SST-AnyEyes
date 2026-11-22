@@ -1,6 +1,6 @@
 //###########################################################################
 // FILE: SstParameterStore.c
-// FUNCTION: BL24C512A的v3参数镜像；保存控制/保护参数及光纤接线，兼容v1/v2加载。
+// FUNCTION: BL24C512A的v4参数镜像；追加开关反馈时间，兼容v1/v2/v3加载。
 //           参数表归SstParameterTable；停机判断归SstCommand。
 //###########################################################################
 #include <string.h>
@@ -18,15 +18,12 @@ static uint16_t storageResult, /* storageResult：最近一次参数保存/加�
 static uint32_t storageTick; /* storageTick：上次推进参数存储任务的 10 ms 节拍。 */
 /* SST_STORE_V1_LENGTH：旧版本参数镜像长度，92字节，载荷为42字。 */
 #define SST_STORE_V1_LENGTH 92U
-/* 前50字沿用v2：42控制参数/给定及8原保护/预充字。后16字为硬件配置。 */
 #define SST_STORE_V2_LENGTH 108U
-/* SST_STORE_HARDWARE_OFFSET：硬件参数在载荷中的首字索引50。 */
-#define SST_STORE_HARDWARE_OFFSET 50U
-/* SST_STORE_SNAPSHOT_WORDS：控制/保护50字加硬件16字，共66字。 */
-#define SST_STORE_SNAPSHOT_WORDS (SST_STORE_HARDWARE_OFFSET + SST_HARDWARE_PARAMETER_WORDS)
-/* v3共140字节，地址0180h..020Bh；旧接口仍按64字节逻辑页换算。 */
+#define SST_STORE_V3_LENGTH 140U
+#define SST_STORE_SNAPSHOT_WORDS (SST_STORE_SWITCH_OFFSET + 2U)
+/* v4共144字节，地址0180h..020Fh，仍按64字节逻辑页换算。 */
 #define SST_STORE_LENGTH (8U + 2U * SST_STORE_SNAPSHOT_WORDS)
-static uint8_t storageImage[SST_STORE_LENGTH]; /* 魔数、版本、66字载荷及CRC；不保存启停或开关输出。 */
+static uint8_t storageImage[SST_STORE_LENGTH]; /* 不保存启停、开关输出或临时软件保护旁路。 */
 
 /*==================================================================
  * 函数功能: 查询 AnyEyes 与 DPRAM 共用参数存储服务的忙状态
@@ -100,19 +97,56 @@ static uint16_t StoreGet(uint16_t offset)
     return (uint16_t)storageImage[offset] | ((uint16_t)storageImage[offset + 1] << 8);
 }
 
+/* 以载荷下标报告第一个错误。旧镜像只校验其存在的段。 */
+static uint16_t StoreValidate(const uint16_t *snapshot, uint16_t words, uint16_t *error_index)
+{
+    uint16_t result = SstParameterTable_SnapshotValidateAt(snapshot, error_index);
+    if (result != SST_PARAM_OK)
+        return result;
+    if (words >= SST_STORE_HARDWARE_OFFSET)
+    {
+        result = SstLegacyParameters_ValidateSnapshotAt(&snapshot[SST_STORE_LEGACY_OFFSET], error_index);
+        if (result != SST_PARAM_OK)
+        {
+            *error_index += SST_STORE_LEGACY_OFFSET;
+            return result;
+        }
+    }
+    if (words >= SST_STORE_SWITCH_OFFSET)
+    {
+        result = SstHardwareParameters_ValidateAt(&snapshot[SST_STORE_HARDWARE_OFFSET], error_index);
+        if (result != SST_PARAM_OK)
+        {
+            *error_index += SST_STORE_HARDWARE_OFFSET;
+            return result;
+        }
+    }
+    if (words == SST_STORE_SNAPSHOT_WORDS)
+    {
+        uint16_t switch_error = SstParameterTable_SwitchTimingError(snapshot[SST_STORE_SWITCH_OFFSET],
+                                                                   snapshot[SST_STORE_SWITCH_OFFSET + 1U]);
+        if (switch_error != SST_PARAM_NO_FIELD)
+        {
+            *error_index = SST_STORE_SWITCH_OFFSET + switch_error;
+            return SST_PARAM_RANGE;
+        }
+    }
+    return SST_PARAM_OK;
+}
+
 /*==================================================================
- * 函数功能: 停机时读取v1/v2/v3镜像，整幅校验通过后才恢复活动参数
- * 输入参数: 无
- * 输出参数: 控制参数、v2起的保护/预充参数、v3起的光纤/保护使能配置。
+ * 函数功能: 停机时读取v1..v4镜像，整幅校验通过后才恢复活动参数
+ * 输入参数: error_index：输出镜像校验失败的载荷下标。
+ * 输出参数: 控制参数、v2保护、v3硬件配置及v4开关反馈时间。
  * 返回值: SST_PARAM_* 操作结果
  * 执行说明: 参数镜像服务在初始化或主循环中调用。
  *================================================================*/
-static uint16_t StoreLoad(void)
+static uint16_t StoreLoad(uint16_t *error_index)
 {
     uint16_t i, /* i：镜像读取及快照解码的索引。 */
         result, /* result：现代及原保护/预充快照的整体校验结果。 */
         length, /* length：由已识别版本决定的合法镜像字节数。 */
-        words; /* 本次合法版本的载荷字数：42、50或66。 */
+        words; /* 本次合法版本的载荷字数：42、50、66或68。 */
     uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* 全幅解码缓存；校验前不写活动参数。 */
     if (SstCommand_IsStopped() == 0U)
         return SST_PARAM_BUSY;
@@ -132,7 +166,12 @@ static uint16_t StoreLoad(void)
         length = SST_STORE_V2_LENGTH;
         words = 50U;
     }
-    else if (storageImage[2] == 3U && storageImage[3] == SST_STORE_LENGTH)
+    else if (storageImage[2] == 3U && storageImage[3] == SST_STORE_V3_LENGTH)
+    {
+        length = SST_STORE_V3_LENGTH;
+        words = SST_STORE_SWITCH_OFFSET;
+    }
+    else if (storageImage[2] == 4U && storageImage[3] == SST_STORE_LENGTH)
     {
         length = SST_STORE_LENGTH;
         words = SST_STORE_SNAPSHOT_WORDS;
@@ -146,29 +185,26 @@ static uint16_t StoreLoad(void)
     /* 任一段非法，整幅镜像均不生效；包括PM、FO、FB等接线/保护字段。 */
     for (i = 0; i < words; ++i)
         snapshot[i] = StoreGet((uint16_t)(6 + 2 * i));
-    result = SstParameterTable_SnapshotValidate(snapshot);
+    result = StoreValidate(snapshot, words, error_index);
     if (result != SST_PARAM_OK)
         return result;
-    if (words >= 50U)
-    {
-        result = SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
-        if (result != SST_PARAM_OK)
-            return result;
-    }
-    if (words == SST_STORE_SNAPSHOT_WORDS)
-    {
-        result = SstHardwareParameters_Validate(&snapshot[SST_STORE_HARDWARE_OFFSET]);
-        if (result != SST_PARAM_OK)
-            return result;
-    }
-    /* v1/v2没有硬件字段：只恢复其已有内容，保留本次源码建立的硬件配置。 */
+
+    /* v1/v2没有硬件字段，保留活动硬件配置。旧镜像的开关时间取源码默认。 */
     SstParameterTable_SnapshotApply(snapshot);
-    if (words >= 50U)
-    {
-        SstLegacyParameters_ApplySnapshot(&snapshot[42]);
-    }
-    if (words == SST_STORE_SNAPSHOT_WORDS)
+    if (words >= SST_STORE_HARDWARE_OFFSET)
+        SstLegacyParameters_ApplySnapshot(&snapshot[SST_STORE_LEGACY_OFFSET]);
+    if (words >= SST_STORE_SWITCH_OFFSET)
         SstHardwareParameters_Apply(&snapshot[SST_STORE_HARDWARE_OFFSET]);
+    if (words == SST_STORE_SNAPSHOT_WORDS)
+    {
+        g_chb_dab_params.switch_stable_10ms = snapshot[SST_STORE_SWITCH_OFFSET];
+        g_chb_dab_params.switch_timeout_10ms = snapshot[SST_STORE_SWITCH_OFFSET + 1U];
+    }
+    else
+    {
+        g_chb_dab_params.switch_stable_10ms = SST_SWITCH_FEEDBACK_STABLE_10MS;
+        g_chb_dab_params.switch_timeout_10ms = SST_SWITCH_ACTION_TIMEOUT_10MS;
+    }
     return SST_PARAM_OK;
 }
 
@@ -181,34 +217,37 @@ static uint16_t StoreLoad(void)
  *================================================================*/
 uint16_t SstParameterStore_Request(uint16_t load)
 {
+    uint16_t error_index;
+    return SstParameterStore_RequestWithError(load, &error_index);
+}
+
+uint16_t SstParameterStore_RequestWithError(uint16_t load, uint16_t *error_index)
+{
     uint16_t i, /* i：参数快照、原保护/预充项及镜像遍历索引。 */
         result; /* result：完整保存快照的范围校验结果。 */
-    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* 保存前整体校验的66字快照。 */
+    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS];
+    *error_index = SST_PARAM_NO_FIELD;
     if ((SstParameterStore_IsBusy() != 0U) || (SstCommand_IsStopped() == 0U))
         return SST_PARAM_BUSY;
     if (load != 0U)
     {
-        storageResult = StoreLoad();
+        storageResult = StoreLoad(error_index);
         return storageResult;
     }
-    for (i = 0; i < 42U; ++i)
+    for (i = 0U; i < SST_STORE_LEGACY_OFFSET; ++i)
         snapshot[i] = SstParameterTable_SnapshotRead(i);
-    for (i = 0; i < 8U; ++i)
-        snapshot[42U + i] = SstLegacyParameters_Read(i);
+    for (i = 0U; i < SST_LEGACY_PARAMETER_COUNT; ++i)
+        snapshot[SST_STORE_LEGACY_OFFSET + i] = SstLegacyParameters_Read(i);
     SstHardwareParameters_Read(&snapshot[SST_STORE_HARDWARE_OFFSET]);
-    result = SstParameterTable_SnapshotValidate(snapshot);
-    if (result != SST_PARAM_OK)
-        return result;
-    result = SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
-    if (result != SST_PARAM_OK)
-        return result;
-    result = SstHardwareParameters_Validate(&snapshot[SST_STORE_HARDWARE_OFFSET]);
+    snapshot[SST_STORE_SWITCH_OFFSET] = g_chb_dab_params.switch_stable_10ms;
+    snapshot[SST_STORE_SWITCH_OFFSET + 1U] = g_chb_dab_params.switch_timeout_10ms;
+    result = StoreValidate(snapshot, SST_STORE_SNAPSHOT_WORDS, error_index);
     if (result != SST_PARAM_OK)
         return result;
     memset(storageImage, 0, sizeof(storageImage));
     storageImage[0] = 0x53;
     storageImage[1] = 0x54;
-    storageImage[2] = 3U;
+    storageImage[2] = 4U;
     storageImage[3] = SST_STORE_LENGTH;
     for (i = 0; i < SST_STORE_SNAPSHOT_WORDS; ++i)
         StorePut((uint16_t)(6 + 2 * i), snapshot[i]);
@@ -309,5 +348,6 @@ uint16_t SstParameterStore_GetResult(void)
  *================================================================*/
 void SstParameterStore_LoadPersistent(void)
 {
-    storageResult = StoreLoad();
+    uint16_t error_index = SST_PARAM_NO_FIELD;
+    storageResult = StoreLoad(&error_index);
 }

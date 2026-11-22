@@ -188,29 +188,45 @@ uint16_t SstParameterTable_SnapshotRead(uint16_t index)
  *================================================================*/
 uint16_t SstParameterTable_SnapshotValidate(const uint16_t *snapshot)
 {
-    uint16_t i, /* i：快照逐项校验的索引。 */
-        word; /* word：当前镜像字的线上编码。 */
+    uint16_t error_index;
+    return SstParameterTable_SnapshotValidateAt(snapshot, &error_index);
+}
+
+uint16_t SstParameterTable_SnapshotValidateAt(const uint16_t *snapshot, uint16_t *error_index)
+{
+    uint16_t i;
+    *error_index = SST_PARAM_NO_FIELD;
     if (!snapshot)
         return SST_PARAM_BAD_ADDRESS;
     for (i = 0; i < 42; ++i)
     {
         const SST_PARAMETER *p =
             i < 37 ? &parameters[i] : &commands[i == 37 ? 2 : i - 34]; /* p：待校验快照字对应的唯一表条目。 */
-        int32_t raw; /* raw：按表内符号规则解释的线上整数。 */
-        word = snapshot[i];
-        raw = p->isSigned ? (int32_t)(int16_t)word : (int32_t)word;
+        int32_t raw = p->isSigned ? (int32_t)(int16_t)snapshot[i] : (int32_t)snapshot[i];
         if (raw < p->minimum || raw > p->maximum)
+        {
+            *error_index = i;
             return SST_PARAM_RANGE;
+        }
     }
-    if (snapshot[27] != 1 && snapshot[27] != 0xFFFF)
-        return SST_PARAM_RANGE;
-    if (snapshot[33] > snapshot[34])
-        return SST_PARAM_RANGE;
-    if (snapshot[38] > snapshot[1])
-        return SST_PARAM_RANGE;
-    if (snapshot[0] != ReadEntry(&parameters[0]))
-        return SST_PARAM_RANGE;
-    return SST_PARAM_OK;
+    if (snapshot[27] != 1U && snapshot[27] != 0xFFFFU)
+        *error_index = 27U; /* 电流反馈符号不允许0。 */
+    else if (snapshot[33] > snapshot[34])
+        *error_index = 33U; /* DAB初始占空不能超过目标。 */
+    else if (snapshot[38] > snapshot[1])
+        *error_index = 38U; /* 开环给定不能超过调制上限。 */
+    else if (snapshot[0] != ReadEntry(&parameters[0]))
+        *error_index = 0U; /* 镜像采样周期必须等于硬件配置。 */
+    return (*error_index == SST_PARAM_NO_FIELD) ? SST_PARAM_OK : SST_PARAM_RANGE;
+}
+
+uint16_t SstParameterTable_SwitchTimingError(uint16_t stable_10ms, uint16_t timeout_10ms)
+{
+    if (timeout_10ms == 0U)
+        return 1U;
+    if (stable_10ms == 0U || stable_10ms > timeout_10ms)
+        return 0U;
+    return SST_PARAM_NO_FIELD;
 }
 
 /*==================================================================

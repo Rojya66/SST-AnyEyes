@@ -121,13 +121,6 @@ void Timer2Isr(void)
         Flag_100ms = 1;
     }
 
-    coutRemoteMeasure++;
-    if (coutRemoteMeasure == 3)
-    {
-        coutRemoteMeasure = 0;
-        Flag_RemoteMeasure = 1;
-    }
-
     if (Flag_Precharge500ms)
     {
         coutPrecharge500ms++;

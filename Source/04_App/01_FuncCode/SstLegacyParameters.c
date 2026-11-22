@@ -52,12 +52,30 @@ uint16_t SstLegacyParameters_Read(uint16_t index)
  *================================================================*/
 uint16_t SstLegacyParameters_ValidateSnapshot(const uint16_t *snapshot)
 {
+    uint16_t error_index;
+    return SstLegacyParameters_ValidateSnapshotAt(snapshot, &error_index);
+}
+
+uint16_t SstLegacyParameters_ValidateSnapshotAt(const uint16_t *snapshot, uint16_t *error_index)
+{
+    uint16_t i;
+    *error_index = SST_PARAM_NO_FIELD;
     if (!snapshot)
         return SST_PARAM_BAD_ADDRESS;
-    if (!snapshot[0] || !snapshot[2] || !snapshot[4] || snapshot[1] == 65535U || snapshot[3] == 65535U ||
-        snapshot[5] == 65535U || !snapshot[7] || snapshot[6] >= snapshot[7])
-        return SST_PARAM_RANGE;
-    return SST_PARAM_OK;
+    for (i = 0U; i < 6U; ++i)
+    {
+        /* 三组定值/计时成对排列；计数须能严格大于整定门槛。 */
+        if (snapshot[i] == ((i & 1U) != 0U ? 65535U : 0U))
+        {
+            *error_index = i;
+            return SST_PARAM_RANGE;
+        }
+    }
+    if (snapshot[7] == 0U)
+        *error_index = 7U;
+    else if (snapshot[6] >= snapshot[7])
+        *error_index = 6U;
+    return (*error_index == SST_PARAM_NO_FIELD) ? SST_PARAM_OK : SST_PARAM_RANGE;
 }
 
 /*==================================================================

@@ -24,7 +24,8 @@ def main():
     app = ROOT / 'Source/04_App'
     io = (ROOT / 'Source/02_Peripheral/00_FPGA/FpgaIo.c').read_text(encoding='utf-8-sig')
     fault = (app / '08_Fault/FaultCheck.C').read_text(encoding='utf-8-sig')
-    telemetry = (app / '10_Host/SstDpramTelemetry.c').read_text(encoding='utf-8-sig')
+    telemetry = '\n'.join((app / path).read_text(encoding='utf-8-sig') for path in
+                          ('08_Fault/SstFaultSummary.h', '10_Host/SstDpramTelemetry.c'))
     telemetry = re.sub(r'^\s*#\s*include[^\n]*$', '', telemetry, flags=re.M)
     accessors = 'static uint8_t s_module_fo_phases = 7U;\n' + '\n'.join(function(io, name) for name in [
         'PhaseModuleMask', 'Port_EffectiveFOEnable', 'Port_EffectiveFBEnable',

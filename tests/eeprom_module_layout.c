@@ -75,8 +75,8 @@ int main(void)
     /* Sparse masks must retain connector bit positions, never become 0..N-1. */
     for(unsigned i=0U;i<256U;++i)
     {
-        words[6]=(unsigned short)i;words[7]=(unsigned short)(255U-i);
-        words[8]=0x80U;words[9]=1U;words[10]=0xA5U;words[11]=0x42U;
+        words[6]=(unsigned short)i;words[7]=(unsigned short)((63U-i)&63U);
+        words[8]=0x80U;words[9]=1U;words[10]=0xA5U;words[11]=0x22U;
         assert(SstHardwareParameters_Validate(words)==SST_PARAM_OK);
         SstHardwareParameters_Apply(words);
         CheckLayout(words+6);

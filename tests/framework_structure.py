@@ -69,18 +69,22 @@ def main():
           "Main owns no domain data or interrupt implementations")
     task = body("TaskSlice_Service")
     expected = ["CpuTask_ServiceHeartbeat", "ChbDabControl_Service", "SstFault_Service",
-                "SstDpramHost_ProcessIncomingBlocks", "SstDpramHost_PublishTelemetry", "SstDpramMaintenance_ProcessPendingRequest",
-                "SstDebug_GetTick10ms", "SstSerial_TxService", "SstDebug_ReceiveService",
-                "SstDebug_ProtocolService", "SstParameterStore_Service", "SstSerial_TxService",
-                "Port_RealTimeParameter"]
+                "SstDpramHost_Service", "SstParameterStore_Service", "Port_RealTimeParameter"]
     actual = [name for name in calls(task) if name not in ("if", "for", "while")]
-    check(actual == expected, "TaskSlice explicit heartbeat/control/fault/DPRAM/parallel maintenance, capture-before-TX, TX/RX/protocol/store/TX/measurement order")
+    check(actual == expected, "TaskSlice services heartbeat, control, fault report, V2 host, store and measurement in order")
+    check(bool(re.search(r'#\s*if\s+SST_ENABLE_DPRAM\s+SstDpramHost_Service\(\);\s*#\s*endif',
+                         uncomment(task))), "TaskSlice enables the V2 service only in DPRAM builds")
     runtime = body("SystemInit_Runtime")
     gate = runtime.find("GPIOBankPinInterruptInit(")
-    required = ["Initial_Variable", "Variable_RST", "FaultLatch_Clear", "ChbDabControl_Init", "SstFault_Init",
-                "SstDpramMaintenance_Initialize", "SstDebug_Init"]
-    check(gate > 0 and all(0 <= runtime.find(name + "(") < gate for name in required),
-          "SystemInit initializes safe control/fault/debug objects before enabling external interrupts")
+    required = ["Initial_Variable", "Variable_RST", "ChbDabControl_Init", "SstFault_Init", "SstDebug_Init",
+                "FaultLatch_Clear", "SstDpramHost_Initialize"]
+    positions = [runtime.find(name + "(") for name in required]
+    check(gate > 0 and all(0 <= position < gate for position in positions) and positions == sorted(positions),
+          "SystemInit initializes control, fault reporting and the V2 host before enabling external interrupts")
+    hardware = body("SystemInit_Hardware")
+    positions = [hardware.find(name + "(") for name in ("EMIFASetup", "SstDpramHost_Invalidate", "InterruptInit")]
+    check(0 <= positions[0] < positions[1] < positions[2],
+          "SystemInit invalidates the old DPRAM signature after EMIFA setup and before interrupts")
     check(bool(re.search(r'while\s*\(\s*!Flag_20s\s*\)', body("SystemInit_WaitPowerOnDelay"))),
           "SystemInit retains Timer2 Flag_20s power-on wait")
 

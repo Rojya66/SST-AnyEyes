@@ -1,0 +1,897 @@
+﻿区域,字地址 HEX,中文点名,符号,访问,类型,占字,单位,编码乘数,原始范围／枚举,源码默认或出处,来源／拟接入字段,说明／有效条件,PDU 十进制,40001 号制,ARM 字节地址,DSP 字节地址
+控制,0x0100,控制操作号,CTRL_OP,W 请求,U16,1,—,1,1..13,0,V2 控制分发 → 原命令/开关入口,每笔仅一项，0 为空。先写完整 4 字再写左邮箱 1。操作见命令表。,256,40257,0x60000200,0x66000200
+控制,0x0101,A 相观察掩码参数,OBS_ARG_A,W 请求,BITS,1,—,1,0x0000..0x3FFF,0,V2 观察掩码 RAM,仅操作 13 解释；其他操作屏幕填 0。bit0..13 对应物理 UNIT 1..14。,257,40258,0x60000202,0x66000202
+控制,0x0102,B 相观察掩码参数,OBS_ARG_B,W 请求,BITS,1,—,1,0x0000..0x3FFF,0,V2 观察掩码 RAM,仅操作 13 解释；其他操作屏幕填 0。bit0..13 对应物理 UNIT 1..14。,258,40259,0x60000204,0x66000204
+控制,0x0103,C 相观察掩码参数,OBS_ARG_C,W 请求,BITS,1,—,1,0x0000..0x3FFF,0,V2 观察掩码 RAM,仅操作 13 解释；其他操作屏幕填 0。bit0..13 对应物理 UNIT 1..14。,259,40260,0x60000206,0x66000206
+遥调,0x01FF,遥调操作号,PAR_OP,W 请求,U16,1,—,1,1..4,0,V2 参数分发 → 参数服务／EEPROM,1 整组应用、2 保存活动值、3 从 EEPROM 恢复、4 读取活动值。候选与实际共用地址。最后写左邮箱 2。,511,40512,0x600003FE,0x660003FE
+遥调,0x0200,最大调制比,MODULATION_MAX,W 请求 / R 实际,U16,1,p.u.,10000,1..9800,0.98,g_chb_dab_params.modulation_max,开环幅值不可超过本项；单相闭环矢量限幅也取本项。,512,40513,0x60000400,0x66000400
+遥调,0x0201,预充完成电压阈值,PRECHARGE_VOLTAGE_V,W 请求 / R 实际,U16,1,V,10,0..30000,280,g_chb_dab_params.precharge_voltage_v,闭环按每个启用相的控制均压比较，同时要求该相所需 UNIT 已在线且 Udc 有效。,513,40514,0x60000402,0x66000402
+遥调,0x0202,预充连续达标时间,PRECHARGE_STABLE_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,20,g_chb_dab_params.precharge_stable_10ms,连续满足 20 拍为 200 ms，条件中断重计。,514,40515,0x60000404,0x66000404
+遥调,0x0203,预充总等待超时,PRECHARGE_TIMEOUT_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,1000,g_chb_dab_params.precharge_timeout_10ms,自进入预充开始累计，默认 10 s；稳定计数重置不会重启总等待计时。,515,40516,0x60000406,0x66000406
+遥调,0x0204,KT1 吸合稳定等待,KT1_SETTLE_10MS,W 请求 / R 实际,U16,1,10 ms,1,0..65535,20,g_chb_dab_params.kt1_settle_10ms,KT1 吸合反馈确认后的机械稳定时间，默认 200 ms。,516,40517,0x60000408,0x66000408
+遥调,0x0205,QF1 分合闸线圈脉宽,QF1_PULSE_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,50,g_chb_dab_params.qf1_pulse_10ms,同一参数用于分闸、合闸，默认 500 ms。,517,40518,0x6000040A,0x6600040A
+遥调,0x0206,PLL 额定频率,PLL_NOMINAL_FREQUENCY_HZ,W 请求 / R 实际,U16,1,Hz,100,100..10000,50,g_chb_dab_params.pll_nominal_frequency_hz,闭环电网跟踪的中心频率。,518,40519,0x6000040C,0x6600040C
+遥调,0x0207,PLL 比例系数,PLL_KP,W 请求 / R 实际,U16,1,系数,10,0..65535,80,g_chb_dab_params.pll_kp,作用于归一化 q 轴电压误差。,519,40520,0x6000040E,0x6600040E
+遥调,0x0208,PLL 积分系数,PLL_KI,W 请求 / R 实际,U16,1,系数,1,0..65535,4000,g_chb_dab_params.pll_ki,每 TAD 乘实际采样周期积分。,520,40521,0x60000410,0x66000410
+遥调,0x0209,PLL 角速度校正上限,PLL_CORRECTION_LIMIT_RAD_S,W 请求 / R 实际,U16,1,rad/s,100,0..65535,62.831853,g_chb_dab_params.pll_correction_limit_rad_s,对应默认约 ±10 Hz；回读按线上精度舍入。,521,40522,0x60000412,0x66000412
+遥调,0x020A,PLL 锁定误差上限,PLL_LOCK_ERROR_PU,W 请求 / R 实际,U16,1,p.u.,10000,1..10000,0.06,g_chb_dab_params.pll_lock_error_pu,比较归一化 q 轴电压误差绝对值。,522,40523,0x60000414,0x66000414
+遥调,0x020B,PLL 最低有效电网幅值,PLL_MIN_GRID_PEAK_V,W 请求 / R 实际,U16,1,V,10,0..65535,100,g_chb_dab_params.pll_min_grid_peak_v,αβ 电压矢量幅值门槛。,523,40524,0x60000416,0x66000416
+遥调,0x020C,PLL 连续锁定确认,PLL_LOCK_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,20,g_chb_dab_params.pll_lock_10ms,进入等待锁相后以连续满足的慢拍确认。,524,40525,0x60000418,0x66000418
+遥调,0x020D,PLL 等待锁定超时,PLL_TIMEOUT_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,500,g_chb_dab_params.pll_timeout_10ms,进入等待锁相后计时，默认 5 s。,525,40526,0x6000041A,0x6600041A
+遥调,0x020E,直流电压外环 Kp,VOLTAGE_KP,W 请求 / R 实际,I16,1,系数,100000,-32768..32767,0.099375,g_chb_dab_params.voltage_kp,有符号；出厂精度高于线上分辨率，未改动本项时保留原浮点值。,526,40527,0x6000041C,0x6600041C
+遥调,0x020F,直流电压外环 Ki,VOLTAGE_KI,W 请求 / R 实际,I16,1,系数,100,-32768..32767,12.5,g_chb_dab_params.voltage_ki,有符号。积分乘 TAD 时长。,527,40528,0x6000041E,0x6600041E
+遥调,0x0210,电压外环电流幅值限幅,VOLTAGE_CURRENT_LIMIT_A,W 请求 / R 实际,U16,1,A 峰值,100,1..65535,95,g_chb_dab_params.voltage_current_limit_a,同时限制启动 Id 目标和电压环输出。,528,40529,0x60000420,0x66000420
+遥调,0x0211,闭环软起方式,STARTUP_STRATEGY,W 请求 / R 实际,U16,1,枚举,1,0..1,0,g_chb_dab_params.startup_strategy,0 沿用原启动方式；1 先爬升 Id 给定，再移交电压环。,529,40530,0x60000422,0x66000422
+遥调,0x0212,软起电压给定初始偏移,STARTUP_UDC_OFFSET_V,W 请求 / R 实际,I16,1,V,100,-32768..32767,20,g_chb_dab_params.startup_udc_offset_v,实测均压低于目标时，初值为实测加偏移，并限制在实测值与目标之间。,530,40531,0x60000424,0x66000424
+遥调,0x0213,软起电压给定步长,STARTUP_UDC_STEP_V,W 请求 / R 实际,U16,1,V/TAD,1000,1..65535,2,g_chb_dab_params.startup_udc_step_v,每个 100 µs TAD 朝最终电压目标最多变化的幅度。,531,40532,0x60000426,0x66000426
+遥调,0x0214,软起 Id 斜坡目标,STARTUP_ID_REFERENCE_A,W 请求 / R 实际,I16,1,A 峰值,100,-32768..32767,10,g_chb_dab_params.startup_id_reference_a,用于固定 Id 软起策略，取电压外环电流限幅范围内的目标。,532,40533,0x60000428,0x66000428
+遥调,0x0215,软起 Id 步长,STARTUP_ID_RAMP_STEP_A,W 请求 / R 实际,U16,1,A/TAD,10000,1..65535,0.05,g_chb_dab_params.startup_id_ramp_step_a,固定 Id 软起策略每 TAD 的变化量。,533,40534,0x6000042A,0x6600042A
+遥调,0x0216,软起 Id 最长持续时间,STARTUP_RAMP_TAD,W 请求 / R 实际,U16,1,TAD,1,1..65535,2000,g_chb_dab_params.startup_ramp_tad,达到目标或到时均移交电压环；默认 200 ms。,534,40535,0x6000042C,0x6600042C
+遥调,0x0217,dq 电流内环 Kp,CURRENT_KP,W 请求 / R 实际,I16,1,系数,1000,-32768..32767,-1.249166667,g_chb_dab_params.current_kp,有符号，二补码直解；保留原反馈方向和未编辑浮点精度。,535,40536,0x6000042E,0x6600042E
+遥调,0x0218,dq 电流内环 Ki,CURRENT_KI,W 请求 / R 实际,I16,1,系数,1000,-32768..32767,-16.66666667,g_chb_dab_params.current_ki,有符号，二补码直解；积分乘 TAD 时长。,536,40537,0x60000430,0x66000430
+遥调,0x0219,闭环输出电压限幅系数,CLOSED_LOOP_VOLTAGE_LIMIT_FACTOR,W 请求 / R 实际,U16,1,p.u.,10000,1..30000,1.10,g_chb_dab_params.closed_loop_voltage_limit_factor,三相按各相母线限幅；单相与最大调制比取小用于 dq 矢量限幅。,537,40538,0x60000432,0x66000432
+遥调,0x021A,电流采样反馈方向,CURRENT_FEEDBACK_SIGN,W 请求 / R 实际,I16,1,符号,1,−1 或 +1,1,g_chb_dab_params.current_feedback_sign,仅 0x0001 和 0xFFFF，禁止零。,538,40539,0x60000434,0x66000434
+遥调,0x021B,电流坐标变换相位补偿,CURRENT_PHASE_COMPENSATION_RAD,W 请求 / R 实际,I16,1,rad,10000,-31415..31415,0.1685,g_chb_dab_params.current_phase_compensation_rad,有符号，单位弧度。,539,40540,0x60000436,0x66000436
+遥调,0x021C,输出电压相位补偿,OUTPUT_PHASE_COMPENSATION_RAD,W 请求 / R 实际,I16,1,rad,10000,-31415..31415,0.1085,g_chb_dab_params.output_phase_compensation_rad,有符号，单位弧度。,540,40541,0x60000438,0x66000438
+遥调,0x021D,快速交流相电流门限,AC_OVERCURRENT_TRIP_A,W 请求 / R 实际,U16,1,A 瞬时,100,1..65535,120,g_chb_dab_params.ac_overcurrent_trip_a,闭环运行且软件保护开启时，检查活动相标定电流绝对值。,541,40542,0x6000043A,0x6600043A
+遥调,0x021E,快速直流相均压门限,DC_OVERVOLTAGE_TRIP_V,W 请求 / R 实际,U16,1,V,10,1..65535,780,g_chb_dab_params.dc_overvoltage_trip_v,闭环运行且软件保护开启时，单相比较 A，相间取最高控制均压。,542,40543,0x6000043C,0x6600043C
+遥调,0x021F,快速过流过压连续样本数,PROTECTION_CONFIRM_SAMPLES,W 请求 / R 实际,U16,1,TAD,1,1..65535,5,g_chb_dab_params.protection_confirm_samples,默认 5 个 100 µs 样本；连续超限计数。,543,40544,0x6000043E,0x6600043E
+遥调,0x0220,DAB 初始占空计数,DAB_START_DUTY_COUNT,W 请求 / R 实际,U16,1,计数,1,0..2500,350,g_chb_dab_params.dab_start_duty_count,起始不超过目标；5000 计数为整周期，默认 7%。,544,40545,0x60000440,0x66000440
+遥调,0x0221,DAB 目标占空计数,DAB_TARGET_DUTY_COUNT,W 请求 / R 实际,U16,1,计数,1,0..2500,2500,g_chb_dab_params.dab_target_duty_count,不小于起始；最多半个周期。,545,40546,0x60000442,0x66000442
+遥调,0x0222,DAB 占空斜坡步长,DAB_RAMP_STEP_COUNT,W 请求 / R 实际,U16,1,计数/TAD,1,1..2500,1,g_chb_dab_params.dab_ramp_step_count,启动后按 TAD 递增到目标。,546,40547,0x60000444,0x66000444
+遥调,0x0223,DAB PWM 起始相位,DAB_START_COUNT,W 请求 / R 实际,U16,1,计数,1,0..4999,1250,g_chb_dab_params.dab_start_count,0..4999 对应一个 PWM 周期。,547,40548,0x60000446,0x66000446
+遥调,0x0224,CHB 开环调制比给定,OPEN_LOOP_MODULATION,W 请求 / R 实际,U16,1,p.u.,10000,0..9800,0.20,g_chb_dab_command.open_loop_modulation,不超过已设置的最大调制比。,548,40549,0x60000448,0x66000448
+遥调,0x0225,CHB 开环输出频率给定,OPEN_LOOP_FREQUENCY_HZ,W 请求 / R 实际,U16,1,Hz,100,100..10000,50,g_chb_dab_command.open_loop_frequency_hz,开环正弦频率。,549,40550,0x6000044A,0x6600044A
+遥调,0x0226,单模块直流目标电压,DC_VOLTAGE_REF_V,W 请求 / R 实际,U16,1,V,10,1..65535,680,g_chb_dab_command.dc_voltage_ref_v,电压外环按当前平均模块电压跟踪该目标。,550,40551,0x6000044C,0x6600044C
+遥调,0x0227,闭环 Iq 给定,IQ_REFERENCE_A,W 请求 / R 实际,I16,1,A 峰值,100,-32768..32767,0,g_chb_dab_command.iq_reference_a,dq 坐标系 q 轴电流给定，有符号。,551,40552,0x6000044E,0x6600044E
+遥调,0x0228,原 HVAC 一级过流定值,LEGACY_OC1_LEVEL,W 请求 / R 实际,U16,1,A RMS,1,1..65535,160,OC_level_SET,任一相有效值超过定值启动计时，各相均低于其 95% 清计数。,552,40553,0x60000450,0x66000450
+遥调,0x0229,原 HVAC 一级过流计时门槛,LEGACY_OC1_TIME,W 请求 / R 实际,U16,1,10 ms,1,0..65534,100,OC_time_SET,原保护使用计数严格大于门槛；默认需 101 次 10 ms 递增。,553,40554,0x60000452,0x66000452
+遥调,0x022A,原 HVAC 二级过流定值,LEGACY_OC2_LEVEL,W 请求 / R 实际,U16,1,A RMS,1,1..65535,180,OC_level_SET_L2,任一相有效值超定值计时，三相均不超时清计数。,554,40555,0x60000454,0x66000454
+遥调,0x022B,原 HVAC 二级过流计时门槛,LEGACY_OC2_TIME,W 请求 / R 实际,U16,1,10 ms,1,0..65534,5,OC_time_SET_L2,严格大于门槛；默认需 6 次 10 ms 递增。,555,40556,0x60000456,0x66000456
+遥调,0x022C,原 HVAC 直流过压定值,LEGACY_OV_LEVEL,W 请求 / R 实际,U16,1,V,1,1..65535,830,OV_level_SET,比较滤波合成量 SVG_Udc_Ave，低于其 95% 清计数。,556,40557,0x60000458,0x66000458
+遥调,0x022D,原 HVAC 直流过压计时门槛,LEGACY_OV_TIME,W 请求 / R 实际,U16,1,10 ms,1,0..65534,5,OV_time_SET,严格大于门槛；默认需 6 次 10 ms 递增。,557,40558,0x6000045A,0x6600045A
+遥调,0x022E,单模块巡检低压阈值,UNIT_SCAN_LOW_V,W 请求 / R 实际,U16,1,V,10,0..65534,350（10 kV 配置）；80（380 V 配置）,HA_L_Voltage_Precharge,闭环 Udc_check() 更新原逐模块低压及汇总标志。低阈值须小于高阈值；与预充状态机的每相均压门槛分列。,558,40559,0x6000045C,0x6600045C
+遥调,0x022F,单模块巡检高压阈值,UNIT_SCAN_HIGH_V,W 请求 / R 实际,U16,1,V,10,1..65535,780,HA_H_Voltage,闭环 Udc_check() 更新高压巡检标志；当前该巡检函数自身的直接跳闸已注释。高阈值大于低阈值。,559,40560,0x6000045E,0x6600045E
+遥调,0x0230,DSP 闭环软件过流过压使能,SOFTWARE_PROTECTION_ENABLE,W 请求 / R 实际,U16,1,开关,1,0..1,1,g_chb_dab_protection_enable,1 开启、0 临时关闭；同时影响快速及原 HVAC 软件 OC/OV 链，硬件 FO/FB 独立。本项不写 EEPROM。,560,40561,0x60000460,0x66000460
+遥调,0x0231,202 采样保护配置位图,AD_PROTECT_MASK,W 请求 / R 实际,BITS,1,位图,1,仅 0xF000 中的位,0x7000,Port_AD_PORT_EN,bit12/13/14 对应 IA/IB/IC。bit15 是接口 IN 位，HVAC 图定义备用；原编码保留。bit0..11 为 0。经 Port_ADProtect_EN 写硬件。,561,40562,0x60000462,0x66000462
+遥调,0x0232,A 相 701 故障接收配置位图,FO_A_MASK,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x3FFF,Port_FO_1_EN,物理 UNIT 1..14 对应 bit0..13；按本相 PM 和控制阶段生成实际 FO_EN，实际值另回读。,562,40563,0x60000464,0x66000464
+遥调,0x0233,B 相 701 故障接收配置位图,FO_B_MASK,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x3FFF,Port_FO_2_EN,物理 UNIT 1..14 对应 bit0..13；按本相 PM 和控制阶段生成实际 FO_EN，实际值另回读。,563,40564,0x60000466,0x66000466
+遥调,0x0234,C 相 701 故障接收配置位图,FO_C_MASK,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x3FFF,Port_FO_3_EN,物理 UNIT 1..14 对应 bit0..13；按本相 PM 和控制阶段生成实际 FO_EN，实际值另回读。,564,40565,0x60000468,0x66000468
+遥调,0x0235,403 插件故障反馈配置位图,FB_ENABLE_MASK,W 请求 / R 实际,BITS,1,位图,1,0x0000..0xFFFF,0x4441,Port_FB_EN,bit0..15 对应插槽 2..17。当前默认 bit0 为 202 采样，6/10/14 为 A/B/C 的 701。701 无有效 FO 时对应汇总位被清，其他位按配置。,565,40566,0x6000046A,0x6600046A
+遥调,0x0236,A 相投入运行的 UNIT 位图,PM_A,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x0001,HA_PM_A1 / HA_PM_A2,bit0..7→501 第一组，bit8..13→第二组低六位。保留物理缺号；两组写入原布局接口，刷新 NUM、参考比例、TX 和 601 掩码。,566,40567,0x6000046C,0x6600046C
+遥调,0x0237,B 相投入运行的 UNIT 位图,PM_B,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x0000,HA_PM_B1 / HA_PM_B2,bit0..7→501 第一组，bit8..13→第二组低六位。保留物理缺号；两组写入原布局接口，刷新 NUM、参考比例、TX 和 601 掩码。,567,40568,0x6000046E,0x6600046E
+遥调,0x0238,C 相投入运行的 UNIT 位图,PM_C,W 请求 / R 实际,BITS,1,位图,1,0x0000..0x3FFF,0x0000,HA_PM_C1 / HA_PM_C2,bit0..7→501 第一组，bit8..13→第二组低六位。保留物理缺号；两组写入原布局接口，刷新 NUM、参考比例、TX 和 601 掩码。,568,40569,0x60000470,0x66000470
+遥调,0x0239,开关反馈连续确认时间,SWITCH_STABLE_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,3,SST_SWITCH_FEEDBACK_STABLE_10MS → 拟增运行参数,现为编译常量。提议停机整定并存储；沿用现有反馈及运行丢失判据。确认时间不超过动作超时。,569,40570,0x60000472,0x66000472
+遥调,0x023A,开关动作反馈超时,SWITCH_TIMEOUT_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,100,SST_SWITCH_ACTION_TIMEOUT_10MS → 拟增运行参数,现为编译常量。提议停机整定并存储；默认 1 s。反馈使能编译配置下使用。,570,40571,0x60000474,0x66000474
+遥调,0x023B,CHB 控制方式,CHB_MODE,W 请求 / R 实际,U16,1,枚举,1,0..1,0,g_chb_dab_command.ac_mode,0 开环，1 闭环。停机改模式，参数生效后再发 CHB/DAB 独立启停请求。沿用既有 EEPROM 模式字段。,571,40572,0x60000476,0x66000476
+遥调,0x023C,手动开关操作方式,SWITCH_MODE,W 请求 / R 实际,U16,1,枚举,1,0..1,0,PortRunFLAG.Bbits.Port_AutoOrManual,0 手动允许停机下维护，1 自动禁止屏幕直接分合。闭环启停一直由核心顺控。复用 EEPROM 系统方式中的位，不覆盖运行/测试管理位。,572,40573,0x60000478,0x66000478
+遥测,0x0500,接口标识,SIGNATURE,R,U16,1,—,1,0x5353,,DSP 后台／V2 通讯服务,DSP 初始化成功后发布；与下一字共同辨认版本。,1280,41281,0x60000A00,0x66000A00
+遥测,0x0501,协议版本,VERSION,R,U16,1,—,1,0x0200,,DSP 后台／V2 通讯服务,高字节主版本，低字节次版本；V2.0 才启用本点表的写操作。,1281,41282,0x60000A02,0x66000A02
+遥测,0x0502,综合遥测发布版本,LIVE_EPOCH,R,U16,1,—,1,偶数稳定；16 位回绕,,DSP 后台／V2 通讯服务,保护 0510..05A9（模块观察专属字段除外）和 0700..073F 已分配点。读前后同一偶数才用同批快照。,1282,41283,0x60000A04,0x66000A04
+遥测,0x0503,模块快照发布版本,MODULE_EPOCH,R,U16,1,—,1,偶数稳定；16 位回绕,,DSP 后台／V2 通讯服务,覆盖 056E..0570、0598..059D、0600..06A7。读前后同偶数才组合屏显。,1283,41284,0x60000A06,0x66000A06
+遥测,0x0504,控制完成计数,CTRL_COUNT,R,U16,1,—,1,0..65535,,DSP 后台／V2 通讯服务,基于发送前值比较变化。结果、操作号先写，本计数最后更新。,1284,41285,0x60000A08,0x66000A08
+遥测,0x0505,最近控制操作,CTRL_LAST_OP,R,U16,1,—,1,0..13,,DSP 后台／V2 通讯服务,与本次提交的 0100 核对。,1285,41286,0x60000A0A,0x66000A0A
+遥测,0x0506,控制受理结果,CTRL_RESULT,R,U16,1,—,1,0..7,,DSP 后台／V2 通讯服务,0受理；1地址、2只读、3范围、4忙或未停机、5联锁/权限、6存储、7不支持。硬件结果另读遥测。,1286,41287,0x60000A0C,0x66000A0C
+遥测,0x0507,遥调完成计数,PAR_COUNT,R,U16,1,—,1,0..65535,,DSP 后台／V2 通讯服务,实际回显、结果及错误位置先就绪，再更新完成计数，最后发右邮箱 20。,1287,41288,0x60000A0E,0x66000A0E
+遥测,0x0508,最近遥调操作,PAR_LAST_OP,R,U16,1,—,1,0..4,,DSP 后台／V2 通讯服务,对应 01FF。EEPROM 保存需完成读回校验。,1288,41289,0x60000A10,0x66000A10
+遥测,0x0509,遥调结果,PAR_RESULT,R,U16,1,—,1,0..7,,DSP 后台／V2 通讯服务,编码同控制结果。失败也回当前活动参数。,1289,41290,0x60000A12,0x66000A12
+遥测,0x050A,遥调出错字地址,PAR_ERR_ADDR,R,U16,1,—,1,字地址或 0xFFFF,,DSP 后台／V2 通讯服务,直接指向点表，例如 0x021A；无单字段错误回 FFFF。,1290,41291,0x60000A14,0x66000A14
+遥测,0x050B,遥调处理中,PAR_BUSY,R,U16,1,—,1,0/1,,DSP 后台／V2 通讯服务,DSP 消费邮箱 2 后置忙，整笔结束清零；BUSY=1 期间不得改参数窗口。,1291,41292,0x60000A16,0x66000A16
+遥测,0x050C,DSP 上电计时,UPTIME_10MS,R,U32,2,10 ms,1,0..4294967295,,DSP 后台／V2 通讯服务,低字在前。随综合遥测发布，通信心跳/历史时间参照；计数回绕。,1292,41293,0x60000A18,0x66000A18
+遥测,0x050E,实际控制采样周期,TAD_US,R,U16,1,µs,1,100（当前）,,DSP 后台／V2 通讯服务,来自控制采样配置，µs/count，只读。,1294,41295,0x60000A1C,0x66000A1C
+遥测,0x050F,501 回传超时设计值,UNIT_LINK_TIMEOUT_US,R,U16,1,µs,1,1000（当前）,,DSP 后台／V2 通讯服务,与配套 501 位流约定的常量，µs/count；没有独立的 FPGA 超时设置读回。,1295,41296,0x60000A1E,0x66000A1E
+遥测,0x0510,CHB 核心状态,CHB_STATE,R,U16,1,枚举,1,0…5,,g_chb_dab_status.state,0 停止，1 预充，2 等 KT1，3 等 PLL，4 运行，5 故障。,1296,41297,0x60000A20,0x66000A20
+遥测,0x0511,实际 CHB 模式,CHB_MODE_ACTIVE,R,U16,1,枚举,1,0、1,,ChbDabControl.c / s_active_ac_mode,拟发布核心已采用的模式，0 开环，1 闭环。,1297,41298,0x60000A22,0x66000A22
+遥测,0x0512,两桥运行请求,BRIDGE_REQUEST,R,BITS,1,—,1,bit0…1,,g_chb_dab_command.run_enable / dab_enable,bit0 CHB 请求，bit1 DAB 请求。与 PWM 提交状态分开显示。,1298,41299,0x60000A24,0x66000A24
+遥测,0x0513,两桥及闭环状态,BRIDGE_STATUS,R,BITS,1,—,1,bit0…4,,"g_chb_dab_status.{ac_pwm_enabled,dab_pwm_enabled,pll_locked,voltage_loop_active}；Port_DSP_CTL.Bbits.SHUTDOWN",bit0 CHB PWM 已下发，bit1 DAB PWM 已下发，bit2 PLL 锁定，bit3 电压外环投入，bit4 总关断命令。PWM 位反映 DSP 提交状态，不能证明每路 IGBT 实际发波。,1299,41300,0x60000A26,0x66000A26
+遥测,0x0514,开关目标及手动许可,SW_TARGET,R,BITS,1,—,1,bit0…3,,"g_chb_dab_status.{qf1_close_command,kt1_close_command}；PortRunFLAG；switch_permission",bit0 QF1 目标合，bit1 KT1 目标合，bit2 自动方式（0 手动），bit3 手动合闸许可。,1300,41301,0x60000A28,0x66000A28
+遥测,0x0515,开关实际触点,SW_FEEDBACK,R,BITS,1,—,1,bit0…2,,"g_chb_dab_status.{qf1_closed,qf1_open,kt1_closed}",bit0 QF1 合位 DI7，bit1 QF1 分位 DI8，bit2 KT1 合位 DI6。反馈功能关闭时标未启用。,1301,41302,0x60000A2A,0x66000A2A
+遥测,0x0516,301 原始开入,S301_DIN,R,BITS,1,—,1,16 位,,g_chb_dab_status.switch_din_raw,DI1…16 对应 bit0…15。仅反馈开启时有效。,1302,41303,0x60000A2C,0x66000A2C
+遥测,0x0517,301 开出命令字,S301_DOUT,R,BITS,1,—,1,16 位,,Port_DOUT.SwitchINOUT16,bit0 QF1 合脉冲，bit1 QF1 分脉冲，bit2 KT1 保持，bit3 AC 运行指示，bit4 AC 故障指示。只代表输出命令。 QF1 命令脉冲可能短于画面轮询周期。,1303,41304,0x60000A2E,0x66000A2E
+遥测,0x0518,当前状态已过时间,STATE_ELAPSED,R,U32,2,10 ms,1,0…4294967295,,tick_10ms − s_state_enter_tick,拟按已有状态进入时间发布，进入下一状态重新计时。,1304,41305,0x60000A30,0x66000A30
+遥测,0x051A,预充连续达标时间,PRECHARGE_STABLE,R,U16,1,10 ms,1,0…65535,,ChbDabControl.c / s_precharge_stable_count,预充时生效，条件失效从 0 计。拟增加现有计数只读镜像。,1306,41307,0x60000A34,0x66000A34
+遥测,0x051B,PLL 连续确认时间,PLL_STABLE,R,U16,1,10 ms,1,0…65535,,ChbDabControl.c / s_pll_lock_10ms_count,等待 PLL 时生效。拟发布现有确认计数。,1307,41308,0x60000A36,0x66000A36
+遥测,0x051C,开关反馈连续相符,SW_STABLE,R,U16,1,10 ms,1,0…65535,,g_chb_dab_status.switch_stable_count,反馈功能开启时有效，达到确认拍数后停止增加。,1308,41309,0x60000A38,0x66000A38
+遥测,0x051D,开关反馈连续不符,SW_MISMATCH,R,U16,1,10 ms,1,0…65535,,g_chb_dab_status.switch_mismatch_count,反馈功能开启时有效，结合 QF1、KT1 实际触点判断。,1309,41310,0x60000A3A,0x66000A3A
+遥测,0x051E,闭环软起阶段,STARTUP_PHASE,R,U16,1,枚举,1,0…3,,g_chb_dab_status.startup_phase,0 空闲，1 固定 Id 斜坡，2 移交电压外环，3 正常。,1310,41311,0x60000A3C,0x66000A3C
+遥测,0x051F,DAB 当前占空计数,DAB_DUTY_ACTIVE,R,U16,1,count,1,0…2500,,g_chb_dab_status.dab_duty_count,DSP 当前实际下发计数，配合 DAB PWM 状态查看。,1311,41312,0x60000A3E,0x66000A3E
+遥测,0x0520,软起已执行 TAD 数,STARTUP_TAD_COUNT,R,U32,2,TAD,1,0…4294967295,,g_chb_dab_status.startup_tad_count,固定 Id 启动斜坡已执行的拍数。,1312,41313,0x60000A40,0x66000A40
+遥测,0x0522,交流采样相配置,PHASE_CAPABILITY,R,BITS,1,—,1,0x0001、0x0007,,SST_PHASE_A_ONLY_TEST,bit0 A，bit1 B，bit2 C。默认 A 单相为 1，三相版为 7。实际 PM 及在线情况另有分相位图。,1314,41315,0x60000A44,0x66000A44
+遥测,0x0523,硬件调试功能配置,BUILD_IO_CAPABILITY,R,BITS,1,—,1,bit0…3,,SST_ENABLE_SWITCH_OUTPUT / FEEDBACK；SST_BENCH_INPUT_SIM；SST_ALLOW_REMOTE_COMMANDS,bit0 开关输出，bit1 真实反馈，bit2 模拟输入，bit3 允许远控。关闭输出或反馈时显示未启用。,1315,41316,0x60000A46,0x66000A46
+遥测,0x0524,预充条件逐项显示,PRECHARGE_READY,R,BITS,1,—,1,bit0…5,,ChbDabControl.c 已有本拍预充判断,拟镜像已有判断。bit0 开关反馈满足或按构建免检，bit1 所需 501 全在线，bit2 所需 Udc 全可用，bit3 本拍无 501 超时事件，bit4 701/403 检查允许，bit5 相均压达门限。仅 PRECHARGE 有效；HMI 不消费 F2。 仅显示核心当拍已评估的条件；开关反馈未到时后续项显示待判。,1316,41317,0x60000A48,0x66000A48
+遥测,0x0525,当前相制和模式的 PM 拓扑检查,PM_TOPOLOGY_OK,R,U16,1,—,1,0/1,,Chb_ConfigurationValid 当前拓扑判据,拟发布原拓扑判定结果。单相仅 A 非空、B/C 空；三相闭环各相非空。开环现版对此判定失败的跳闸分支已注释。,1317,41318,0x60000A4A,0x66000A4A
+遥测,0x0540,端口电压有效值 AB / AN,U_RMS_A,R,F32,2,V RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_V_A,三相为 UAB 有效值。单相为实测 AN 有效值。,1344,41345,0x60000A80,0x66000A80
+遥测,0x0542,端口电压有效值 BC,U_RMS_B,R,F32,2,V RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_V_B,三相为 UBC 有效值。单相版无此量。,1346,41347,0x60000A84,0x66000A84
+遥测,0x0544,端口电压有效值 CA,U_RMS_C,R,F32,2,V RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_V_C,三相为 UCA 有效值。单相版无此量。三相 CA 由 −AB−BC 重构后求 RMS。,1348,41349,0x60000A88,0x66000A88
+遥测,0x0546,A 相端口电流有效值,I_PORT_RMS_A,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_I_A,501 Avg_IG 链路，200 点求 RMS。,1350,41351,0x60000A8C,0x66000A8C
+遥测,0x0548,B 相端口电流有效值,I_PORT_RMS_B,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_I_B,501 Avg_IG 链路，200 点求 RMS。单相版无此量。,1352,41353,0x60000A90,0x66000A90
+遥测,0x054A,C 相端口电流有效值,I_PORT_RMS_C,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_I_C,C 相瞬时端口电流由 −IA−IB 重构，200 点求 RMS。单相版无此量。,1354,41355,0x60000A94,0x66000A94
+遥测,0x054C,A 相网侧电流有效值,I_GRID_RMS_A,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.I_A_2,采样板网侧 CT 链路，200 点求 RMS。,1356,41357,0x60000A98,0x66000A98
+遥测,0x054E,B 相网侧电流有效值,I_GRID_RMS_B,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.I_B_2,采样板网侧 CT 链路，200 点求 RMS。单相版无此量。,1358,41359,0x60000A9C,0x66000A9C
+遥测,0x0550,C 相网侧电流有效值,I_GRID_RMS_C,R,F32,2,A RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.I_C_2,C 相瞬时网侧电流由 −IA−IB 重构，200 点求 RMS。单相版无此量。,1360,41361,0x60000AA0,0x66000AA0
+遥测,0x0552,A 相模块平均直流电压,UDC_PHASE_A,R,F32,2,V,1,IEEE 754 单精度,,SVG_Udc_A_Ave,沿用控制反馈，各启用 501 组 Avg_DC 等权平均后滤波。结合本相所有 PM 的 Udc 可用位显示。,1362,41363,0x60000AA4,0x66000AA4
+遥测,0x0554,B 相模块平均直流电压,UDC_PHASE_B,R,F32,2,V,1,IEEE 754 单精度,,SVG_Udc_B_Ave,沿用控制反馈，各启用 501 组 Avg_DC 等权平均后滤波。结合本相所有 PM 的 Udc 可用位显示。,1364,41365,0x60000AA8,0x66000AA8
+遥测,0x0556,C 相模块平均直流电压,UDC_PHASE_C,R,F32,2,V,1,IEEE 754 单精度,,SVG_Udc_C_Ave,沿用控制反馈，各启用 501 组 Avg_DC 等权平均后滤波。结合本相所有 PM 的 Udc 可用位显示。,1366,41367,0x60000AAC,0x66000AAC
+遥测,0x0558,端口有功功率,PORT_P,R,F32,2,kW,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_P,按端口电压与端口电流现有计量方法计算并滤波。,1368,41369,0x60000AB0,0x66000AB0
+遥测,0x055A,端口无功功率,PORT_Q,R,F32,2,kvar,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_Q,采用现有 HVAC 无功计算。单相使用 SOGI 正交量，感性滞后为正。,1370,41371,0x60000AB4,0x66000AB4
+遥测,0x055C,外环使用的模块均压,UDC_CONTROL_MEAN,R,F32,2,V,1,IEEE 754 单精度,,g_chb_dab_status.dc_voltage_average_v,单相取 A 相均压，三相取三相均压的平均。,1372,41373,0x60000AB8,0x66000AB8
+遥测,0x055E,预充使用的最低相均压,UDC_PHASE_MIN,R,F32,2,V,1,IEEE 754 单精度,,g_chb_dab_status.dc_voltage_min_v,单相取 A，三相取三相均压的最小值。单台最低模块电压另需查看模块样本。,1374,41375,0x60000ABC,0x66000ABC
+遥测,0x0560,PLL 估计频率,PLL_FREQ,R,F32,2,Hz,1,IEEE 754 单精度,,g_chb_dab_status.pll_frequency_hz,配合 PLL 锁定位解释，未锁定时为估计值。,1376,41377,0x60000AC0,0x66000AC0
+遥测,0x0562,当前 Id 给定,ID_REF,R,F32,2,A,1,IEEE 754 单精度,,g_chb_dab_status.id_reference_a,闭环电流控制 d 轴峰值标度。软起阶段反映斜坡。,1378,41379,0x60000AC4,0x66000AC4
+遥测,0x0564,当前 Id 反馈,ID_FB,R,F32,2,A,1,IEEE 754 单精度,,g_chb_dab_status.id_feedback_a,闭环电流控制 d 轴峰值标度。,1380,41381,0x60000AC8,0x66000AC8
+遥测,0x0566,当前 Iq 给定,IQ_REF,R,F32,2,A,1,IEEE 754 单精度,,g_chb_dab_command.iq_reference_a,闭环电流控制 q 轴输入给定，峰值标度。,1382,41383,0x60000ACC,0x66000ACC
+遥测,0x0568,当前 Iq 反馈,IQ_FB,R,F32,2,A,1,IEEE 754 单精度,,g_chb_dab_status.iq_feedback_a,闭环电流控制 q 轴峰值标度。,1384,41385,0x60000AD0,0x66000AD0
+遥测,0x056A,软起电压外环给定,UDC_RAMP_REF,R,F32,2,V,1,IEEE 754 单精度,,g_chb_dab_status.startup_voltage_reference_v,与当前模块均压和目标直流电压比较，可查看软起进度。,1386,41387,0x60000AD4,0x66000AD4
+遥测,0x056C,当前最大调制幅值,MOD_ACTUAL_MAX,R,F32,2,pu,1,IEEE 754 单精度,,g_chb_dab_status.modulation_actual,取活动相瞬时调制指令绝对值的最大值，供观察。,1388,41389,0x60000AD8,0x66000AD8
+遥测,0x056E,A 相所选模块最高温度,TMAX_OBS_A,R,I16,1,°C,10,有符号 ×10,,501 TEMP[通道]；按本帧有效观察位取最大值,仅汇总本相有效观察槽；无槽则显示无数据。PT100 约 0.41 s 生成一次新平均值。,1390,41391,0x60000ADC,0x66000ADC
+遥测,0x056F,B 相所选模块最高温度,TMAX_OBS_B,R,I16,1,°C,10,有符号 ×10,,501 TEMP[通道]；按本帧有效观察位取最大值,仅汇总本相有效观察槽；无槽则显示无数据。PT100 约 0.41 s 生成一次新平均值。,1391,41392,0x60000ADE,0x66000ADE
+遥测,0x0570,C 相所选模块最高温度,TMAX_OBS_C,R,I16,1,°C,10,有符号 ×10,,501 TEMP[通道]；按本帧有效观察位取最大值,仅汇总本相有效观察槽；无槽则显示无数据。PT100 约 0.41 s 生成一次新平均值。,1392,41393,0x60000AE0,0x66000AE0
+遥测,0x0580,A 相生效运行 PM,PM_ACTIVE_A,R,BITS,1,—,1,0x0000…0x3FFF,,HA_PM_A1 / HA_PM_A2,按 (组1 & FF) | ((组2 & 3F) << 8) 合并。观察选点不改运行配置。 bit0…13 对应 UNIT1…14。,1408,41409,0x60000B00,0x66000B00
+遥测,0x0581,B 相生效运行 PM,PM_ACTIVE_B,R,BITS,1,—,1,0x0000…0x3FFF,,HA_PM_B1 / HA_PM_B2,按 (组1 & FF) | ((组2 & 3F) << 8) 合并。观察选点不改运行配置。 bit0…13 对应 UNIT1…14。,1409,41410,0x60000B02,0x66000B02
+遥测,0x0582,C 相生效运行 PM,PM_ACTIVE_C,R,BITS,1,—,1,0x0000…0x3FFF,,HA_PM_C1 / HA_PM_C2,按 (组1 & FF) | ((组2 & 3F) << 8) 合并。观察选点不改运行配置。 bit0…13 对应 UNIT1…14。,1410,41411,0x60000B04,0x66000B04
+遥测,0x0583,A 相501 逐路在线,UNIT_ONLINE_A,R,BITS,1,—,1,0x0000…0x3FFF,,U5/U6 XA F1[7:0],收到 Udc 帧后置位，1 ms 无有效 Udc 帧清位；取与运行 PM 的交集。开环亦可观测。 bit0…13 对应 UNIT1…14。,1411,41412,0x60000B06,0x66000B06
+遥测,0x0584,B 相501 逐路在线,UNIT_ONLINE_B,R,BITS,1,—,1,0x0000…0x3FFF,,U9/U10 XA F1[7:0],收到 Udc 帧后置位，1 ms 无有效 Udc 帧清位；取与运行 PM 的交集。开环亦可观测。 bit0…13 对应 UNIT1…14。,1412,41413,0x60000B08,0x66000B08
+遥测,0x0585,C 相501 逐路在线,UNIT_ONLINE_C,R,BITS,1,—,1,0x0000…0x3FFF,,U13/U14 XA F1[7:0],收到 Udc 帧后置位，1 ms 无有效 Udc 帧清位；取与运行 PM 的交集。开环亦可观测。 bit0…13 对应 UNIT1…14。,1413,41414,0x60000B0A,0x66000B0A
+遥测,0x0586,A 相501 Udc 已更新可用,UDC_USABLE_A,R,BITS,1,—,1,0x0000…0x3FFF,,U5/U6 XA F1[15:8],BK 或掉线清除，解冻后须提交新 Udc。 bit0…13 对应 UNIT1…14。,1414,41415,0x60000B0C,0x66000B0C
+遥测,0x0587,B 相501 Udc 已更新可用,UDC_USABLE_B,R,BITS,1,—,1,0x0000…0x3FFF,,U9/U10 XA F1[15:8],BK 或掉线清除，解冻后须提交新 Udc。 bit0…13 对应 UNIT1…14。,1415,41416,0x60000B0E,0x66000B0E
+遥测,0x0588,C 相501 Udc 已更新可用,UDC_USABLE_C,R,BITS,1,—,1,0x0000…0x3FFF,,U13/U14 XA F1[15:8],BK 或掉线清除，解冻后须提交新 Udc。 bit0…13 对应 UNIT1…14。,1416,41417,0x60000B10,0x66000B10
+遥测,0x0589,A 相501 当前缺失,UNIT_OFFLINE_A,R,BITS,1,—,1,0x0000…0x3FFF,,PM_ACTIVE_A & ~UNIT_ONLINE_A,随收帧恢复。预充未得电可有缺失，是否跳闸查看核心故障。 bit0…13 对应 UNIT1…14。,1417,41418,0x60000B12,0x66000B12
+遥测,0x058A,B 相501 当前缺失,UNIT_OFFLINE_B,R,BITS,1,—,1,0x0000…0x3FFF,,PM_ACTIVE_B & ~UNIT_ONLINE_B,随收帧恢复。预充未得电可有缺失，是否跳闸查看核心故障。 bit0…13 对应 UNIT1…14。,1418,41419,0x60000B14,0x66000B14
+遥测,0x058B,C 相501 当前缺失,UNIT_OFFLINE_C,R,BITS,1,—,1,0x0000…0x3FFF,,PM_ACTIVE_C & ~UNIT_ONLINE_C,随收帧恢复。预充未得电可有缺失，是否跳闸查看核心故障。 bit0…13 对应 UNIT1…14。,1419,41420,0x60000B16,0x66000B16
+遥测,0x058C,A 相501 失联跳闸位置,UNIT_TRIP_LOSS_A,R,BITS,1,—,1,0x0000…0x3FFF,,g_chb_dab_status.unit_link_missing[0]；core fault 8,故障 8 时冻结的本拍 offline|dropped（含两次轮询间短掉线）；仅 core=8 时有效，其余显示无此归因，复位清。 bit0…13 对应 UNIT1…14。,1420,41421,0x60000B18,0x66000B18
+遥测,0x058D,B 相501 失联跳闸位置,UNIT_TRIP_LOSS_B,R,BITS,1,—,1,0x0000…0x3FFF,,g_chb_dab_status.unit_link_missing[1]；core fault 8,故障 8 时冻结的本拍 offline|dropped（含两次轮询间短掉线）；仅 core=8 时有效，其余显示无此归因，复位清。 bit0…13 对应 UNIT1…14。,1421,41422,0x60000B1A,0x66000B1A
+遥测,0x058E,C 相501 失联跳闸位置,UNIT_TRIP_LOSS_C,R,BITS,1,—,1,0x0000…0x3FFF,,g_chb_dab_status.unit_link_missing[2]；core fault 8,故障 8 时冻结的本拍 offline|dropped（含两次轮询间短掉线）；仅 core=8 时有效，其余显示无此归因，复位清。 bit0…13 对应 UNIT1…14。,1422,41423,0x60000B1C,0x66000B1C
+遥测,0x058F,A 相701 生效保护使能,FO_ENABLE_A,R,BITS,1,—,1,0x0000…0x3FFF,,701 U8 XA 23 / Port_EffectiveFOEnable(),读 701 实际使能字；受 FO 设置、有效 PM 和运行阶段共同约束。 bit0…13 对应 UNIT1…14。,1423,41424,0x60000B1E,0x66000B1E
+遥测,0x0590,B 相701 生效保护使能,FO_ENABLE_B,R,BITS,1,—,1,0x0000…0x3FFF,,701 U12 XA 23 / Port_EffectiveFOEnable(),读 701 实际使能字；受 FO 设置、有效 PM 和运行阶段共同约束。 bit0…13 对应 UNIT1…14。,1424,41425,0x60000B20,0x66000B20
+遥测,0x0591,C 相701 生效保护使能,FO_ENABLE_C,R,BITS,1,—,1,0x0000…0x3FFF,,701 U16 XA 23 / Port_EffectiveFOEnable(),读 701 实际使能字；受 FO 设置、有效 PM 和运行阶段共同约束。 bit0…13 对应 UNIT1…14。,1425,41426,0x60000B22,0x66000B22
+遥测,0x0592,A 相701 实时故障输入,FO_LIVE_A,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U8 XA E4 / Port_FOStatusRead(plugin,0)",1 表示使能口当前失光，未使能口为 0。 bit0…13 对应 UNIT1…14。,1426,41427,0x60000B24,0x66000B24
+遥测,0x0593,B 相701 实时故障输入,FO_LIVE_B,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U12 XA E4 / Port_FOStatusRead(plugin,0)",1 表示使能口当前失光，未使能口为 0。 bit0…13 对应 UNIT1…14。,1427,41428,0x60000B26,0x66000B26
+遥测,0x0594,C 相701 实时故障输入,FO_LIVE_C,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U16 XA E4 / Port_FOStatusRead(plugin,0)",1 表示使能口当前失光，未使能口为 0。 bit0…13 对应 UNIT1…14。,1428,41429,0x60000B28,0x66000B28
+遥测,0x0595,A 相701 首次锁存位置,FO_FIRST_A,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U8 XA E5 / Port_FOStatusRead(plugin,1)",直接发布物理首锁存位图，保留同一时刻多个位置；后发变化见实时字，复位后刷新。 bit0…13 对应 UNIT1…14。,1429,41430,0x60000B2A,0x66000B2A
+遥测,0x0596,B 相701 首次锁存位置,FO_FIRST_B,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U12 XA E5 / Port_FOStatusRead(plugin,1)",直接发布物理首锁存位图，保留同一时刻多个位置；后发变化见实时字，复位后刷新。 bit0…13 对应 UNIT1…14。,1430,41431,0x60000B2C,0x66000B2C
+遥测,0x0597,C 相701 首次锁存位置,FO_FIRST_C,R,BITS,1,—,1,0x0000…0x3FFF,,"701 U16 XA E5 / Port_FOStatusRead(plugin,1)",直接发布物理首锁存位图，保留同一时刻多个位置；后发变化见实时字，复位后刷新。 bit0…13 对应 UNIT1…14。,1431,41432,0x60000B2E,0x66000B2E
+遥测,0x0598,A 相已采用的观察掩码,OBS_APPLIED_A,R,BITS,1,—,1,0x0000…0x3FFF,,屏幕观察配置的 DSP 副本（拟新增）,回读已提交的选择，选择未装口无有效样本。仅影响读数，不影响运行和保护。 bit0…13 对应 UNIT1…14。,1432,41433,0x60000B30,0x66000B30
+遥测,0x0599,B 相已采用的观察掩码,OBS_APPLIED_B,R,BITS,1,—,1,0x0000…0x3FFF,,屏幕观察配置的 DSP 副本（拟新增）,回读已提交的选择，选择未装口无有效样本。仅影响读数，不影响运行和保护。 bit0…13 对应 UNIT1…14。,1433,41434,0x60000B32,0x66000B32
+遥测,0x059A,C 相已采用的观察掩码,OBS_APPLIED_C,R,BITS,1,—,1,0x0000…0x3FFF,,屏幕观察配置的 DSP 副本（拟新增）,回读已提交的选择，选择未装口无有效样本。仅影响读数，不影响运行和保护。 bit0…13 对应 UNIT1…14。,1434,41435,0x60000B34,0x66000B34
+遥测,0x059B,A 相本帧可显示的模块槽,OBS_VALID_A,R,BITS,1,—,1,0x0000…0x3FFF,,OBS_APPLIED_A & PM_ACTIVE_A & UNIT_ONLINE_A & UDC_USABLE_A,本次快照选中并更新的槽。资格来自 Udc，两个电流及温度为同槽最近缓存，无独立时效位。 bit0…13 对应 UNIT1…14。,1435,41436,0x60000B36,0x66000B36
+遥测,0x059C,B 相本帧可显示的模块槽,OBS_VALID_B,R,BITS,1,—,1,0x0000…0x3FFF,,OBS_APPLIED_B & PM_ACTIVE_B & UNIT_ONLINE_B & UDC_USABLE_B,本次快照选中并更新的槽。资格来自 Udc，两个电流及温度为同槽最近缓存，无独立时效位。 bit0…13 对应 UNIT1…14。,1436,41437,0x60000B38,0x66000B38
+遥测,0x059D,C 相本帧可显示的模块槽,OBS_VALID_C,R,BITS,1,—,1,0x0000…0x3FFF,,OBS_APPLIED_C & PM_ACTIVE_C & UNIT_ONLINE_C & UDC_USABLE_C,本次快照选中并更新的槽。资格来自 Udc，两个电流及温度为同槽最近缓存，无独立时效位。 bit0…13 对应 UNIT1…14。,1437,41438,0x60000B3A,0x66000B3A
+遥测,0x059E,403 插件故障生效使能,FB_ENABLE,R,BITS,1,—,1,16 位,,403 U4 XA 39 / FB_EN,bit0…15 对应 U2…U17，bit6/10/14 为三块 701。,1438,41439,0x60000B3C,0x66000B3C
+遥测,0x059F,403 插件故障实时字,FB_LIVE,R,BITS,1,—,1,16 位,,403 U4 XA E6 / Port_FBStatusRead(0),bit0…15 对应 U2…U17，bit6/10/14 为三块 701。,1439,41440,0x60000B3E,0x66000B3E
+遥测,0x05A0,403 插件故障首锁存,FB_FIRST,R,BITS,1,—,1,16 位,,403 U4 XA E7 / Port_FBStatusRead(1),bit0…15 对应 U2…U17，bit6/10/14 为三块 701。先定位插件，再看该插件首锁存。,1440,41441,0x60000B40,0x66000B40
+遥测,0x05A1,采样板硬件保护使能,AD_PROTECTION_EN,R,BITS,1,—,1,16 位,,FPGA_Interface[U2-2].AD_PROT_EN,当前硬件启用的比较通道，结合门限设置查看。,1441,41442,0x60000B42,0x66000B42
+遥测,0x05A2,DSP 快速过流/过压使能,SW_OCOV_EN,R,U16,1,布尔,1,0、1,,g_chb_dab_protection_enable,1 开启 DSP 快速和原 HVAC 软件 OC/OV 处理，0 临时关闭。202 与 701 硬件链各有独立配置。,1442,41443,0x60000B44,0x66000B44
+遥测,0x05A3,A 相 601 光口关闭配置,SHUT601_A,R,BITS,1,—,1,16 位,,601 U7 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1443,41444,0x60000B46,0x66000B46
+遥测,0x05A4,B 相 601 光口关闭配置,SHUT601_B,R,BITS,1,—,1,16 位,,601 U11 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1444,41445,0x60000B48,0x66000B48
+遥测,0x05A5,C 相 601 光口关闭配置,SHUT601_C,R,BITS,1,—,1,16 位,,601 U15 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1445,41446,0x60000B4A,0x66000B4A
+遥测,0x05A6,上电自动恢复参数配置,BOOT_LOAD_CONFIG,R,U16,1,—,1,0/1,,CHB_LOAD_EEPROM_PARAMETERS,当前默认 0；手动保存成功与下次上电是否自动恢复，分别显示。,1446,41447,0x60000B4C,0x66000B4C
+遥测,0x05A7,202 实时硬件保护通道,AD_LIVE,R,BITS,1,—,1,有效高位 0xF000,,202 XA=E2；Port_AD_ProtectStatusRead(0),bit12/13/14 为 IA/IB/IC，bit15 为备用输入；与有效使能一起解释。,1447,41448,0x60000B4E,0x66000B4E
+遥测,0x05A8,202 首次硬件保护通道,AD_FIRST,R,BITS,1,—,1,有效高位 0xF000,,202 XA=E3；Port_AD_ProtectStatusRead(1),实际 E3 首锁存，手动复位前可定位通道；历史中的 403 来源 bit0 仅定位到板。,1448,41449,0x60000B50,0x66000B50
+遥测,0x05A9,DSP 下发的 UNIT 桥及风扇命令,UNIT_CMD,R,BITS,1,—,1,取有效位 0x0211,,Module_PM_CTL：501 下行命令镜像,bit0 SVG_EN、bit4 DAB_EN、bit9 FAN_OFF。预充时 UNIT 风扇按本地电压滞回；无逐台风扇转速或启停反馈。,1449,41450,0x60000B52,0x66000B52
+模块采样,0x0600,A 相 UNIT1 母线电压,A01_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1536,41537,0x60000C00,0x66000C00
+模块采样,0x0601,A 相 UNIT1 Ir 电流,A01_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1537,41538,0x60000C02,0x66000C02
+模块采样,0x0602,A 相 UNIT1 Ig 端口电流,A01_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1538,41539,0x60000C04,0x66000C04
+模块采样,0x0603,A 相 UNIT1 PT100 温度,A01_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1539,41540,0x60000C06,0x66000C06
+模块采样,0x0604,A 相 UNIT2 母线电压,A02_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit1 为 1 时显示，否则显示“—”。,1540,41541,0x60000C08,0x66000C08
+模块采样,0x0605,A 相 UNIT2 Ir 电流,A02_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit1 为 1 时显示，否则显示“—”。,1541,41542,0x60000C0A,0x66000C0A
+模块采样,0x0606,A 相 UNIT2 Ig 端口电流,A02_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit1 为 1 时显示，否则显示“—”。,1542,41543,0x60000C0C,0x66000C0C
+模块采样,0x0607,A 相 UNIT2 PT100 温度,A02_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit1 为 1 时显示，否则显示“—”。,1543,41544,0x60000C0E,0x66000C0E
+模块采样,0x0608,A 相 UNIT3 母线电压,A03_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit2 为 1 时显示，否则显示“—”。,1544,41545,0x60000C10,0x66000C10
+模块采样,0x0609,A 相 UNIT3 Ir 电流,A03_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit2 为 1 时显示，否则显示“—”。,1545,41546,0x60000C12,0x66000C12
+模块采样,0x060A,A 相 UNIT3 Ig 端口电流,A03_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit2 为 1 时显示，否则显示“—”。,1546,41547,0x60000C14,0x66000C14
+模块采样,0x060B,A 相 UNIT3 PT100 温度,A03_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit2 为 1 时显示，否则显示“—”。,1547,41548,0x60000C16,0x66000C16
+模块采样,0x060C,A 相 UNIT4 母线电压,A04_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit3 为 1 时显示，否则显示“—”。,1548,41549,0x60000C18,0x66000C18
+模块采样,0x060D,A 相 UNIT4 Ir 电流,A04_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit3 为 1 时显示，否则显示“—”。,1549,41550,0x60000C1A,0x66000C1A
+模块采样,0x060E,A 相 UNIT4 Ig 端口电流,A04_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit3 为 1 时显示，否则显示“—”。,1550,41551,0x60000C1C,0x66000C1C
+模块采样,0x060F,A 相 UNIT4 PT100 温度,A04_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit3 为 1 时显示，否则显示“—”。,1551,41552,0x60000C1E,0x66000C1E
+模块采样,0x0610,A 相 UNIT5 母线电压,A05_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit4 为 1 时显示，否则显示“—”。,1552,41553,0x60000C20,0x66000C20
+模块采样,0x0611,A 相 UNIT5 Ir 电流,A05_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit4 为 1 时显示，否则显示“—”。,1553,41554,0x60000C22,0x66000C22
+模块采样,0x0612,A 相 UNIT5 Ig 端口电流,A05_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit4 为 1 时显示，否则显示“—”。,1554,41555,0x60000C24,0x66000C24
+模块采样,0x0613,A 相 UNIT5 PT100 温度,A05_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit4 为 1 时显示，否则显示“—”。,1555,41556,0x60000C26,0x66000C26
+模块采样,0x0614,A 相 UNIT6 母线电压,A06_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit5 为 1 时显示，否则显示“—”。,1556,41557,0x60000C28,0x66000C28
+模块采样,0x0615,A 相 UNIT6 Ir 电流,A06_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit5 为 1 时显示，否则显示“—”。,1557,41558,0x60000C2A,0x66000C2A
+模块采样,0x0616,A 相 UNIT6 Ig 端口电流,A06_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit5 为 1 时显示，否则显示“—”。,1558,41559,0x60000C2C,0x66000C2C
+模块采样,0x0617,A 相 UNIT6 PT100 温度,A06_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit5 为 1 时显示，否则显示“—”。,1559,41560,0x60000C2E,0x66000C2E
+模块采样,0x0618,A 相 UNIT7 母线电压,A07_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 86 / DC[6],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit6 为 1 时显示，否则显示“—”。,1560,41561,0x60000C30,0x66000C30
+模块采样,0x0619,A 相 UNIT7 Ir 电流,A07_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 96 / IR[6],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit6 为 1 时显示，否则显示“—”。,1561,41562,0x60000C32,0x66000C32
+模块采样,0x061A,A 相 UNIT7 Ig 端口电流,A07_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A6 / IG[6],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit6 为 1 时显示，否则显示“—”。,1562,41563,0x60000C34,0x66000C34
+模块采样,0x061B,A 相 UNIT7 PT100 温度,A07_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B6 / TEMP[6],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit6 为 1 时显示，否则显示“—”。,1563,41564,0x60000C36,0x66000C36
+模块采样,0x061C,A 相 UNIT8 母线电压,A08_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 87 / DC[7],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit7 为 1 时显示，否则显示“—”。,1564,41565,0x60000C38,0x66000C38
+模块采样,0x061D,A 相 UNIT8 Ir 电流,A08_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 97 / IR[7],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit7 为 1 时显示，否则显示“—”。,1565,41566,0x60000C3A,0x66000C3A
+模块采样,0x061E,A 相 UNIT8 Ig 端口电流,A08_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A7 / IG[7],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit7 为 1 时显示，否则显示“—”。,1566,41567,0x60000C3C,0x66000C3C
+模块采样,0x061F,A 相 UNIT8 PT100 温度,A08_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U5 XA B7 / TEMP[7],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit7 为 1 时显示，否则显示“—”。,1567,41568,0x60000C3E,0x66000C3E
+模块采样,0x0620,A 相 UNIT9 母线电压,A09_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit8 为 1 时显示，否则显示“—”。,1568,41569,0x60000C40,0x66000C40
+模块采样,0x0621,A 相 UNIT9 Ir 电流,A09_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit8 为 1 时显示，否则显示“—”。,1569,41570,0x60000C42,0x66000C42
+模块采样,0x0622,A 相 UNIT9 Ig 端口电流,A09_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit8 为 1 时显示，否则显示“—”。,1570,41571,0x60000C44,0x66000C44
+模块采样,0x0623,A 相 UNIT9 PT100 温度,A09_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit8 为 1 时显示，否则显示“—”。,1571,41572,0x60000C46,0x66000C46
+模块采样,0x0624,A 相 UNIT10 母线电压,A10_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit9 为 1 时显示，否则显示“—”。,1572,41573,0x60000C48,0x66000C48
+模块采样,0x0625,A 相 UNIT10 Ir 电流,A10_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit9 为 1 时显示，否则显示“—”。,1573,41574,0x60000C4A,0x66000C4A
+模块采样,0x0626,A 相 UNIT10 Ig 端口电流,A10_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit9 为 1 时显示，否则显示“—”。,1574,41575,0x60000C4C,0x66000C4C
+模块采样,0x0627,A 相 UNIT10 PT100 温度,A10_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit9 为 1 时显示，否则显示“—”。,1575,41576,0x60000C4E,0x66000C4E
+模块采样,0x0628,A 相 UNIT11 母线电压,A11_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit10 为 1 时显示，否则显示“—”。,1576,41577,0x60000C50,0x66000C50
+模块采样,0x0629,A 相 UNIT11 Ir 电流,A11_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit10 为 1 时显示，否则显示“—”。,1577,41578,0x60000C52,0x66000C52
+模块采样,0x062A,A 相 UNIT11 Ig 端口电流,A11_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit10 为 1 时显示，否则显示“—”。,1578,41579,0x60000C54,0x66000C54
+模块采样,0x062B,A 相 UNIT11 PT100 温度,A11_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit10 为 1 时显示，否则显示“—”。,1579,41580,0x60000C56,0x66000C56
+模块采样,0x062C,A 相 UNIT12 母线电压,A12_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit11 为 1 时显示，否则显示“—”。,1580,41581,0x60000C58,0x66000C58
+模块采样,0x062D,A 相 UNIT12 Ir 电流,A12_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit11 为 1 时显示，否则显示“—”。,1581,41582,0x60000C5A,0x66000C5A
+模块采样,0x062E,A 相 UNIT12 Ig 端口电流,A12_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit11 为 1 时显示，否则显示“—”。,1582,41583,0x60000C5C,0x66000C5C
+模块采样,0x062F,A 相 UNIT12 PT100 温度,A12_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit11 为 1 时显示，否则显示“—”。,1583,41584,0x60000C5E,0x66000C5E
+模块采样,0x0630,A 相 UNIT13 母线电压,A13_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit12 为 1 时显示，否则显示“—”。,1584,41585,0x60000C60,0x66000C60
+模块采样,0x0631,A 相 UNIT13 Ir 电流,A13_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit12 为 1 时显示，否则显示“—”。,1585,41586,0x60000C62,0x66000C62
+模块采样,0x0632,A 相 UNIT13 Ig 端口电流,A13_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit12 为 1 时显示，否则显示“—”。,1586,41587,0x60000C64,0x66000C64
+模块采样,0x0633,A 相 UNIT13 PT100 温度,A13_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit12 为 1 时显示，否则显示“—”。,1587,41588,0x60000C66,0x66000C66
+模块采样,0x0634,A 相 UNIT14 母线电压,A14_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U6 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit13 为 1 时显示，否则显示“—”。,1588,41589,0x60000C68,0x66000C68
+模块采样,0x0635,A 相 UNIT14 Ir 电流,A14_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit13 为 1 时显示，否则显示“—”。,1589,41590,0x60000C6A,0x66000C6A
+模块采样,0x0636,A 相 UNIT14 Ig 端口电流,A14_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U6 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit13 为 1 时显示，否则显示“—”。,1590,41591,0x60000C6C,0x66000C6C
+模块采样,0x0637,A 相 UNIT14 PT100 温度,A14_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U6 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_A 的 bit13 为 1 时显示，否则显示“—”。,1591,41592,0x60000C6E,0x66000C6E
+模块采样,0x0638,B 相 UNIT1 母线电压,B01_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit0 为 1 时显示，否则显示“—”。,1592,41593,0x60000C70,0x66000C70
+模块采样,0x0639,B 相 UNIT1 Ir 电流,B01_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit0 为 1 时显示，否则显示“—”。,1593,41594,0x60000C72,0x66000C72
+模块采样,0x063A,B 相 UNIT1 Ig 端口电流,B01_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit0 为 1 时显示，否则显示“—”。,1594,41595,0x60000C74,0x66000C74
+模块采样,0x063B,B 相 UNIT1 PT100 温度,B01_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit0 为 1 时显示，否则显示“—”。,1595,41596,0x60000C76,0x66000C76
+模块采样,0x063C,B 相 UNIT2 母线电压,B02_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit1 为 1 时显示，否则显示“—”。,1596,41597,0x60000C78,0x66000C78
+模块采样,0x063D,B 相 UNIT2 Ir 电流,B02_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit1 为 1 时显示，否则显示“—”。,1597,41598,0x60000C7A,0x66000C7A
+模块采样,0x063E,B 相 UNIT2 Ig 端口电流,B02_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit1 为 1 时显示，否则显示“—”。,1598,41599,0x60000C7C,0x66000C7C
+模块采样,0x063F,B 相 UNIT2 PT100 温度,B02_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit1 为 1 时显示，否则显示“—”。,1599,41600,0x60000C7E,0x66000C7E
+模块采样,0x0640,B 相 UNIT3 母线电压,B03_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit2 为 1 时显示，否则显示“—”。,1600,41601,0x60000C80,0x66000C80
+模块采样,0x0641,B 相 UNIT3 Ir 电流,B03_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit2 为 1 时显示，否则显示“—”。,1601,41602,0x60000C82,0x66000C82
+模块采样,0x0642,B 相 UNIT3 Ig 端口电流,B03_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit2 为 1 时显示，否则显示“—”。,1602,41603,0x60000C84,0x66000C84
+模块采样,0x0643,B 相 UNIT3 PT100 温度,B03_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit2 为 1 时显示，否则显示“—”。,1603,41604,0x60000C86,0x66000C86
+模块采样,0x0644,B 相 UNIT4 母线电压,B04_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit3 为 1 时显示，否则显示“—”。,1604,41605,0x60000C88,0x66000C88
+模块采样,0x0645,B 相 UNIT4 Ir 电流,B04_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit3 为 1 时显示，否则显示“—”。,1605,41606,0x60000C8A,0x66000C8A
+模块采样,0x0646,B 相 UNIT4 Ig 端口电流,B04_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit3 为 1 时显示，否则显示“—”。,1606,41607,0x60000C8C,0x66000C8C
+模块采样,0x0647,B 相 UNIT4 PT100 温度,B04_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit3 为 1 时显示，否则显示“—”。,1607,41608,0x60000C8E,0x66000C8E
+模块采样,0x0648,B 相 UNIT5 母线电压,B05_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit4 为 1 时显示，否则显示“—”。,1608,41609,0x60000C90,0x66000C90
+模块采样,0x0649,B 相 UNIT5 Ir 电流,B05_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit4 为 1 时显示，否则显示“—”。,1609,41610,0x60000C92,0x66000C92
+模块采样,0x064A,B 相 UNIT5 Ig 端口电流,B05_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit4 为 1 时显示，否则显示“—”。,1610,41611,0x60000C94,0x66000C94
+模块采样,0x064B,B 相 UNIT5 PT100 温度,B05_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit4 为 1 时显示，否则显示“—”。,1611,41612,0x60000C96,0x66000C96
+模块采样,0x064C,B 相 UNIT6 母线电压,B06_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit5 为 1 时显示，否则显示“—”。,1612,41613,0x60000C98,0x66000C98
+模块采样,0x064D,B 相 UNIT6 Ir 电流,B06_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit5 为 1 时显示，否则显示“—”。,1613,41614,0x60000C9A,0x66000C9A
+模块采样,0x064E,B 相 UNIT6 Ig 端口电流,B06_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit5 为 1 时显示，否则显示“—”。,1614,41615,0x60000C9C,0x66000C9C
+模块采样,0x064F,B 相 UNIT6 PT100 温度,B06_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit5 为 1 时显示，否则显示“—”。,1615,41616,0x60000C9E,0x66000C9E
+模块采样,0x0650,B 相 UNIT7 母线电压,B07_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 86 / DC[6],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit6 为 1 时显示，否则显示“—”。,1616,41617,0x60000CA0,0x66000CA0
+模块采样,0x0651,B 相 UNIT7 Ir 电流,B07_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 96 / IR[6],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit6 为 1 时显示，否则显示“—”。,1617,41618,0x60000CA2,0x66000CA2
+模块采样,0x0652,B 相 UNIT7 Ig 端口电流,B07_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A6 / IG[6],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit6 为 1 时显示，否则显示“—”。,1618,41619,0x60000CA4,0x66000CA4
+模块采样,0x0653,B 相 UNIT7 PT100 温度,B07_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B6 / TEMP[6],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit6 为 1 时显示，否则显示“—”。,1619,41620,0x60000CA6,0x66000CA6
+模块采样,0x0654,B 相 UNIT8 母线电压,B08_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U9 XA 87 / DC[7],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit7 为 1 时显示，否则显示“—”。,1620,41621,0x60000CA8,0x66000CA8
+模块采样,0x0655,B 相 UNIT8 Ir 电流,B08_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA 97 / IR[7],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit7 为 1 时显示，否则显示“—”。,1621,41622,0x60000CAA,0x66000CAA
+模块采样,0x0656,B 相 UNIT8 Ig 端口电流,B08_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U9 XA A7 / IG[7],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit7 为 1 时显示，否则显示“—”。,1622,41623,0x60000CAC,0x66000CAC
+模块采样,0x0657,B 相 UNIT8 PT100 温度,B08_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U9 XA B7 / TEMP[7],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit7 为 1 时显示，否则显示“—”。,1623,41624,0x60000CAE,0x66000CAE
+模块采样,0x0658,B 相 UNIT9 母线电压,B09_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit8 为 1 时显示，否则显示“—”。,1624,41625,0x60000CB0,0x66000CB0
+模块采样,0x0659,B 相 UNIT9 Ir 电流,B09_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit8 为 1 时显示，否则显示“—”。,1625,41626,0x60000CB2,0x66000CB2
+模块采样,0x065A,B 相 UNIT9 Ig 端口电流,B09_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit8 为 1 时显示，否则显示“—”。,1626,41627,0x60000CB4,0x66000CB4
+模块采样,0x065B,B 相 UNIT9 PT100 温度,B09_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit8 为 1 时显示，否则显示“—”。,1627,41628,0x60000CB6,0x66000CB6
+模块采样,0x065C,B 相 UNIT10 母线电压,B10_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit9 为 1 时显示，否则显示“—”。,1628,41629,0x60000CB8,0x66000CB8
+模块采样,0x065D,B 相 UNIT10 Ir 电流,B10_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit9 为 1 时显示，否则显示“—”。,1629,41630,0x60000CBA,0x66000CBA
+模块采样,0x065E,B 相 UNIT10 Ig 端口电流,B10_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit9 为 1 时显示，否则显示“—”。,1630,41631,0x60000CBC,0x66000CBC
+模块采样,0x065F,B 相 UNIT10 PT100 温度,B10_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit9 为 1 时显示，否则显示“—”。,1631,41632,0x60000CBE,0x66000CBE
+模块采样,0x0660,B 相 UNIT11 母线电压,B11_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit10 为 1 时显示，否则显示“—”。,1632,41633,0x60000CC0,0x66000CC0
+模块采样,0x0661,B 相 UNIT11 Ir 电流,B11_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit10 为 1 时显示，否则显示“—”。,1633,41634,0x60000CC2,0x66000CC2
+模块采样,0x0662,B 相 UNIT11 Ig 端口电流,B11_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit10 为 1 时显示，否则显示“—”。,1634,41635,0x60000CC4,0x66000CC4
+模块采样,0x0663,B 相 UNIT11 PT100 温度,B11_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit10 为 1 时显示，否则显示“—”。,1635,41636,0x60000CC6,0x66000CC6
+模块采样,0x0664,B 相 UNIT12 母线电压,B12_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit11 为 1 时显示，否则显示“—”。,1636,41637,0x60000CC8,0x66000CC8
+模块采样,0x0665,B 相 UNIT12 Ir 电流,B12_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit11 为 1 时显示，否则显示“—”。,1637,41638,0x60000CCA,0x66000CCA
+模块采样,0x0666,B 相 UNIT12 Ig 端口电流,B12_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit11 为 1 时显示，否则显示“—”。,1638,41639,0x60000CCC,0x66000CCC
+模块采样,0x0667,B 相 UNIT12 PT100 温度,B12_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit11 为 1 时显示，否则显示“—”。,1639,41640,0x60000CCE,0x66000CCE
+模块采样,0x0668,B 相 UNIT13 母线电压,B13_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit12 为 1 时显示，否则显示“—”。,1640,41641,0x60000CD0,0x66000CD0
+模块采样,0x0669,B 相 UNIT13 Ir 电流,B13_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit12 为 1 时显示，否则显示“—”。,1641,41642,0x60000CD2,0x66000CD2
+模块采样,0x066A,B 相 UNIT13 Ig 端口电流,B13_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit12 为 1 时显示，否则显示“—”。,1642,41643,0x60000CD4,0x66000CD4
+模块采样,0x066B,B 相 UNIT13 PT100 温度,B13_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit12 为 1 时显示，否则显示“—”。,1643,41644,0x60000CD6,0x66000CD6
+模块采样,0x066C,B 相 UNIT14 母线电压,B14_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U10 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_B 的 bit13 为 1 时显示，否则显示“—”。,1644,41645,0x60000CD8,0x66000CD8
+模块采样,0x066D,B 相 UNIT14 Ir 电流,B14_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit13 为 1 时显示，否则显示“—”。,1645,41646,0x60000CDA,0x66000CDA
+模块采样,0x066E,B 相 UNIT14 Ig 端口电流,B14_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U10 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_B 的 bit13 为 1 时显示，否则显示“—”。,1646,41647,0x60000CDC,0x66000CDC
+模块采样,0x066F,B 相 UNIT14 PT100 温度,B14_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U10 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_B 的 bit13 为 1 时显示，否则显示“—”。,1647,41648,0x60000CDE,0x66000CDE
+模块采样,0x0670,C 相 UNIT1 母线电压,C01_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit0 为 1 时显示，否则显示“—”。,1648,41649,0x60000CE0,0x66000CE0
+模块采样,0x0671,C 相 UNIT1 Ir 电流,C01_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit0 为 1 时显示，否则显示“—”。,1649,41650,0x60000CE2,0x66000CE2
+模块采样,0x0672,C 相 UNIT1 Ig 端口电流,C01_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit0 为 1 时显示，否则显示“—”。,1650,41651,0x60000CE4,0x66000CE4
+模块采样,0x0673,C 相 UNIT1 PT100 温度,C01_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit0 为 1 时显示，否则显示“—”。,1651,41652,0x60000CE6,0x66000CE6
+模块采样,0x0674,C 相 UNIT2 母线电压,C02_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit1 为 1 时显示，否则显示“—”。,1652,41653,0x60000CE8,0x66000CE8
+模块采样,0x0675,C 相 UNIT2 Ir 电流,C02_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit1 为 1 时显示，否则显示“—”。,1653,41654,0x60000CEA,0x66000CEA
+模块采样,0x0676,C 相 UNIT2 Ig 端口电流,C02_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit1 为 1 时显示，否则显示“—”。,1654,41655,0x60000CEC,0x66000CEC
+模块采样,0x0677,C 相 UNIT2 PT100 温度,C02_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit1 为 1 时显示，否则显示“—”。,1655,41656,0x60000CEE,0x66000CEE
+模块采样,0x0678,C 相 UNIT3 母线电压,C03_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit2 为 1 时显示，否则显示“—”。,1656,41657,0x60000CF0,0x66000CF0
+模块采样,0x0679,C 相 UNIT3 Ir 电流,C03_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit2 为 1 时显示，否则显示“—”。,1657,41658,0x60000CF2,0x66000CF2
+模块采样,0x067A,C 相 UNIT3 Ig 端口电流,C03_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit2 为 1 时显示，否则显示“—”。,1658,41659,0x60000CF4,0x66000CF4
+模块采样,0x067B,C 相 UNIT3 PT100 温度,C03_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit2 为 1 时显示，否则显示“—”。,1659,41660,0x60000CF6,0x66000CF6
+模块采样,0x067C,C 相 UNIT4 母线电压,C04_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit3 为 1 时显示，否则显示“—”。,1660,41661,0x60000CF8,0x66000CF8
+模块采样,0x067D,C 相 UNIT4 Ir 电流,C04_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit3 为 1 时显示，否则显示“—”。,1661,41662,0x60000CFA,0x66000CFA
+模块采样,0x067E,C 相 UNIT4 Ig 端口电流,C04_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit3 为 1 时显示，否则显示“—”。,1662,41663,0x60000CFC,0x66000CFC
+模块采样,0x067F,C 相 UNIT4 PT100 温度,C04_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit3 为 1 时显示，否则显示“—”。,1663,41664,0x60000CFE,0x66000CFE
+模块采样,0x0680,C 相 UNIT5 母线电压,C05_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit4 为 1 时显示，否则显示“—”。,1664,41665,0x60000D00,0x66000D00
+模块采样,0x0681,C 相 UNIT5 Ir 电流,C05_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit4 为 1 时显示，否则显示“—”。,1665,41666,0x60000D02,0x66000D02
+模块采样,0x0682,C 相 UNIT5 Ig 端口电流,C05_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit4 为 1 时显示，否则显示“—”。,1666,41667,0x60000D04,0x66000D04
+模块采样,0x0683,C 相 UNIT5 PT100 温度,C05_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit4 为 1 时显示，否则显示“—”。,1667,41668,0x60000D06,0x66000D06
+模块采样,0x0684,C 相 UNIT6 母线电压,C06_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit5 为 1 时显示，否则显示“—”。,1668,41669,0x60000D08,0x66000D08
+模块采样,0x0685,C 相 UNIT6 Ir 电流,C06_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit5 为 1 时显示，否则显示“—”。,1669,41670,0x60000D0A,0x66000D0A
+模块采样,0x0686,C 相 UNIT6 Ig 端口电流,C06_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit5 为 1 时显示，否则显示“—”。,1670,41671,0x60000D0C,0x66000D0C
+模块采样,0x0687,C 相 UNIT6 PT100 温度,C06_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit5 为 1 时显示，否则显示“—”。,1671,41672,0x60000D0E,0x66000D0E
+模块采样,0x0688,C 相 UNIT7 母线电压,C07_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 86 / DC[6],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit6 为 1 时显示，否则显示“—”。,1672,41673,0x60000D10,0x66000D10
+模块采样,0x0689,C 相 UNIT7 Ir 电流,C07_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 96 / IR[6],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit6 为 1 时显示，否则显示“—”。,1673,41674,0x60000D12,0x66000D12
+模块采样,0x068A,C 相 UNIT7 Ig 端口电流,C07_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A6 / IG[6],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit6 为 1 时显示，否则显示“—”。,1674,41675,0x60000D14,0x66000D14
+模块采样,0x068B,C 相 UNIT7 PT100 温度,C07_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B6 / TEMP[6],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit6 为 1 时显示，否则显示“—”。,1675,41676,0x60000D16,0x66000D16
+模块采样,0x068C,C 相 UNIT8 母线电压,C08_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U13 XA 87 / DC[7],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit7 为 1 时显示，否则显示“—”。,1676,41677,0x60000D18,0x66000D18
+模块采样,0x068D,C 相 UNIT8 Ir 电流,C08_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA 97 / IR[7],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit7 为 1 时显示，否则显示“—”。,1677,41678,0x60000D1A,0x66000D1A
+模块采样,0x068E,C 相 UNIT8 Ig 端口电流,C08_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U13 XA A7 / IG[7],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit7 为 1 时显示，否则显示“—”。,1678,41679,0x60000D1C,0x66000D1C
+模块采样,0x068F,C 相 UNIT8 PT100 温度,C08_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U13 XA B7 / TEMP[7],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit7 为 1 时显示，否则显示“—”。,1679,41680,0x60000D1E,0x66000D1E
+模块采样,0x0690,C 相 UNIT9 母线电压,C09_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit8 为 1 时显示，否则显示“—”。,1680,41681,0x60000D20,0x66000D20
+模块采样,0x0691,C 相 UNIT9 Ir 电流,C09_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit8 为 1 时显示，否则显示“—”。,1681,41682,0x60000D22,0x66000D22
+模块采样,0x0692,C 相 UNIT9 Ig 端口电流,C09_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit8 为 1 时显示，否则显示“—”。,1682,41683,0x60000D24,0x66000D24
+模块采样,0x0693,C 相 UNIT9 PT100 温度,C09_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B0 / TEMP[0],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit8 为 1 时显示，否则显示“—”。,1683,41684,0x60000D26,0x66000D26
+模块采样,0x0694,C 相 UNIT10 母线电压,C10_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 81 / DC[1],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit9 为 1 时显示，否则显示“—”。,1684,41685,0x60000D28,0x66000D28
+模块采样,0x0695,C 相 UNIT10 Ir 电流,C10_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 91 / IR[1],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit9 为 1 时显示，否则显示“—”。,1685,41686,0x60000D2A,0x66000D2A
+模块采样,0x0696,C 相 UNIT10 Ig 端口电流,C10_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A1 / IG[1],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit9 为 1 时显示，否则显示“—”。,1686,41687,0x60000D2C,0x66000D2C
+模块采样,0x0697,C 相 UNIT10 PT100 温度,C10_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B1 / TEMP[1],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit9 为 1 时显示，否则显示“—”。,1687,41688,0x60000D2E,0x66000D2E
+模块采样,0x0698,C 相 UNIT11 母线电压,C11_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 82 / DC[2],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit10 为 1 时显示，否则显示“—”。,1688,41689,0x60000D30,0x66000D30
+模块采样,0x0699,C 相 UNIT11 Ir 电流,C11_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 92 / IR[2],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit10 为 1 时显示，否则显示“—”。,1689,41690,0x60000D32,0x66000D32
+模块采样,0x069A,C 相 UNIT11 Ig 端口电流,C11_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A2 / IG[2],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit10 为 1 时显示，否则显示“—”。,1690,41691,0x60000D34,0x66000D34
+模块采样,0x069B,C 相 UNIT11 PT100 温度,C11_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B2 / TEMP[2],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit10 为 1 时显示，否则显示“—”。,1691,41692,0x60000D36,0x66000D36
+模块采样,0x069C,C 相 UNIT12 母线电压,C12_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 83 / DC[3],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit11 为 1 时显示，否则显示“—”。,1692,41693,0x60000D38,0x66000D38
+模块采样,0x069D,C 相 UNIT12 Ir 电流,C12_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 93 / IR[3],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit11 为 1 时显示，否则显示“—”。,1693,41694,0x60000D3A,0x66000D3A
+模块采样,0x069E,C 相 UNIT12 Ig 端口电流,C12_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A3 / IG[3],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit11 为 1 时显示，否则显示“—”。,1694,41695,0x60000D3C,0x66000D3C
+模块采样,0x069F,C 相 UNIT12 PT100 温度,C12_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B3 / TEMP[3],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit11 为 1 时显示，否则显示“—”。,1695,41696,0x60000D3E,0x66000D3E
+模块采样,0x06A0,C 相 UNIT13 母线电压,C13_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 84 / DC[4],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit12 为 1 时显示，否则显示“—”。,1696,41697,0x60000D40,0x66000D40
+模块采样,0x06A1,C 相 UNIT13 Ir 电流,C13_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 94 / IR[4],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit12 为 1 时显示，否则显示“—”。,1697,41698,0x60000D42,0x66000D42
+模块采样,0x06A2,C 相 UNIT13 Ig 端口电流,C13_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A4 / IG[4],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit12 为 1 时显示，否则显示“—”。,1698,41699,0x60000D44,0x66000D44
+模块采样,0x06A3,C 相 UNIT13 PT100 温度,C13_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B4 / TEMP[4],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit12 为 1 时显示，否则显示“—”。,1699,41700,0x60000D46,0x66000D46
+模块采样,0x06A4,C 相 UNIT14 母线电压,C14_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U14 XA 85 / DC[5],滤波后的直流电压。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1700,41701,0x60000D48,0x66000D48
+模块采样,0x06A5,C 相 UNIT14 Ir 电流,C14_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA 95 / IR[5],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1701,41702,0x60000D4A,0x66000D4A
+模块采样,0x06A6,C 相 UNIT14 Ig 端口电流,C14_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1702,41703,0x60000D4C,0x66000D4C
+模块采样,0x06A7,C 相 UNIT14 PT100 温度,C14_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1703,41704,0x60000D4E,0x66000D4E
+故障,0x0700,综合故障字,fault_summary,R,BITS,1,—,1,0x0000..FFFF,,SstDpramTelemetry_GetFaultWord；V2增加 CHB_FAULT_UNIT_LINK → bit13,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7逆变器、8相序、9频率、10过流、11欠压、12过压、13通信、14同步、15总故障。 V2 将 core=8 一并计入 bit13；保留 bit15 总故障。,1792,41793,0x60000E00,0x66000E00
+故障,0x0701,核心锁存原因,fault_control_reason,R,U16,1,—,1,0..8,,g_chb_dab_status.fault_code,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,1793,41794,0x60000E02,0x66000E02
+故障,0x0702,当前列表首个报告码,fault_first_code,R,U16,1,—,1,0或五位十进制码,,SstFault_GetFirstCode(),本次故障期间按DSP后台发现顺序去重、追加；不保证物理首触发顺序。,1794,41795,0x60000E04,0x66000E04
+故障,0x0703,当前最高严重等级,fault_max_severity,R,U16,1,—,1,0..4,,SstFault_GetLevel(),0一级、1二级、2三级、3四级、4无故障,1795,41796,0x60000E06,0x66000E06
+故障,0x0704,当前有效码数,fault_active_count,R,U16,1,—,1,0..32,,SstFault_GetActiveCount(),读取0x0720起前N项。,1796,41797,0x60000E08,0x66000E08
+故障,0x0705,端口故障原始字,fault_raw_port,R,BITS,1,—,1,0x0000..FFFF,,Port_RealFault.PORT_FAULT16,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,1797,41798,0x60000E0A,0x66000E0A
+故障,0x0706,软件故障分类原始字,fault_raw_type,R,BITS,1,—,1,0x0000..FFFF,,FaultTypeFLAG.FaultTypeFLAG16,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,1798,41799,0x60000E0C,0x66000E0C
+故障,0x0707,403首次故障来源软件锁存,fault_fb_source,R,BITS,1,—,1,0x0000..FFFF,,FBLatch_TAD,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,1799,41800,0x60000E0E,0x66000E0E
+故障,0x0708,原HVAC软件过流锁存,legacy_oc_latch,R,U16,1,—,1,0或非零,,HVAC_OC_Fault,快速核心OC单独上报29103，触发时本字段可以为0。,1800,41801,0x60000E10,0x66000E10
+故障,0x0709,原HVAC软件过压锁存,legacy_ov_latch,R,U16,1,—,1,0或非零,,HVAC_OV_Fault,快速核心OV单独上报29104，触发时本字段可以为0。,1801,41802,0x60000E12,0x66000E12
+故障,0x0720,当前故障码01,active_fault_01,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(0),超过当前有效码数的槽读取0；无符号十进制显示。,1824,41825,0x60000E40,0x66000E40
+故障,0x0721,当前故障码02,active_fault_02,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(1),超过当前有效码数的槽读取0；无符号十进制显示。,1825,41826,0x60000E42,0x66000E42
+故障,0x0722,当前故障码03,active_fault_03,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(2),超过当前有效码数的槽读取0；无符号十进制显示。,1826,41827,0x60000E44,0x66000E44
+故障,0x0723,当前故障码04,active_fault_04,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(3),超过当前有效码数的槽读取0；无符号十进制显示。,1827,41828,0x60000E46,0x66000E46
+故障,0x0724,当前故障码05,active_fault_05,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(4),超过当前有效码数的槽读取0；无符号十进制显示。,1828,41829,0x60000E48,0x66000E48
+故障,0x0725,当前故障码06,active_fault_06,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(5),超过当前有效码数的槽读取0；无符号十进制显示。,1829,41830,0x60000E4A,0x66000E4A
+故障,0x0726,当前故障码07,active_fault_07,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(6),超过当前有效码数的槽读取0；无符号十进制显示。,1830,41831,0x60000E4C,0x66000E4C
+故障,0x0727,当前故障码08,active_fault_08,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(7),超过当前有效码数的槽读取0；无符号十进制显示。,1831,41832,0x60000E4E,0x66000E4E
+故障,0x0728,当前故障码09,active_fault_09,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(8),超过当前有效码数的槽读取0；无符号十进制显示。,1832,41833,0x60000E50,0x66000E50
+故障,0x0729,当前故障码10,active_fault_10,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(9),超过当前有效码数的槽读取0；无符号十进制显示。,1833,41834,0x60000E52,0x66000E52
+故障,0x072A,当前故障码11,active_fault_11,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(10),超过当前有效码数的槽读取0；无符号十进制显示。,1834,41835,0x60000E54,0x66000E54
+故障,0x072B,当前故障码12,active_fault_12,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(11),超过当前有效码数的槽读取0；无符号十进制显示。,1835,41836,0x60000E56,0x66000E56
+故障,0x072C,当前故障码13,active_fault_13,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(12),超过当前有效码数的槽读取0；无符号十进制显示。,1836,41837,0x60000E58,0x66000E58
+故障,0x072D,当前故障码14,active_fault_14,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(13),超过当前有效码数的槽读取0；无符号十进制显示。,1837,41838,0x60000E5A,0x66000E5A
+故障,0x072E,当前故障码15,active_fault_15,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(14),超过当前有效码数的槽读取0；无符号十进制显示。,1838,41839,0x60000E5C,0x66000E5C
+故障,0x072F,当前故障码16,active_fault_16,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(15),超过当前有效码数的槽读取0；无符号十进制显示。,1839,41840,0x60000E5E,0x66000E5E
+故障,0x0730,当前故障码17,active_fault_17,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(16),超过当前有效码数的槽读取0；无符号十进制显示。,1840,41841,0x60000E60,0x66000E60
+故障,0x0731,当前故障码18,active_fault_18,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(17),超过当前有效码数的槽读取0；无符号十进制显示。,1841,41842,0x60000E62,0x66000E62
+故障,0x0732,当前故障码19,active_fault_19,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(18),超过当前有效码数的槽读取0；无符号十进制显示。,1842,41843,0x60000E64,0x66000E64
+故障,0x0733,当前故障码20,active_fault_20,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(19),超过当前有效码数的槽读取0；无符号十进制显示。,1843,41844,0x60000E66,0x66000E66
+故障,0x0734,当前故障码21,active_fault_21,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(20),超过当前有效码数的槽读取0；无符号十进制显示。,1844,41845,0x60000E68,0x66000E68
+故障,0x0735,当前故障码22,active_fault_22,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(21),超过当前有效码数的槽读取0；无符号十进制显示。,1845,41846,0x60000E6A,0x66000E6A
+故障,0x0736,当前故障码23,active_fault_23,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(22),超过当前有效码数的槽读取0；无符号十进制显示。,1846,41847,0x60000E6C,0x66000E6C
+故障,0x0737,当前故障码24,active_fault_24,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(23),超过当前有效码数的槽读取0；无符号十进制显示。,1847,41848,0x60000E6E,0x66000E6E
+故障,0x0738,当前故障码25,active_fault_25,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(24),超过当前有效码数的槽读取0；无符号十进制显示。,1848,41849,0x60000E70,0x66000E70
+故障,0x0739,当前故障码26,active_fault_26,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(25),超过当前有效码数的槽读取0；无符号十进制显示。,1849,41850,0x60000E72,0x66000E72
+故障,0x073A,当前故障码27,active_fault_27,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(26),超过当前有效码数的槽读取0；无符号十进制显示。,1850,41851,0x60000E74,0x66000E74
+故障,0x073B,当前故障码28,active_fault_28,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(27),超过当前有效码数的槽读取0；无符号十进制显示。,1851,41852,0x60000E76,0x66000E76
+故障,0x073C,当前故障码29,active_fault_29,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(28),超过当前有效码数的槽读取0；无符号十进制显示。,1852,41853,0x60000E78,0x66000E78
+故障,0x073D,当前故障码30,active_fault_30,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(29),超过当前有效码数的槽读取0；无符号十进制显示。,1853,41854,0x60000E7A,0x66000E7A
+故障,0x073E,当前故障码31,active_fault_31,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(30),超过当前有效码数的槽读取0；无符号十进制显示。,1854,41855,0x60000E7C,0x66000E7C
+故障,0x073F,当前故障码32,active_fault_32,R,U16,1,—,1,0或五位十进制码,,SstFault_GetCode(31),超过当前有效码数的槽读取0；无符号十进制显示。,1855,41856,0x60000E7E,0x66000E7E
+故障历史,0x0800,故障历史发布版本,history_epoch,R,U16,1,—,1,0..65535,,历史发布器 epoch,独立于实时遥测。历史改变时先写奇数、完成后写偶数；跨包读取前后须为相同偶数。,2048,42049,0x60001000,0x66001000
+故障历史,0x0801,故障历史条数,history_count,R,U16,1,—,1,0..32,,SstFault_GetHistoryCount(),每次新加入当前表的故障码生成一条，最近32条。故障复位保留，DSP重新初始化后清空。,2049,42050,0x60001002,0x66001002
+故障历史,0x0802,最新历史事件序号,history_last_sequence,R,U32,2,—,1,0..4294967295,,SstFault_GetHistory(0).sequence,低16位在前。观察次数；首个事件为1，无记录时为0。,2050,42051,0x60001004,0x66001004
+故障历史,0x0810,历史00·报告码,hist_00_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2064,42065,0x60001020,0x66001020
+故障历史,0x0811,历史00·严重等级,hist_00_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2065,42066,0x60001022,0x66001022
+故障历史,0x0812,历史00·核心原因,hist_00_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2066,42067,0x60001024,0x66001024
+故障历史,0x0813,历史00·端口故障原始字,hist_00_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2067,42068,0x60001026,0x66001026
+故障历史,0x0814,历史00·故障分类原始字,hist_00_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2068,42069,0x60001028,0x66001028
+故障历史,0x0815,历史00·采样保护来源,hist_00_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2069,42070,0x6000102A,0x6600102A
+故障历史,0x0816,历史00·403故障来源锁存,hist_00_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2070,42071,0x6000102C,0x6600102C
+故障历史,0x0817,历史00·701 A相故障位置,hist_00_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2071,42072,0x6000102E,0x6600102E
+故障历史,0x0818,历史00·701 B相故障位置,hist_00_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2072,42073,0x60001030,0x66001030
+故障历史,0x0819,历史00·701 C相故障位置,hist_00_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2073,42074,0x60001032,0x66001032
+故障历史,0x081A,历史00·模块故障处理计数,hist_00_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2074,42075,0x60001034,0x66001034
+故障历史,0x081B,历史00·DSP上电后台观察节拍,hist_00_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2075,42076,0x60001036,0x66001036
+故障历史,0x081D,历史00·事件序号,hist_00_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2077,42078,0x6000103A,0x6600103A
+故障历史,0x081F,历史00·501 A相失联证据,hist_00_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2079,42080,0x6000103E,0x6600103E
+故障历史,0x0820,历史00·501 B相失联证据,hist_00_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2080,42081,0x60001040,0x66001040
+故障历史,0x0821,历史00·501 C相失联证据,hist_00_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2081,42082,0x60001042,0x66001042
+故障历史,0x0822,历史01·报告码,hist_01_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2082,42083,0x60001044,0x66001044
+故障历史,0x0823,历史01·严重等级,hist_01_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2083,42084,0x60001046,0x66001046
+故障历史,0x0824,历史01·核心原因,hist_01_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2084,42085,0x60001048,0x66001048
+故障历史,0x0825,历史01·端口故障原始字,hist_01_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2085,42086,0x6000104A,0x6600104A
+故障历史,0x0826,历史01·故障分类原始字,hist_01_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2086,42087,0x6000104C,0x6600104C
+故障历史,0x0827,历史01·采样保护来源,hist_01_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2087,42088,0x6000104E,0x6600104E
+故障历史,0x0828,历史01·403故障来源锁存,hist_01_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2088,42089,0x60001050,0x66001050
+故障历史,0x0829,历史01·701 A相故障位置,hist_01_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2089,42090,0x60001052,0x66001052
+故障历史,0x082A,历史01·701 B相故障位置,hist_01_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2090,42091,0x60001054,0x66001054
+故障历史,0x082B,历史01·701 C相故障位置,hist_01_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2091,42092,0x60001056,0x66001056
+故障历史,0x082C,历史01·模块故障处理计数,hist_01_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2092,42093,0x60001058,0x66001058
+故障历史,0x082D,历史01·DSP上电后台观察节拍,hist_01_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2093,42094,0x6000105A,0x6600105A
+故障历史,0x082F,历史01·事件序号,hist_01_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2095,42096,0x6000105E,0x6600105E
+故障历史,0x0831,历史01·501 A相失联证据,hist_01_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2097,42098,0x60001062,0x66001062
+故障历史,0x0832,历史01·501 B相失联证据,hist_01_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2098,42099,0x60001064,0x66001064
+故障历史,0x0833,历史01·501 C相失联证据,hist_01_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2099,42100,0x60001066,0x66001066
+故障历史,0x0834,历史02·报告码,hist_02_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2100,42101,0x60001068,0x66001068
+故障历史,0x0835,历史02·严重等级,hist_02_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2101,42102,0x6000106A,0x6600106A
+故障历史,0x0836,历史02·核心原因,hist_02_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2102,42103,0x6000106C,0x6600106C
+故障历史,0x0837,历史02·端口故障原始字,hist_02_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2103,42104,0x6000106E,0x6600106E
+故障历史,0x0838,历史02·故障分类原始字,hist_02_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2104,42105,0x60001070,0x66001070
+故障历史,0x0839,历史02·采样保护来源,hist_02_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2105,42106,0x60001072,0x66001072
+故障历史,0x083A,历史02·403故障来源锁存,hist_02_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2106,42107,0x60001074,0x66001074
+故障历史,0x083B,历史02·701 A相故障位置,hist_02_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2107,42108,0x60001076,0x66001076
+故障历史,0x083C,历史02·701 B相故障位置,hist_02_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2108,42109,0x60001078,0x66001078
+故障历史,0x083D,历史02·701 C相故障位置,hist_02_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2109,42110,0x6000107A,0x6600107A
+故障历史,0x083E,历史02·模块故障处理计数,hist_02_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2110,42111,0x6000107C,0x6600107C
+故障历史,0x083F,历史02·DSP上电后台观察节拍,hist_02_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2111,42112,0x6000107E,0x6600107E
+故障历史,0x0841,历史02·事件序号,hist_02_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2113,42114,0x60001082,0x66001082
+故障历史,0x0843,历史02·501 A相失联证据,hist_02_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2115,42116,0x60001086,0x66001086
+故障历史,0x0844,历史02·501 B相失联证据,hist_02_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2116,42117,0x60001088,0x66001088
+故障历史,0x0845,历史02·501 C相失联证据,hist_02_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2117,42118,0x6000108A,0x6600108A
+故障历史,0x0846,历史03·报告码,hist_03_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2118,42119,0x6000108C,0x6600108C
+故障历史,0x0847,历史03·严重等级,hist_03_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2119,42120,0x6000108E,0x6600108E
+故障历史,0x0848,历史03·核心原因,hist_03_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2120,42121,0x60001090,0x66001090
+故障历史,0x0849,历史03·端口故障原始字,hist_03_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2121,42122,0x60001092,0x66001092
+故障历史,0x084A,历史03·故障分类原始字,hist_03_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2122,42123,0x60001094,0x66001094
+故障历史,0x084B,历史03·采样保护来源,hist_03_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2123,42124,0x60001096,0x66001096
+故障历史,0x084C,历史03·403故障来源锁存,hist_03_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2124,42125,0x60001098,0x66001098
+故障历史,0x084D,历史03·701 A相故障位置,hist_03_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2125,42126,0x6000109A,0x6600109A
+故障历史,0x084E,历史03·701 B相故障位置,hist_03_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2126,42127,0x6000109C,0x6600109C
+故障历史,0x084F,历史03·701 C相故障位置,hist_03_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2127,42128,0x6000109E,0x6600109E
+故障历史,0x0850,历史03·模块故障处理计数,hist_03_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2128,42129,0x600010A0,0x660010A0
+故障历史,0x0851,历史03·DSP上电后台观察节拍,hist_03_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2129,42130,0x600010A2,0x660010A2
+故障历史,0x0853,历史03·事件序号,hist_03_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2131,42132,0x600010A6,0x660010A6
+故障历史,0x0855,历史03·501 A相失联证据,hist_03_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2133,42134,0x600010AA,0x660010AA
+故障历史,0x0856,历史03·501 B相失联证据,hist_03_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2134,42135,0x600010AC,0x660010AC
+故障历史,0x0857,历史03·501 C相失联证据,hist_03_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2135,42136,0x600010AE,0x660010AE
+故障历史,0x0858,历史04·报告码,hist_04_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2136,42137,0x600010B0,0x660010B0
+故障历史,0x0859,历史04·严重等级,hist_04_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2137,42138,0x600010B2,0x660010B2
+故障历史,0x085A,历史04·核心原因,hist_04_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2138,42139,0x600010B4,0x660010B4
+故障历史,0x085B,历史04·端口故障原始字,hist_04_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2139,42140,0x600010B6,0x660010B6
+故障历史,0x085C,历史04·故障分类原始字,hist_04_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2140,42141,0x600010B8,0x660010B8
+故障历史,0x085D,历史04·采样保护来源,hist_04_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2141,42142,0x600010BA,0x660010BA
+故障历史,0x085E,历史04·403故障来源锁存,hist_04_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2142,42143,0x600010BC,0x660010BC
+故障历史,0x085F,历史04·701 A相故障位置,hist_04_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2143,42144,0x600010BE,0x660010BE
+故障历史,0x0860,历史04·701 B相故障位置,hist_04_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2144,42145,0x600010C0,0x660010C0
+故障历史,0x0861,历史04·701 C相故障位置,hist_04_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2145,42146,0x600010C2,0x660010C2
+故障历史,0x0862,历史04·模块故障处理计数,hist_04_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2146,42147,0x600010C4,0x660010C4
+故障历史,0x0863,历史04·DSP上电后台观察节拍,hist_04_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2147,42148,0x600010C6,0x660010C6
+故障历史,0x0865,历史04·事件序号,hist_04_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2149,42150,0x600010CA,0x660010CA
+故障历史,0x0867,历史04·501 A相失联证据,hist_04_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2151,42152,0x600010CE,0x660010CE
+故障历史,0x0868,历史04·501 B相失联证据,hist_04_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2152,42153,0x600010D0,0x660010D0
+故障历史,0x0869,历史04·501 C相失联证据,hist_04_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2153,42154,0x600010D2,0x660010D2
+故障历史,0x086A,历史05·报告码,hist_05_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2154,42155,0x600010D4,0x660010D4
+故障历史,0x086B,历史05·严重等级,hist_05_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2155,42156,0x600010D6,0x660010D6
+故障历史,0x086C,历史05·核心原因,hist_05_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2156,42157,0x600010D8,0x660010D8
+故障历史,0x086D,历史05·端口故障原始字,hist_05_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2157,42158,0x600010DA,0x660010DA
+故障历史,0x086E,历史05·故障分类原始字,hist_05_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2158,42159,0x600010DC,0x660010DC
+故障历史,0x086F,历史05·采样保护来源,hist_05_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2159,42160,0x600010DE,0x660010DE
+故障历史,0x0870,历史05·403故障来源锁存,hist_05_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2160,42161,0x600010E0,0x660010E0
+故障历史,0x0871,历史05·701 A相故障位置,hist_05_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2161,42162,0x600010E2,0x660010E2
+故障历史,0x0872,历史05·701 B相故障位置,hist_05_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2162,42163,0x600010E4,0x660010E4
+故障历史,0x0873,历史05·701 C相故障位置,hist_05_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2163,42164,0x600010E6,0x660010E6
+故障历史,0x0874,历史05·模块故障处理计数,hist_05_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2164,42165,0x600010E8,0x660010E8
+故障历史,0x0875,历史05·DSP上电后台观察节拍,hist_05_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2165,42166,0x600010EA,0x660010EA
+故障历史,0x0877,历史05·事件序号,hist_05_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2167,42168,0x600010EE,0x660010EE
+故障历史,0x0879,历史05·501 A相失联证据,hist_05_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2169,42170,0x600010F2,0x660010F2
+故障历史,0x087A,历史05·501 B相失联证据,hist_05_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2170,42171,0x600010F4,0x660010F4
+故障历史,0x087B,历史05·501 C相失联证据,hist_05_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2171,42172,0x600010F6,0x660010F6
+故障历史,0x087C,历史06·报告码,hist_06_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2172,42173,0x600010F8,0x660010F8
+故障历史,0x087D,历史06·严重等级,hist_06_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2173,42174,0x600010FA,0x660010FA
+故障历史,0x087E,历史06·核心原因,hist_06_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2174,42175,0x600010FC,0x660010FC
+故障历史,0x087F,历史06·端口故障原始字,hist_06_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2175,42176,0x600010FE,0x660010FE
+故障历史,0x0880,历史06·故障分类原始字,hist_06_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2176,42177,0x60001100,0x66001100
+故障历史,0x0881,历史06·采样保护来源,hist_06_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2177,42178,0x60001102,0x66001102
+故障历史,0x0882,历史06·403故障来源锁存,hist_06_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2178,42179,0x60001104,0x66001104
+故障历史,0x0883,历史06·701 A相故障位置,hist_06_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2179,42180,0x60001106,0x66001106
+故障历史,0x0884,历史06·701 B相故障位置,hist_06_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2180,42181,0x60001108,0x66001108
+故障历史,0x0885,历史06·701 C相故障位置,hist_06_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2181,42182,0x6000110A,0x6600110A
+故障历史,0x0886,历史06·模块故障处理计数,hist_06_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2182,42183,0x6000110C,0x6600110C
+故障历史,0x0887,历史06·DSP上电后台观察节拍,hist_06_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2183,42184,0x6000110E,0x6600110E
+故障历史,0x0889,历史06·事件序号,hist_06_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2185,42186,0x60001112,0x66001112
+故障历史,0x088B,历史06·501 A相失联证据,hist_06_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2187,42188,0x60001116,0x66001116
+故障历史,0x088C,历史06·501 B相失联证据,hist_06_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2188,42189,0x60001118,0x66001118
+故障历史,0x088D,历史06·501 C相失联证据,hist_06_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2189,42190,0x6000111A,0x6600111A
+故障历史,0x088E,历史07·报告码,hist_07_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2190,42191,0x6000111C,0x6600111C
+故障历史,0x088F,历史07·严重等级,hist_07_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2191,42192,0x6000111E,0x6600111E
+故障历史,0x0890,历史07·核心原因,hist_07_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2192,42193,0x60001120,0x66001120
+故障历史,0x0891,历史07·端口故障原始字,hist_07_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2193,42194,0x60001122,0x66001122
+故障历史,0x0892,历史07·故障分类原始字,hist_07_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2194,42195,0x60001124,0x66001124
+故障历史,0x0893,历史07·采样保护来源,hist_07_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2195,42196,0x60001126,0x66001126
+故障历史,0x0894,历史07·403故障来源锁存,hist_07_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2196,42197,0x60001128,0x66001128
+故障历史,0x0895,历史07·701 A相故障位置,hist_07_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2197,42198,0x6000112A,0x6600112A
+故障历史,0x0896,历史07·701 B相故障位置,hist_07_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2198,42199,0x6000112C,0x6600112C
+故障历史,0x0897,历史07·701 C相故障位置,hist_07_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2199,42200,0x6000112E,0x6600112E
+故障历史,0x0898,历史07·模块故障处理计数,hist_07_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2200,42201,0x60001130,0x66001130
+故障历史,0x0899,历史07·DSP上电后台观察节拍,hist_07_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2201,42202,0x60001132,0x66001132
+故障历史,0x089B,历史07·事件序号,hist_07_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2203,42204,0x60001136,0x66001136
+故障历史,0x089D,历史07·501 A相失联证据,hist_07_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2205,42206,0x6000113A,0x6600113A
+故障历史,0x089E,历史07·501 B相失联证据,hist_07_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2206,42207,0x6000113C,0x6600113C
+故障历史,0x089F,历史07·501 C相失联证据,hist_07_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2207,42208,0x6000113E,0x6600113E
+故障历史,0x08A0,历史08·报告码,hist_08_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2208,42209,0x60001140,0x66001140
+故障历史,0x08A1,历史08·严重等级,hist_08_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2209,42210,0x60001142,0x66001142
+故障历史,0x08A2,历史08·核心原因,hist_08_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2210,42211,0x60001144,0x66001144
+故障历史,0x08A3,历史08·端口故障原始字,hist_08_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2211,42212,0x60001146,0x66001146
+故障历史,0x08A4,历史08·故障分类原始字,hist_08_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2212,42213,0x60001148,0x66001148
+故障历史,0x08A5,历史08·采样保护来源,hist_08_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2213,42214,0x6000114A,0x6600114A
+故障历史,0x08A6,历史08·403故障来源锁存,hist_08_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2214,42215,0x6000114C,0x6600114C
+故障历史,0x08A7,历史08·701 A相故障位置,hist_08_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2215,42216,0x6000114E,0x6600114E
+故障历史,0x08A8,历史08·701 B相故障位置,hist_08_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2216,42217,0x60001150,0x66001150
+故障历史,0x08A9,历史08·701 C相故障位置,hist_08_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2217,42218,0x60001152,0x66001152
+故障历史,0x08AA,历史08·模块故障处理计数,hist_08_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2218,42219,0x60001154,0x66001154
+故障历史,0x08AB,历史08·DSP上电后台观察节拍,hist_08_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2219,42220,0x60001156,0x66001156
+故障历史,0x08AD,历史08·事件序号,hist_08_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2221,42222,0x6000115A,0x6600115A
+故障历史,0x08AF,历史08·501 A相失联证据,hist_08_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2223,42224,0x6000115E,0x6600115E
+故障历史,0x08B0,历史08·501 B相失联证据,hist_08_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2224,42225,0x60001160,0x66001160
+故障历史,0x08B1,历史08·501 C相失联证据,hist_08_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2225,42226,0x60001162,0x66001162
+故障历史,0x08B2,历史09·报告码,hist_09_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2226,42227,0x60001164,0x66001164
+故障历史,0x08B3,历史09·严重等级,hist_09_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2227,42228,0x60001166,0x66001166
+故障历史,0x08B4,历史09·核心原因,hist_09_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2228,42229,0x60001168,0x66001168
+故障历史,0x08B5,历史09·端口故障原始字,hist_09_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2229,42230,0x6000116A,0x6600116A
+故障历史,0x08B6,历史09·故障分类原始字,hist_09_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2230,42231,0x6000116C,0x6600116C
+故障历史,0x08B7,历史09·采样保护来源,hist_09_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2231,42232,0x6000116E,0x6600116E
+故障历史,0x08B8,历史09·403故障来源锁存,hist_09_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2232,42233,0x60001170,0x66001170
+故障历史,0x08B9,历史09·701 A相故障位置,hist_09_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2233,42234,0x60001172,0x66001172
+故障历史,0x08BA,历史09·701 B相故障位置,hist_09_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2234,42235,0x60001174,0x66001174
+故障历史,0x08BB,历史09·701 C相故障位置,hist_09_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2235,42236,0x60001176,0x66001176
+故障历史,0x08BC,历史09·模块故障处理计数,hist_09_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2236,42237,0x60001178,0x66001178
+故障历史,0x08BD,历史09·DSP上电后台观察节拍,hist_09_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2237,42238,0x6000117A,0x6600117A
+故障历史,0x08BF,历史09·事件序号,hist_09_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2239,42240,0x6000117E,0x6600117E
+故障历史,0x08C1,历史09·501 A相失联证据,hist_09_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2241,42242,0x60001182,0x66001182
+故障历史,0x08C2,历史09·501 B相失联证据,hist_09_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2242,42243,0x60001184,0x66001184
+故障历史,0x08C3,历史09·501 C相失联证据,hist_09_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2243,42244,0x60001186,0x66001186
+故障历史,0x08C4,历史10·报告码,hist_10_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2244,42245,0x60001188,0x66001188
+故障历史,0x08C5,历史10·严重等级,hist_10_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2245,42246,0x6000118A,0x6600118A
+故障历史,0x08C6,历史10·核心原因,hist_10_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2246,42247,0x6000118C,0x6600118C
+故障历史,0x08C7,历史10·端口故障原始字,hist_10_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2247,42248,0x6000118E,0x6600118E
+故障历史,0x08C8,历史10·故障分类原始字,hist_10_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2248,42249,0x60001190,0x66001190
+故障历史,0x08C9,历史10·采样保护来源,hist_10_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2249,42250,0x60001192,0x66001192
+故障历史,0x08CA,历史10·403故障来源锁存,hist_10_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2250,42251,0x60001194,0x66001194
+故障历史,0x08CB,历史10·701 A相故障位置,hist_10_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2251,42252,0x60001196,0x66001196
+故障历史,0x08CC,历史10·701 B相故障位置,hist_10_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2252,42253,0x60001198,0x66001198
+故障历史,0x08CD,历史10·701 C相故障位置,hist_10_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2253,42254,0x6000119A,0x6600119A
+故障历史,0x08CE,历史10·模块故障处理计数,hist_10_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2254,42255,0x6000119C,0x6600119C
+故障历史,0x08CF,历史10·DSP上电后台观察节拍,hist_10_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2255,42256,0x6000119E,0x6600119E
+故障历史,0x08D1,历史10·事件序号,hist_10_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2257,42258,0x600011A2,0x660011A2
+故障历史,0x08D3,历史10·501 A相失联证据,hist_10_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2259,42260,0x600011A6,0x660011A6
+故障历史,0x08D4,历史10·501 B相失联证据,hist_10_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2260,42261,0x600011A8,0x660011A8
+故障历史,0x08D5,历史10·501 C相失联证据,hist_10_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2261,42262,0x600011AA,0x660011AA
+故障历史,0x08D6,历史11·报告码,hist_11_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2262,42263,0x600011AC,0x660011AC
+故障历史,0x08D7,历史11·严重等级,hist_11_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2263,42264,0x600011AE,0x660011AE
+故障历史,0x08D8,历史11·核心原因,hist_11_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2264,42265,0x600011B0,0x660011B0
+故障历史,0x08D9,历史11·端口故障原始字,hist_11_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2265,42266,0x600011B2,0x660011B2
+故障历史,0x08DA,历史11·故障分类原始字,hist_11_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2266,42267,0x600011B4,0x660011B4
+故障历史,0x08DB,历史11·采样保护来源,hist_11_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2267,42268,0x600011B6,0x660011B6
+故障历史,0x08DC,历史11·403故障来源锁存,hist_11_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2268,42269,0x600011B8,0x660011B8
+故障历史,0x08DD,历史11·701 A相故障位置,hist_11_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2269,42270,0x600011BA,0x660011BA
+故障历史,0x08DE,历史11·701 B相故障位置,hist_11_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2270,42271,0x600011BC,0x660011BC
+故障历史,0x08DF,历史11·701 C相故障位置,hist_11_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2271,42272,0x600011BE,0x660011BE
+故障历史,0x08E0,历史11·模块故障处理计数,hist_11_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2272,42273,0x600011C0,0x660011C0
+故障历史,0x08E1,历史11·DSP上电后台观察节拍,hist_11_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2273,42274,0x600011C2,0x660011C2
+故障历史,0x08E3,历史11·事件序号,hist_11_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2275,42276,0x600011C6,0x660011C6
+故障历史,0x08E5,历史11·501 A相失联证据,hist_11_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2277,42278,0x600011CA,0x660011CA
+故障历史,0x08E6,历史11·501 B相失联证据,hist_11_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2278,42279,0x600011CC,0x660011CC
+故障历史,0x08E7,历史11·501 C相失联证据,hist_11_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2279,42280,0x600011CE,0x660011CE
+故障历史,0x08E8,历史12·报告码,hist_12_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2280,42281,0x600011D0,0x660011D0
+故障历史,0x08E9,历史12·严重等级,hist_12_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2281,42282,0x600011D2,0x660011D2
+故障历史,0x08EA,历史12·核心原因,hist_12_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2282,42283,0x600011D4,0x660011D4
+故障历史,0x08EB,历史12·端口故障原始字,hist_12_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2283,42284,0x600011D6,0x660011D6
+故障历史,0x08EC,历史12·故障分类原始字,hist_12_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2284,42285,0x600011D8,0x660011D8
+故障历史,0x08ED,历史12·采样保护来源,hist_12_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2285,42286,0x600011DA,0x660011DA
+故障历史,0x08EE,历史12·403故障来源锁存,hist_12_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2286,42287,0x600011DC,0x660011DC
+故障历史,0x08EF,历史12·701 A相故障位置,hist_12_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2287,42288,0x600011DE,0x660011DE
+故障历史,0x08F0,历史12·701 B相故障位置,hist_12_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2288,42289,0x600011E0,0x660011E0
+故障历史,0x08F1,历史12·701 C相故障位置,hist_12_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2289,42290,0x600011E2,0x660011E2
+故障历史,0x08F2,历史12·模块故障处理计数,hist_12_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2290,42291,0x600011E4,0x660011E4
+故障历史,0x08F3,历史12·DSP上电后台观察节拍,hist_12_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2291,42292,0x600011E6,0x660011E6
+故障历史,0x08F5,历史12·事件序号,hist_12_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2293,42294,0x600011EA,0x660011EA
+故障历史,0x08F7,历史12·501 A相失联证据,hist_12_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2295,42296,0x600011EE,0x660011EE
+故障历史,0x08F8,历史12·501 B相失联证据,hist_12_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2296,42297,0x600011F0,0x660011F0
+故障历史,0x08F9,历史12·501 C相失联证据,hist_12_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2297,42298,0x600011F2,0x660011F2
+故障历史,0x08FA,历史13·报告码,hist_13_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2298,42299,0x600011F4,0x660011F4
+故障历史,0x08FB,历史13·严重等级,hist_13_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2299,42300,0x600011F6,0x660011F6
+故障历史,0x08FC,历史13·核心原因,hist_13_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2300,42301,0x600011F8,0x660011F8
+故障历史,0x08FD,历史13·端口故障原始字,hist_13_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2301,42302,0x600011FA,0x660011FA
+故障历史,0x08FE,历史13·故障分类原始字,hist_13_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2302,42303,0x600011FC,0x660011FC
+故障历史,0x08FF,历史13·采样保护来源,hist_13_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2303,42304,0x600011FE,0x660011FE
+故障历史,0x0900,历史13·403故障来源锁存,hist_13_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2304,42305,0x60001200,0x66001200
+故障历史,0x0901,历史13·701 A相故障位置,hist_13_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2305,42306,0x60001202,0x66001202
+故障历史,0x0902,历史13·701 B相故障位置,hist_13_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2306,42307,0x60001204,0x66001204
+故障历史,0x0903,历史13·701 C相故障位置,hist_13_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2307,42308,0x60001206,0x66001206
+故障历史,0x0904,历史13·模块故障处理计数,hist_13_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2308,42309,0x60001208,0x66001208
+故障历史,0x0905,历史13·DSP上电后台观察节拍,hist_13_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2309,42310,0x6000120A,0x6600120A
+故障历史,0x0907,历史13·事件序号,hist_13_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2311,42312,0x6000120E,0x6600120E
+故障历史,0x0909,历史13·501 A相失联证据,hist_13_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2313,42314,0x60001212,0x66001212
+故障历史,0x090A,历史13·501 B相失联证据,hist_13_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2314,42315,0x60001214,0x66001214
+故障历史,0x090B,历史13·501 C相失联证据,hist_13_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2315,42316,0x60001216,0x66001216
+故障历史,0x090C,历史14·报告码,hist_14_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2316,42317,0x60001218,0x66001218
+故障历史,0x090D,历史14·严重等级,hist_14_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2317,42318,0x6000121A,0x6600121A
+故障历史,0x090E,历史14·核心原因,hist_14_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2318,42319,0x6000121C,0x6600121C
+故障历史,0x090F,历史14·端口故障原始字,hist_14_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2319,42320,0x6000121E,0x6600121E
+故障历史,0x0910,历史14·故障分类原始字,hist_14_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2320,42321,0x60001220,0x66001220
+故障历史,0x0911,历史14·采样保护来源,hist_14_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2321,42322,0x60001222,0x66001222
+故障历史,0x0912,历史14·403故障来源锁存,hist_14_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2322,42323,0x60001224,0x66001224
+故障历史,0x0913,历史14·701 A相故障位置,hist_14_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2323,42324,0x60001226,0x66001226
+故障历史,0x0914,历史14·701 B相故障位置,hist_14_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2324,42325,0x60001228,0x66001228
+故障历史,0x0915,历史14·701 C相故障位置,hist_14_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2325,42326,0x6000122A,0x6600122A
+故障历史,0x0916,历史14·模块故障处理计数,hist_14_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2326,42327,0x6000122C,0x6600122C
+故障历史,0x0917,历史14·DSP上电后台观察节拍,hist_14_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2327,42328,0x6000122E,0x6600122E
+故障历史,0x0919,历史14·事件序号,hist_14_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2329,42330,0x60001232,0x66001232
+故障历史,0x091B,历史14·501 A相失联证据,hist_14_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2331,42332,0x60001236,0x66001236
+故障历史,0x091C,历史14·501 B相失联证据,hist_14_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2332,42333,0x60001238,0x66001238
+故障历史,0x091D,历史14·501 C相失联证据,hist_14_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2333,42334,0x6000123A,0x6600123A
+故障历史,0x091E,历史15·报告码,hist_15_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2334,42335,0x6000123C,0x6600123C
+故障历史,0x091F,历史15·严重等级,hist_15_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2335,42336,0x6000123E,0x6600123E
+故障历史,0x0920,历史15·核心原因,hist_15_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2336,42337,0x60001240,0x66001240
+故障历史,0x0921,历史15·端口故障原始字,hist_15_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2337,42338,0x60001242,0x66001242
+故障历史,0x0922,历史15·故障分类原始字,hist_15_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2338,42339,0x60001244,0x66001244
+故障历史,0x0923,历史15·采样保护来源,hist_15_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2339,42340,0x60001246,0x66001246
+故障历史,0x0924,历史15·403故障来源锁存,hist_15_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2340,42341,0x60001248,0x66001248
+故障历史,0x0925,历史15·701 A相故障位置,hist_15_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2341,42342,0x6000124A,0x6600124A
+故障历史,0x0926,历史15·701 B相故障位置,hist_15_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2342,42343,0x6000124C,0x6600124C
+故障历史,0x0927,历史15·701 C相故障位置,hist_15_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2343,42344,0x6000124E,0x6600124E
+故障历史,0x0928,历史15·模块故障处理计数,hist_15_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2344,42345,0x60001250,0x66001250
+故障历史,0x0929,历史15·DSP上电后台观察节拍,hist_15_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2345,42346,0x60001252,0x66001252
+故障历史,0x092B,历史15·事件序号,hist_15_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2347,42348,0x60001256,0x66001256
+故障历史,0x092D,历史15·501 A相失联证据,hist_15_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2349,42350,0x6000125A,0x6600125A
+故障历史,0x092E,历史15·501 B相失联证据,hist_15_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2350,42351,0x6000125C,0x6600125C
+故障历史,0x092F,历史15·501 C相失联证据,hist_15_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2351,42352,0x6000125E,0x6600125E
+故障历史,0x0930,历史16·报告码,hist_16_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2352,42353,0x60001260,0x66001260
+故障历史,0x0931,历史16·严重等级,hist_16_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2353,42354,0x60001262,0x66001262
+故障历史,0x0932,历史16·核心原因,hist_16_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2354,42355,0x60001264,0x66001264
+故障历史,0x0933,历史16·端口故障原始字,hist_16_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2355,42356,0x60001266,0x66001266
+故障历史,0x0934,历史16·故障分类原始字,hist_16_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2356,42357,0x60001268,0x66001268
+故障历史,0x0935,历史16·采样保护来源,hist_16_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2357,42358,0x6000126A,0x6600126A
+故障历史,0x0936,历史16·403故障来源锁存,hist_16_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2358,42359,0x6000126C,0x6600126C
+故障历史,0x0937,历史16·701 A相故障位置,hist_16_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2359,42360,0x6000126E,0x6600126E
+故障历史,0x0938,历史16·701 B相故障位置,hist_16_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2360,42361,0x60001270,0x66001270
+故障历史,0x0939,历史16·701 C相故障位置,hist_16_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2361,42362,0x60001272,0x66001272
+故障历史,0x093A,历史16·模块故障处理计数,hist_16_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2362,42363,0x60001274,0x66001274
+故障历史,0x093B,历史16·DSP上电后台观察节拍,hist_16_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2363,42364,0x60001276,0x66001276
+故障历史,0x093D,历史16·事件序号,hist_16_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2365,42366,0x6000127A,0x6600127A
+故障历史,0x093F,历史16·501 A相失联证据,hist_16_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2367,42368,0x6000127E,0x6600127E
+故障历史,0x0940,历史16·501 B相失联证据,hist_16_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2368,42369,0x60001280,0x66001280
+故障历史,0x0941,历史16·501 C相失联证据,hist_16_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2369,42370,0x60001282,0x66001282
+故障历史,0x0942,历史17·报告码,hist_17_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2370,42371,0x60001284,0x66001284
+故障历史,0x0943,历史17·严重等级,hist_17_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2371,42372,0x60001286,0x66001286
+故障历史,0x0944,历史17·核心原因,hist_17_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2372,42373,0x60001288,0x66001288
+故障历史,0x0945,历史17·端口故障原始字,hist_17_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2373,42374,0x6000128A,0x6600128A
+故障历史,0x0946,历史17·故障分类原始字,hist_17_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2374,42375,0x6000128C,0x6600128C
+故障历史,0x0947,历史17·采样保护来源,hist_17_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2375,42376,0x6000128E,0x6600128E
+故障历史,0x0948,历史17·403故障来源锁存,hist_17_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2376,42377,0x60001290,0x66001290
+故障历史,0x0949,历史17·701 A相故障位置,hist_17_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2377,42378,0x60001292,0x66001292
+故障历史,0x094A,历史17·701 B相故障位置,hist_17_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2378,42379,0x60001294,0x66001294
+故障历史,0x094B,历史17·701 C相故障位置,hist_17_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2379,42380,0x60001296,0x66001296
+故障历史,0x094C,历史17·模块故障处理计数,hist_17_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2380,42381,0x60001298,0x66001298
+故障历史,0x094D,历史17·DSP上电后台观察节拍,hist_17_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2381,42382,0x6000129A,0x6600129A
+故障历史,0x094F,历史17·事件序号,hist_17_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2383,42384,0x6000129E,0x6600129E
+故障历史,0x0951,历史17·501 A相失联证据,hist_17_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2385,42386,0x600012A2,0x660012A2
+故障历史,0x0952,历史17·501 B相失联证据,hist_17_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2386,42387,0x600012A4,0x660012A4
+故障历史,0x0953,历史17·501 C相失联证据,hist_17_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2387,42388,0x600012A6,0x660012A6
+故障历史,0x0954,历史18·报告码,hist_18_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2388,42389,0x600012A8,0x660012A8
+故障历史,0x0955,历史18·严重等级,hist_18_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2389,42390,0x600012AA,0x660012AA
+故障历史,0x0956,历史18·核心原因,hist_18_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2390,42391,0x600012AC,0x660012AC
+故障历史,0x0957,历史18·端口故障原始字,hist_18_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2391,42392,0x600012AE,0x660012AE
+故障历史,0x0958,历史18·故障分类原始字,hist_18_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2392,42393,0x600012B0,0x660012B0
+故障历史,0x0959,历史18·采样保护来源,hist_18_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2393,42394,0x600012B2,0x660012B2
+故障历史,0x095A,历史18·403故障来源锁存,hist_18_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2394,42395,0x600012B4,0x660012B4
+故障历史,0x095B,历史18·701 A相故障位置,hist_18_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2395,42396,0x600012B6,0x660012B6
+故障历史,0x095C,历史18·701 B相故障位置,hist_18_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2396,42397,0x600012B8,0x660012B8
+故障历史,0x095D,历史18·701 C相故障位置,hist_18_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2397,42398,0x600012BA,0x660012BA
+故障历史,0x095E,历史18·模块故障处理计数,hist_18_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2398,42399,0x600012BC,0x660012BC
+故障历史,0x095F,历史18·DSP上电后台观察节拍,hist_18_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2399,42400,0x600012BE,0x660012BE
+故障历史,0x0961,历史18·事件序号,hist_18_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2401,42402,0x600012C2,0x660012C2
+故障历史,0x0963,历史18·501 A相失联证据,hist_18_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2403,42404,0x600012C6,0x660012C6
+故障历史,0x0964,历史18·501 B相失联证据,hist_18_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2404,42405,0x600012C8,0x660012C8
+故障历史,0x0965,历史18·501 C相失联证据,hist_18_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2405,42406,0x600012CA,0x660012CA
+故障历史,0x0966,历史19·报告码,hist_19_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2406,42407,0x600012CC,0x660012CC
+故障历史,0x0967,历史19·严重等级,hist_19_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2407,42408,0x600012CE,0x660012CE
+故障历史,0x0968,历史19·核心原因,hist_19_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2408,42409,0x600012D0,0x660012D0
+故障历史,0x0969,历史19·端口故障原始字,hist_19_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2409,42410,0x600012D2,0x660012D2
+故障历史,0x096A,历史19·故障分类原始字,hist_19_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2410,42411,0x600012D4,0x660012D4
+故障历史,0x096B,历史19·采样保护来源,hist_19_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2411,42412,0x600012D6,0x660012D6
+故障历史,0x096C,历史19·403故障来源锁存,hist_19_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2412,42413,0x600012D8,0x660012D8
+故障历史,0x096D,历史19·701 A相故障位置,hist_19_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2413,42414,0x600012DA,0x660012DA
+故障历史,0x096E,历史19·701 B相故障位置,hist_19_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2414,42415,0x600012DC,0x660012DC
+故障历史,0x096F,历史19·701 C相故障位置,hist_19_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2415,42416,0x600012DE,0x660012DE
+故障历史,0x0970,历史19·模块故障处理计数,hist_19_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2416,42417,0x600012E0,0x660012E0
+故障历史,0x0971,历史19·DSP上电后台观察节拍,hist_19_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2417,42418,0x600012E2,0x660012E2
+故障历史,0x0973,历史19·事件序号,hist_19_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2419,42420,0x600012E6,0x660012E6
+故障历史,0x0975,历史19·501 A相失联证据,hist_19_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2421,42422,0x600012EA,0x660012EA
+故障历史,0x0976,历史19·501 B相失联证据,hist_19_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2422,42423,0x600012EC,0x660012EC
+故障历史,0x0977,历史19·501 C相失联证据,hist_19_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2423,42424,0x600012EE,0x660012EE
+故障历史,0x0978,历史20·报告码,hist_20_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2424,42425,0x600012F0,0x660012F0
+故障历史,0x0979,历史20·严重等级,hist_20_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2425,42426,0x600012F2,0x660012F2
+故障历史,0x097A,历史20·核心原因,hist_20_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2426,42427,0x600012F4,0x660012F4
+故障历史,0x097B,历史20·端口故障原始字,hist_20_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2427,42428,0x600012F6,0x660012F6
+故障历史,0x097C,历史20·故障分类原始字,hist_20_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2428,42429,0x600012F8,0x660012F8
+故障历史,0x097D,历史20·采样保护来源,hist_20_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2429,42430,0x600012FA,0x660012FA
+故障历史,0x097E,历史20·403故障来源锁存,hist_20_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2430,42431,0x600012FC,0x660012FC
+故障历史,0x097F,历史20·701 A相故障位置,hist_20_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2431,42432,0x600012FE,0x660012FE
+故障历史,0x0980,历史20·701 B相故障位置,hist_20_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2432,42433,0x60001300,0x66001300
+故障历史,0x0981,历史20·701 C相故障位置,hist_20_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2433,42434,0x60001302,0x66001302
+故障历史,0x0982,历史20·模块故障处理计数,hist_20_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2434,42435,0x60001304,0x66001304
+故障历史,0x0983,历史20·DSP上电后台观察节拍,hist_20_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2435,42436,0x60001306,0x66001306
+故障历史,0x0985,历史20·事件序号,hist_20_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2437,42438,0x6000130A,0x6600130A
+故障历史,0x0987,历史20·501 A相失联证据,hist_20_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2439,42440,0x6000130E,0x6600130E
+故障历史,0x0988,历史20·501 B相失联证据,hist_20_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2440,42441,0x60001310,0x66001310
+故障历史,0x0989,历史20·501 C相失联证据,hist_20_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2441,42442,0x60001312,0x66001312
+故障历史,0x098A,历史21·报告码,hist_21_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2442,42443,0x60001314,0x66001314
+故障历史,0x098B,历史21·严重等级,hist_21_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2443,42444,0x60001316,0x66001316
+故障历史,0x098C,历史21·核心原因,hist_21_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2444,42445,0x60001318,0x66001318
+故障历史,0x098D,历史21·端口故障原始字,hist_21_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2445,42446,0x6000131A,0x6600131A
+故障历史,0x098E,历史21·故障分类原始字,hist_21_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2446,42447,0x6000131C,0x6600131C
+故障历史,0x098F,历史21·采样保护来源,hist_21_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2447,42448,0x6000131E,0x6600131E
+故障历史,0x0990,历史21·403故障来源锁存,hist_21_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2448,42449,0x60001320,0x66001320
+故障历史,0x0991,历史21·701 A相故障位置,hist_21_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2449,42450,0x60001322,0x66001322
+故障历史,0x0992,历史21·701 B相故障位置,hist_21_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2450,42451,0x60001324,0x66001324
+故障历史,0x0993,历史21·701 C相故障位置,hist_21_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2451,42452,0x60001326,0x66001326
+故障历史,0x0994,历史21·模块故障处理计数,hist_21_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2452,42453,0x60001328,0x66001328
+故障历史,0x0995,历史21·DSP上电后台观察节拍,hist_21_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2453,42454,0x6000132A,0x6600132A
+故障历史,0x0997,历史21·事件序号,hist_21_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2455,42456,0x6000132E,0x6600132E
+故障历史,0x0999,历史21·501 A相失联证据,hist_21_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2457,42458,0x60001332,0x66001332
+故障历史,0x099A,历史21·501 B相失联证据,hist_21_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2458,42459,0x60001334,0x66001334
+故障历史,0x099B,历史21·501 C相失联证据,hist_21_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2459,42460,0x60001336,0x66001336
+故障历史,0x099C,历史22·报告码,hist_22_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2460,42461,0x60001338,0x66001338
+故障历史,0x099D,历史22·严重等级,hist_22_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2461,42462,0x6000133A,0x6600133A
+故障历史,0x099E,历史22·核心原因,hist_22_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2462,42463,0x6000133C,0x6600133C
+故障历史,0x099F,历史22·端口故障原始字,hist_22_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2463,42464,0x6000133E,0x6600133E
+故障历史,0x09A0,历史22·故障分类原始字,hist_22_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2464,42465,0x60001340,0x66001340
+故障历史,0x09A1,历史22·采样保护来源,hist_22_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2465,42466,0x60001342,0x66001342
+故障历史,0x09A2,历史22·403故障来源锁存,hist_22_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2466,42467,0x60001344,0x66001344
+故障历史,0x09A3,历史22·701 A相故障位置,hist_22_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2467,42468,0x60001346,0x66001346
+故障历史,0x09A4,历史22·701 B相故障位置,hist_22_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2468,42469,0x60001348,0x66001348
+故障历史,0x09A5,历史22·701 C相故障位置,hist_22_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2469,42470,0x6000134A,0x6600134A
+故障历史,0x09A6,历史22·模块故障处理计数,hist_22_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2470,42471,0x6000134C,0x6600134C
+故障历史,0x09A7,历史22·DSP上电后台观察节拍,hist_22_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2471,42472,0x6000134E,0x6600134E
+故障历史,0x09A9,历史22·事件序号,hist_22_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2473,42474,0x60001352,0x66001352
+故障历史,0x09AB,历史22·501 A相失联证据,hist_22_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2475,42476,0x60001356,0x66001356
+故障历史,0x09AC,历史22·501 B相失联证据,hist_22_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2476,42477,0x60001358,0x66001358
+故障历史,0x09AD,历史22·501 C相失联证据,hist_22_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2477,42478,0x6000135A,0x6600135A
+故障历史,0x09AE,历史23·报告码,hist_23_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2478,42479,0x6000135C,0x6600135C
+故障历史,0x09AF,历史23·严重等级,hist_23_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2479,42480,0x6000135E,0x6600135E
+故障历史,0x09B0,历史23·核心原因,hist_23_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2480,42481,0x60001360,0x66001360
+故障历史,0x09B1,历史23·端口故障原始字,hist_23_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2481,42482,0x60001362,0x66001362
+故障历史,0x09B2,历史23·故障分类原始字,hist_23_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2482,42483,0x60001364,0x66001364
+故障历史,0x09B3,历史23·采样保护来源,hist_23_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2483,42484,0x60001366,0x66001366
+故障历史,0x09B4,历史23·403故障来源锁存,hist_23_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2484,42485,0x60001368,0x66001368
+故障历史,0x09B5,历史23·701 A相故障位置,hist_23_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2485,42486,0x6000136A,0x6600136A
+故障历史,0x09B6,历史23·701 B相故障位置,hist_23_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2486,42487,0x6000136C,0x6600136C
+故障历史,0x09B7,历史23·701 C相故障位置,hist_23_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2487,42488,0x6000136E,0x6600136E
+故障历史,0x09B8,历史23·模块故障处理计数,hist_23_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2488,42489,0x60001370,0x66001370
+故障历史,0x09B9,历史23·DSP上电后台观察节拍,hist_23_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2489,42490,0x60001372,0x66001372
+故障历史,0x09BB,历史23·事件序号,hist_23_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2491,42492,0x60001376,0x66001376
+故障历史,0x09BD,历史23·501 A相失联证据,hist_23_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2493,42494,0x6000137A,0x6600137A
+故障历史,0x09BE,历史23·501 B相失联证据,hist_23_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2494,42495,0x6000137C,0x6600137C
+故障历史,0x09BF,历史23·501 C相失联证据,hist_23_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2495,42496,0x6000137E,0x6600137E
+故障历史,0x09C0,历史24·报告码,hist_24_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2496,42497,0x60001380,0x66001380
+故障历史,0x09C1,历史24·严重等级,hist_24_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2497,42498,0x60001382,0x66001382
+故障历史,0x09C2,历史24·核心原因,hist_24_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2498,42499,0x60001384,0x66001384
+故障历史,0x09C3,历史24·端口故障原始字,hist_24_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2499,42500,0x60001386,0x66001386
+故障历史,0x09C4,历史24·故障分类原始字,hist_24_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2500,42501,0x60001388,0x66001388
+故障历史,0x09C5,历史24·采样保护来源,hist_24_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2501,42502,0x6000138A,0x6600138A
+故障历史,0x09C6,历史24·403故障来源锁存,hist_24_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2502,42503,0x6000138C,0x6600138C
+故障历史,0x09C7,历史24·701 A相故障位置,hist_24_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2503,42504,0x6000138E,0x6600138E
+故障历史,0x09C8,历史24·701 B相故障位置,hist_24_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2504,42505,0x60001390,0x66001390
+故障历史,0x09C9,历史24·701 C相故障位置,hist_24_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2505,42506,0x60001392,0x66001392
+故障历史,0x09CA,历史24·模块故障处理计数,hist_24_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2506,42507,0x60001394,0x66001394
+故障历史,0x09CB,历史24·DSP上电后台观察节拍,hist_24_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2507,42508,0x60001396,0x66001396
+故障历史,0x09CD,历史24·事件序号,hist_24_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2509,42510,0x6000139A,0x6600139A
+故障历史,0x09CF,历史24·501 A相失联证据,hist_24_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2511,42512,0x6000139E,0x6600139E
+故障历史,0x09D0,历史24·501 B相失联证据,hist_24_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2512,42513,0x600013A0,0x660013A0
+故障历史,0x09D1,历史24·501 C相失联证据,hist_24_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2513,42514,0x600013A2,0x660013A2
+故障历史,0x09D2,历史25·报告码,hist_25_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2514,42515,0x600013A4,0x660013A4
+故障历史,0x09D3,历史25·严重等级,hist_25_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2515,42516,0x600013A6,0x660013A6
+故障历史,0x09D4,历史25·核心原因,hist_25_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2516,42517,0x600013A8,0x660013A8
+故障历史,0x09D5,历史25·端口故障原始字,hist_25_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2517,42518,0x600013AA,0x660013AA
+故障历史,0x09D6,历史25·故障分类原始字,hist_25_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2518,42519,0x600013AC,0x660013AC
+故障历史,0x09D7,历史25·采样保护来源,hist_25_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2519,42520,0x600013AE,0x660013AE
+故障历史,0x09D8,历史25·403故障来源锁存,hist_25_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2520,42521,0x600013B0,0x660013B0
+故障历史,0x09D9,历史25·701 A相故障位置,hist_25_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2521,42522,0x600013B2,0x660013B2
+故障历史,0x09DA,历史25·701 B相故障位置,hist_25_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2522,42523,0x600013B4,0x660013B4
+故障历史,0x09DB,历史25·701 C相故障位置,hist_25_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2523,42524,0x600013B6,0x660013B6
+故障历史,0x09DC,历史25·模块故障处理计数,hist_25_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2524,42525,0x600013B8,0x660013B8
+故障历史,0x09DD,历史25·DSP上电后台观察节拍,hist_25_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2525,42526,0x600013BA,0x660013BA
+故障历史,0x09DF,历史25·事件序号,hist_25_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2527,42528,0x600013BE,0x660013BE
+故障历史,0x09E1,历史25·501 A相失联证据,hist_25_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2529,42530,0x600013C2,0x660013C2
+故障历史,0x09E2,历史25·501 B相失联证据,hist_25_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2530,42531,0x600013C4,0x660013C4
+故障历史,0x09E3,历史25·501 C相失联证据,hist_25_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2531,42532,0x600013C6,0x660013C6
+故障历史,0x09E4,历史26·报告码,hist_26_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2532,42533,0x600013C8,0x660013C8
+故障历史,0x09E5,历史26·严重等级,hist_26_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2533,42534,0x600013CA,0x660013CA
+故障历史,0x09E6,历史26·核心原因,hist_26_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2534,42535,0x600013CC,0x660013CC
+故障历史,0x09E7,历史26·端口故障原始字,hist_26_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2535,42536,0x600013CE,0x660013CE
+故障历史,0x09E8,历史26·故障分类原始字,hist_26_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2536,42537,0x600013D0,0x660013D0
+故障历史,0x09E9,历史26·采样保护来源,hist_26_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2537,42538,0x600013D2,0x660013D2
+故障历史,0x09EA,历史26·403故障来源锁存,hist_26_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2538,42539,0x600013D4,0x660013D4
+故障历史,0x09EB,历史26·701 A相故障位置,hist_26_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2539,42540,0x600013D6,0x660013D6
+故障历史,0x09EC,历史26·701 B相故障位置,hist_26_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2540,42541,0x600013D8,0x660013D8
+故障历史,0x09ED,历史26·701 C相故障位置,hist_26_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2541,42542,0x600013DA,0x660013DA
+故障历史,0x09EE,历史26·模块故障处理计数,hist_26_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2542,42543,0x600013DC,0x660013DC
+故障历史,0x09EF,历史26·DSP上电后台观察节拍,hist_26_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2543,42544,0x600013DE,0x660013DE
+故障历史,0x09F1,历史26·事件序号,hist_26_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2545,42546,0x600013E2,0x660013E2
+故障历史,0x09F3,历史26·501 A相失联证据,hist_26_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2547,42548,0x600013E6,0x660013E6
+故障历史,0x09F4,历史26·501 B相失联证据,hist_26_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2548,42549,0x600013E8,0x660013E8
+故障历史,0x09F5,历史26·501 C相失联证据,hist_26_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2549,42550,0x600013EA,0x660013EA
+故障历史,0x09F6,历史27·报告码,hist_27_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2550,42551,0x600013EC,0x660013EC
+故障历史,0x09F7,历史27·严重等级,hist_27_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2551,42552,0x600013EE,0x660013EE
+故障历史,0x09F8,历史27·核心原因,hist_27_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2552,42553,0x600013F0,0x660013F0
+故障历史,0x09F9,历史27·端口故障原始字,hist_27_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2553,42554,0x600013F2,0x660013F2
+故障历史,0x09FA,历史27·故障分类原始字,hist_27_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2554,42555,0x600013F4,0x660013F4
+故障历史,0x09FB,历史27·采样保护来源,hist_27_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2555,42556,0x600013F6,0x660013F6
+故障历史,0x09FC,历史27·403故障来源锁存,hist_27_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2556,42557,0x600013F8,0x660013F8
+故障历史,0x09FD,历史27·701 A相故障位置,hist_27_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2557,42558,0x600013FA,0x660013FA
+故障历史,0x09FE,历史27·701 B相故障位置,hist_27_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2558,42559,0x600013FC,0x660013FC
+故障历史,0x09FF,历史27·701 C相故障位置,hist_27_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2559,42560,0x600013FE,0x660013FE
+故障历史,0x0A00,历史27·模块故障处理计数,hist_27_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2560,42561,0x60001400,0x66001400
+故障历史,0x0A01,历史27·DSP上电后台观察节拍,hist_27_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2561,42562,0x60001402,0x66001402
+故障历史,0x0A03,历史27·事件序号,hist_27_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2563,42564,0x60001406,0x66001406
+故障历史,0x0A05,历史27·501 A相失联证据,hist_27_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2565,42566,0x6000140A,0x6600140A
+故障历史,0x0A06,历史27·501 B相失联证据,hist_27_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2566,42567,0x6000140C,0x6600140C
+故障历史,0x0A07,历史27·501 C相失联证据,hist_27_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2567,42568,0x6000140E,0x6600140E
+故障历史,0x0A08,历史28·报告码,hist_28_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2568,42569,0x60001410,0x66001410
+故障历史,0x0A09,历史28·严重等级,hist_28_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2569,42570,0x60001412,0x66001412
+故障历史,0x0A0A,历史28·核心原因,hist_28_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2570,42571,0x60001414,0x66001414
+故障历史,0x0A0B,历史28·端口故障原始字,hist_28_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2571,42572,0x60001416,0x66001416
+故障历史,0x0A0C,历史28·故障分类原始字,hist_28_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2572,42573,0x60001418,0x66001418
+故障历史,0x0A0D,历史28·采样保护来源,hist_28_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2573,42574,0x6000141A,0x6600141A
+故障历史,0x0A0E,历史28·403故障来源锁存,hist_28_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2574,42575,0x6000141C,0x6600141C
+故障历史,0x0A0F,历史28·701 A相故障位置,hist_28_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2575,42576,0x6000141E,0x6600141E
+故障历史,0x0A10,历史28·701 B相故障位置,hist_28_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2576,42577,0x60001420,0x66001420
+故障历史,0x0A11,历史28·701 C相故障位置,hist_28_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2577,42578,0x60001422,0x66001422
+故障历史,0x0A12,历史28·模块故障处理计数,hist_28_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2578,42579,0x60001424,0x66001424
+故障历史,0x0A13,历史28·DSP上电后台观察节拍,hist_28_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2579,42580,0x60001426,0x66001426
+故障历史,0x0A15,历史28·事件序号,hist_28_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2581,42582,0x6000142A,0x6600142A
+故障历史,0x0A17,历史28·501 A相失联证据,hist_28_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2583,42584,0x6000142E,0x6600142E
+故障历史,0x0A18,历史28·501 B相失联证据,hist_28_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2584,42585,0x60001430,0x66001430
+故障历史,0x0A19,历史28·501 C相失联证据,hist_28_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2585,42586,0x60001432,0x66001432
+故障历史,0x0A1A,历史29·报告码,hist_29_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2586,42587,0x60001434,0x66001434
+故障历史,0x0A1B,历史29·严重等级,hist_29_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2587,42588,0x60001436,0x66001436
+故障历史,0x0A1C,历史29·核心原因,hist_29_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2588,42589,0x60001438,0x66001438
+故障历史,0x0A1D,历史29·端口故障原始字,hist_29_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2589,42590,0x6000143A,0x6600143A
+故障历史,0x0A1E,历史29·故障分类原始字,hist_29_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2590,42591,0x6000143C,0x6600143C
+故障历史,0x0A1F,历史29·采样保护来源,hist_29_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2591,42592,0x6000143E,0x6600143E
+故障历史,0x0A20,历史29·403故障来源锁存,hist_29_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2592,42593,0x60001440,0x66001440
+故障历史,0x0A21,历史29·701 A相故障位置,hist_29_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2593,42594,0x60001442,0x66001442
+故障历史,0x0A22,历史29·701 B相故障位置,hist_29_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2594,42595,0x60001444,0x66001444
+故障历史,0x0A23,历史29·701 C相故障位置,hist_29_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2595,42596,0x60001446,0x66001446
+故障历史,0x0A24,历史29·模块故障处理计数,hist_29_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2596,42597,0x60001448,0x66001448
+故障历史,0x0A25,历史29·DSP上电后台观察节拍,hist_29_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2597,42598,0x6000144A,0x6600144A
+故障历史,0x0A27,历史29·事件序号,hist_29_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2599,42600,0x6000144E,0x6600144E
+故障历史,0x0A29,历史29·501 A相失联证据,hist_29_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2601,42602,0x60001452,0x66001452
+故障历史,0x0A2A,历史29·501 B相失联证据,hist_29_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2602,42603,0x60001454,0x66001454
+故障历史,0x0A2B,历史29·501 C相失联证据,hist_29_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2603,42604,0x60001456,0x66001456
+故障历史,0x0A2C,历史30·报告码,hist_30_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2604,42605,0x60001458,0x66001458
+故障历史,0x0A2D,历史30·严重等级,hist_30_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2605,42606,0x6000145A,0x6600145A
+故障历史,0x0A2E,历史30·核心原因,hist_30_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2606,42607,0x6000145C,0x6600145C
+故障历史,0x0A2F,历史30·端口故障原始字,hist_30_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2607,42608,0x6000145E,0x6600145E
+故障历史,0x0A30,历史30·故障分类原始字,hist_30_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2608,42609,0x60001460,0x66001460
+故障历史,0x0A31,历史30·采样保护来源,hist_30_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2609,42610,0x60001462,0x66001462
+故障历史,0x0A32,历史30·403故障来源锁存,hist_30_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2610,42611,0x60001464,0x66001464
+故障历史,0x0A33,历史30·701 A相故障位置,hist_30_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2611,42612,0x60001466,0x66001466
+故障历史,0x0A34,历史30·701 B相故障位置,hist_30_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2612,42613,0x60001468,0x66001468
+故障历史,0x0A35,历史30·701 C相故障位置,hist_30_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2613,42614,0x6000146A,0x6600146A
+故障历史,0x0A36,历史30·模块故障处理计数,hist_30_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2614,42615,0x6000146C,0x6600146C
+故障历史,0x0A37,历史30·DSP上电后台观察节拍,hist_30_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2615,42616,0x6000146E,0x6600146E
+故障历史,0x0A39,历史30·事件序号,hist_30_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2617,42618,0x60001472,0x66001472
+故障历史,0x0A3B,历史30·501 A相失联证据,hist_30_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2619,42620,0x60001476,0x66001476
+故障历史,0x0A3C,历史30·501 B相失联证据,hist_30_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2620,42621,0x60001478,0x66001478
+故障历史,0x0A3D,历史30·501 C相失联证据,hist_30_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2621,42622,0x6000147A,0x6600147A
+故障历史,0x0A3E,历史31·报告码,hist_31_code,R,U16,1,—,1,0或五位十进制码,,SST_FAULT_RECORD.code,十进制无符号；仅0x0801范围内的槽有效。,2622,42623,0x6000147C,0x6600147C
+故障历史,0x0A3F,历史31·严重等级,hist_31_severity,R,U16,1,—,1,0..4,,SST_FAULT_RECORD.level,0一级、1二级、2三级、3四级、4无故障,2623,42624,0x6000147E,0x6600147E
+故障历史,0x0A40,历史31·核心原因,hist_31_control_reason,R,U16,1,—,1,0..8,,SST_FAULT_RECORD.control_fault,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,2624,42625,0x60001480,0x66001480
+故障历史,0x0A41,历史31·端口故障原始字,hist_31_raw_port,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.port_fault,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7桥、8相序、9频率、10过流、11欠压、12过压；13/14在HVAC中是软件过压/过流，15总故障。,2625,42626,0x60001482,0x66001482
+故障历史,0x0A42,历史31·故障分类原始字,hist_31_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2626,42627,0x60001484,0x66001484
+故障历史,0x0A43,历史31·采样保护来源,hist_31_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2627,42628,0x60001486,0x66001486
+故障历史,0x0A44,历史31·403故障来源锁存,hist_31_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2628,42629,0x60001488,0x66001488
+故障历史,0x0A45,历史31·701 A相故障位置,hist_31_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2629,42630,0x6000148A,0x6600148A
+故障历史,0x0A46,历史31·701 B相故障位置,hist_31_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2630,42631,0x6000148C,0x6600148C
+故障历史,0x0A47,历史31·701 C相故障位置,hist_31_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2631,42632,0x6000148E,0x6600148E
+故障历史,0x0A48,历史31·模块故障处理计数,hist_31_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2632,42633,0x60001490,0x66001490
+故障历史,0x0A49,历史31·DSP上电后台观察节拍,hist_31_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2633,42634,0x60001492,0x66001492
+故障历史,0x0A4B,历史31·事件序号,hist_31_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2635,42636,0x60001496,0x66001496
+故障历史,0x0A4D,历史31·501 A相失联证据,hist_31_lost_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[0],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2637,42638,0x6000149A,0x6600149A
+故障历史,0x0A4E,历史31·501 B相失联证据,hist_31_lost_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[1],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2638,42639,0x6000149C,0x6600149C
+故障历史,0x0A4F,历史31·501 C相失联证据,hist_31_lost_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.unit_link_missing[2],新增记录字段。核心原因1/8时保留判据最近一次闭环轮询的PM内缺帧或已捕获超时；其他原因置0，屏幕显示“未判定”。bit0..13=UNIT 1..14。,2639,42640,0x6000149E,0x6600149E
+物理邮箱,0x1FFE,ARM → DSP 左邮箱,MB_LEFT,W 通知,U16,1,—,1,1 或 2,,DPRAM 物理邮箱,主机最后 FC06 单写；1 提交控制，2 提交遥调。DSP 读取消本侧通知。,8190,48191,0x60003FFC,0x66003FFC
+物理邮箱,0x1FFF,DSP → ARM 右邮箱,MB_RIGHT,R 通知,U16,1,—,1,3 或 20,,DPRAM 物理邮箱,3 综合遥测就绪，20 遥调实际回读已就绪；主机/ARM 读取消本侧通知。无需写零。,8191,48192,0x60003FFE,0x66003FFE

@@ -153,6 +153,9 @@ typedef struct
     unsigned short dab_target_duty_count; /* dab_target_duty_count：DAB 斜坡目标占空比计数，上限 2500。 */
     unsigned short dab_ramp_step_count; /* dab_ramp_step_count：每个 TAD 的 DAB 占空比递增计数，默认 1。 */
     unsigned short dab_start_count; /* dab_start_count：DAB PWM 起始相位计数，范围 0..4999。 */
+
+    unsigned short switch_stable_10ms; /* 触点连续确认，以及运行反馈丢失的判定时间。 */
+    unsigned short switch_timeout_10ms; /* QF1/KT1动作后等待目标触点的最长时间。 */
 } CHB_DAB_PARAMETERS;
 
 typedef struct
@@ -197,6 +200,20 @@ extern volatile CHB_DAB_PARAMETERS
     g_chb_dab_params; /* g_chb_dab_params：CHB/DAB 控制参数；调试器可观察，通信写入需停机校验。 */
 extern volatile CHB_DAB_STATUS
     g_chb_dab_status; /* g_chb_dab_status：控制核心维护的运行状态镜像，后台仅用于读取上报。 */
+
+/* 屏幕读取的启动诊断，计数来自当前状态；状态切换后不再显示上一阶段计数。 */
+typedef struct
+{
+    unsigned short active_mode;
+    unsigned short precharge_stable_10ms;
+    unsigned short pll_stable_10ms;
+    unsigned short precharge_ready;
+    unsigned short topology_valid;
+    unsigned long state_elapsed_10ms;
+} CHB_STARTUP_STATUS;
+
+void ChbDabControl_ReadStartupStatus(CHB_STARTUP_STATUS *status);
+
 /* 仿真器可修改的快速软件过流/过压检查开关，不代表现场硬件保护状态。 */
 extern volatile unsigned short
     g_chb_dab_protection_enable; /* g_chb_dab_protection_enable：新增软件过流/过压检查使能，0 关闭、1 开启；硬件保护能力取决于现场 FPGA 位流。 */

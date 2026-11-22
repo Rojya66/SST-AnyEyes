@@ -46,6 +46,8 @@ extern "C"
  * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
     uint16_t SstHardwareParameters_Validate(const uint16_t *words);
+    /* 失败时给出接线配置段的字段下标。 */
+    uint16_t SstHardwareParameters_ValidateAt(const uint16_t *words, uint16_t *error_index);
     /*==================================================================
  * 函数功能: 将已整幅校验的硬件参数写入DSP变量及对应FPGA寄存器
  * 输入参数: words：已通过完整镜像校验的16字硬件参数缓存

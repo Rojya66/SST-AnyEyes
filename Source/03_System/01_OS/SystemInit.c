@@ -2,8 +2,6 @@
 #include "SystemInit.h"
 #include "ControlInit.h"
 #include "FpgaIo.h"
-#include "DpramConfig.h"
-#include "DPRAM.h"
 #include "PortStatusData.h"
 #include "SoftTimeData.h"
 #include "SstBoard.h"
@@ -18,8 +16,6 @@
 #include "SstDebug.h"
 #include "SstFault.h"
 #include "SstParams.h"
-#include "SstDpramMaintenance.h"
-#include "SstDpramProtocol.h"
 #include "SstDpramHost.h"
 #include "SstBenchInputs.h"
 #include "EEProm.H"
@@ -40,6 +36,7 @@ void SystemInit_Hardware(void)
     HWREG(SOC_SYSCFG_0_REGS + SYSCFG0_KICK1R) = SYSCFG_KICK1R_UNLOCK;
 
     EMIFASetup();
+    SstDpramHost_Invalidate();
     GPIOBankPinMuxSet();
     GPIOBankPinInit();
     Eeprom_Initialize(); // 释放BL24C512A的SDA/SCL并启动I2C延时时基
@@ -94,7 +91,6 @@ void SystemInit_Runtime(void)
     SstBenchInputs_Init(); // 测试输入初始化，保持启动命令为0
 #endif
     SstFault_Init();
-    SstDpramMaintenance_Initialize();
     SstDebug_Init();
 #if CHB_LOAD_EEPROM_PARAMETERS
     SstParameters_LoadPersistent();
@@ -103,14 +99,12 @@ void SystemInit_Runtime(void)
     Port_FO_EN_Set(3U, 0U, 0U, 0U, 0U);
     Port_FB_EN_Set();
     FaultLatch_Clear(0, 1);
-    SstDpramScreen_Initialize();
     SstDpramHost_Initialize();
     /* Control objects and safe outputs exist before TAD/FAULT enable. */
     GPIOBankPinInterruptInit();
 
     /* 只有DPRAM模式需要清除mailbox并接收上位机通知。 */
 #if SST_ENABLE_DPRAM
-    HWREGH(DPRAM_Maibox_Left);
     GPIOPinWrite(SOC_GPIO_0_REGS, 144, 0);
 #endif
 }

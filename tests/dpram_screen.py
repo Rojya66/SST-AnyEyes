@@ -23,7 +23,7 @@ def main():
                '01_FuncCode/SstHardwareParameters.c',
                '01_FuncCode/SstParameterStore.c', '04_Control/SstCommand.c',
                '10_Host/SstDpramParameter.c', '10_Host/SstDpramCommand.c',
-               '10_Host/SstDpramTelemetry.c', '10_Host/SstDpramScreen.c']
+               '08_Fault/SstFaultSummary.h', '10_Host/SstDpramTelemetry.c', '10_Host/SstDpramScreen.c']
     template = Path(__file__).with_suffix('.c').read_text(encoding='utf-8')
     body = template.replace('/* DEFAULTS */', defaults).replace(
         '/* IMPLEMENTATIONS */', '\n'.join(source(APP / name) for name in modules))

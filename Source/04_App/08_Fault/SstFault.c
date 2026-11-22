@@ -86,6 +86,7 @@ static unsigned short s_legacy_first; /* s_legacy_first：本次会话首次故�
  *================================================================*/
 static unsigned short SstFault_ReadInput(SST_FAULT_INPUT *input)
 {
+    unsigned short phase;
     input->raw.code = SST_FAULT_NONE;
     input->raw.level = SST_FAULT_LEVEL_NONE;
     input->raw.sequence = 0UL;
@@ -100,6 +101,11 @@ static unsigned short SstFault_ReadInput(SST_FAULT_INPUT *input)
     input->raw.fo_c = SST_READ_U16(FOLatch_C_TAD);
     input->raw.module_dispose = SST_READ_U16(ModuleFault_DisposeTimes);
     input->raw.tick_10ms = g_chb_dab_status.tick_10ms;
+    /* 保护停机分闸后的普遍失光不能作为其他故障的起因。只记录闭环已有的判断证据。 */
+    for (phase = 0U; phase < 3U; ++phase)
+        input->raw.unit_link_missing[phase] =
+            (input->raw.control_fault == CHB_FAULT_PRECHARGE_TIMEOUT ||
+             input->raw.control_fault == CHB_FAULT_UNIT_LINK) ? g_chb_dab_status.unit_link_missing[phase] : 0U;
     input->software_oc = SST_READ_U16(HVAC_OC_Fault);
     input->software_ov = SST_READ_U16(HVAC_OV_Fault);
     input->reset_pending = (unsigned short)(SST_READ_U8(Flag_Clear_0) | SST_READ_U8(Flag_Clear_1));
@@ -337,6 +343,11 @@ unsigned short SstFault_GetActiveCount(void)
 unsigned short SstFault_GetHistoryCount(void)
 {
     return s_history_count;
+}
+
+unsigned long SstFault_GetHistorySequence(void)
+{
+    return s_sequence;
 }
 
 /*==================================================================

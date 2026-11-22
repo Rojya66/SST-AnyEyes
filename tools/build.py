@@ -10,7 +10,10 @@ from firmware_inputs import fingerprint
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = {'usbphyGS60.c', 'pruss.c', 'mailbox.c', 'hsi2c.c', 'cppi41dma.c',
-            'usbphyGS70.c', 'gpio_v2.c', 'uart_irda_cir.c', 'hs_mmcsd.c', 'cache.c'}
+            'usbphyGS70.c', 'gpio_v2.c', 'uart_irda_cir.c', 'hs_mmcsd.c', 'cache.c',
+            # V1.1 handlers are retained for host regression fixtures only.
+            'SstDpramCommand.c', 'SstDpramExtension.c', 'SstDpramMaintenance.c',
+            'SstDpramParameter.c', 'SstDpramScreen.c', 'SstDpramTelemetry.c'}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,14 +57,14 @@ def main():
     for path, obj, status, log in results:
         logs.append(str(path.relative_to(ROOT)) + '\n' + log)
         if status: failures.append(str(path.relative_to(ROOT)))
-    executable = output / 'SST_DpramCompat.out'
+    executable = output / 'SST_CHB_V1.0.out'
     link_status = None
     if not failures:
-        link_flags = ['-mv6740', '-z', '--map_file=' + str(output / 'SST_DpramCompat.map'),
+        link_flags = ['-mv6740', '-z', '--map_file=' + str(output / 'SST_CHB_V1.0.map'),
                       '--heap_size=0x800', '--stack_size=0x800',
                       '--search_path=' + str(Path(args.tool_root) / 'lib'), '--reread_libs',
                       '--warn_sections', '--rom_model', '--display_error_number',
-                      '--xml_link_info=' + str(output / 'SST_DpramCompat_linkInfo.xml'),
+                      '--xml_link_info=' + str(output / 'SST_CHB_V1.0_linkInfo.xml'),
                       '--output_file=' + str(executable)]
         link_cmd = [str(compiler)] + link_flags + [str(r[1]) for r in results]
         link_cmd += [str(ROOT / 'C6748.cmd'), '-llibc.a']

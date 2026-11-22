@@ -1,34 +1,17 @@
-/* 文件职责: SstDpramHost.h 模块公开接口。 */
-#ifndef SSTDPRAMHOST_H_
-#define SSTDPRAMHOST_H_
+#ifndef SST_DPRAM_HOST_H
+#define SST_DPRAM_HOST_H
+
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-    /*==================================================================
- * 函数功能: 读取可选 DPRAM 遥控/遥调块并交给统一命令入口
- * 输入参数: 无
- * 输出参数: 消费遥控通知；读取旧控制/遥调缓存，提交统一启停命令或标记扩展维护请求。
- * 返回值: 无
- * 执行说明: 仅由主循环调用；SST_ENABLE_DPRAM=0 时不访问并口。
- *================================================================*/
-    void SstDpramHost_ProcessIncomingBlocks(void);
-    /*==================================================================
- * 函数功能: 开放DPRAM通知前发布原块2实际初值
- * 输入参数: 无
- * 输出参数: 原块2实际参数及邮箱20；周期任务不再覆写主机正在编辑的块2
- * 返回值: 无
- * 执行说明: 仅初始化调用；后续只有接收邮箱2才回写该共享区域。
- *================================================================*/
-    void SstDpramHost_Initialize(void);
-    /*==================================================================
- * 函数功能: 按轮询顺序回写可选 DPRAM 端口遥测及有效插件块
- * 输入参数: 无
- * 输出参数: DPRAM 端口遥测块及本轮插件/遥调块，更新 WriteBlock_Index。
- * 返回值: 无
- * 执行说明: 主循环消费遥测节拍标志；每次回写公共块和一个轮询块。
- *================================================================*/
-    void SstDpramHost_PublishTelemetry(void);
+
+/* EMIFA 建立后令签名无效，清除复位之前的协议就绪状态。 */
+void SstDpramHost_Invalidate(void);
+/* 控制对象初始化完成、DPRAM 中断开放前发布初值。 */
+void SstDpramHost_Initialize(void);
+/* 主循环先消费邮箱，再分片发布遥测。 */
+void SstDpramHost_Service(void);
+
 #ifdef __cplusplus
 }
 #endif

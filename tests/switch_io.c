@@ -118,6 +118,24 @@ static void verify_pll_feedback_interruption(void)
         "WAIT_PLL may enable PWM after two fresh consecutive lock confirmations");
 }
 
+static void verify_tuned_switch_times(void)
+{
+    prepare_switch_fixture();
+    g_chb_dab_params.switch_stable_10ms = 5U;
+    g_chb_dab_params.switch_timeout_10ms = 8U;
+    g_chb_dab_command.run_enable = 1U;
+    slow(1U);
+    assert(g_chb_dab_status.state == CHB_STATE_STOPPED);
+    slow(1U);
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE);
+    /* Leave QF1 open after the close command; use the tuned action deadline. */
+    slow(7U);
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE);
+    slow(1U);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_SWITCH_FEEDBACK);
+    assert(Port_DOUT.Dout.Qf1OpenPulse == 1U);
+}
+
 static void verify_repeated_kt1_request(unsigned short close)
 {
     unsigned int tick;
@@ -306,6 +324,7 @@ int main(void)
     verify_pll_feedback_interruption();
     verify_repeated_kt1_request(1U);
     verify_repeated_kt1_request(0U);
+    verify_tuned_switch_times();
     assert(switch_regression_failures == 0U);
 #endif
 

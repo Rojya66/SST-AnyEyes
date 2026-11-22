@@ -19,5 +19,7 @@
 #define SST_PARAM_DENIED 5U
 /* SST_PARAM_STORAGE：参数服务存储校验/读写失败结果码。 */
 #define SST_PARAM_STORAGE 6U
+/* 完整快照校验未指向单个字段。 */
+#define SST_PARAM_NO_FIELD 0xFFFFU
 
 #endif /* SST_PARAM_TYPES_H */

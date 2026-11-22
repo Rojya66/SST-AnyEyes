@@ -17,6 +17,10 @@
 #include "ProtectionData.h"
 #include "SoftTimeData.h"
 #include "DpramHostData.h"
+#include "DPRAM.H"
+#include "DpramConfig.h"
+#include "FpgaIo.h"
+#include "hw_types.h"
 #include "Ft3RecorderData.h"
 #include "FpgaRegister.h"
 #include "interrupt.h"
@@ -33,7 +37,7 @@ static unsigned int event_count, scenarios;
 static int record_events = 1, core_ready, fault_ready, debug_ready;
 static unsigned int pending_pin = 69, timer_counter;
 static volatile uint32_t registers32[8];
-static volatile uint16_t register16;
+static volatile uint16_t left_mailbox, right_mailbox;
 static void (*handlers[16])(void);
 
 static void event(const char *name) { if(record_events) { if(event_count>=4096) abort(); events[event_count++]=name; } }
@@ -46,7 +50,17 @@ static void before(const char *first,const char *second) { check(index_of(first)
 static void exact(const char *const *expected,unsigned int count) { unsigned int i; if(event_count!=count) { fprintf(stderr,"expected %u events, got %u\n",count,event_count); for(i=0;i<event_count;++i) fprintf(stderr,"%s ",events[i]); fprintf(stderr,"\n"); } check(event_count==count,"unexpected call count"); for(i=0;i<count;i++) { if(strcmp(events[i],expected[i])) { fprintf(stderr,"at %u expected %s got %s\n",i,expected[i],events[i]); fail("unexpected call trace"); } } scenarios++; }
 
 volatile uint32_t *TraceRegister32(uintptr_t address) { event("HWREG32"); return &registers32[(address>>2)&7]; }
-volatile uint16_t *TraceRegister16(uintptr_t address) { (void)address; event("mailbox"); return &register16; }
+volatile uint16_t *TraceRegister16(uintptr_t address)
+{
+    if (address == DPRAM_Maibox_Left)
+    {
+        event("mailbox_left");
+        return &left_mailbox;
+    }
+    check(address == DPRAM_Maibox_Right, "unexpected 16-bit register access");
+    event("mailbox_right");
+    return &right_mailbox;
+}
 void GPIOPinWrite(unsigned int base,unsigned int pin,unsigned int value) { (void)base; (void)value; if(pin==43) event(value?"pin43on":"pin43off"); else if(pin==45) event(value?"pin45on":"pin45off"); else if(pin==144) event("dpram_ack"); }
 void GPIOBankIntDisable(unsigned int base,unsigned int bank) { (void)base; event(bank==4?"bank4off":bank==8?"bank8off":"bank6off"); }
 void GPIOBankIntEnable(unsigned int base,unsigned int bank) { (void)base; event(bank==4?"bank4on":bank==8?"bank8on":"bank6on"); }
@@ -76,18 +90,28 @@ STUB(Variable_RST,"variable_reset")
 STUB(SstParameters_LoadPersistent,"sst_load")
 void ChbDabControl_Init(void) { event("core_init"); core_ready=1; }
 void SstFault_Init(void) { event("fault_init"); fault_ready=1; }
-STUB(SstDpramMaintenance_Initialize,"dpram_maintenance_init")
-STUB(SstDpramScreen_Initialize,"dpram_screen_init")
-STUB(SstDpramHost_Initialize,"dpram_host_init")
-STUB(SstDpramScreen_ProcessTransactions,"dpram_screen_service")
-STUB(SstDpramMaintenance_ProcessPendingRequest,"dpram_maintenance_service")
+STUB(SstDpramHost_Invalidate,"dpram_host_invalidate")
+void SstDpramHost_Initialize(void)
+{
+    event("dpram_host_init");
+#if SST_ENABLE_DPRAM
+    /* The real host handles both mailbox accesses before GPIO notification is enabled. */
+    (void)HWREGH(DPRAM_Maibox_Left);
+    HWREGH(DPRAM_Maibox_Right) = WriteBlock_remRegulate;
+#endif
+}
+void Port_FO_EN_Set(ushort groups, ushort a, ushort b, ushort c, ushort n)
+{
+    check(groups == 3U && !(a | b | c | n), "boot FO enable groups");
+    event("fo_enable");
+}
+STUB(Port_FB_EN_Set,"fb_enable")
 void SstDebug_Init(void) { event("debug_init"); debug_ready=1; }
 void FaultLatch_Clear(unsigned char run,unsigned char reset) { (void)reset; event(run?"latch_runtime_clear":"latch_boot_clear"); }
 void ChbDabControl_Tick10ms(void) { event("core_tick"); g_chb_dab_status.tick_10ms++; }
 STUB(ChbDabControl_Service,"core_service")
 STUB(SstFault_Service,"fault_service")
-STUB(SstDpramHost_ProcessIncomingBlocks,"dpram_control")
-STUB(SstDpramHost_PublishTelemetry,"dpram_telemetry")
+STUB(SstDpramHost_Service,"dpram_host_service")
 uint32_t SstDebug_GetTick1ms(void) { event("tick_capture"); return (uint32_t)g_chb_dab_status.tick_10ms; }
 STUB(SstSerial_TxService,"tx")
 STUB(SstDebug_ReceiveService,"rx")
@@ -129,26 +153,30 @@ int main(void) {
     static const char *dpram_trace[]={"bank6off","event_clear","pending","gpio_clear","bank6on"};
     static const char *background[]={"core_service","fault_service",
 #if SST_ENABLE_DPRAM
-      "dpram_control","dpram_telemetry","dpram_maintenance_service","dpram_screen_service",
+      "dpram_host_service",
 #endif
       "store","realtime_background"};
     CpuTask_InitBootFlags(); SystemInit_Hardware();
-    before("psc","emifa"); before("emifa","pinmux"); before("gpio_init","eeprom_init"); before("eeprom_init","interrupt_init"); before("timer_init","register_timer");
+    before("psc","emifa"); before("emifa","dpram_host_invalidate"); before("dpram_host_invalidate","pinmux"); before("gpio_init","eeprom_init"); before("eeprom_init","interrupt_init"); before("timer_init","register_timer");
     check(handlers[C674X_MASK_INT8]==Timer2Isr && !handlers[C674X_MASK_INT5],"only timer registered during boot"); scenarios++;
     record_events=0; for(i=0;i<2000;i++) Timer2Isr(); record_events=1;
     check(Flag_20s==1 && g_chb_dab_status.tick_10ms==2000,"real timer 20 second flag and core ticks");
     SystemInit_WaitPowerOnDelay(); check(!Flag_20s && !Flag_WDI,"startup wait consumes elapsed flag"); scenarios++;
     reset_events(); SystemInit_Runtime();
     before("variable_init","variable_reset"); before("variable_reset","core_init");
-    before("core_init","fault_init"); before("fault_init","dpram_maintenance_init"); before("dpram_maintenance_init","debug_init"); before("debug_init","latch_boot_clear"); before("latch_boot_clear","enable_tad");
+    before("core_init","fault_init"); before("fault_init","debug_init");
+    before("debug_init","fo_enable"); before("fo_enable","fb_enable"); before("fb_enable","latch_boot_clear");
+    before("latch_boot_clear","dpram_host_init"); before("dpram_host_init","enable_tad");
 #if CHB_LOAD_EEPROM_PARAMETERS
-    before("debug_init","sst_load"); before("sst_load","latch_boot_clear");
+    before("debug_init","sst_load"); before("sst_load","fo_enable");
 #endif
     check(handlers[C674X_MASK_INT5]==FPGAIsr && handlers[C674X_MASK_INT4]==FAULTIsr,"TAD and fault handlers bound");
 #if SST_ENABLE_DPRAM
-    check(handlers[C674X_MASK_INT7]==DPRAMIsr && count_of("enable_dpram")==1 && count_of("mailbox")==1,"DPRAM compile switch enables notification");
+    check(handlers[C674X_MASK_INT7]==DPRAMIsr && count_of("enable_dpram")==1,"DPRAM compile switch enables notification");
+    before("dpram_host_init","mailbox_left"); before("mailbox_left","mailbox_right"); before("mailbox_right","enable_dpram");
+    check(count_of("mailbox_left")==1 && count_of("mailbox_right")==1 && right_mailbox==20U,"boot V2 mailbox setup");
 #else
-    check(!handlers[C674X_MASK_INT7] && !count_of("mailbox"),"disabled DPRAM never registered or read");
+    check(!handlers[C674X_MASK_INT7] && !count_of("mailbox_left") && !count_of("mailbox_right"),"disabled DPRAM never registered or accessed");
 #endif
     scenarios++;
     Flag_1s=0; reset_events(); TaskSlice_Service(); exact(background,sizeof(background)/sizeof(background[0]));

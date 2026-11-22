@@ -1,4 +1,4 @@
-"""Verify linked DPRAM placement and the absence of runtime initialization images."""
+"""Verify V2 DPRAM placement, reserved mailboxes and NOINIT in TI linker maps."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -6,23 +6,15 @@ import json
 import re
 
 
+PROJECT = "SST_CHB_V1.0"
+DPRAM_BASE = 0x66000000
+DPRAM_END = 0x66004000
+DPRAM_DATA_SIZE = 0x3FFC
+
+
 def inspect(path, dpram_enabled=None):
     data = path.read_bytes()
     text = data.decode("utf-8", errors="replace")
-    expected = {
-        "DPRAM_Block1_remControl": (0x660001E0, 0x20),
-        "DPRAM_Block2_remRegulate": (0x660003FE, 0x56),
-        "DPRAM_Block3_remMeaSig": (0x66000A00, 0x42),
-    }
-    expected.update({f"DPRAM_Block4_PluginUnit{i}":
-                     (0x66000D00 + (i - 2) * 0x200, 0x100) for i in range(2, 18)})
-    extensions = {
-        "DPRAM_SstRequest": (0x66002C00, 0x100), "DPRAM_SstResponse": (0x66002D00, 0x100),
-        "DPRAM_SstTelemetry": (0x66002E00, 0x100), "DPRAM_SstHistory": (0x66002F00, 0x400),
-    }
-    expected.update(extensions)
-    # Reproducible builds record exact definitions. Disabled extension objects
-    # may be pruned, but every retained section must still match its fixed range.
     build_report = path.with_name("build_result.json")
     if dpram_enabled is None and build_report.exists():
         definitions = json.loads(build_report.read_text(encoding="utf-8"))["defines"]
@@ -36,20 +28,29 @@ def inspect(path, dpram_enabled=None):
     errors = []
     if re.search(r'\.cinit[^\r\n]*DPRAM_|\.binit[^\r\n]*DPRAM_', text):
         errors.append("DPRAM startup initialization image present")
-    sections = {}
-    pattern = r'^\.(DPRAM_\w+)\s*\r?\n\*?\s+\d+\s+([0-9a-fA-F]{8})\s+([0-9a-fA-F]{8})\s+UNINITIALIZED'
-    for name, origin, size in re.findall(pattern, text, re.MULTILINE):
-        location = (int(origin, 16), int(size, 16))
-        sections[name] = location
-        if expected.get(name) != location:
-            errors.append(f"Unexpected layout for {name}: {location}")
-    required = set(expected) - set(extensions) - {"DPRAM_Block4_PluginUnit17"}
+    # TI prints short section names on the same line and longer names on the
+    # preceding line. Include other sections in case one overlaps the MMIO range.
+    section_map = text.partition("SECTION ALLOCATION MAP")[2].partition("GLOBAL SYMBOLS")[0]
+    section_pattern = (
+        r'^\.([\w.$]+)[ \t]*(?:\r?\n)?[ \t]*\*?[ \t]*\d+'
+        r'[ \t]+([0-9a-fA-F]{8})[ \t]+([0-9a-fA-F]{8})([^\r\n]*)'
+    )
+    sections = {name: (int(origin, 16), int(size, 16), attributes.strip())
+                for name, origin, size, attributes in
+                re.findall(section_pattern, section_map, re.MULTILINE)}
+    dpram_sections = {}
+    for name, (origin, size, attributes) in sections.items():
+        if name.startswith("DPRAM_") or (origin < DPRAM_END and origin + size > DPRAM_BASE):
+            dpram_sections[name] = (origin, size)
+            if name != "DPRAM_V2":
+                errors.append(f"Unexpected DPRAM section {name}: 0x{origin:08X}, 0x{size:X} bytes")
+            elif (origin, size, attributes) != (DPRAM_BASE, DPRAM_DATA_SIZE, "UNINITIALIZED"):
+                errors.append("DPRAM_V2 must be NOINIT at 0x66000000 for 0x3FFC bytes")
     if dpram_enabled is None:
-        dpram_enabled = bool(set(extensions) & sections.keys())
-    if dpram_enabled:
-        required.update(extensions)
-    if not required.issubset(sections):
-        errors.append("Missing retained DPRAM sections: " + str(sorted(required - sections.keys())))
+        dpram_enabled = "DPRAM_V2" in dpram_sections
+    if dpram_enabled != ("DPRAM_V2" in dpram_sections):
+        errors.append("DPRAM_V2 retention does not match the build configuration")
+
     hardware_expected = {
         "FPGA_InterfaceFile": (0x60000000, 0x1E00),
         "FT3_PTCT_Register": (0x60001E00, 0x40),
@@ -58,25 +59,28 @@ def inspect(path, dpram_enabled=None):
         "FT3_Backup_Register": (0x60001EC0, 0x40),
     }
     hardware_sections = {}
-    hardware_pattern = r'^\.(FPGA_InterfaceFile|FT3_\w+)\s*\r?\n\*?\s+\d+\s+([0-9a-fA-F]{8})\s+([0-9a-fA-F]{8})\s+UNINITIALIZED'
-    for name, origin, size in re.findall(hardware_pattern, text, re.MULTILINE):
-        location = (int(origin, 16), int(size, 16))
-        hardware_sections[name] = location
-        if hardware_expected.get(name) != location:
-            errors.append(f"Unexpected FPGA/FT3 layout for {name}: {location}")
-    # Unused FT3 plugins are removed by the linker in the selected HVAC build.
-    for name in ("FPGA_InterfaceFile", "FT3_FaultRecorder_Register"):
-        if name not in hardware_sections:
-            errors.append("Missing retained FPGA/FT3 section: " + name)
-    # TI map segment table: load-address, run-address, memory-size, file-size.
-    for address, file_size in re.findall(
-            r'^\s*(66[0-9a-fA-F]{6})\s+66[0-9a-fA-F]{6}\s+[0-9a-fA-F]{8}\s+([0-9a-fA-F]{8})\s+rw-',
-            text, re.MULTILINE):
-        if int(file_size, 16):
-            errors.append(f"DPRAM segment {address} has loadable file bytes")
+    for name, (origin, size, attributes) in sections.items():
+        if name == "FPGA_InterfaceFile" or name.startswith("FT3_"):
+            location = (origin, size)
+            hardware_sections[name] = location
+            if hardware_expected.get(name) != location or attributes != "UNINITIALIZED":
+                errors.append(f"Unexpected FPGA/FT3 layout for {name}: {location}")
+    if "FPGA_InterfaceFile" not in hardware_sections:
+        errors.append("Missing retained FPGA_InterfaceFile")
+
+    segments = text.partition("SEGMENT ALLOCATION MAP")[2].partition("SECTION ALLOCATION MAP")[0]
+    for run, load, length, init in re.findall(
+            r'^[ \t]*([0-9a-fA-F]{8})[ \t]+([0-9a-fA-F]{8})[ \t]+'
+            r'([0-9a-fA-F]{8})[ \t]+([0-9a-fA-F]{8})[ \t]+[rwx-]{3}(?=[ \t]|$)',
+            segments, re.MULTILINE):
+        run, load, length, init = (int(value, 16) for value in (run, load, length, init))
+        in_dpram = (run < DPRAM_END and run + length > DPRAM_BASE or
+                    load < DPRAM_END and load + init > DPRAM_BASE)
+        if in_dpram and init:
+            errors.append(f"DPRAM segment 0x{run:08X} has loadable file bytes")
     return {"path": str(path.resolve()), "sha256": hashlib.sha256(data).hexdigest(),
-            "retained_sections": len(sections), "dpram_enabled": dpram_enabled,
-            "retained_extension_sections": sorted(set(extensions) & sections.keys()),
+            "retained_sections": len(dpram_sections), "dpram_enabled": dpram_enabled,
+            "dpram_sections": dpram_sections,
             "fpga_ft3_sections": hardware_sections,
             "errors": errors, "passed": not errors}
 
@@ -87,16 +91,16 @@ def main():
     parser.add_argument("maps", type=Path, nargs="*")
     parser.add_argument("--delivery", action="store_true", help="audit all current matrix and default/CCS maps")
     parser.add_argument("--dpram", choices=("auto", "enabled", "disabled"), default="auto",
-                        help="require the four extension sections when enabled; auto reads adjacent build metadata")
+                        help="require V2 NOINIT when enabled; auto reads adjacent build metadata")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     if args.delivery:
         variants = json.loads((root / "build/matrix_result.json").read_text())
         paths = [Path(item["executable"]).with_suffix(".map") for item in variants]
-        paths += [root / item for item in ("build/Debug/default/SST_AnyEyes.map",
-                  "build/Release/default/SST_AnyEyes.map", "Debug/SST_AnyEyes.map", "Release/SST_AnyEyes.map")]
+        paths += [root / folder / f"{PROJECT}.map" for folder in
+                  ("build/Debug/default", "build/Release/default", "Debug", "Release")]
     else:
-        paths = args.maps or [root / "build/Debug/default/SST_AnyEyes.map"]
+        paths = args.maps or [root / "build/Debug/default" / f"{PROJECT}.map"]
     configured = None if args.dpram == "auto" else args.dpram == "enabled"
     results = [inspect(path, configured) for path in paths]
     for result in results:

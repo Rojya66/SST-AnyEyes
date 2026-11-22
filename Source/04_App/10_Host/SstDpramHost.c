@@ -1,150 +1,281 @@
 #include "SstDpramHost.h"
 #include "ChbBuildConfig.h"
-#include "DpramHostData.h"
-#include "DpramRegister.h"
-#include "DpramConfig.h"
-#include "FpgaRegister.h"
-#include "SoftTimeData.h"
-#include "SstControlConfig.h"
-#include "SstBoardConfig.h"
-#include "DPRAM.h"
-#include "SstCommand.h"
-#include "SstParams.h"
-#include "SstDpramMaintenance.h"
-#include "SstDpramProtocol.h"
+#include "SstDpramV2.h"
+
+#if SST_ENABLE_DPRAM
+#include "ChbDabControl.h"
 #include "ControlData.h"
+#include "DPRAM.h"
+#include "DpramHostData.h"
+#include "FpgaRegister.h"
+#include "PortStatusData.h"
+#include "SstBoardConfig.h"
+#include "SstCommand.h"
+#include "SstDpramV2Parameter.h"
+#include "SstDpramV2Telemetry.h"
+#include "SstParameterStore.h"
+#include "hw_types.h"
 
-static unsigned short s_regulate_reply_sent; /* 邮箱20刚发布，本轮遥测让出通知窗口。 */
+/* 最后两字是硬件邮箱，不放进普通数据区。 */
+#pragma DATA_SECTION(DPRAM_V2_Words, ".DPRAM_V2")
+static volatile uint16_t DPRAM_V2_Words[0x1FFEU];
+#define DPRAM_WORD(addr) DPRAM_V2_Words[(addr)]
+#define SST_DPRAM_V2_UNSUPPORTED 7U
 
-/*==================================================================
- * 函数功能: 读取可选 DPRAM 遥控/遥调块并交给统一命令入口
- * 输入参数: 无
- * 输出参数: 消费遥控通知；读取旧控制/遥调缓存，提交统一启停命令或标记扩展维护请求。
- * 返回值: 无
- * 执行说明: 仅由主循环调用；SST_ENABLE_DPRAM=0 时不访问并口。
- *================================================================*/
-void SstDpramHost_ProcessIncomingBlocks(void)
+enum
 {
-#if SST_ENABLE_DPRAM
-    if (Flag_RemoteControlRegulate == 0U)
-    {
-        return;
-    }
+    CONTROL_CHB_START = 1, CONTROL_CHB_STOP,
+    CONTROL_DAB_START, CONTROL_DAB_STOP,
+    CONTROL_STOP_ALL, CONTROL_RESET_FAULT,
+    CONTROL_QF1_CLOSE, CONTROL_QF1_OPEN,
+    CONTROL_KT1_CLOSE, CONTROL_KT1_OPEN,
+    CONTROL_PERMIT_CLOSE, CONTROL_INHIBIT_CLOSE,
+    CONTROL_SET_OBSERVATION
+};
 
-    Flag_RemoteControlRegulate = 0;
-    rtt = (rtt == 0U) ? 1U : 0U;
-    FPGA_Interface[MainControl_PluginUnit_4 - 2].LED.Bbits.led3 = rtt;
+enum
+{
+    PARAMETER_APPLY = 1, PARAMETER_SAVE, PARAMETER_LOAD, PARAMETER_READ
+};
 
-    /* 接收第1步：DPRAM_Read读取左邮箱1FFE，并按邮箱号复制共享区到本机RAM。
-     * 邮箱1：00F0..00FF的16字 -> PORT_Control_DATA_Buf.DPRAM_Block1Buf。
-     * 邮箱2：01FF..0229的43字 -> PORT_Regulate_DATA_Buf.DPRAM_Block2Buf。
-     * 这里只完成通知及数据复制，尚未赋值run_enable、dab_enable或活动PI。 */
-    DPRAM_Read();
-    if (FLAG_NEW_L == SST_DPRAM_MAINTENANCE_BLOCK)
-    {
-        SstDpramMaintenance_MarkRequestPending(); // 邮箱21：现代参数维护，后台分片回复
-    }
-    else if (FLAG_NEW_L == ReadBlock_remControl)
-    {
-        /* 接收第2步A：解析16字掩码、检查联锁，最后经SstControlCommand_ApplyRequests赋值。
-         * 00F2 bit0仅请求CHB；00F8/00F9 bit0单独请求DAB ON/OFF。
-         * control_result由屏幕1985读，control_count由1984读；不以Modbus ACK判成功。 */
-        g_sst_dpram_screen_result.control_result = SstDpramCommand_ProcessControlBlock(PORT_Control_DATA_Buf.DPRAM_Block1Buf);
-        ++g_sst_dpram_screen_result.control_count;
-    }
-    else if (FLAG_NEW_L == ReadBlock_remRegulate)
-    {
-        /* 接收第2步B：原43字 -> 检查本块字段 -> 直接赋值Udc、频率、PI及保护使能。
-         * 最终赋值在SstDpramParameter_DecodeAndApplyLegacyBlock中按地址逐项明写。
-         * 本路径不写run_enable/dab_enable；01FF的运行/测试位只是管理方式。 */
-        g_sst_dpram_screen_result.regulate_result =
-            SstDpramParameter_DecodeAndApplyLegacyBlock(PORT_Regulate_DATA_Buf.DPRAM_Block2Buf);
-        ++g_sst_dpram_screen_result.regulate_count;
-        /* 接收第3步：把实际生效参数重新编码回原43字，再回写DPRAM并通知邮箱20。
-         * 失败也回实际值，不能把候选回显当成功；读1986计数、1987结果确认本笔。 */
-        SstDpramParameter_EncodeLegacyBlock(PORT_Regulate_DATA_Buf.DPRAM_Block2Buf);
-        /* 旧DPRAM_Write(20)只有此标志为1才复制43字并发右邮箱20；写完会清0。
-         * 每笔成功/失败遥调都必须重新置位，回传实际值，避免只在上电回读一次。 */
-        FLAG_RemRegulate_SetOver = 1U;
-        DPRAM_Write(WriteBlock_remRegulate);
-        s_regulate_reply_sent = 1U;
-    }
-#else
-    /* SST_ENABLE_DPRAM=0 时跳过并口控制。 */
-    return;
-#endif
+static uint16_t s_observation[3];
+static uint16_t s_switch_permission;
+static uint16_t s_control_count;
+static uint16_t s_parameter_count;
+static uint16_t s_save_pending;
+
+void SstDpramV2_WriteWord(uint16_t addr, uint16_t value)
+{
+    DPRAM_WORD(addr) = value;
 }
 
-/*==================================================================
- * 函数功能: 按轮询顺序回写可选 DPRAM 端口遥测及有效插件块
- * 输入参数: 无
- * 输出参数: DPRAM 端口遥测块及本轮插件/遥调块，更新 WriteBlock_Index。
- * 返回值: 无
- * 执行说明: 主循环消费遥测节拍标志；每次回写公共块和一个轮询块。
- *================================================================*/
-void SstDpramHost_PublishTelemetry(void)
+uint16_t SstDpramV2_ObservationMask(uint16_t phase)
 {
-#if SST_ENABLE_DPRAM
-    if (Flag_RemoteMeasure == 0U)
+    return s_observation[phase];
+}
+
+uint16_t SstDpramV2_SwitchPermission(void)
+{
+    return s_switch_permission;
+}
+
+static uint16_t RequestManualSwitch(uint16_t close, uint16_t open)
+{
+    if (PortRunFLAG.Bbits.Port_AutoOrManual != 0U ||
+        (close != 0U && s_switch_permission == 0U))
+        return SST_PARAM_DENIED;
+    return ChbDabControl_MaintenanceSwitch(close, open);
+}
+
+static uint16_t SetObservation(const uint16_t *mask)
+{
+    uint16_t phase;
+    for (phase = 0U; phase < 3U; ++phase)
     {
-        return;
+        if ((mask[phase] & (uint16_t)~SST_DPRAM_V2_PHASE_MASK) != 0U)
+            return SST_PARAM_RANGE;
+    }
+    for (phase = 0U; phase < 3U; ++phase)
+        s_observation[phase] = mask[phase];
+    return SST_PARAM_OK;
+}
+
+static uint16_t ApplyControl(const uint16_t *words)
+{
+    const uint16_t op = words[0];
+
+    /* 观察选择只影响读数。停机在保存 EEPROM 期间也可受理。 */
+    if (op == CONTROL_SET_OBSERVATION)
+        return SetObservation(&words[1]);
+    if (SST_ALLOW_REMOTE_COMMANDS == 0U)
+        return SST_PARAM_DENIED;
+
+    switch (op)
+    {
+        case CONTROL_STOP_ALL:
+            SstCommand_EmergencyStop();
+            (void)ChbDabControl_MaintenanceSwitch(0U, 3U);
+            return SST_PARAM_OK;
+        case CONTROL_CHB_STOP:
+        case CONTROL_DAB_STOP:
+            SstControlCommand_ApplyRequests(0U, 0U, 0U, op == CONTROL_CHB_STOP ? 2U : 1U, 0U);
+            return SST_PARAM_OK;
+        case CONTROL_QF1_OPEN:
+            return RequestManualSwitch(0U, 2U);
+        case CONTROL_KT1_OPEN:
+            return RequestManualSwitch(0U, 1U);
+        case CONTROL_INHIBIT_CLOSE:
+            s_switch_permission = 0U;
+            return SST_PARAM_OK;
+        default:
+            break;
     }
 
-    Flag_RemoteMeasure = 0;
-    if (s_regulate_reply_sent)
+    if (SstParameterStore_IsBusy() != 0U)
+        return SST_PARAM_BUSY;
+
+    switch (op)
     {
-        s_regulate_reply_sent = 0U;
-        return; /* 避免刚发邮箱20就在同一轮主循环被遥测通知覆盖。 */
+        case CONTROL_CHB_START:
+        case CONTROL_DAB_START:
+            if (g_chb_dab_status.state == CHB_STATE_FAULT || g_chb_dab_status.fault_code != CHB_FAULT_NONE)
+                return SST_PARAM_DENIED;
+            SstControlCommand_ApplyRequests(op == CONTROL_CHB_START, 0U, op == CONTROL_DAB_START, 0U, 0U);
+            return SST_PARAM_OK;
+        case CONTROL_RESET_FAULT:
+            if (SstCommand_IsStopped() == 0U)
+                return SST_PARAM_BUSY;
+            SstControlCommand_ApplyRequests(0U, 0U, 0U, 0U, 1U);
+            return SST_PARAM_OK;
+        case CONTROL_QF1_CLOSE:
+            return RequestManualSwitch(2U, 0U);
+        case CONTROL_KT1_CLOSE:
+            return RequestManualSwitch(1U, 0U);
+        case CONTROL_PERMIT_CLOSE:
+            s_switch_permission = 1U;
+            return SST_PARAM_OK;
+        default:
+            return SST_DPRAM_V2_UNSUPPORTED;
     }
-    SstDpramMaintenance_PublishSnapshots();
-    SstDpramScreen_PublishStatus();
-    /* 一个30ms节拍只发布一个旧邮箱，避免块3刚通知就被插件覆盖。
-     * 插件数据仍是固定区可轮询镜像；邮箱无队列/ACK，不宣称绝不漏通知。 */
-    static unsigned short publish_common = 1U; /* 交替发布块3与插件的后台标志。 */
-    if (publish_common)
+}
+
+static void ProcessControl(void)
+{
+    uint16_t words[SST_DPRAM_V2_CONTROL_WORDS];
+    uint16_t i;
+    for (i = 0U; i < SST_DPRAM_V2_CONTROL_WORDS; ++i)
+        words[i] = DPRAM_WORD(SST_DPRAM_V2_CONTROL + i);
+    DPRAM_WORD(SST_DPRAM_V2_CONTROL) = 0U;
+    DPRAM_WORD(SST_DPRAM_V2_CONTROL_OP) = words[0];
+    DPRAM_WORD(SST_DPRAM_V2_CONTROL_RESULT) = ApplyControl(words);
+    DPRAM_WORD(SST_DPRAM_V2_CONTROL_COUNT) = ++s_control_count;
+}
+
+static void PublishParameters(void)
+{
+    uint16_t words[SST_DPRAM_V2_PARAMETER_WORDS];
+    uint16_t i;
+    SstDpramV2Parameter_Read(words);
+    for (i = 0U; i < SST_DPRAM_V2_PARAMETER_WORDS; ++i)
+        DPRAM_WORD(SST_DPRAM_V2_PARAMETER_BASE + i) = words[i];
+}
+
+static void CompleteParameter(uint16_t op, uint16_t result, uint16_t error_addr)
+{
+    PublishParameters();
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_LAST) = op;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_RESULT) = result;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_ERROR) = error_addr;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_COUNT) = ++s_parameter_count;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_BUSY) = 0U;
+}
+
+static uint16_t ProcessParameter(void)
+{
+    const uint16_t op = DPRAM_WORD(SST_DPRAM_V2_PARAMETER_OP);
+    uint16_t result;
+    uint16_t error_addr = SST_DPRAM_V2_NO_ERROR_ADDR;
+
+    /* 左邮箱没有队列。等待保存的屏幕不能提交第二笔遥调。 */
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_OP) = 0U;
+    if (s_save_pending != 0U)
+        return 0U;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_BUSY) = 1U;
+    if (op == PARAMETER_READ)
+        result = SST_PARAM_OK;
+    else if (SST_ALLOW_REMOTE_COMMANDS == 0U)
+        result = SST_PARAM_DENIED;
+    else if (op == PARAMETER_APPLY)
     {
-        DPRAM_Write(WriteBlock_remMeaSig);
-        publish_common = 0U;
+        uint16_t words[SST_DPRAM_V2_PARAMETER_WORDS];
+        uint16_t i;
+        for (i = 0U; i < SST_DPRAM_V2_PARAMETER_WORDS; ++i)
+            words[i] = DPRAM_WORD(SST_DPRAM_V2_PARAMETER_BASE + i);
+        result = SstDpramV2Parameter_Apply(words, &error_addr);
     }
+    else if (op == PARAMETER_SAVE || op == PARAMETER_LOAD)
+        result = SstDpramV2Parameter_Store(op == PARAMETER_LOAD, &error_addr);
     else
+        result = SST_DPRAM_V2_UNSUPPORTED;
+
+    if (op == PARAMETER_SAVE && result == SST_PARAM_OK)
     {
-        unsigned short count; /* 本轮最多检查16个插件槽位，不忙等。 */
-        unsigned short valid; /* 配置中有效的数据生产者位图。 */
-        valid = SstDpramTelemetry_GetPluginMask();
-        for (count = 0U; count < 16U; ++count)
-        {
-            if (WriteBlock_Index < WriteBlock_PluginUnit_2 || WriteBlock_Index >= WriteBlock_PluginUnit_17)
-                WriteBlock_Index = WriteBlock_PluginUnit_2;
-            if (valid & (1U << (WriteBlock_Index - WriteBlock_PluginUnit_2)))
-            {
-                DPRAM_Write(WriteBlock_Index++);
-                break;
-            }
-            ++WriteBlock_Index;
-        }
-        publish_common = 1U;
+        s_save_pending = 1U;
+        return 0U;
     }
-#else
-    /* SST_ENABLE_DPRAM=0 时跳过并口遥测。 */
-    return;
+    CompleteParameter(op, result, error_addr);
+    return 1U;
+}
+#endif
+
+void SstDpramHost_Invalidate(void)
+{
+#if SST_ENABLE_DPRAM
+    DPRAM_WORD(SST_DPRAM_V2_SIGNATURE) = 0U;
 #endif
 }
 
-/*==================================================================
- * 函数功能: 开放DPRAM通知前发布原块2实际初值
- * 输入参数: 无
- * 输出参数: 原块2实际参数及邮箱20；周期任务不再覆写主机正在编辑的块2
- * 返回值: 无
- * 执行说明: 仅初始化调用；后续只有接收邮箱2才回写该共享区域。
- *================================================================*/
 void SstDpramHost_Initialize(void)
 {
 #if SST_ENABLE_DPRAM
-    SstDpramParameter_EncodeLegacyBlock(PORT_Regulate_DATA_Buf.DPRAM_Block2Buf);
-    /* 与每笔遥调回复使用相同的旧回写许可；DPRAM_Write完成后自行清零。 */
-    FLAG_RemRegulate_SetOver = 1U;
-    DPRAM_Write(WriteBlock_remRegulate);
-    WriteBlock_Index = WriteBlock_PluginUnit_2;
-    s_regulate_reply_sent = 0U;
+    uint16_t addr;
+    s_control_count = s_parameter_count = s_save_pending = s_switch_permission = 0U;
+    s_observation[0] = (HA_PM_A1 | (HA_PM_A2 << 8U)) & SST_DPRAM_V2_PHASE_MASK;
+#if SST_PHASE_A_ONLY_TEST
+    s_observation[1] = s_observation[2] = 0U;
+#else
+    s_observation[1] = (HA_PM_B1 | (HA_PM_B2 << 8U)) & SST_DPRAM_V2_PHASE_MASK;
+    s_observation[2] = (HA_PM_C1 | (HA_PM_C2 << 8U)) & SST_DPRAM_V2_PHASE_MASK;
+#endif
+    for (addr = SST_DPRAM_V2_CONTROL; addr < SST_DPRAM_V2_CONTROL + SST_DPRAM_V2_CONTROL_WORDS; ++addr)
+        DPRAM_WORD(addr) = 0U;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_OP) = 0U;
+    for (addr = SST_DPRAM_V2_CONTROL_COUNT; addr <= SST_DPRAM_V2_PARAMETER_BUSY; ++addr)
+        DPRAM_WORD(addr) = 0U;
+    DPRAM_WORD(SST_DPRAM_V2_PARAMETER_ERROR) = SST_DPRAM_V2_NO_ERROR_ADDR;
+    PublishParameters();
+    SstDpramV2Telemetry_Init();
+    /* 先应答上次复位遗留的左邮箱，再发布本次启动签名。 */
+    (void)HWREGH(DPRAM_Maibox_Left);
+    DPRAM_WORD(SST_DPRAM_V2_VERSION) = 0x0200U;
+    DPRAM_WORD(SST_DPRAM_V2_SIGNATURE) = 0x5353U;
+    HWREGH(DPRAM_Maibox_Right) = WriteBlock_remRegulate;
+#endif
+}
+
+void SstDpramHost_Service(void)
+{
+#if SST_ENABLE_DPRAM
+    uint16_t parameter_reply = 0U;
+    if (Flag_RemoteControlRegulate != 0U)
+    {
+        uint16_t block;
+        /* 清软件标志，再读左邮箱取消硬件通知。 */
+        Flag_RemoteControlRegulate = 0U;
+        block = HWREGH(DPRAM_Maibox_Left);
+        rtt ^= 1U;
+        FPGA_Interface[MainControl_PluginUnit_4 - 2].LED.Bbits.led3 = rtt;
+        if (block == ReadBlock_remControl)
+            ProcessControl();
+        else if (block == ReadBlock_remRegulate)
+            parameter_reply = ProcessParameter();
+    }
+
+    if (s_save_pending != 0U && SstParameterStore_IsBusy() == 0U)
+    {
+        s_save_pending = 0U;
+        CompleteParameter(PARAMETER_SAVE, SstParameterStore_GetResult(), SST_DPRAM_V2_NO_ERROR_ADDR);
+        parameter_reply = 1U;
+    }
+
+    SstDpramV2Telemetry_Service();
+    if (parameter_reply != 0U)
+    {
+        /* 让出本轮遥测通知，避免邮箱 20 马上被覆盖。 */
+        (void)SstDpramV2Telemetry_TakeLiveNotification();
+        HWREGH(DPRAM_Maibox_Right) = WriteBlock_remRegulate;
+    }
+    else if (SstDpramV2Telemetry_TakeLiveNotification() != 0U)
+        HWREGH(DPRAM_Maibox_Right) = WriteBlock_remMeaSig;
 #endif
 }

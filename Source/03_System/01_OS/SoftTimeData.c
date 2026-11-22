@@ -16,7 +16,6 @@ unsigned char Flag_50ms; /* Flag_50ms：Timer2 更新、后台消费的周期 50
 
 unsigned char Flag_100ms; /* Flag_100ms：Timer2 更新、后台消费的周期 100 ms到时标志。 */
 
-unsigned char Flag_RemoteMeasure; /* Flag_RemoteMeasure：Timer2 更新、后台消费的遥测轮询到时标志。 */
 
 
 unsigned char Flag_Precharge500ms; /* Flag_Precharge500ms：Timer2 更新、后台消费的预充等待 500 ms到时标志。 */
@@ -44,7 +43,6 @@ unsigned short cout50ms; /* cout50ms：Timer2 原 周期 50 ms计数；实际节
 
 unsigned short cout100ms; /* cout100ms：Timer2 原 周期 100 ms计数；实际节拍沿用原判断式。 */
 
-unsigned short coutRemoteMeasure; /* coutRemoteMeasure：Timer2 原 遥测轮询计数；实际节拍沿用原判断式。 */
 
 unsigned short coutStopWait; /* coutStopWait：Timer2 原 停机等待计数；实际节拍沿用原判断式。 */
 

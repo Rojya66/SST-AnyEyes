@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 tree = ET.parse(ROOT / '.project')
-tree.getroot().find('name').text = 'AnyEyesVersion_DpramCompat'
+tree.getroot().find('name').text = 'SST_CHB_V1.0'
 tree.write(ROOT / '.project', encoding='utf-8', xml_declaration=True)
 
 tree = ET.parse(ROOT / '.cproject')
