@@ -124,11 +124,12 @@ extern "C"
     extern void Module_TestMode(uchar TestMode);
 
     /*==================================================================
- * 函数功能: 将 Port_DOUT 开关控制字写入端口 FPGA 数字输出寄存器
+ * 函数功能: 将S301的QF1脉冲、KT1保持及AC指示字写入FPGA
  * 输入参数: 无
- * 输出参数: 写函数修改对应 FPGA 寄存器或控制字缓存；读函数通过返回值提供原始数据。
+ * 输出参数: IO_PluginUnit_2的DOUT寄存器；Port_DOUT缓存不变。
  * 返回值: 无
- * 执行说明: 底层 FPGA 寄存器访问；插件编号沿用原工程，不能改变地址或结构体布局。
+ * 执行说明: Dout.Qf1ClosePulse/Qf1OpenPulse/Kt1Hold对应DO1/DO2/DO3；
+ *           301 FPGA已处理输出极性，DSP直接写字，1表示继电器吸合。
  *================================================================*/
     extern void Port_IO_Out(void);
 
@@ -210,6 +211,18 @@ extern "C"
  *================================================================*/
     extern void Port_FB_EN_Set(void);
 
+    /* HVAC实际使能，保留FO/FB的独立配置并按已接入的PM通道裁剪。 */
+    extern ushort Port_EffectiveFOEnable(ushort input_plugin);
+    extern ushort Port_EffectiveFBEnable(void);
+    /* phase_mask bit0/1/2：本轮实际布防A/B/C相701。 */
+    extern uchar Port_SetModuleFOArmed(uchar phase_mask);
+    extern ushort Port_UnitLinkRead(ushort plugin);
+    extern ushort Port_UnitLinkLossRead(ushort plugin);
+    extern void Port_UnitLinkLossClear(ushort plugin, ushort channels);
+
+    /* 根据各相PM位图，闭锁601未接入的光纤输出。 */
+    extern void Port_ApplyModuleShutdownMask(void);
+
     /*==================================================================
  * 函数功能: 设置端口 FPGA 的硬件故障复位控制位
  * 输入参数: RST_FB：端口硬件故障复位控制值
@@ -250,11 +263,11 @@ extern "C"
     extern ushort Module_TotalStatusRead(uchar CJ_index, uchar latch);
 
     /*==================================================================
- * 函数功能: 读取端口数字输入的实时或锁存值
+ * 函数功能: 读取S301数字输入实时或故障锁存字
  * 输入参数: latch：0 读取实时寄存器，非零读取锁存寄存器
  * 输出参数: 无指针输出；读取原 FPGA 实时或锁存寄存器，结果通过返回值提供。
- * 返回值: 16 位数字输入位图
- * 执行说明: 底层 FPGA 寄存器访问；插件编号沿用原工程，不能改变地址或结构体布局。
+ * 返回值: Din位图；DI6=KT1合位，DI7=QF1合位，DI8=QF1分位，1表示触点闭合
+ * 执行说明: 只读取，不再执行旧隔离开关、接地开关或外部断路器解析。
  *================================================================*/
     extern ushort Port_DINRead(uchar latch);
 

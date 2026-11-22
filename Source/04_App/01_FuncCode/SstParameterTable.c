@@ -32,8 +32,8 @@ static const SST_PARAMETER parameters[] = {
     {(volatile void *)&g_chb_dab_params.precharge_voltage_v, 10.0F, 0L, 30000L, 0U, 0U},
     {(volatile void *)&g_chb_dab_params.precharge_stable_10ms, 1.0F, 1L, 65535L, 0U, 1U},
     {(volatile void *)&g_chb_dab_params.precharge_timeout_10ms, 1.0F, 1L, 65535L, 0U, 1U},
-    {(volatile void *)&g_chb_dab_params.bypass_delay_10ms, 1.0F, 0L, 65535L, 0U, 1U},
-    {(volatile void *)&g_chb_dab_params.breaker_pulse_10ms, 1.0F, 1L, 65535L, 0U, 1U},
+    {(volatile void *)&g_chb_dab_params.kt1_settle_10ms, 1.0F, 0L, 65535L, 0U, 1U},
+    {(volatile void *)&g_chb_dab_params.qf1_pulse_10ms, 1.0F, 1L, 65535L, 0U, 1U},
     {(volatile void *)&g_chb_dab_params.pll_nominal_frequency_hz, 100.0F, 100L, 10000L, 0U, 0U},
     {(volatile void *)&g_chb_dab_params.pll_kp, 10.0F, 0L, 65535L, 0U, 0U},
     {(volatile void *)&g_chb_dab_params.pll_ki, 1.0F, 0L, 65535L, 0U, 0U},
@@ -103,6 +103,9 @@ static uint16_t WriteEntry(const SST_PARAMETER *p, uint16_t value)
         p->isSigned ? (int32_t)(int16_t)value : (int32_t)value; /* raw：参数物理值缩放后的有符号整数中间值。 */
     if (raw < p->minimum || raw > p->maximum)
         return SST_PARAM_RANGE;
+    /* 这里是参数的最终写入语句，p->address来自本文件顶部唯一映射表。
+     * isWord写unsigned short；否则把有符号/无符号raw除比例后写float。
+     * 例：current_kp的raw=-1250、scale=1000，实际成员得到-1.25，不额外反号。 */
     if (p->isWord)
         *(volatile unsigned short *)p->address = (unsigned short)raw;
     else
@@ -244,6 +247,14 @@ void SstParameterTable_SnapshotApply(const uint16_t *snapshot)
 void SstParameterTable_SnapshotApplyChanged(const uint16_t *snapshot)
 {
     uint16_t index; /* 快照字索引。 */
+    /* 57项扩展参数事务的赋值路径：ApplyParameterSnapshot -> 本函数 -> WriteEntry。
+     * Word原43字遥调在SstDpramParameter_DecodeAndApplyLegacyBlock内直接赋值，不走此处。
+     * 1..36直接映射parameters[index]，例如15/16电压PI、24/25电流PI、7 PLL额定频率。
+     * 37 -> commands[2] ac_mode；38 -> commands[4] open_loop_modulation；
+     * 39 -> commands[5] open_loop_frequency_hz；40 -> commands[6] dc_voltage_ref_v；
+     * 41 -> commands[7] iq_reference_a。
+     * 这里永远不会选择commands[0/1/3]，因此不会写run_enable/dab_enable/fault_reset。
+     * 本函数不访问DPRAM、PWM或EEPROM，只在上层已整体校验后写变化项。 */
     for (index = 1U; index < 42U; ++index)
     {
         if (snapshot[index] == SstParameterTable_SnapshotRead(index))

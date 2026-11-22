@@ -1,5 +1,7 @@
 # SST 框架重构验证报告
 
+> 2026-11-16：100 Vac专用宏和程序已移除。本文低压配置、限流步骤及证据属于历史版本；当前配置和本次验证见 [移除记录](REMOVE_LV100_PROFILE_20261116.md)，VOFA通道见 [运行遥测](VOFA_TELEMETRY.md)。
+
 ## 当前 PI、100 Vac 参数及三相兼容修复（2026-10-19）
 
 当前默认是 100 Vac 单相低压参数、真实采样、VOFA、仿真器控制、DPRAM 关闭。公共 PI、三相 DC_Log 及安全路径修复、低压启动参数和最终验证见 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 第 9 节；持久软件证据见 [low_voltage_100vac_validation.json](evidence/low_voltage_100vac_validation.json)。以下各节对应各自固定历史版本，不能用于证明当前固件已经通过同样检查。

@@ -86,19 +86,19 @@ extern "C"
             XXG_PORT_FAULT PORT_FAULT; /* PORT_FAULT：端口故障的原 16 位位域字，位定义随旧端口分支解释。 */
             short PORT_P; /* PORT_P：端口有功功率；float 为物理值，16 位版本为旧遥测缩放编码。 */
             short PORT_Q; /* PORT_Q：端口无功功率；float 为物理值，16 位版本为旧遥测缩放编码。 */
-            short PORT_V_A; /* PORT_V_A：端口 A 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_V_B; /* PORT_V_B：端口 B 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_V_C; /* PORT_V_C：端口 C 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_I_A; /* PORT_I_A：端口 A 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_I_B; /* PORT_I_B：端口 B 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_I_C; /* PORT_I_C：端口 C 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short PORT_I_N; /* PORT_I_N：端口 N 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-            short V_A_2; /* V_A_2：端口第二组 A 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-            short V_B_2; /* V_B_2：端口第二组 B 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-            short V_C_2; /* V_C_2：端口第二组 C 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-            short I_A_2; /* I_A_2：端口第二组 A 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
-            short I_B_2; /* I_B_2：端口第二组 B 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
-            short I_C_2; /* I_C_2：端口第二组 C 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
+            short PORT_V_A; /* PORT_V_A：端口 A 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_V_B; /* PORT_V_B：端口 B 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_V_C; /* PORT_V_C：端口 C 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_I_A; /* PORT_I_A：端口 A 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_I_B; /* PORT_I_B：端口 B 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_I_C; /* PORT_I_C：端口 C 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_I_N; /* PORT_I_N：端口 N 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short V_A_2; /* V_A_2：端口第二组 A 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short V_B_2; /* V_B_2：端口第二组 B 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short V_C_2; /* V_C_2：端口第二组 C 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short I_A_2; /* I_A_2：端口第二组 A 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short I_B_2; /* I_B_2：端口第二组 B 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short I_C_2; /* I_C_2：端口第二组 C 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
             short DC_V; /* DC_V：端口直流电压；float 为 V，16 位版使用旧协议缩放格式。 */
             short RMS_CURRENT_5TH; /* RMS_CURRENT_5TH：5 次谐波电流有效值遥测；定点/浮点比例见旧遥调/遥测转换。 */
             short RMS_CURRENT_7TH; /* RMS_CURRENT_7TH：7 次谐波电流有效值遥测；定点/浮点比例见旧遥调/遥测转换。 */
@@ -107,11 +107,12 @@ extern "C"
             short PHA_CURRENT_7TH; /* PHA_CURRENT_7TH：7 次谐波电流相位遥测；定点/浮点比例见旧遥调/遥测转换。 */
             short PHA_CURRENT_11TH; /* PHA_CURRENT_11TH：11 次谐波电流相位遥测；定点/浮点比例见旧遥调/遥测转换。 */
             short PORT_PF; /* PORT_PF：端口功率因数；16 位版使用旧协议缩放格式。 */
-            short PORT_V0; /* PORT_V0：旧下垂控制的电压基准量，编码比例见 RemoteSig_Dispose。 */
-            short PORT_F0; /* PORT_F0：旧下垂控制的频率基准量，编码比例见 RemoteSig_Dispose。 */
-            short PORT_KF; /* PORT_KF：旧频率下垂系数，编码比例见 RemoteSig_Dispose。 */
-            short PORT_KV; /* PORT_KV：旧电压下垂系数，编码比例见 RemoteSig_Dispose。 */
-            short Reserved_1[3]; /* Reserved_1：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
+            short PORT_V0; /* PORT_V0：旧下垂控制的电压基准量，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_F0; /* PORT_F0：旧下垂控制的频率基准量，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_KF; /* PORT_KF：旧频率下垂系数，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            short PORT_KV; /* PORT_KV：旧电压下垂系数，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+            /* 051E..0520：现为A/B/C相701故障位图；保留原short布局，按Block3Buf的uint16读。 */
+            short Reserved_1[3];
         } DPRAM_RemMeaSig;
 
         /* DPRAM_RemMeaSig：对应结构化字段视图，与本联合体的整字数组重叠，布局保持原工程。 */ //DPRAM的第3分区的结构体
@@ -127,19 +128,19 @@ extern "C"
         XXG_PORT_FAULT PORT_FAULT; /* PORT_FAULT：端口故障的原 16 位位域字，位定义随旧端口分支解释。 */
         float PORT_P; /* PORT_P：端口有功功率；float 为物理值，16 位版本为旧遥测缩放编码。 */
         float PORT_Q; /* PORT_Q：端口无功功率；float 为物理值，16 位版本为旧遥测缩放编码。 */
-        float PORT_V_A; /* PORT_V_A：端口 A 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_V_B; /* PORT_V_B：端口 B 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_V_C; /* PORT_V_C：端口 C 相/中线电压遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_I_A; /* PORT_I_A：端口 A 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_I_B; /* PORT_I_B：端口 B 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_I_C; /* PORT_I_C：端口 C 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float PORT_I_N; /* PORT_I_N：端口 N 相/中线电流遥测；float 为物理量，16 位版比例见 RemoteSig_Dispose。 */
-        float V_A_2; /* V_A_2：端口第二组 A 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-        float V_B_2; /* V_B_2：端口第二组 B 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-        float V_C_2; /* V_C_2：端口第二组 C 相电压遥测；16 位版比例见 RemoteSig_Dispose。 */
-        float I_A_2; /* I_A_2：端口第二组 A 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
-        float I_B_2; /* I_B_2：端口第二组 B 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
-        float I_C_2; /* I_C_2：端口第二组 C 相电流遥测；16 位版比例见 RemoteSig_Dispose。 */
+        float PORT_V_A; /* PORT_V_A：端口 A 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_V_B; /* PORT_V_B：端口 B 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_V_C; /* PORT_V_C：端口 C 相/中线电压遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_I_A; /* PORT_I_A：端口 A 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_I_B; /* PORT_I_B：端口 B 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_I_C; /* PORT_I_C：端口 C 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_I_N; /* PORT_I_N：端口 N 相/中线电流遥测；float 为物理量，16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float V_A_2; /* V_A_2：端口第二组 A 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float V_B_2; /* V_B_2：端口第二组 B 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float V_C_2; /* V_C_2：端口第二组 C 相电压遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float I_A_2; /* I_A_2：端口第二组 A 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float I_B_2; /* I_B_2：端口第二组 B 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float I_C_2; /* I_C_2：端口第二组 C 相电流遥测；16 位版比例见 SstDpramTelemetry_BuildLegacyBlock。 */
         float DC_V; /* DC_V：端口直流电压；float 为 V，16 位版使用旧协议缩放格式。 */
         float RMS_CURRENT_5TH; /* RMS_CURRENT_5TH：5 次谐波电流有效值遥测；定点/浮点比例见旧遥调/遥测转换。 */
         float RMS_CURRENT_7TH; /* RMS_CURRENT_7TH：7 次谐波电流有效值遥测；定点/浮点比例见旧遥调/遥测转换。 */
@@ -148,11 +149,12 @@ extern "C"
         float PHA_CURRENT_7TH; /* PHA_CURRENT_7TH：7 次谐波电流相位遥测；定点/浮点比例见旧遥调/遥测转换。 */
         float PHA_CURRENT_11TH; /* PHA_CURRENT_11TH：11 次谐波电流相位遥测；定点/浮点比例见旧遥调/遥测转换。 */
         float PORT_PF; /* PORT_PF：端口功率因数；16 位版使用旧协议缩放格式。 */
-        float PORT_V0; /* PORT_V0：旧下垂控制的电压基准量，编码比例见 RemoteSig_Dispose。 */
-        float PORT_F0; /* PORT_F0：旧下垂控制的频率基准量，编码比例见 RemoteSig_Dispose。 */
-        float PORT_KF; /* PORT_KF：旧频率下垂系数，编码比例见 RemoteSig_Dispose。 */
-        float PORT_KV; /* PORT_KV：旧电压下垂系数，编码比例见 RemoteSig_Dispose。 */
-        float Reserved_1[3]; /* Reserved_1：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
+        float PORT_V0; /* PORT_V0：旧下垂控制的电压基准量，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_F0; /* PORT_F0：旧下垂控制的频率基准量，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_KF; /* PORT_KF：旧频率下垂系数，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        float PORT_KV; /* PORT_KV：旧电压下垂系数，编码比例见 SstDpramTelemetry_BuildLegacyBlock。 */
+        /* 旧float缓存保留布局；新增701位图由SstDpramTelemetry直接编码，不经过此float数组。 */
+        float Reserved_1[3];
     } DPRAM_RemMeaSigFloat, *P_DPRAM_RemMeaSigFloat; //DPRAM的第3分区的结构体
 
     typedef union _XXG_COM_START_PORT
@@ -216,10 +218,9 @@ extern "C"
     {
         struct _COM_SWITCH
         {
-            ushort Contactor_Inner : 1; /* Contactor_Inner：1:内部接触器动作；0：不动作。 */
-            ushort Breaker_Inner : 1; /* Breaker_Inner：1:内部断路器动作；0：不动作。 */
-            ushort Breaker_Outer1 : 1; /* Breaker_Outer1：1:外部断路器1动作；0：不动作。 */
-            ushort Breaker_Outer2 : 1; /* Breaker_Outer2：1:外部断路器2动作；0：不动作。 */
+            ushort KT1 : 1; /* bit0：预充接触器KT1动作；ON块吸合保持、OFF块释放。 */
+            ushort QF1 : 1; /* bit1：主断路器QF1动作；ON块合闸脉冲、OFF块分闸脉冲。 */
+            ushort Reserved_Switch : 2; /* bit2..3：原外部开关位置保留，接收时忽略。 */
             ushort Reservedbit : 12;
             /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ //备用
         } Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
@@ -256,8 +257,8 @@ extern "C"
     {
         struct _PORT_SWITCH_EN
         {
-            ushort SWITCH_ON_EN : 1; /* SWITCH_ON_EN：1:外部断路器闭合使能；0：不动作。 */
-            ushort SWITCH_ON_DEN : 1; /* SWITCH_ON_DEN：1:外部断路器闭合禁止；0：不动作。 */
+            ushort SWITCH_ON_EN : 1; /* SWITCH_ON_EN：1:本机开关合闸许可；0：不动作。 */
+            ushort SWITCH_ON_DEN : 1; /* SWITCH_ON_DEN：1:本机开关合闸禁止；0：不动作。 */
             ushort Reservedbit : 14;
             /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ //备用
         } Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */

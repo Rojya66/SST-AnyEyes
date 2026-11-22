@@ -8,29 +8,6 @@
 extern "C"
 {
 #endif
-    typedef union _XXG_SwitchFLAG
-    {
-        struct _SwitchFLAG
-        {
-            ushort S_EXT_CB_ON_EN : 1; /* S_EXT_CB_ON_EN：旧开关流程的外部断路器合闸允许条件。 */
-            ushort S_EXT_CB : 2; /* S_EXT_CB：旧开关流程的外部断路器目标/判定状态。 */
-            ushort S_INT_CB : 2; /* S_INT_CB：旧开关流程的内部断路器目标/判定状态。 */
-            ushort S_CONTACTOR : 1; /* S_CONTACTOR：旧开关流程的接触器目标/判定状态。 */
-
-            ushort EXT_CB_ON_EN : 1; /* EXT_CB_ON_EN：外部断路器合闸允许标志。 */
-            ushort Flag_Switch : 3;
-            /* Flag_Switch：1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2。 */ //1: 动接触器；2：动内部断路器;3：动外部断路器1；4：动外部断路器2
-            ushort Flag_SwitchZhi : 1; /* Flag_SwitchZhi：旧开关动作时序状态值。 */ //0:断；1：合
-            ushort Flag_SwitchSuccess : 1; /* Flag_SwitchSuccess：旧开关动作成功标志。 */
-            ushort Flag_SwitchRun : 1; /* Flag_SwitchRun：旧开关动作正在执行标志。 */
-            ushort Flag_SwitchTable : 2;
-            /* Flag_SwitchTable：0：操作失败；1:无需继续操作1；2：无需继续操作2；3：继续操作。 */ //0：操作失败；1:无需继续操作1；2：无需继续操作2；3：继续操作
-            ushort Reservedbit : 1; /* Reservedbit：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */
-        } Bbits; /* Bbits：与整字重叠的位域视图，字段位置对应原硬件/协议布局。 */
-
-        ushort SwitchFLAG16; /* SwitchFLAG16：本联合体的完整 16 位字视图，与位域成员共用存储。 */
-    } XXG_SwitchFLAG;
-
     typedef union _XXG_PortRunFLAG
     {
         struct _PortRunFLAG

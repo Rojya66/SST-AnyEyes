@@ -1,219 +1,127 @@
-// TI File $Revision: /main/1 $
-// Checkin $Date: August 18, 2006   13:51:50 $
+﻿//###########################################################################
+// FILE: EEProm.H
+// FUNCTION: BL24C512A读写及原64字节逻辑页接口；不访问X1226的RTC/控制区。
 //###########################################################################
-//
-// FILE:   EEProm.h
-//
-// TITLE:  EEProm & Time Read/Write
-// AUTHOR: Li Kai
-//
-//###########################################################################
-// $TI Release: DSP2833x Header Files V1.10 $
-// $Release Date: February 15, 2008 $
-//###########################################################################
+#ifndef SST_EEPROM_H
+#define SST_EEPROM_H
+#include "SstTypes.h"
+#include "EepromConfig.h"
+#ifndef Uint8
+/* Uint8：原兼容接口使用的8位无符号类型。 */
+#define Uint8 unsigned char
+#endif
+/* VALIDFLAG：本驱动调用成功，返回1。 */
+#define VALIDFLAG 1U
+/* INVALIDFLAG：本驱动调用失败，返回0。 */
+#define INVALIDFLAG 0U
+/* EEPROM_ADDRESS为含R/W位的写寻址字节，供旧代码查看；不是7位地址。 */
+#define EEPROM_ADDRESS SST_EEPROM_DEVICE_WRITE
 
-#ifndef _EEPROM_H_
-#define _EEPROM_H_
+/* 最近一次底层访问结果：无应答与读到FF是不同情况。 */
+#define EEPROM_ERROR_NONE 0U
+/* EEPROM_ERROR_BUS_LOW：产生START前总线未能回到高电平。 */
+#define EEPROM_ERROR_BUS_LOW 1U
+/* EEPROM_ERROR_NO_ACK：器件未对当前字节应答。 */
+#define EEPROM_ERROR_NO_ACK 2U
+/* EEPROM_ERROR_ADDRESS：地址、长度或缓存参数不合法。 */
+#define EEPROM_ERROR_ADDRESS 3U
+/* EEPROM_ERROR_WRITE_TIMEOUT：有限ACK轮询后仍未结束内部写忙。 */
+#define EEPROM_ERROR_WRITE_TIMEOUT 4U
+
+typedef struct
+{
+    unsigned short error;       /* 最近一次底层错误，0表示I2C事务正常。 */
+    unsigned short address;     /* 最近一次访问的EEPROM绝对字节地址。 */
+    unsigned short stage;       /* 0空闲、1器件地址、2地址高字节、3低字节、4数据、5读方向。 */
+    unsigned short device_byte; /* 实际发送的含R/W位寻址字节，便于CCS核对接线。 */
+} SST_EEPROM_STATUS;
 
 #ifdef __cplusplus
 extern "C"
-{ // 按 C 语言链接导出接口，供 C++ 通信模块调用。
+{
 #endif
-
-/****************************************************************************/
-/*                                                                          */
-/*              宏定义                                                                                                                                                         */
-/*                                                                          */
-/****************************************************************************/
-/* Uint8：旧代码无符号 8 位整数类型别名。 */
-#define Uint8 unsigned char
-
-//IIC
-//#define X4643	//使用X4643
-#ifdef X4643
-/* EEPROM_ADDRESS：EEPROM 软件 I²C 器件寻址字节，保持原器件定义。 */
-#define EEPROM_ADDRESS 0xA0
-/* CONTROL_ADDRESS：EEPROM/RTC 控制区软件 I²C 器件寻址字节。 */
-#define CONTROL_ADDRESS 0xA0
-/* CONTROL_ADDRESS_HIGH：EEPROM/RTC 控制寄存器地址高字节。 */
-#define CONTROL_ADDRESS_HIGH 0xFF
-/* CONTROL_ADDRESS_LOW：EEPROM/RTC 控制寄存器地址低字节。 */
-#define CONTROL_ADDRESS_LOW 0xFF
-#else //使用X1226
-/* EEPROM_ADDRESS：EEPROM 软件 I²C 器件寻址字节，保持原器件定义。 */
-#define EEPROM_ADDRESS 0xAE
-/* CONTROL_ADDRESS：EEPROM/RTC 控制区软件 I²C 器件寻址字节。 */
-#define CONTROL_ADDRESS 0xDE
-/* CONTROL_ADDRESS_HIGH：EEPROM/RTC 控制寄存器地址高字节。 */
-/* 高、低地址字节共同构成寄存器地址；CCR 的 0x003F 为状态寄存器。 */
-#define CONTROL_ADDRESS_HIGH 0x00
-/* CONTROL_ADDRESS_LOW：EEPROM/RTC 控制寄存器地址低字节。 */
-#define CONTROL_ADDRESS_LOW 0x3F
-/* TIME_ADDRESS：RTC 时间区软件 I²C 器件寻址字节。 */
-#define TIME_ADDRESS 0xDE
-/* TIME_ADDRESS_HIGH：RTC 时间寄存器地址高字节。 */
-#define TIME_ADDRESS_HIGH 0x00
-/* TIME_ADDRESS_LOW：RTC 时间寄存器地址低字节。 */
-#define TIME_ADDRESS_LOW 0x30
-#endif
-
-/* VALIDFLAG：原 EEPROM/I²C 操作成功标志值。 */
-#define VALIDFLAG 1
-/* INVALIDFLAG：原 EEPROM/I²C 操作失败标志值。 */
-#define INVALIDFLAG 0
-
-//EEPROM ADDRESS
-/* Page_ADC_Zero：旧 AD 零点校准 EEPROM 页号。 */
-#define Page_ADC_Zero 0x00 //AD校准零漂与校准系数
-/* Page_ADC_Ratio：原 Page_ADC 采样量的传感器/工程量换算比例。 */
-#define Page_ADC_Ratio 0x01 //AD各通道变比与基准值
-/* Page_CAL_Para：旧计算参数 EEPROM 页号。 */
-#define Page_CAL_Para 0x02 //算法中各种参数
-/* Page_CTL_Set：旧控制配置 EEPROM 页号。 */
-#define Page_CTL_Set 0x03 //装置的各种设定
-/* Page_LOG_A：旧记录 A 的 EEPROM 页号。 */
-#define Page_LOG_A 0x04 //事件记录
-/* Page_LOG_B：旧记录 B 的 EEPROM 页号。 */
-#define Page_LOG_B 0x05
-/* Page_LOG_C：旧记录 C 的 EEPROM 页号。 */
-#define Page_LOG_C 0x06
-/* Page_LOG_D：旧记录 D 的 EEPROM 页号。 */
-#define Page_LOG_D 0x07
-
-/* Addr_Udc_ref：旧 EEPROM 直流电压给定字节偏移。 */
-#define Addr_Udc_ref 0x20
-/* Addr_Q_ref：旧 EEPROM 无功功率给定字节偏移。 */
-#define Addr_Q_ref 0x22
-/* Addr_IQ_ref：旧 EEPROM q 轴电流给定字节偏移。 */
-#define Addr_IQ_ref 0x24
-/* Addr_Adj_Phi：旧 EEPROM 相位 Phi 调整参数字节偏移。 */
-#define Addr_Adj_Phi 0x38
-/* Addr_Adj_Theta：旧 EEPROM 相位 Theta 调整参数字节偏移。 */
-#define Addr_Adj_Theta 0x3A
-/* Addr_Modulation：旧 EEPROM 调制比参数字节偏移。 */
-#define Addr_Modulation 0x3C
-/* Addr_Debug_Rec：旧 EEPROM 调试记录参数字节偏移。 */
-#define Addr_Debug_Rec 0x3E
-
-    /****************************************************************************/
-    /*                                                                          */
-    /*              外部调用函数声明                                                                                                                                        */
-    /*                                                                          */
-    /****************************************************************************/
+    extern volatile SST_EEPROM_STATUS g_sst_eeprom_status; /* 最近一次I2C访问的可观察诊断状态。 */
 
     /*==================================================================
- * 函数功能: 通过软件 I²C 写入 EEPROM 单字节，保留最多三次重试
- * 输入参数: u8PageNum：EEPROM 页号，每页 64 字节
- *           pu8Offset：EEPROM 页内字节偏移
- *           u8Data：待写入字节，或调用者提供的段写数据缓存
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_byte_write(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 u8Data);
-    /*==================================================================
- * 函数功能: 通过软件 I²C 写入指定页内的一段字节数据
- * 输入参数: u8PageNum：EEPROM 页号，每页 64 字节
- *           pu8Offset：EEPROM 页内字节偏移
- *           length：有效字节数；维护对象按其接口约定使用 16 位字数
- *           u8Data：待写入字节，或调用者提供的段写数据缓存
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_section_write(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 length, Uint8 *u8Data);
-    /*==================================================================
- * 函数功能: 通过软件 I²C 读取 EEPROM 单字节
- * 输入参数: u8PageNum：EEPROM 页号，每页 64 字节
- *           pu8Offset：EEPROM 页内字节偏移
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: 读取的字节；失败沿用原函数的返回约定
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_byte_read(Uint8 u8PageNum, Uint8 pu8Offset);
-    /*==================================================================
- * 函数功能: 通过软件 I²C 读取指定页内的一段数据
- * 输入参数: u8PageNum：EEPROM 页号，每页 64 字节
- *           pu8Offset：EEPROM 页内字节偏移
- *           length：有效字节数；维护对象按其接口约定使用 16 位字数
- *           u8Data：待写入字节，或调用者提供的段写数据缓存
- * 输出参数: u8Data 指向的 length 个接收字节。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_section_read(Uint8 u8PageNum, Uint8 pu8Offset, Uint8 length, Uint8 *u8Data);
-    /*==================================================================
- * 函数功能: 读取 EEPROM 指定页的 64 个字节
- * 输入参数: u8PageNum：EEPROM 页号，每页 64 字节
- *           pu8RecByte：输出页读取缓存，容量至少 64 字节
- * 输出参数: pu8RecByte 指向的 64 字节页缓存。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_page_read(Uint8 u8PageNum, Uint8 *pu8RecByte);
-    /*==================================================================
- * 函数功能: 写入 EEPROM/RTC 的控制寄存器
- * 输入参数: u8Data：待写入字节，或调用者提供的段写数据缓存
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 r_eeprom_control_write(Uint8 u8Data);
-    /*==================================================================
- * 函数功能: 写 EEPROM 控制寄存器以恢复写保护
+ * 函数功能: 释放软件I2C总线，并在上电一次启动CPU周期计数延时时基
  * 输入参数: 无
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
+ * 返回值: 无
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
-    extern Uint8 r_eeprom_protect(void);
+    void Eeprom_Initialize(void);
     /*==================================================================
- * 函数功能: 写 EEPROM 控制寄存器以允许写入
- * 输入参数: 无
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
+ * 函数功能: 按16位字节地址连续读取；重复START切读方向，最后字节NACK
+ * 输入参数: address：EEPROM绝对起始字节地址
+ *           data：接收缓存，至少length字节
+ *           length：读取字节数，非0且不超过器件末尾
+ * 返回值: VALIDFLAG读取完成，此时输出缓存有效；INVALIDFLAG失败
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
-    extern Uint8 r_eeprom_unprotect(void);
+    Uint8 Eeprom_Read(unsigned short address, Uint8 *data, unsigned short length);
     /*==================================================================
- * 函数功能: 通过软件 I²C 读取 RTC 时间寄存器到调用者缓存
- * 输入参数: time：输出 RTC 时间寄存器字节缓存
- * 输出参数: time 指向的原 RTC 时间寄存器字段缓存。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
+ * 函数功能: 连续写入，按128字节物理页边界分段并有限轮询写完成
+ * 输入参数: address：EEPROM绝对起始字节地址
+ *           data：待写字节缓存，至少length字节
+ *           length：写入字节数，非0且不超过器件末尾
+ * 返回值: VALIDFLAG所有段写完成；INVALIDFLAG范围、总线或应答错误
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
-    extern Uint8 r_time_read(Uint8 *time);
+    Uint8 Eeprom_Write(unsigned short address, const Uint8 *data, unsigned short length);
     /*==================================================================
- * 函数功能: 通过软件 I²C 写入调用者提供的 RTC 时间字段
- * 输入参数: rec_time：输入 RTC 时间寄存器字节缓存
- * 输出参数: 读操作写入接收缓存；其余操作改变 SDA/SCL 或 EEPROM/RTC 内容。
- * 返回值: VALIDFLAG 表示成功，INVALIDFLAG 表示失败
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
+ * 函数功能: 发起一字节写入，不等待最长3ms内部写周期
+ * 输入参数: address：EEPROM绝对字节地址
+ *           value：待写的单字节值
+ * 返回值: VALIDFLAG器件已接收；INVALIDFLAG无应答或总线错误；写完成由调用者等待/校验
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
  *================================================================*/
-    extern Uint8 r_time_write(Uint8 *rec_time);
-    /*==================================================================
- * 函数功能: 把两位压缩 BCD 转为十进制数值
- * 输入参数: val：待转换的两位 BCD/十进制数值
- * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
- * 返回值: 转换后的二进制整数数值
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 BCD2HEX(Uint8 val);
-    /*==================================================================
- * 函数功能: 把十进制数值转为两位压缩 BCD
- * 输入参数: val：待转换的两位 BCD/十进制数值
- * 输出参数: 无指针输出；通过返回值提供计算结果或状态。
- * 返回值: 高半字节为十位、低半字节为个位
- * 执行说明: 板级自定义软件 I²C 驱动；SDA/SCL 位于 GPIO0，运行时存储任务在主循环调用。
- *================================================================*/
-    extern Uint8 HEX2BCD(Uint8 val);
+    Uint8 Eeprom_StartByteWrite(unsigned short address, Uint8 value);
 
+    /*==================================================================
+ * 函数功能: 按原64字节逻辑页发起单字节写，供每10ms异步保存使用
+ * 输入参数: page：逻辑页号，绝对地址的页部分为page乘64
+ *           offset：该逻辑页内字节偏移，调用者按0..63组织
+ *           value：待写字节
+ * 返回值: 底层VALIDFLAG或INVALIDFLAG；不等待内部写周期
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+    Uint8 r_eeprom_byte_write(Uint8 page, Uint8 offset, Uint8 value);
+/*==================================================================
+ * 函数功能: 原逻辑页接口的连续段写；不执行X1226解锁或RTC寻址
+ * 输入参数: page：原64字节逻辑页号
+ *           offset：起始字节偏移
+ *           length：连续写入字节数
+ *           data：至少length字节的待写缓存
+ * 返回值: VALIDFLAG全部写完成；INVALIDFLAG失败
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+    Uint8 r_eeprom_section_write(Uint8 page, Uint8 offset, Uint8 length, Uint8 *data);
+/*==================================================================
+ * 函数功能: 原逻辑页接口的连续段读，显式返回I2C成功状态
+ * 输入参数: page：原64字节逻辑页号
+ *           offset：起始字节偏移
+ *           length：连续读取字节数，可跨逻辑页
+ *           data：至少length字节的接收缓存
+ * 返回值: VALIDFLAG读取完成，此时缓存有效；INVALIDFLAG失败
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+    Uint8 r_eeprom_section_read(Uint8 page, Uint8 offset, Uint8 length, Uint8 *data);
+/*==================================================================
+ * 函数功能: 读取完整的64字节逻辑页；不把逻辑页改为128字节
+ * 输入参数: page：原64字节逻辑页号
+ *           data：至少64字节的接收缓存
+ * 返回值: VALIDFLAG读取完成；INVALIDFLAG失败
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+    Uint8 r_eeprom_page_read(Uint8 page, Uint8 *data);
+    /*==================================================================
+ * 函数功能: 兼容旧调用的单字节读，失败返回FF；新镜像使用带状态的段读
+ * 输入参数: page：原64字节逻辑页号
+ *           offset：页内字节偏移
+ * 返回值: 读取的数据，失败FF；此接口不能区分有效FF和无应答
+ * 执行说明: 初始化或主循环调用，允许实时中断抢占，不关全局中断。
+ *================================================================*/
+    Uint8 r_eeprom_byte_read(Uint8 page, Uint8 offset);
 #ifdef __cplusplus
 }
-#endif /* extern "C" */
-
-#endif // end of EEPROM_H definition
-
-//===========================================================================
-// End of file.
-//===========================================================================
+#endif
+#endif

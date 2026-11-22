@@ -60,8 +60,7 @@ def run(source: Path, header: Path, config: Path, compiler: str, template: str,
         binary = work / "control_test.exe"
         command = [compiler, "-std=c99", "-O2", "-Wall", "-Wextra",
                    "-DSST_SIMULATOR_MODE=1", "-DSST_ENABLE_DPRAM=0",
-                   "-DSST_BENCH_INPUT_SIM=0", "-DSST_PHASE_A_ONLY_TEST=0",
-                   "-DSST_LOW_VOLTAGE_100V_TEST=0", str(unit),
+                   "-DSST_ENABLE_SWITCH_OUTPUT=0", "-DSST_ENABLE_SWITCH_FEEDBACK=0", "-DSST_BENCH_INPUT_SIM=0", "-DSST_PHASE_A_ONLY_TEST=0", str(unit),
                    "-lm", "-o", str(binary)]
         if support_project is not None:
             command.insert(1, "-DSST_HOST_EXPECT_DC_LOG_UPDATES=1")

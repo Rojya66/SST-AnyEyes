@@ -36,7 +36,7 @@ void PWMPluseEnable_Initial(void)
 {
     /* 上电安全态：DSP shutdown、光纤 shutdown、CHB/DAB PWM 状态均置为封锁。 */
     Port_DSPControl_AllShutdown(1); //dsp_ctl shutdown灭
-    Port_ModuleShutdown(3, 0, 0, 0, 0, 0); //光纤输出shutdown亮
+    Port_ModuleShutdown(3U, 0xFFFFU, 0xFFFFU, 0xFFFFU, 0U, 0U);
     Module_PWMEN(0);
 
     FaultDisposeFLAG.Bbits.PWMEN_FibreOptical = 0; //shutdown光纤灭

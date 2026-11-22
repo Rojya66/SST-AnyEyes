@@ -20,6 +20,7 @@ def main():
     defaults = defaults[defaults.index('volatile CHB_DAB_COMMAND g_chb_dab_command ='):]
     defaults = defaults[:defaults.index('static SST_PI_CONTROLLER')]
     modules = ['01_FuncCode/SstParameterTable.c', '01_FuncCode/SstLegacyParameters.c',
+               '01_FuncCode/SstHardwareParameters.c',
                '01_FuncCode/SstParameterStore.c', '04_Control/SstCommand.c',
                '10_Host/SstDpramParameter.c', '10_Host/SstDpramCommand.c',
                '10_Host/SstDpramTelemetry.c', '10_Host/SstDpramScreen.c']
@@ -38,7 +39,6 @@ def main():
             command = [compiler, '-std=c99', '-O2', '-Wall', '-Wextra',
                        '-Wno-unknown-pragmas', '-Wno-unused-variable', '-I', str(work),
                        '-DSST_PHASE_A_ONLY_TEST=' + str(phase),
-                       '-DSST_LOW_VOLTAGE_100V_TEST=' + str(phase),
                        '-DSST_SIMULATOR_MODE=' + str(simulator), '-DSST_ENABLE_DPRAM=' + str(dpram),
                        str(unit), '-lm', '-o', str(binary)]
             run = subprocess.run(command, capture_output=True, text=True)

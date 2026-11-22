@@ -20,6 +20,13 @@ static void assert_near(float actual, float expected, float tolerance)
 
 static void reset_test_io(void)
 {
+    memset(fake_unit_link, 0xFF, sizeof(fake_unit_link));
+    memset(fake_unit_loss, 0, sizeof(fake_unit_loss));
+    memset(fake_fo_enable, 0, sizeof(fake_fo_enable));
+    memset(fake_fo_input, 0, sizeof(fake_fo_input));
+    memset(fake_fb_input, 0, sizeof(fake_fb_input));
+    fake_fb_enable = 0U;
+    fake_fo_phases = 7U;
     memset(FPGA_Interface, 0, sizeof(FPGA_Interface));
     memset(&Port_DOUT, 0, sizeof(Port_DOUT));
     memset(&FaultDisposeFLAG, 0, sizeof(FaultDisposeFLAG));
@@ -243,7 +250,7 @@ static unsigned long start_single_phase_closed_loop(unsigned short startup_strat
     setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_params.startup_strategy = startup_strategy;
     g_chb_dab_params.precharge_stable_10ms = 2U;
-    g_chb_dab_params.bypass_delay_10ms = 2U;
+    g_chb_dab_params.kt1_settle_10ms = 2U;
     g_chb_dab_params.pll_lock_10ms = 2U;
     g_chb_dab_params.pll_timeout_10ms = 100U;
     g_chb_dab_params.startup_id_reference_a = 5.0F;
@@ -335,7 +342,7 @@ static void hash_single_phase_observables(void)
 
 #define H(member) hash_word((uint32_t)g_chb_dab_status.member)
 #define F(member) hash_test_float(g_chb_dab_status.member)
-    H(state); H(fault_code); H(ac_input_closed); H(precharge_bypassed);
+    H(state); H(fault_code); H(qf1_close_command); H(kt1_close_command);
     H(ac_pwm_enabled); H(dab_pwm_enabled); H(pll_locked); H(dab_duty_count);
     H(tick_10ms); H(startup_phase); H(startup_tad_count); H(voltage_loop_active);
     F(dc_voltage_average_v); F(dc_voltage_min_v); F(pll_angle_rad);
@@ -918,11 +925,169 @@ static void test_atomic_pwm_enable_fault_race(void)
     printf("PASS atomic_pwm_enable_fault_race startup_and_dab_restart\n");
 }
 
+static void unit_link_service_tick(void)
+{
+    ChbDabControl_Tick10ms();
+    ChbDabControl_Service();
+}
+
+static void test_precharge_link_and_fo(void)
+{
+    const unsigned short a1 = Com_A1_PluginUnit_5 - 2U;
+    const unsigned short a2 = Com_A2_PluginUnit_6 - 2U;
+    const unsigned short b1 = Com_B1_PluginUnit_9 - 2U;
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    HA_PM_A2 = 0x20U;
+    NHA_module_A = 2U;
+    HA_PM_B1 = 0x40U;
+    fake_unit_link[a1] = 0x0101U;
+    fake_unit_link[a2] = 0x0020U;
+    fake_unit_link[b1] = 0U; /* 单相试验不等待B相。 */
+    fake_unit_loss[a2] = 0x20U;
+    fake_fo_enable[0] = 0x2001U;
+    g_chb_dab_params.precharge_stable_10ms = 2U;
+    g_chb_dab_params.kt1_settle_10ms = 1U;
+    g_chb_dab_params.pll_lock_10ms = 2U;
+    g_chb_dab_status.dc_voltage_min_v = 600.0F;
+    g_chb_dab_command.run_enable = 1U;
+    g_chb_dab_command.dab_enable = 1U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE && fake_fo_phases == 0U);
+    assert(fake_unit_loss[a2] == 0U);
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U && fake_fo_phases == 0U);
+
+    fake_unit_link[a2] = 0x2020U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U && fake_fo_phases == 1U);
+    fake_fo_input[0][0] = 0x2000U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U); /* FB未使能也要看701实时FO。 */
+    fake_fo_input[0][0] = 0U;
+    fake_fo_input[0][1] = 0x2000U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U);
+    fake_fo_input[0][1] = 0U;
+    fake_fb_enable = 0x0040U;
+    fake_fb_input[1] = 0x0040U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U && reset_calls == 0U);
+    fake_fb_input[1] = 0U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 1U);
+    fake_unit_loss[a2] = 0x20U;
+    unit_link_service_tick();
+    assert(s_precharge_stable_count == 0U && fake_unit_loss[a2] == 0U);
+    assert(g_chb_dab_status.unit_link_missing[0] == 0x2000U);
+    assert((Chb_ReadUnitLinks(0U) == 0U) && (g_chb_dab_status.unit_link_missing[0] == 0x2000U));
+    unit_link_service_tick();
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_KT1_SETTLE);
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_WAIT_PLL);
+    g_chb_dab_status.pll_locked = 1U;
+    unit_link_service_tick();
+    assert(s_pll_lock_10ms_count == 1U);
+    fake_unit_loss[a2] = 0x20U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_WAIT_PLL && s_pll_lock_10ms_count == 0U);
+    unit_link_service_tick();
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING && fake_ac_pwm && fake_dab_pwm);
+
+    fake_unit_loss[a2] = 0x20U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT && !fake_ac_pwm && !fake_dab_pwm);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_UNIT_LINK);
+    assert(g_chb_dab_status.unit_link_missing[0] == 0x2000U && fake_fo_phases == 1U);
+    puts("PASS link readiness, FO arming delay, lost pulse, PLL restart, and running trip");
+}
+
+static void test_zero_link_confirmation_and_normal_stop(void)
+{
+    const unsigned short a1 = Com_A1_PluginUnit_5 - 2U;
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_params.precharge_stable_10ms = 0U;
+    g_chb_dab_params.pll_lock_10ms = 0U;
+    g_chb_dab_params.kt1_settle_10ms = 0U;
+    g_chb_dab_status.dc_voltage_min_v = 600.0F;
+    g_chb_dab_command.run_enable = 1U;
+    fake_unit_link[a1] = 0x0001U;
+    unit_link_service_tick();
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE && fake_fo_phases == 0U);
+    fake_unit_link[a1] = 0x0101U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE && fake_fo_phases == 1U);
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_KT1_SETTLE);
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_WAIT_PLL);
+    g_chb_dab_status.pll_locked = 1U;
+    fake_unit_link[a1] = 0x0001U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_WAIT_PLL && !fake_ac_pwm);
+    fake_unit_link[a1] = 0x0101U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING && fake_ac_pwm);
+
+    fake_unit_loss[a1] = 1U;
+    g_chb_dab_command.run_enable = 0U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_STOPPED && !fake_ac_pwm);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_NONE && fake_fo_phases == 0U);
+    assert(fake_unit_loss[a1] == 1U && reset_calls == 0U);
+    puts("PASS zero confirmation still checks data and FO, and commanded stop takes priority");
+
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_status.state = CHB_STATE_RUNNING;
+    fake_fo_phases = 1U;
+    fake_fo_enable[0] = 1U;
+    fake_fo_input[0][1] = 1U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_HARDWARE);
+    assert(fake_fo_phases == 1U && reset_calls == 0U);
+    puts("PASS latched FO is preserved and forces FAULT at commanded stop");
+}
+
+static void test_open_loop_fo_gate_without_link(void)
+{
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    fake_fo_phases = 0U;
+    fake_fo_enable[0] = 1U;
+    fake_fo_input[0][1] = 1U;
+    fake_unit_link[Com_A1_PluginUnit_5 - 2U] = 0U;
+    g_chb_dab_command.dab_enable = 1U;
+    ChbDabControl_Service();
+    assert(g_chb_dab_status.state == CHB_STATE_STOPPED && !fake_dab_pwm);
+    assert(fake_fo_phases == 7U && fake_fo_input[0][1] == 1U);
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_FAULT && !fake_dab_pwm);
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_HARDWARE);
+    assert(fake_fo_phases == 7U && fake_fo_input[0][1] == 1U);
+
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    fake_fo_phases = 0U;
+    fake_unit_link[Com_A1_PluginUnit_5 - 2U] = 0U;
+    g_chb_dab_command.dab_enable = 1U;
+    ChbDabControl_Service();
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_RUNNING && !fake_ac_pwm && fake_dab_pwm);
+    puts("PASS first open-loop DAB verifies armed FO without requiring 501 heartbeat");
+}
+
 int main(void)
 {
     test_defaults = g_chb_dab_params;
     test_command_defaults = g_chb_dab_command;
     assert(test_defaults.sample_period_s == 0.0001F);
+    test_precharge_link_and_fo();
+    test_zero_link_confirmation_and_normal_stop();
+    test_open_loop_fo_gate_without_link();
+#if SST_TEST_UNIT_LINK_ONLY
+    return 0;
+#endif
     test_sogi_quadrature();
     test_sogi_invalid_recovery();
     test_closed_loop_takeover_and_neutral_phases();

@@ -38,11 +38,11 @@ UART 协议由 `SST_DEBUG_PROTOCOL` 单独选择 AnyEyes 或 VOFA，不承担本
 
 GPIO101 下降沿 ISR 只置位后台读取标志，与 Word 描述一致。控制块应清零后只填写本次动作，完整写块后最后写邮箱；不要把写入值的回读当执行成功。
 
-右邮箱不是事件队列：`SstDpramHost_ServiceTelemetry()` 每轮先发布块3，再发布一个轮询块，后者可以马上覆盖邮箱3；扩展回复21也共用此邮箱。只等待邮箱恰好等于3或21的轮询方案可能漏掉通知。ARM 应定时读取公共块，扩展回复按序号和版本戳确认，不能依赖捕获每次邮箱值。物理中断清除行为仍需结合 ARM 驱动和 DPRAM 器件核验，不能自行增加反向写邮箱 ACK。
+右邮箱不是事件队列：`SstDpramHost_PublishTelemetry()` 每轮先发布块3，再发布一个轮询块，后者可以马上覆盖邮箱3；扩展回复21也共用此邮箱。只等待邮箱恰好等于3或21的轮询方案可能漏掉通知。ARM 应定时读取公共块，扩展回复按序号和版本戳确认，不能依赖捕获每次邮箱值。物理中断清除行为仍需结合 ARM 驱动和 DPRAM 器件核验，不能自行增加反向写邮箱 ACK。
 
 ## 3 控制块兼容范围
 
-真正执行入口是 `SstDpramHost_ServiceRemoteControl()` → `SstCommand_ApplyDpram()`，不是文件中保留的旧 `RemoteControl_Dispose()`。
+真正执行入口是 `SstDpramHost_ProcessIncomingBlocks()` → `SstControlCommand_ApplyRequests()`，不是文件中保留的旧 `RemoteControl_Dispose()`。
 
 | 字段 | 地址 | 当前实际行为 |
 |---|---|---|

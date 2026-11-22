@@ -1,5 +1,7 @@
 # A相 AN 采样与虚拟 dq 闭环测试说明
 
+> 2026-11-16：100 Vac专用宏和程序已移除。本文低压配置、限流步骤及证据属于历史版本；当前配置和本次验证见 [移除记录](REMOVE_LV100_PROFILE_20261116.md)，VOFA通道见 [运行遥测](VOFA_TELEMETRY.md)。
+
 本说明记录 `D:/Code/SST/AnyEyesVersion` 首次单相功能及高压参数背景，目标硬件为 C6748 + FPGA/UNIT。2026-10-19 当前默认已切换 100 Vac 单相低压参数，并更新公共 PI 和三相安全路径；参数、启动与最终验证以 [PI_REFACTOR_AND_LOW_VOLTAGE.md](PI_REFACTOR_AND_LOW_VOLTAGE.md) 为准。FPGA 10 kHz 外部中断入口、应答顺序、`ControlTAD`、`TAD_PLL` 未改，完整调用链的板上耗时仍需实测。
 
 ## 构建开关

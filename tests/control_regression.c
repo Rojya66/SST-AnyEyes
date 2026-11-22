@@ -38,9 +38,12 @@ static FAKE_FPGA FPGA_Interface[16];
 #define Com_B2_PluginUnit_10 10
 #define Com_C1_PluginUnit_13 13
 #define Com_C2_PluginUnit_14 14
+#define Input_A_PluginUnit_8 8
+#define Input_B_PluginUnit_12 12
+#define Input_C_PluginUnit_16 16
 #define PortStatusNum_Standby 0x06U
 #define PortStatusNum_Start 0x10U
-#define PortStatusNum_Start_ContactorOnOver 0x14U
+#define PortStatusNum_Start_Kt1Closed 0x14U
 #define PortStatusNum_Start_PortStart 0x16U
 #define PortStatusNum_Run 0x20U
 #define PortStatusNum_Stop 0x0dU
@@ -55,8 +58,8 @@ static float SVG_Udc_A_Ave, SVG_Udc_B_Ave, SVG_Udc_C_Ave;
 static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
 static unsigned short HA_IG_Log_A, HA_IG_Log_B, HA_IG_Log_C;
 static unsigned short Port_RunStatus, Port_State;
-static struct { struct { unsigned short Breaker_InnerOn, Breaker_InnerOff,
-    Contactor_Inner; } Bbits; } Port_DOUT;
+static struct { struct { unsigned short Qf1ClosePulse, Qf1OpenPulse,
+    Kt1Hold, AcRunning, AcFault; } Dout; } Port_DOUT;
 static struct { struct { unsigned short PWMPulseState, PWMEN_FibreOptical; } Bbits; } FaultDisposeFLAG;
 static struct { struct { unsigned short Port_Start, Port_Stop,
     DAB_StartMethod, SVG_PWMEN, DAB_PWMEN; } Bbits; } ControlFLAG;
@@ -64,6 +67,55 @@ static struct { struct { unsigned short P_Status; } Bbits; } Port_MainStatus;
 static struct { struct { unsigned short PWMState_Dab, PWMState_50Hz; } Bbits; } PortRunFLAG;
 static union { unsigned short PORT_FAULT16; struct {
     unsigned short PORT_FAULT_bit15; } Bbits; } Port_RealFault;
+
+/* A normal legacy fixture starts with healthy links and FO previously armed.
+ * Specific cold-start tests override these hardware inputs explicitly. */
+static unsigned short fake_unit_link[16] = {
+    [3] = 0xFFFFU, [4] = 0xFFFFU, [7] = 0xFFFFU,
+    [8] = 0xFFFFU, [11] = 0xFFFFU, [12] = 0xFFFFU
+};
+static unsigned short fake_unit_loss[16];
+static unsigned char fake_fo_phases = 7U;
+static unsigned short fake_fo_enable[3];
+static unsigned short fake_fo_input[3][2];
+static unsigned short fake_fb_enable;
+static unsigned short fake_fb_input[2];
+
+static unsigned short Port_UnitLinkRead(unsigned short plugin)
+{
+    return fake_unit_link[plugin - 2U];
+}
+static unsigned short Port_UnitLinkLossRead(unsigned short plugin)
+{
+    return fake_unit_loss[plugin - 2U];
+}
+static void Port_UnitLinkLossClear(unsigned short plugin, unsigned short channels)
+{
+    fake_unit_loss[plugin - 2U] &= ~channels;
+}
+static unsigned char Port_SetModuleFOArmed(unsigned char phases)
+{
+    unsigned char changed = (phases != fake_fo_phases);
+    fake_fo_phases = phases;
+    return changed;
+}
+static unsigned short Port_EffectiveFOEnable(unsigned short plugin)
+{
+    unsigned short phase = (plugin - Input_A_PluginUnit_8) / 4U;
+    return (fake_fo_phases & (1U << phase)) ? fake_fo_enable[phase] : 0U;
+}
+static unsigned short Port_EffectiveFBEnable(void)
+{
+    return fake_fb_enable;
+}
+static unsigned short Port_FOStatusRead(unsigned char plugin, unsigned char latch)
+{
+    return fake_fo_input[(plugin - Input_A_PluginUnit_8) / 4U][latch];
+}
+static unsigned short Port_FBStatusRead(unsigned char latch)
+{
+    return fake_fb_input[latch];
+}
 
 static uint64_t trace_hash;
 static uint64_t snapshot_hash;
@@ -86,9 +138,9 @@ static void hash_word(uint32_t word) {
         trace_hash *= UINT64_C(1099511628211); }
 }
 static void Port_IO_Out(void) { ++io_calls; hash_word(0x100U);
-    hash_word(Port_DOUT.Bbits.Breaker_InnerOn);
-    hash_word(Port_DOUT.Bbits.Breaker_InnerOff);
-    hash_word(Port_DOUT.Bbits.Contactor_Inner); }
+    hash_word(Port_DOUT.Dout.Qf1ClosePulse);
+    hash_word(Port_DOUT.Dout.Qf1OpenPulse);
+    hash_word(Port_DOUT.Dout.Kt1Hold); }
 static void Port_StateUpdate_Write(void) { ++state_calls; hash_word(0x200U);
     hash_word(Port_RunStatus); }
 static void PWMPluse_Enable(unsigned short bridge) { ++enable_calls;
@@ -123,6 +175,7 @@ static void Port_DSPControl_AllShutdown(unsigned short enable) {
     ++all_shutdown_calls;
     hash_word(0x530U); hash_word(enable);
 }
+static void Module_FAN_OFF(unsigned short disable) { (void)disable; }
 static void Variable_RST(void) {
     ++variable_reset_calls;
     if (fault_before_variable_reset != 0U) {
@@ -243,7 +296,7 @@ static void hash_snapshot_fields(void) {
     unsigned int i;
 #define H(member) hash_word((uint32_t)g_chb_dab_status.member)
 #define F(member) hash_float(g_chb_dab_status.member)
-    H(state); H(fault_code); H(ac_input_closed); H(precharge_bypassed);
+    H(state); H(fault_code); H(qf1_close_command); H(kt1_close_command);
     H(ac_pwm_enabled); H(dab_pwm_enabled); H(pll_locked); H(dab_duty_count);
     H(tick_10ms); H(startup_phase); H(startup_tad_count); H(voltage_loop_active);
     F(dc_voltage_average_v); F(dc_voltage_min_v); F(pll_angle_rad);
@@ -348,7 +401,7 @@ static unsigned long enter_closed(unsigned short strategy) {
     setup(CHB_AC_MODE_CLOSED_LOOP);
     g_chb_dab_params.startup_strategy = strategy;
     g_chb_dab_params.precharge_stable_10ms = 2U;
-    g_chb_dab_params.bypass_delay_10ms = 2U;
+    g_chb_dab_params.kt1_settle_10ms = 2U;
     g_chb_dab_params.pll_lock_10ms = 2U;
     g_chb_dab_command.run_enable = g_chb_dab_command.dab_enable = 1U;
     for(n = 1; n < 20000UL; ++n) {
@@ -357,7 +410,7 @@ static unsigned long enter_closed(unsigned short strategy) {
         assert(g_chb_dab_status.state != CHB_STATE_FAULT);
     }
     assert(n < 20000UL && g_chb_dab_status.pll_locked != 0U);
-    assert(g_chb_dab_status.precharge_bypassed && fake_ac_pwm && fake_dab_pwm);
+    assert(g_chb_dab_status.kt1_close_command && fake_ac_pwm && fake_dab_pwm);
     return n + 1UL;
 }
 int main(void) {

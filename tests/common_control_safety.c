@@ -1,7 +1,4 @@
 /* Host-only tests of common production control behavior, never target-linked. */
-#if SST_LOW_VOLTAGE_100V_TEST != SST_HOST_EXPECT_LOW_PROFILE
-#error "Derived low-voltage profile differs from the requested test fixture"
-#endif
 static CHB_DAB_PARAMETERS saved_parameters;
 static CHB_DAB_COMMAND saved_command;
 static unsigned long sample_number;
@@ -24,12 +21,12 @@ static void common_capture_shutdown(void)
 
 static float grid_peak(void)
 {
-    return SST_LOW_VOLTAGE_100V_TEST ? 141.421356F : 311.0F;
+    return 311.0F;
 }
 
 static float bus_voltage(void)
 {
-    return SST_LOW_VOLTAGE_100V_TEST ? 23.570226F : 600.0F;
+    return 600.0F;
 }
 
 static void fixture(unsigned short mode)
@@ -263,106 +260,6 @@ static void test_invalid_values_and_protection_order(void)
     puts("PASS common NaN/Inf and protection before PI");
 }
 
-static void test_low_voltage_startup(void)
-{
-#if SST_LOW_VOLTAGE_100V_TEST
-    unsigned int i;
-    float previous;
-    assert(saved_command.ac_mode == CHB_AC_MODE_CLOSED_LOOP);
-    assert(saved_command.dc_voltage_ref_v == 35.0F);
-    assert(saved_parameters.startup_strategy == CHB_STARTUP_ID_RAMP);
-    fixture(CHB_AC_MODE_CLOSED_LOOP);
-    g_chb_dab_command.run_enable = 1U;
-    SVG_Udc_A_Ave = 19.0F;
-    for (i = 0U; i < 2500U; ++i)
-    {
-        tick();
-        /* Closed-loop commands are accepted on the next 10 ms service tick. */
-        assert(g_chb_dab_status.state ==
-               ((sample_number < 100UL) ? CHB_STATE_STOPPED : CHB_STATE_PRECHARGE));
-        assert(fake_ac_pwm == 0U);
-    }
-    start_closed();
-    assert(s_startup_phase == CHB_STARTUP_ID_RAMP_PHASE);
-    assert(fabsf(s_startup_voltage_reference - bus_voltage()) < 0.001F);
-    previous = 0.0F;
-    for (i = 0U; i < 10000U && s_startup_phase == CHB_STARTUP_ID_RAMP_PHASE; ++i)
-    {
-        tick();
-        assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
-        assert(s_id_reference >= previous);
-        assert(s_id_reference - previous <= saved_parameters.startup_id_ramp_step_a + 0.000001F);
-        previous = s_id_reference;
-    }
-    assert(i >= 990U && i <= 1002U);
-    assert(s_startup_phase == CHB_STARTUP_VOLTAGE_HANDOVER);
-    tick();
-    assert(s_startup_phase == CHB_STARTUP_NORMAL);
-    assert(fabsf(s_id_reference - previous) < 0.001F);
-    for (i = 0U; i < 12000U; ++i)
-    {
-        previous = s_startup_voltage_reference;
-        tick();
-        assert(s_startup_voltage_reference - previous <= saved_parameters.startup_udc_step_v + 0.00001F);
-        assert(fabsf(s_id_reference) <= 1.00001F);
-        assert(g_chb_dab_status.state == CHB_STATE_RUNNING);
-    }
-    assert(fabsf(s_startup_voltage_reference - 35.0F) < 0.001F);
-    assert(g_chb_dab_status.load_ready == 0U);
-    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
-    SVG_Udc_A_Ave = 35.0F;
-    for (i = 0U; i < SST_LV100_READY_TAD - 1U; ++i)
-    {
-        tick();
-        assert(g_chb_dab_status.load_ready == 0U);
-    }
-    tick();
-    assert(g_chb_dab_status.load_ready == 1U);
-    for (i = 0U; i < 50000U; ++i)
-    {
-        previous = g_chb_dab_status.current_limit_active_a;
-        tick();
-        assert(g_chb_dab_status.current_limit_active_a >= previous);
-        assert(g_chb_dab_status.current_limit_active_a - previous <= 0.00101F);
-        assert(g_chb_dab_status.current_limit_active_a <= 50.0F);
-    }
-    assert(g_chb_dab_status.current_limit_active_a == 50.0F);
-    /* A load dip retains permission. Iq shares the same circular budget. */
-    SVG_Udc_A_Ave = 33.0F;
-    g_chb_dab_command.iq_reference_a = 30.0F;
-    s_voltage_pi.integral = 50.0F;
-    tick();
-    assert(g_chb_dab_status.load_ready == 1U);
-    assert(g_chb_dab_status.current_limit_active_a == 50.0F);
-    assert(fabsf(s_id_reference) <= 40.0001F);
-    assert(fabsf(s_iq_pi.reference - 30.0F) < 0.001F);
-    g_chb_dab_command.iq_reference_a = 0.0F;
-    g_chb_dab_params.voltage_current_limit_a = 5.0F;
-    tick();
-    assert(g_chb_dab_status.current_limit_active_a == 5.0F);
-    assert(fabsf(s_id_reference) <= 5.0F);
-    g_chb_dab_command.run_enable = 0U;
-    for (i = 0U; i < 100U && g_chb_dab_status.state != CHB_STATE_STOPPED; ++i)
-    {
-        tick();
-    }
-    assert(g_chb_dab_status.state == CHB_STATE_STOPPED && fake_ac_pwm == 0U);
-    assert(g_chb_dab_status.load_ready == 0U);
-    assert(g_chb_dab_status.current_limit_active_a == 1.0F);
-    start_closed();
-    g_chb_dab_command.iq_reference_a = 30.0F;
-    tick();
-    assert(fabsf(s_iq_pi.reference) <= 1.00001F);
-    assert(s_id_reference * s_id_reference + s_iq_pi.reference * s_iq_pi.reference <= 1.0001F);
-    start_closed();
-    g_chb_dab_params.voltage_current_limit_a = 50.1F;
-    tick();
-    assert(g_chb_dab_status.fault_code == CHB_FAULT_BAD_CONFIGURATION);
-    puts("PASS load-ready debounce, 1-to-50A slew, dq budget, live derating and restart reset");
-    puts("PASS actual 100Vac defaults, insufficient precharge, 100ms Id ramp, voltage slew and stop");
-#endif
-}
-
 int main(void)
 {
     saved_parameters = g_chb_dab_params;
@@ -371,6 +268,5 @@ int main(void)
     test_pll_and_bus();
     test_fault_races_and_barrier();
     test_invalid_values_and_protection_order();
-    test_low_voltage_startup();
     return 0;
 }

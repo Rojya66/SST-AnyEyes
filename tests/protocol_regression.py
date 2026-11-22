@@ -24,11 +24,11 @@ def main():
         evidence.mkdir(parents=True,exist_ok=True)
         shutil.copy2(unit,evidence/"protocol_unit.cpp")
         results=[]
-        variants=[("sim_anyeyes",["SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0"]),
-                             ("remote_anyeyes",["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"]),
-                             ("dpram_anyeyes",["SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=1"]),
+        variants=[("sim_anyeyes",["SST_DEBUG_PROTOCOL=1","SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0"]),
+                             ("remote_anyeyes",["SST_DEBUG_PROTOCOL=1","SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=0"]),
+                             ("dpram_anyeyes",["SST_DEBUG_PROTOCOL=1","SST_SIMULATOR_MODE=0","SST_ENABLE_DPRAM=1"]),
                              ("sim_vofa",["SST_DEBUG_PROTOCOL=2","SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0"]),
-                             ("custom_tag_anyeyes",["SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0",
+                             ("custom_tag_anyeyes",["SST_DEBUG_PROTOCOL=1","SST_SIMULATOR_MODE=1","SST_ENABLE_DPRAM=0",
                               "SST_PRODUCT_SERIES=201","SST_PRODUCT_PART=202","SST_HARDWARE_PLATFORM=203",
                               "SST_VERSION_BRANCH=204","SST_VERSION_RELEASE=205","SST_VERSION_BETA=206"])]
         for name,defines in variants:

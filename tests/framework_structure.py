@@ -69,7 +69,7 @@ def main():
           "Main owns no domain data or interrupt implementations")
     task = body("TaskSlice_Service")
     expected = ["CpuTask_ServiceHeartbeat", "ChbDabControl_Service", "SstFault_Service",
-                "SstDpramHost_ServiceRemoteControl", "SstDpramHost_ServiceTelemetry", "SstDpramMaintenance_Service",
+                "SstDpramHost_ProcessIncomingBlocks", "SstDpramHost_PublishTelemetry", "SstDpramMaintenance_ProcessPendingRequest",
                 "SstDebug_GetTick10ms", "SstSerial_TxService", "SstDebug_ReceiveService",
                 "SstDebug_ProtocolService", "SstParameterStore_Service", "SstSerial_TxService",
                 "Port_RealTimeParameter"]
@@ -78,7 +78,7 @@ def main():
     runtime = body("SystemInit_Runtime")
     gate = runtime.find("GPIOBankPinInterruptInit(")
     required = ["Initial_Variable", "Variable_RST", "FaultLatch_Clear", "ChbDabControl_Init", "SstFault_Init",
-                "SstDpramMaintenance_Init", "SstDebug_Init"]
+                "SstDpramMaintenance_Initialize", "SstDebug_Init"]
     check(gate > 0 and all(0 <= runtime.find(name + "(") < gate for name in required),
           "SystemInit initializes safe control/fault/debug objects before enabling external interrupts")
     check(bool(re.search(r'while\s*\(\s*!Flag_20s\s*\)', body("SystemInit_WaitPowerOnDelay"))),

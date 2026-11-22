@@ -378,8 +378,7 @@ extern "C"
 
 #endif
 #ifdef HVAC_online
-    extern ushort GNDSwitch, /* GNDSwitch：原接地开关状态。 */
-        ISOSwitch; /* ISOSwitch：原隔离开关状态。 */
+
 
 #endif
 #ifdef HVAC_online
@@ -391,8 +390,7 @@ extern "C"
 
 #endif
 #ifdef HVAC_online
-    extern ushort ISO_counter_on, /* ISO_counter_on：原隔离开关闭合确认计数。 */
-        ISO_counter_off; /* ISO_counter_off：原隔离开关断开确认计数。 */
+
 
 #endif
 #ifdef HVAC_online

@@ -284,9 +284,9 @@
       ]
     },
     {
-      "key": "function:SstCommand_ApplyDpram",
+      "key": "function:SstControlCommand_ApplyRequests",
       "new_keys": [
-        "function:SstCommand_ApplyDpram",
+        "function:SstControlCommand_ApplyRequests",
         "function:SstCommand_IsStopped"
       ],
       "baseline_sha256s": [
@@ -1516,7 +1516,7 @@
       "new_keys": [
         "function:Port_AD_Sample"
       ],
-      "reason": "单相宏1采用AN瞬时电压及现场霍尔标定0.0305185乘原始采样，绕过线转相、隔离B/C；宏0原三相采样转换和既有临时注入保留。低压profile的A相501排序方向滞环使用SST_LV100_CURRENT_DIRECTION_HYST_A=0.1F，严格越过±0.1A才切换（Avg_IG/10量化达到±0.2A），边界/区间内保持；LOW0原±1A两if及B/C判据完全保留。此方向判据不改电流采样、过流阈值或故障路径。",
+      "reason": "单相宏1采用AN瞬时电压及现场霍尔标定0.0305185乘原始采样，绕过线转相、隔离B/C；宏0原三相采样转换和既有临时注入保留。2026-11-16低压profile已移除；A/B/C排序方向均保留原±1A两if判据。此方向判据不改电流采样、过流阈值或故障路径。",
       "validation": "tests/single_phase_io.py (actual ADC/PM_CTL, phase/low=1/1,1/0,0/0, latch0/1: low ±0.1A hold/±0.2A change; high ±1A hold/±1.1A change); tests/single_phase_control.py; tests/realtime_audit.py (explicit LOW0/high-voltage macro0 exact measurement bodies); tests/single_phase_isolation.py (TI LOW0 macro0 exact ADC body and macro0/1 four ISR instructions/calls/stack); target builds reported separately; hardware noise/WCET not measured",
       "baseline_sha256s": [
         "20d5fd21666bceb2a22761c95bccd5013cc1fb1f2fd28c88cd9ff4b4930cfdbc",
@@ -1929,9 +1929,9 @@
       ]
     },
     {
-      "key": "function:Chb_SetAcInput",
+      "key": "function:Chb_SetQf1",
       "new_keys": [
-        "function:Chb_SetAcInput"
+        "function:Chb_SetQf1"
       ],
       "reason": "双模式交流进线输出在保存/恢复原中断状态的短临界区内最终复核故障、锁存模式及启机请求，阻止ISR关断后后台再次合闸；IO地址和脉冲定义不变。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured",
@@ -1957,9 +1957,9 @@
       ]
     },
     {
-      "key": "function:Chb_SetPrechargeBypass",
+      "key": "function:Chb_SetKt1",
       "new_keys": [
-        "function:Chb_SetPrechargeBypass"
+        "function:Chb_SetKt1"
       ],
       "reason": "双模式预充旁路输出最终复核故障、模式和启机请求并在短临界区提交，故障后保持断开；IO地址不变。",
       "validation": "tests/common_control_safety.py (real core in three-phase/high-voltage single-phase/100Vac single-phase: mode latch, per-phase bus and positive PLL, 200-TAD loss, fault races, first-TAD barrier, NaN/Inf, protection ordering); tests/single_phase_control.py; tests/control_regression.py (behavior assertions and separately pinned intentional traces); tests/pi_regression.py; tests/realtime_audit.py; tests/single_phase_isolation.py (strict unchanged measurement/IO macro0 bodies and four ISR instructions/calls/stack); TI builds reported separately; hardware WCET not measured",

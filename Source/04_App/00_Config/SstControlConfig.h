@@ -15,16 +15,10 @@ extern "C"
 
 /* ControlTAD：原 FPGA PWM/TAD 周期计数，保持 5000。 */
 #define ControlTAD 5000
-/* SwitchTotalNum：原开关动作表条目数量。 */
-#define SwitchTotalNum 2
 /* OV_Stop：原过压停机策略条件编译开关。 */
 #define OV_Stop
-//#define EEPROM_FirstW  // first
-#if CHB_LOAD_EEPROM_PARAMETERS
-/* 上位机版本保留EEPROM读写；仿真器模式默认不访问EEPROM。 */
-/* EEPROM_ON：原 EEPROM 兼容访问开关，受上电加载配置控制。 */
-#define EEPROM_ON
-#endif
+/* EEPROM上电恢复只由CHB_LOAD_EEPROM_PARAMETERS控制，在SystemInit_Runtime
+ * 中统一校验v1/v2/v3镜像；不再启用未校验的旧页0..3自动读/首次写。 */
 /* FaultOutTest：原故障输出测试编译标识。 */
 #define FaultOutTest
 
@@ -133,14 +127,8 @@ extern "C"
 #define PortStatusNum_Start 0x10
 /* PortStatusNum_WaitPowerStart：原端口状态机 WaitPowerStart 状态编号，保持兼容数值。 */
 #define PortStatusNum_WaitPowerStart 0x09
-/* PortStatusNum_Start_SWTable：原端口状态机 Start_SWTable 状态编号，保持兼容数值。 */
-#define PortStatusNum_Start_SWTable 0x11
-/* PortStatusNum_Start_SWOver：原端口状态机 Start_SWOver 状态编号，保持兼容数值。 */
-#define PortStatusNum_Start_SWOver 0x12
-/* PortStatusNum_Start_ContactorOn：原端口状态机 Start_ContactorOn 状态编号，保持兼容数值。 */
-#define PortStatusNum_Start_ContactorOn 0x13
-/* PortStatusNum_Start_ContactorOnOver：原端口状态机 Start_ContactorOnOver 状态编号，保持兼容数值。 */
-#define PortStatusNum_Start_ContactorOnOver 0x14
+/* PortStatusNum_Start_Kt1Closed：原端口状态机 Start_ContactorOnOver 状态编号，保持兼容数值。 */
+#define PortStatusNum_Start_Kt1Closed 0x14
 /* PortStatusNum_Start_DABDutyStart：原端口状态机 Start_DABDutyStart 状态编号，保持兼容数值。 */
 #define PortStatusNum_Start_DABDutyStart 0x15
 /* PortStatusNum_Start_PortStart：原端口状态机 Start_PortStart 状态编号，保持兼容数值。 */
@@ -152,17 +140,11 @@ extern "C"
 
 /* PortStatusNum_Stop：原端口状态机 Stop 状态编号，保持兼容数值。 */
 #define PortStatusNum_Stop 0x0d
-/* PortStatusNum_Stop_EXTBreakerOff：原端口状态机 Stop_EXTBreakerOff 状态编号，保持兼容数值。 */
-#define PortStatusNum_Stop_EXTBreakerOff 0x0e
-/* PortStatusNum_Stop_ContactorOff：原端口状态机 Stop_ContactorOff 状态编号，保持兼容数值。 */
-#define PortStatusNum_Stop_ContactorOff 0x0f
 
 /* PortStatusNum_ManualStart_PortStart：原端口状态机 ManualStart_PortStart 状态编号，保持兼容数值。 */
 #define PortStatusNum_ManualStart_PortStart 0x0a
 /* PortStatusNum_ManualStart_SVGStart：原端口状态机 ManualStart_SVGStart 状态编号，保持兼容数值。 */
 #define PortStatusNum_ManualStart_SVGStart 0x0b
-/* PortStatusNum_ManualStart_SWOver：原端口状态机 ManualStart_SWOver 状态编号，保持兼容数值。 */
-#define PortStatusNum_ManualStart_SWOver 0x0c
 
 /* PTCT_FT3：PT/CT FT3 插件选择编号。 */
 #define PTCT_FT3 1 //FT3 INDEX

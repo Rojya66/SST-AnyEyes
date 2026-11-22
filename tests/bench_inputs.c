@@ -49,7 +49,7 @@ static FAKE_FPGA FPGA_Interface[16];
 #define Com_C2_PluginUnit_14 14
 #define PortStatusNum_Standby 0x06U
 #define PortStatusNum_Start 0x10U
-#define PortStatusNum_Start_ContactorOnOver 0x14U
+#define PortStatusNum_Start_Kt1Closed 0x14U
 #define PortStatusNum_Start_PortStart 0x16U
 #define PortStatusNum_Run 0x20U
 #define PortStatusNum_Stop 0x0dU
@@ -62,8 +62,8 @@ static unsigned short NHA_module_A, NHA_module_B, NHA_module_C;
 static unsigned short HA_IG_Log_A, HA_IG_Log_B, HA_IG_Log_C;
 static unsigned short HA_DC_Log_A, HA_DC_Log_B, HA_DC_Log_C;
 static unsigned short Port_RunStatus, Port_State;
-static struct { struct { unsigned short Breaker_InnerOn, Breaker_InnerOff,
-    Contactor_Inner; } Bbits; } Port_DOUT;
+static struct { struct { unsigned short Qf1ClosePulse, Qf1OpenPulse,
+    Kt1Hold, AcRunning, AcFault; } Dout; } Port_DOUT;
 static struct { struct { unsigned short PWMPulseState, PWMEN_FibreOptical; } Bbits; } FaultDisposeFLAG;
 static struct { struct { unsigned short Port_Start, Port_Stop, DAB_StartMethod; } Bbits; } ControlFLAG;
 static struct { struct { unsigned short P_Status; } Bbits; } Port_MainStatus;
@@ -91,6 +91,7 @@ static void Module_PWMEN(unsigned short enable) {
     fake_dab_pwm = (enable & 2U) != 0U;
 }
 static void Port_DSPControl_AllShutdown(unsigned short enable) { (void)enable; }
+static void Module_FAN_OFF(unsigned short disable) { (void)disable; }
 static void Variable_RST(void) { }
 static unsigned int fake_interrupt_enabled = 1U;
 static unsigned int IntGlobalDisable(void) {
@@ -331,7 +332,7 @@ static void enter_running(unsigned short strategy) {
             assert(g_chb_dab_status.state == previous + 1U);
             if(previous == CHB_STATE_PRECHARGE)
                 assert(g_chb_dab_status.tick_10ms - stage_tick == 20UL);
-            if(previous == CHB_STATE_BYPASS_DELAY)
+            if(previous == CHB_STATE_KT1_SETTLE)
                 assert(g_chb_dab_status.tick_10ms - stage_tick == 20UL);
             if(previous == CHB_STATE_WAIT_PLL)
                 assert(g_chb_dab_status.tick_10ms - stage_tick == 20UL);
@@ -344,7 +345,7 @@ static void enter_running(unsigned short strategy) {
     assert(n < 30000U && previous == CHB_STATE_RUNNING);
     assert(g_chb_dab_status.pll_locked == 1U);
     near_value(g_chb_dab_status.pll_frequency_hz, 50.0F, 0.1F);
-    assert(g_chb_dab_status.precharge_bypassed == 1U);
+    assert(g_chb_dab_status.kt1_close_command == 1U);
     assert(fake_ac_pwm && fake_dab_pwm);
     assert(g_chb_dab_status.dab_duty_count == 350U);
     near_value(g_chb_dab_status.startup_voltage_reference_v, 420.0F, 0.001F);
@@ -514,7 +515,7 @@ int main(void) {
     defaults = g_chb_dab_params;
     command_defaults = g_chb_dab_command;
     assert(defaults.precharge_stable_10ms == 20U);
-    assert(defaults.bypass_delay_10ms == 20U);
+    assert(defaults.kt1_settle_10ms == 20U);
     assert(defaults.pll_lock_10ms == 20U);
     assert(defaults.protection_confirm_samples == 5U);
     test_generator();

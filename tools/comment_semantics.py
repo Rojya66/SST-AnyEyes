@@ -194,9 +194,9 @@ Chb_UpdateVoltageReference|按启动策略更新直流电压外环给定及状�
 Chb_WriteNormalizedReferences|将三相归一化调制指令映射到原 FPGA 工频桥参考格式
 Chb_WriteNeutralReferences|写入原 FPGA 中性参考值，保持停机安全输出
 Chb_WriteDabDuty|限幅 DAB 计数并更新各相占空比、起始计数及 FPGA 寄存器
-Chb_SetAcInput|设置交流输入断路器的通断脉冲及状态
-Chb_ClearAcInputPulse|撤销已到期的交流输入断路器控制脉冲
-Chb_SetPrechargeBypass|设置预充旁路接触器及状态镜像
+Chb_SetQf1|设置交流输入断路器的通断脉冲及状态
+Chb_ClearQf1Pulse|撤销已到期的交流输入断路器控制脉冲
+Chb_SetKt1|设置预充旁路接触器及状态镜像
 Chb_DisableAllPwm|撤销工频桥和 DAB PWM 使能并清空状态镜像
 Chb_SetLegacyStatus|把简化控制状态映射到原工程端口状态字
 Chb_EnterState|切换控制状态并记录状态进入的 10 ms 节拍
@@ -213,7 +213,7 @@ Chb_GetClosedLoopIdReference|执行兼容启动或 Id 斜坡，并在满足条�
 Chb_RunClosedLoop|按原反馈方向执行 dq 电流闭环及电压前馈，输出三相调制参考
 Chb_CheckSoftwareProtection|确认软件交流过流与直流过压连续样本并提交控制故障
 ChbDabControl_FastStep|在原 TAD 路径执行 PLL、开环/闭环控制、软件保护及 DAB 占空比斜坡
-SstCommand_ApplyDpram|按停止和关脉冲优先规则将 DPRAM 字段接入统一控制命令
+SstControlCommand_ApplyRequests|按停止和关脉冲优先规则将 DPRAM 字段接入统一控制命令
 ''', '控制核心；FastStep 及其计算子函数属于原 100 µs TAD 路径，Service 属于主循环。', 'CHB/DAB 命令、参数派生状态、PI 历史量以及原 FPGA 参考/使能寄存器。')
 functions('''
 U_Decomposition_PLL|对电网电压作坐标变换及序分量滤波，推进原锁相环相角
@@ -310,8 +310,8 @@ modulation_max|三相调制比绝对值上限，默认 0.98
 precharge_voltage_v|三相单模块最低直流电压的预充达标阈值，单位 V
 precharge_stable_10ms|预充电压须持续达标的 10 ms 拍数
 precharge_timeout_10ms|预充允许的最大等待时间，单位 10 ms
-bypass_delay_10ms|投入预充旁路后的等待时间，单位 10 ms
-breaker_pulse_10ms|交流输入断路器合/分闸脉冲宽度，单位 10 ms
+kt1_settle_10ms|投入预充旁路后的等待时间，单位 10 ms
+qf1_pulse_10ms|交流输入断路器合/分闸脉冲宽度，单位 10 ms
 pll_nominal_frequency_hz|PLL 额定电网频率，单位 Hz
 pll_kp|PLL 归一化 q 轴误差比例系数
 pll_ki|PLL 归一化 q 轴误差积分系数，积分乘 sample_period_s
@@ -344,8 +344,8 @@ dab_ramp_step_count|每个 TAD 的 DAB 占空比递增计数，默认 1
 dab_start_count|DAB PWM 起始相位计数，范围 0..4999
 state|CHB_STATE_* 运行状态编号
 fault_code|CHB_FAULT_* 控制故障编号，区别于五位上报故障码
-ac_input_closed|交流输入闭合状态镜像，非零表示闭合
-precharge_bypassed|预充旁路状态镜像，非零表示已旁路
+qf1_close_command|交流输入闭合状态镜像，非零表示闭合
+kt1_close_command|预充旁路状态镜像，非零表示已旁路
 ac_pwm_enabled|CHB 工频桥 PWM 使能状态镜像
 dab_pwm_enabled|DAB PWM 使能状态镜像
 pll_locked|PLL 连续锁定已确认标志
@@ -371,7 +371,7 @@ s_pll_integral|PLL 角速度修正的积分状态，单位 rad/s
 s_open_loop_angle|开环输出当前相角，单位 rad
 s_id_reference|控制核心当前 Id 给定，单位 A
 s_state_enter_tick|当前状态进入时的 10 ms 节拍
-s_breaker_pulse_end_tick|断路器控制脉冲结束的 10 ms 节拍
+s_qf1_pulse_start_tick|断路器控制脉冲结束的 10 ms 节拍
 s_last_service_tick|主循环上次推进状态机的 10 ms 节拍
 s_precharge_stable_count|预充连续达标的 10 ms 拍数
 s_pll_lock_fast_count|PLL 连续锁定的 TAD 样本计数
@@ -1049,15 +1049,15 @@ for key,contract in dict(
     Chb_WriteNormalizedReferences='HA_Module_RefVolt_A/B/C、原调制给定寄存器及 modulation_actual。',
     Chb_WriteNeutralReferences='原调制给定寄存器的中性参考及 modulation_actual。',
     Chb_WriteDabDuty='HA_DABDuty_*、HA_DAB_PluseStart_*、FPGA DAB 计数及 dab_duty_count。',
-    Chb_SetAcInput='Port_DOUT 断路器控制脉冲、结束时刻以及 ac_input_closed。',
-    Chb_ClearAcInputPulse='Port_DOUT 断路器合/分闸脉冲及对应数字输出寄存器。',
-    Chb_SetPrechargeBypass='Port_DOUT 接触器控制位及 precharge_bypassed。',
+    Chb_SetQf1='Port_DOUT 断路器控制脉冲、结束时刻以及 qf1_close_command。',
+    Chb_ClearQf1Pulse='Port_DOUT 断路器合/分闸脉冲及对应数字输出寄存器。',
+    Chb_SetKt1='Port_DOUT 接触器控制位及 kt1_close_command。',
     Chb_DisableAllPwm='原模块 PWM 控制寄存器、ac_pwm_enabled 和 dab_pwm_enabled。',
     Chb_SetLegacyStatus='Port_State、Port_RunStatus 及旧端口主状态/运行位域。',
     Chb_EnterState='g_chb_dab_status.state 及 s_state_enter_tick。',
     ChbDabControl_Tick10ms='g_chb_dab_status.tick_10ms。',
     ChbDabControl_ApplyRemoteCommand='g_chb_dab_command.run_enable、dab_enable；只提交命令。',
-    SstCommand_ApplyDpram='g_chb_dab_command 的启停、DAB 使能及故障复位字段；只提交命令。',
+    SstControlCommand_ApplyRequests='g_chb_dab_command 的启停、DAB 使能及故障复位字段；只提交命令。',
     SstParams_RunCommand='g_chb_dab_command.run_enable、dab_enable；PWM 由控制核心执行。',
     SstParams_EmergencyStop='run_enable、dab_enable 清零；原保护/控制路径完成关断。',
     Chb_RunOpenLoop='开环相角、三相调制给定及运行调制幅值状态。',

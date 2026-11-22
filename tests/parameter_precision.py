@@ -37,7 +37,7 @@ int main(void) {
  assert(SstParams_Write(0,3,1)==SST_PARAM_BUSY);
  assert(SstParams_Write(1,24,1000)==SST_PARAM_BUSY);
  assert(SstParams_RunCommand(0)==SST_PARAM_OK);
- for(i=0;i<240;++i) {++g_chb_dab_status.tick_10ms;SstParams_Service();}
+ for(i=0;i<300;++i) {++g_chb_dab_status.tick_10ms;SstParams_Service();}
  assert(!SstParams_IsStorageBusy() && SstParams_GetStorageResult()==SST_PARAM_OK);
  assert(SstParams_Write(29,1,0xA55A)==SST_PARAM_OK);
  assert(!g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable);

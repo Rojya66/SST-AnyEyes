@@ -20,7 +20,7 @@ def strip_local_includes(source: str) -> str:
                   flags=re.MULTILINE)
 
 
-def run(project: Path, compiler: str) -> str:
+def run(project: Path, compiler: str, unit_link_only: bool = False) -> str:
     tests = project / "tests"
     source_dir = project / "Source/04_App"
     with tempfile.TemporaryDirectory(prefix="sst_single_phase_") as folder:
@@ -69,14 +69,15 @@ def run(project: Path, compiler: str) -> str:
             "-Wextra",
             "-DSST_SIMULATOR_MODE=1",
             "-DSST_ENABLE_DPRAM=0",
-            "-DSST_BENCH_INPUT_SIM=0",
+            "-DSST_ENABLE_SWITCH_OUTPUT=0", "-DSST_ENABLE_SWITCH_FEEDBACK=0", "-DSST_BENCH_INPUT_SIM=0",
             "-DSST_PHASE_A_ONLY_TEST=1",
-            "-DSST_LOW_VOLTAGE_100V_TEST=0",
             str(unit),
             "-lm",
             "-o",
             str(binary),
         ]
+        if unit_link_only:
+            command.insert(1, "-DSST_TEST_UNIT_LINK_ONLY=1")
         subprocess.run(command, check=True, capture_output=True, text=True)
         result = subprocess.run(
             [str(binary)], check=True, capture_output=True, text=True, timeout=30
@@ -88,11 +89,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--cc", default=shutil.which("gcc"))
+    parser.add_argument("--unit-link-only", action="store_true", help="Run only the 501/701 startup and link scenarios")
     args = parser.parse_args()
     if not args.cc:
         raise SystemExit("GCC not found; pass --cc with a host GCC executable")
     try:
-        output = run(args.project, args.cc)
+        output = run(args.project, args.cc, args.unit_link_only)
     except subprocess.CalledProcessError as error:
         raise SystemExit(f"single-phase compile/run failed:\n{error.stdout}\n{error.stderr}")
     print(output, end="")

@@ -94,8 +94,8 @@ void SstDisplay_Refresh(void)
     display[3] = g_chb_dab_command.run_enable;
     display[4] = g_chb_dab_command.dab_enable;
     display[5] = g_chb_dab_command.ac_mode;
-    display[6] = g_chb_dab_status.ac_input_closed;
-    display[7] = g_chb_dab_status.precharge_bypassed;
+    display[6] = g_chb_dab_status.qf1_close_command;
+    display[7] = g_chb_dab_status.kt1_close_command;
     display[8] = g_chb_dab_status.ac_pwm_enabled;
     display[9] = g_chb_dab_status.dab_pwm_enabled;
     display[10] = g_chb_dab_status.pll_locked;

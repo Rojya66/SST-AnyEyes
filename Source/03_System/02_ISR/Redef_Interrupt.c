@@ -128,24 +128,6 @@ void Timer2Isr(void)
         Flag_RemoteMeasure = 1;
     }
 
-    if (Flag_Switch500ms)
-    {
-        coutSwitch500ms--;
-        if (coutSwitch500ms == 0)
-        {
-            Flag_Switch500ms = 0;
-        }
-    }
-
-    if (Flag_Switch1s)
-    {
-        coutSwitch1s--;
-        if (coutSwitch1s == 0)
-        {
-            Flag_Switch1s = 0;
-        }
-    }
-
     if (Flag_Precharge500ms)
     {
         coutPrecharge500ms++;
@@ -205,15 +187,6 @@ void Timer2Isr(void)
         }
     }
 
-    if (ISO_counter_on < 500)
-    {
-        ISO_counter_on++;
-    }
-
-    if (ISO_counter_off < 500)
-    {
-        ISO_counter_off++;
-    }
 #endif
 
     // 原HVAC软件保护计时：以下计数在Timer2中断内按10 ms递增，非TAD样本计数。

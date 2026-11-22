@@ -1,12 +1,13 @@
 //###########################################################################
 // FILE: SstParameterStore.c
-// FUNCTION: EEPROM页6/7的v2镜像及分步保存/整体校验加载事务；兼容v1加载。
+// FUNCTION: BL24C512A的v3参数镜像；保存控制/保护参数及光纤接线，兼容v1/v2加载。
 //           参数表归SstParameterTable；停机判断归SstCommand。
 //###########################################################################
 #include <string.h>
 #include "SstParameterStore.h"
 #include "SstParameterTable.h"
 #include "SstLegacyParameters.h"
+#include "SstHardwareParameters.h"
 #include "SstCommand.h"
 #include "ChbDabControl.h"
 #include "ChbBuildConfig.h"
@@ -17,11 +18,15 @@ static uint16_t storageResult, /* storageResult：最近一次参数保存/加�
 static uint32_t storageTick; /* storageTick：上次推进参数存储任务的 10 ms 节拍。 */
 /* SST_STORE_V1_LENGTH：旧版本参数镜像长度，92字节，载荷为42字。 */
 #define SST_STORE_V1_LENGTH 92U
-/* SST_STORE_SNAPSHOT_WORDS：v2镜像字数，42现代字及8原保护/预充字；不保存运行期保护旁路。 */
-#define SST_STORE_SNAPSHOT_WORDS 50U
-/* SST_STORE_LENGTH：v2页6/7参数镜像总长度，108字节。 */
+/* 前50字沿用v2：42控制参数/给定及8原保护/预充字。后16字为硬件配置。 */
+#define SST_STORE_V2_LENGTH 108U
+/* SST_STORE_HARDWARE_OFFSET：硬件参数在载荷中的首字索引50。 */
+#define SST_STORE_HARDWARE_OFFSET 50U
+/* SST_STORE_SNAPSHOT_WORDS：控制/保护50字加硬件16字，共66字。 */
+#define SST_STORE_SNAPSHOT_WORDS (SST_STORE_HARDWARE_OFFSET + SST_HARDWARE_PARAMETER_WORDS)
+/* v3共140字节，地址0180h..020Bh；旧接口仍按64字节逻辑页换算。 */
 #define SST_STORE_LENGTH (8U + 2U * SST_STORE_SNAPSHOT_WORDS)
-static uint8_t storageImage[SST_STORE_LENGTH]; /* storageImage：页6/7的v2镜像，包含魔数、版本、50字载荷及CRC。 */
+static uint8_t storageImage[SST_STORE_LENGTH]; /* 魔数、版本、66字载荷及CRC；不保存启停或开关输出。 */
 
 /*==================================================================
  * 函数功能: 查询 AnyEyes 与 DPRAM 共用参数存储服务的忙状态
@@ -96,9 +101,9 @@ static uint16_t StoreGet(uint16_t offset)
 }
 
 /*==================================================================
- * 函数功能: 停机时读取页6/7的v1/v2镜像，整体校验后恢复可持久化参数
+ * 函数功能: 停机时读取v1/v2/v3镜像，整幅校验通过后才恢复活动参数
  * 输入参数: 无
- * 输出参数: 校验通过后更新参数表及 v2 原保护/预充参数；任何校验失败均不应用镜像。
+ * 输出参数: 控制参数、v2起的保护/预充参数、v3起的光纤/保护使能配置。
  * 返回值: SST_PARAM_* 操作结果
  * 执行说明: 参数镜像服务在初始化或主循环中调用。
  *================================================================*/
@@ -107,13 +112,14 @@ static uint16_t StoreLoad(void)
     uint16_t i, /* i：镜像读取及快照解码的索引。 */
         result, /* result：现代及原保护/预充快照的整体校验结果。 */
         length, /* length：由已识别版本决定的合法镜像字节数。 */
-        words; /* words：本次版本的快照字数，v1为42、v2为50。 */
-    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* snapshot：现代参数及v2原保护/预充编码。 */
-    if (!SstCommand_IsStopped())
+        words; /* 本次合法版本的载荷字数：42、50或66。 */
+    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* 全幅解码缓存；校验前不写活动参数。 */
+    if (SstCommand_IsStopped() == 0U)
         return SST_PARAM_BUSY;
-    /* 先读6字节头并识别固定版本；不接受EEPROM给出的任意长度。 */
-    for (i = 0; i < 6U; ++i)
-        storageImage[i] = r_eeprom_byte_read((uint8_t)(6 + i / 64), (uint8_t)(i % 64));
+    /* 带状态的连续读取：NACK必须失败，不能把旧缓存或FF当作有效参数。
+     * 先识别固定版本及长度；不使用EEPROM中的任意长度作为缓存边界。 */
+    if (r_eeprom_section_read(6U, 0U, 6U, storageImage) != VALIDFLAG)
+        return SST_PARAM_STORAGE;
     if (storageImage[0] != 0x53 || storageImage[1] != 0x54)
         return SST_PARAM_STORAGE;
     if (storageImage[2] == 1U && storageImage[3] == SST_STORE_V1_LENGTH)
@@ -121,34 +127,48 @@ static uint16_t StoreLoad(void)
         length = SST_STORE_V1_LENGTH;
         words = 42U;
     }
-    else if (storageImage[2] == 2U && storageImage[3] == SST_STORE_LENGTH)
+    else if (storageImage[2] == 2U && storageImage[3] == SST_STORE_V2_LENGTH)
+    {
+        length = SST_STORE_V2_LENGTH;
+        words = 50U;
+    }
+    else if (storageImage[2] == 3U && storageImage[3] == SST_STORE_LENGTH)
     {
         length = SST_STORE_LENGTH;
         words = SST_STORE_SNAPSHOT_WORDS;
     }
     else
         return SST_PARAM_STORAGE;
-    for (i = 6U; i < length; ++i)
-        storageImage[i] = r_eeprom_byte_read((uint8_t)(6 + i / 64), (uint8_t)(i % 64));
+    if (r_eeprom_section_read(6U, 6U, (uint8_t)(length - 6U), &storageImage[6]) != VALIDFLAG)
+        return SST_PARAM_STORAGE;
     if (StoreGet((uint16_t)(length - 2U)) != StoreCrc(storageImage, (uint16_t)(length - 2U)))
         return SST_PARAM_STORAGE;
-    /* 先解码并整体校验；v2任一原保护参数非法时，现代参数也不能部分生效。 */
+    /* 任一段非法，整幅镜像均不生效；包括PM、FO、FB等接线/保护字段。 */
     for (i = 0; i < words; ++i)
         snapshot[i] = StoreGet((uint16_t)(6 + 2 * i));
     result = SstParameterTable_SnapshotValidate(snapshot);
     if (result != SST_PARAM_OK)
         return result;
-    if (words == SST_STORE_SNAPSHOT_WORDS)
+    if (words >= 50U)
     {
         result = SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
         if (result != SST_PARAM_OK)
             return result;
     }
-    SstParameterTable_SnapshotApply(snapshot);
     if (words == SST_STORE_SNAPSHOT_WORDS)
+    {
+        result = SstHardwareParameters_Validate(&snapshot[SST_STORE_HARDWARE_OFFSET]);
+        if (result != SST_PARAM_OK)
+            return result;
+    }
+    /* v1/v2没有硬件字段：只恢复其已有内容，保留本次源码建立的硬件配置。 */
+    SstParameterTable_SnapshotApply(snapshot);
+    if (words >= 50U)
     {
         SstLegacyParameters_ApplySnapshot(&snapshot[42]);
     }
+    if (words == SST_STORE_SNAPSHOT_WORDS)
+        SstHardwareParameters_Apply(&snapshot[SST_STORE_HARDWARE_OFFSET]);
     return SST_PARAM_OK;
 }
 
@@ -163,10 +183,10 @@ uint16_t SstParameterStore_Request(uint16_t load)
 {
     uint16_t i, /* i：参数快照、原保护/预充项及镜像遍历索引。 */
         result; /* result：完整保存快照的范围校验结果。 */
-    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* snapshot：保存前整体校验的50字编码快照。 */
-    if (SstParameterStore_IsBusy() || !SstCommand_IsStopped())
+    uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* 保存前整体校验的66字快照。 */
+    if ((SstParameterStore_IsBusy() != 0U) || (SstCommand_IsStopped() == 0U))
         return SST_PARAM_BUSY;
-    if (load)
+    if (load != 0U)
     {
         storageResult = StoreLoad();
         return storageResult;
@@ -175,16 +195,20 @@ uint16_t SstParameterStore_Request(uint16_t load)
         snapshot[i] = SstParameterTable_SnapshotRead(i);
     for (i = 0; i < 8U; ++i)
         snapshot[42U + i] = SstLegacyParameters_Read(i);
+    SstHardwareParameters_Read(&snapshot[SST_STORE_HARDWARE_OFFSET]);
     result = SstParameterTable_SnapshotValidate(snapshot);
     if (result != SST_PARAM_OK)
         return result;
     result = SstLegacyParameters_ValidateSnapshot(&snapshot[42]);
     if (result != SST_PARAM_OK)
         return result;
+    result = SstHardwareParameters_Validate(&snapshot[SST_STORE_HARDWARE_OFFSET]);
+    if (result != SST_PARAM_OK)
+        return result;
     memset(storageImage, 0, sizeof(storageImage));
     storageImage[0] = 0x53;
     storageImage[1] = 0x54;
-    storageImage[2] = 2;
+    storageImage[2] = 3U;
     storageImage[3] = SST_STORE_LENGTH;
     for (i = 0; i < SST_STORE_SNAPSHOT_WORDS; ++i)
         StorePut((uint16_t)(6 + 2 * i), snapshot[i]);
@@ -210,10 +234,10 @@ void SstParameterStore_Service(void)
     uint16_t offset; /* offset：本拍写入或读回的镜像字节偏移。 */
     uint8_t value, /* value：本拍写入 EEPROM 的单字节值。 */
         ok; /* ok：EEPROM 单字节写入的 VALIDFLAG/INVALIDFLAG 结果。 */
-    if (!storagePending || now == storageTick)
+    if ((storagePending == 0U) || (now == storageTick))
         return;
     storageTick = now;
-    if (!SstCommand_IsStopped())
+    if (SstCommand_IsStopped() == 0U)
     {
         storagePending = 0;
         storageResult = SST_PARAM_BUSY;
@@ -239,7 +263,8 @@ void SstParameterStore_Service(void)
     else
     {
         offset = (uint16_t)(storagePosition - SST_STORE_LENGTH - 1);
-        if (r_eeprom_byte_read((uint8_t)(6 + offset / 64), (uint8_t)(offset % 64)) != storageImage[offset])
+        ok = r_eeprom_section_read((uint8_t)(6U + offset / 64U), (uint8_t)(offset % 64U), 1U, &value);
+        if ((ok != VALIDFLAG) || (value != storageImage[offset]))
         {
             storagePending = 0;
             storageResult = SST_PARAM_STORAGE;

@@ -13,7 +13,7 @@ extern "C"
  * 返回值: 无
  * 执行说明: 仅开机调用；不同分域按ControlInit列出的原顺序执行。
  *================================================================*/
-    void DpramDefaults_InitRegulation(void);
+    void DpramDefaults_InitializeRegulation(void);
 
 #ifdef __cplusplus
 }

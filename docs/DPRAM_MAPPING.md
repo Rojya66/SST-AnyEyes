@@ -69,7 +69,7 @@ Block1 首地址为 `0x660001E0`，每个字段一个 16 位字。协议方向�
 | 14 | `0x660001FC` | `PORT_GRIDTYPE` | bit0 电网；bit1 负载；bit2 强网；bit3 弱网；bit4 电网故障；bit5 电网正常；bit6..15 保留 | 有布局，无当前消费 |
 | 15 | `0x660001FE` | `Reserved_3` | 保留 | 不消费 |
 
-实际入口只把 word 2、3、8、9、10 传给 [`SstCommand_ApplyDpram`](../Source/04_App/04_Control/SstCommand.c#L90)。STOP bit0优先并立即返回，因此同帧RESET不会执行；OFF 优先于对应 ON，而且任何有效OFF位都会抑制同帧START；参数存储忙时 STOP/OFF 仍执行，而 START/ON/RESET 被抑制。RESET 还要求控制状态为 STOPPED 或 FAULT、两路命令为 0、两路实际 PWM 均关闭。旧的 `RemoteControl_Dispose()` 虽然仍在 `DPRAM.C`，当前 DPRAM 后台入口不调用它。
+实际入口只把 word 2、3、8、9、10 传给 [`SstControlCommand_ApplyRequests`](../Source/04_App/04_Control/SstCommand.c#L90)。STOP bit0优先并立即返回，因此同帧RESET不会执行；OFF 优先于对应 ON，而且任何有效OFF位都会抑制同帧START；参数存储忙时 STOP/OFF 仍执行，而 START/ON/RESET 被抑制。RESET 还要求控制状态为 STOPPED 或 FAULT、两路命令为 0、两路实际 PWM 均关闭。旧的 `RemoteControl_Dispose()` 虽然仍在 `DPRAM.C`，当前 DPRAM 后台入口不调用它。
 
 以下仅说明请求编码，不绕过状态机、硬件故障或预充/PLL条件：每次先把16字全部置零，再设置所列字，最后写左邮箱为 `1`。
 

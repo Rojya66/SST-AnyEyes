@@ -10,6 +10,7 @@
 #include "SstParams.h"
 #include "SstBoard.h"
 #include "CpuTask.h"
+#include "SstHardwareParameters.h"
 #define SOC_UART_2_REGS 0U
 #define SOC_GPIO_0_REGS 0U
 #define UART_LSR 0U
@@ -39,4 +40,21 @@ unsigned UARTSpaceAvail(unsigned);
 void UARTCharPutNonBlocking(unsigned,unsigned);
 uint8_t r_eeprom_byte_read(uint8_t,uint8_t);
 uint8_t r_eeprom_byte_write(uint8_t,uint8_t,uint8_t);
+uint8_t r_eeprom_section_read(uint8_t,uint8_t,uint8_t,uint8_t *);
+typedef struct { struct { uint16_t Port_RunOrTest, Port_AutoOrManual; } Bbits; } HOST_PORT_RUN_FLAG;
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern HOST_PORT_RUN_FLAG PortRunFLAG;
+extern uint16_t Port_AD_PORT_EN, Port_FO_1_EN, Port_FO_2_EN, Port_FO_3_EN, Port_FB_EN;
+extern uint16_t HA_PM_A1, HA_PM_A2, HA_PM_B1, HA_PM_B2, HA_PM_C1, HA_PM_C2;
+extern uint16_t Port_OnState, Port_Main_WorkMode, Port_STATCOM_WorkMode, Port_APF_WorkMode;
+void FpgaInit_ApplyModuleLayout(const uint16_t *);
+void Port_ADProtect_EN(void);
+void Port_FO_EN_Set(uint16_t,uint16_t,uint16_t,uint16_t,uint16_t);
+void Port_FB_EN_Set(void);
+void Port_StateUpdate_Write(void);
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -191,6 +191,7 @@ void SstFault_Service(void)
 {
     SST_FAULT_INPUT input; /* input：后台采集的原故障输入及控制状态。 */
     unsigned short code = SST_FAULT_NONE; /* code：参考五位 SST_FAULT_* 上报故障码，0 表示无故障。 */
+    unsigned short level = SST_FAULT_LEVEL_2;
     unsigned short has_detail = 0U; /* has_detail：本轮是否已获得可分类的故障明细。 */
     unsigned short i; /* i：当前故障表、位映射表或历史表的遍历索引。 */
     if (!SstFault_ReadInput(&input))
@@ -226,12 +227,16 @@ void SstFault_Service(void)
         case CHB_FAULT_SWITCH_FEEDBACK:
             code = SST_FAULT_SWITCH_FEEDBACK;
             break;
+        case CHB_FAULT_UNIT_LINK:
+            code = SST_FAULT_COMMUNICATION;
+            level = SST_FAULT_LEVEL_3;
+            break;
         default:
             break;
     }
     if (code != SST_FAULT_NONE)
     {
-        SstFault_Add(code, SST_FAULT_LEVEL_2, &input);
+        SstFault_Add(code, level, &input);
         has_detail = 1U;
     }
     /* Record already-latched software faults; never repeat the trip decision. */

@@ -1,6 +1,8 @@
-# 参数逐项表
+﻿# 参数逐项表
 
 物理值=解码后的整数÷比例。int16使用二补码；0..41沿用唯一参数表，42..49原保护，50..56运行期配置。
+
+2026-11-19保存升级v3：本表0..49及51..56保存，第50项临时快速保护旁路不保存。另保存六组501位图及原端口管理方式；见[EEPROM适配记录](../EEPROM_BL24C512A_ADAPTATION_20261119.md)。本表索引与EEPROM硬件段索引不同，屏幕地址未改变。
 
 |序号|待应用Modbus|实际Modbus|成员|类型|乘数|原始范围|
 |---|---|---|---|---|---|---|
@@ -9,8 +11,8 @@
 |2|`0x1A02`|`0x1A82`|`g_chb_dab_params.precharge_voltage_v`|uint16|10.0|0..30000|
 |3|`0x1A03`|`0x1A83`|`g_chb_dab_params.precharge_stable_10ms`|uint16|1.0|1..65535|
 |4|`0x1A04`|`0x1A84`|`g_chb_dab_params.precharge_timeout_10ms`|uint16|1.0|1..65535|
-|5|`0x1A05`|`0x1A85`|`g_chb_dab_params.bypass_delay_10ms`|uint16|1.0|0..65535|
-|6|`0x1A06`|`0x1A86`|`g_chb_dab_params.breaker_pulse_10ms`|uint16|1.0|1..65535|
+|5|`0x1A05`|`0x1A85`|`g_chb_dab_params.kt1_settle_10ms`|uint16|1.0|0..65535|
+|6|`0x1A06`|`0x1A86`|`g_chb_dab_params.qf1_pulse_10ms`|uint16|1.0|1..65535|
 |7|`0x1A07`|`0x1A87`|`g_chb_dab_params.pll_nominal_frequency_hz`|uint16|100.0|100..10000|
 |8|`0x1A08`|`0x1A88`|`g_chb_dab_params.pll_kp`|uint16|10.0|0..65535|
 |9|`0x1A09`|`0x1A89`|`g_chb_dab_params.pll_ki`|uint16|1.0|0..65535|
