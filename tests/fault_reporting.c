@@ -150,5 +150,12 @@ int main(void)
            SST_FAULT_PLL_TIMEOUT);
     assert(SstFault_GetCode(0xffffU) == 0);
     puts("PASS: repeated episodes, 32-record wrap, history severity and bounds");
+
+    g_chb_dab_status.state = CHB_STATE_FAULT;
+    g_chb_dab_status.fault_code = CHB_FAULT_FAN_CONFIG;
+    SstFault_Service();
+    assert(SstFault_GetFirstCode() == SST_FAULT_FAN_CONFIG);
+    assert(SstFault_GetHistory(0, &record) && record.control_fault == CHB_FAULT_FAN_CONFIG);
+    puts("PASS: UNIT fan configuration failure reports 39105");
     return 0;
 }

@@ -33,8 +33,10 @@ def main():
     assert isr_changes <= {('function', 'Timer2Isr')}, isr_changes
     control_preserved, changed = source_changes('Source/04_App/04_Control/ChbDabControl.c')
     allowed_control_changes = {
-        ('object', 'g_chb_dab_params'), ('function', 'Chb_ReadSwitchFeedback'),
-        ('function', 'Chb_EnterState'), ('function', 'ChbDabControl_Service'),
+        ('object', 'g_chb_dab_params'), ('object', 'g_chb_dab_command'),
+        ('function', 'Chb_ReadSwitchFeedback'), ('function', 'Chb_ReadUnitLinks'),
+        ('function', 'Chb_EnterState'), ('function', 'ChbDabControl_Init'),
+        ('function', 'ChbDabControl_Service'),
     }
     assert changed <= allowed_control_changes, changed - allowed_control_changes
 
@@ -75,12 +77,16 @@ def main():
         assert int(row['40001 号制']) == 40001 + address
         assert int(row['ARM 字节地址'], 16) == 0x60000000 + 2 * address
         assert int(row['DSP 字节地址'], 16) == 0x66000000 + 2 * address
-    ranges = [(0x0100, 0x0103), (0x01FF, 0x023C), (0x0500, 0x050F),
-              (0x0510, 0x0525), (0x0540, 0x0570), (0x0580, 0x05A9),
+    ranges = [(0x0100, 0x0103), (0x01FF, 0x023E), (0x0500, 0x050F),
+              (0x0510, 0x0525), (0x0540, 0x0570), (0x0580, 0x05B3),
               (0x0600, 0x06A7), (0x0700, 0x0709), (0x0720, 0x073F),
               (0x0800, 0x0803), (0x0810, 0x0A4F), (0x1FFE, 0x1FFF)]
     assert used_words == {address for first, last in ranges for address in range(first, last + 1)}
     assert symbols['MB_LEFT'] == 0x1FFE and symbols['MB_RIGHT'] == 0x1FFF
+    assert symbols['FAN_OFF_COUNT'] == 0x023D and symbols['FAN_ON_COUNT'] == 0x023E
+    for phase_index, phase in enumerate('ABC'):
+        assert symbols[f'FAN_CONFIG_CONFIRMED_{phase}'] == 0x05AD + phase_index
+        assert symbols[f'FAN_CONFIG_REJECTED_{phase}'] == 0x05B0 + phase_index
     for phase_index, phase in enumerate('ABC'):
         for module in range(1, 15):
             base = 0x0600 + 56 * phase_index + 4 * (module - 1)

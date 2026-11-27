@@ -1,4 +1,4 @@
-"""SST CHB V2.0 Modbus TCP access for the panel and bench client."""
+"""SST CHB V2.1 Modbus TCP access for the panel and bench client."""
 
 import csv
 from dataclasses import dataclass
@@ -9,11 +9,12 @@ import struct
 import time
 
 
-SIGNATURE = (0x5353, 0x0200)
+SIGNATURE = (0x5353, 0x0201)
+VERSION_LABEL = f"V{SIGNATURE[1] >> 8}.{SIGNATURE[1] & 0xFF}"
 CONTROL_START = 0x0100
 PARAMETER_COMMAND = 0x01FF
 PARAMETER_START = 0x0200
-PARAMETER_COUNT = 61
+PARAMETER_COUNT = 63
 CONTROL_RECEIPT = 0x0504
 PARAMETER_RECEIPT = 0x0507
 LEFT_MAILBOX = 0x1FFE
@@ -208,7 +209,7 @@ class Panel:
                 return
             first = uptime
             time.sleep(0.03)
-        raise ProtocolError("DSP V2.0 签名已就绪，实时节拍未更新")
+        raise ProtocolError(f"DSP {VERSION_LABEL} 签名已就绪，实时节拍未更新")
 
     def snapshot(self, epoch, spans):
         for _ in range(4):
@@ -226,7 +227,7 @@ class Panel:
         return self.snapshot(LIVE_EPOCH, (
             (0x050C, 0x056E - 0x050C),
             (0x0580, 0x0598 - 0x0580),
-            (0x059E, 0x05AA - 0x059E),
+            (0x059E, 0x05B4 - 0x059E),
             (0x0700, 0x0740 - 0x0700),
         ))
 
@@ -285,7 +286,7 @@ class Panel:
         if operation not in (1, 2, 3, 4):
             raise ValueError("遥调操作号错误")
         if operation == 1 and (words is None or len(words) != PARAMETER_COUNT):
-            raise ValueError("遥调应用需要完整的 61 个设置字")
+            raise ValueError(f"遥调应用需要完整的 {PARAMETER_COUNT} 个设置字")
         self.check_version()
         before, _, _, _, busy = self.bus.read(PARAMETER_RECEIPT, 5)
         if busy:

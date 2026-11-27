@@ -125,8 +125,17 @@ int main(void)
     observe[0] = 0x0300U;
     observe[1] = 0x2000U;
     g_chb_dab_params.sample_period_s = 0.0001F;
+    g_chb_dab_params.fan_off_count = 185U; /* 已应用的活动值，等待下一次事务。 */
+    g_chb_dab_params.fan_on_count = 265U;
     g_chb_dab_status.tick_10ms = 0x00012345UL;
     g_chb_dab_status.qf1_closed = 1U;
+    g_chb_dab_status.fan_config_generation = 12U;
+    g_chb_dab_status.fan_config_off_count = 180U;
+    g_chb_dab_status.fan_config_on_count = 260U;
+    g_chb_dab_status.fan_config_confirmed[0] = 0x8101U;
+    g_chb_dab_status.fan_config_confirmed[1] = 0x2000U;
+    g_chb_dab_status.fan_config_rejected[0] = 0x0200U;
+    g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_WAITING;
 
     SstFault_Init();
     SstDpramV2Telemetry_Init();
@@ -146,6 +155,9 @@ int main(void)
     assert(dpram[0x0592U] == 1U && dpram[0x0595U] == 0x0100U);
     assert(dpram[0x05A0U] == 0x0040U && dpram[0x05A8U] == 0x2000U);
     assert(dpram[0x05A3U] == 0x3CFEU && dpram[0x05A9U] == 0x0211U);
+    assert(dpram[0x05AAU] == 180U && dpram[0x05ABU] == 260U && dpram[0x05ACU] == 12U);
+    assert(dpram[0x05ADU] == 0x0101U && dpram[0x05B0U] == 0x0200U);
+    assert(dpram[0x05B3U] == CHB_FAN_CONFIG_WAITING);
     assert(dpram[0x0598U] == 0x0300U && dpram[0x059BU] == 0x0100U);
     assert(dpram[0x0620U] == 640U && dpram[0x0621U] == (uint16_t)-13);
     assert(dpram[0x0622U] == 25U && dpram[0x0623U] == (uint16_t)-10);
@@ -153,9 +165,11 @@ int main(void)
 #if SST_PHASE_A_ONLY_TEST
     assert(reads501 == 4U && dpram[0x0581U] == 0 && dpram[0x059CU] == 0);
     assert(dpram[0x0543U] == 0U && dpram[0x066CU] == 0U);
+    assert(dpram[0x05AEU] == 0U);
 #else
     assert(reads501 == 6U && dpram[0x0581U] == 0x2000U && dpram[0x059CU] == 0x2000U);
     assert(dpram[0x0543U] == 0x4000U && dpram[0x066CU] == 820U);
+    assert(dpram[0x05AEU] == 0x2000U);
 #endif
 
     /* A9 的 F1 在线保留且 Udc 不可用，模块快照在 100ms 时撤销它的数据资格。 */
@@ -193,7 +207,7 @@ int main(void)
     assert(dpram[0x0801U] == 2U && dpram[0x0802U] == 2U);
     assert(dpram[0x0810U] == 19101U && dpram[0x081FU] == 0U);
     assert(dpram[0x0822U] == 39103U && dpram[0x0831U] == 0x0100U);
-    printf("PASS V2 telemetry phase=%u: snapshot bounds, A9 and B14, F1 validity and fault history\n",
+    printf("PASS V2.1 telemetry phase=%u: snapshot bounds, A9 and B14, F1, fan configuration and fault history\n",
            SST_PHASE_A_ONLY_TEST);
     return 0;
 }

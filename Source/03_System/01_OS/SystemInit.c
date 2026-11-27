@@ -16,6 +16,7 @@
 #include "SstDebug.h"
 #include "SstFault.h"
 #include "SstParams.h"
+#include "SstParameterStore.h"
 #include "SstDpramHost.h"
 #include "SstBenchInputs.h"
 #include "EEProm.H"
@@ -94,6 +95,8 @@ void SystemInit_Runtime(void)
     SstDebug_Init();
 #if CHB_LOAD_EEPROM_PARAMETERS
     SstParameters_LoadPersistent();
+#elif !SST_BENCH_INPUT_SIM
+    SstParameterStore_LoadFanThresholds();
 #endif
     /* 按最终PM与FO/FB配置写使能，再启动保护锁存复位。 */
     Port_FO_EN_Set(3U, 0U, 0U, 0U, 0U);

@@ -11,11 +11,13 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 from uuid import uuid4
 
-from protocol import ModbusTcp, Panel, ProtocolError, SnapshotChanged, load_points
+from protocol import (PARAMETER_COUNT, PARAMETER_START, VERSION_LABEL, ModbusTcp, Panel,
+                      ProtocolError, SnapshotChanged, load_points)
 
 
 PHASES = "ABC"
 STATE_NAMES = ("停止", "预充", "等 KT1", "等 PLL", "运行", "故障")
+FAN_CONFIG_STATES = ("未开始", "等待 UNIT 确认", "已确认", "配置失败", "使用默认阈值或未启用分发")
 PHASE_FIELDS = (
     ("PM_ACTIVE", "投入运行"),
     ("UNIT_ONLINE", "501 在线"),
@@ -115,7 +117,8 @@ class App:
         self.points = points
         self.faults = faults
         self.args = args
-        self.parameter_points = [p for p in points.values() if 0x0200 <= p.address <= 0x023C]
+        self.parameter_points = [p for p in points.values()
+                                 if PARAMETER_START <= p.address < PARAMETER_START + PARAMETER_COUNT]
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.panel = None
         self.future = None
@@ -149,7 +152,7 @@ class App:
         self.connect_button.pack(side="left")
         self.link = tk.StringVar(value="未连接")
         ttk.Label(nav, textvariable=self.link).pack(side="left", padx=10)
-        self.feedback = tk.StringVar(value="等待读取 DSP V2.0")
+        self.feedback = tk.StringVar(value=f"等待读取 DSP {VERSION_LABEL}")
         ttk.Label(root, textvariable=self.feedback, padding=(12, 4), anchor="w").pack(side="bottom", fill="x")
         self.pages = ttk.Notebook(root, padding=(8, 4))
         self.pages.pack(fill="both", expand=True)
@@ -240,6 +243,8 @@ class App:
         ttk.Entry(panel, width=22, textvariable=self.filter).pack(side="left")
         self.filter.trace_add("write", lambda *_: self.show_parameters())
         ttk.Label(self.param_page, text="先读取活动参数。双击编辑值，应用后查看 DSP 回读；保存仅保存活动值。").pack(anchor="w", pady=5)
+        self.fan_config = tk.StringVar(value="等待风扇均压配置状态")
+        ttk.Label(self.param_page, textvariable=self.fan_config, wraplength=1030).pack(anchor="w", pady=5)
         self.param_tree = tree(self.param_page, (
             ("地址", 80), ("参数", 260), ("活动值", 100), ("编辑值", 100), ("单位", 75), ("原始范围", 155),
         ), 20)
@@ -306,7 +311,7 @@ class App:
                 entry.delete(0, "end")
             self.link.set(f"{host}:{self.args.port} · Unit ID {self.args.unit}")
             self.connect_button.configure(text="断开")
-            self.feedback.set("V2.0 已识别，等待读取实时状态")
+            self.feedback.set(f"{VERSION_LABEL} 已识别，等待读取实时状态")
 
         self.schedule(open_panel, connected, True)
 
@@ -318,6 +323,7 @@ class App:
         self.module_info.set("等待 DSP")
         self.module_masks.set("")
         self.fault_head.set("等待读取故障状态")
+        self.fan_config.set("等待风扇均压配置状态")
         self.parameter_values = None
         self.parameter_edits.clear()
         for widget in (self.live_tree, self.module_tree, self.current_faults, self.history_tree, self.param_tree):
@@ -386,8 +392,9 @@ class App:
                     self.feedback.set("DSP 已重新上电；请重新读取活动参数")
                 self.latest = live
                 alive = time.monotonic() - self.last_live_change < 1.0
-                self.link.set(f"{self.host.get().strip()} · V2.0 {'在线' if alive else '实时节拍未更新'}")
+                self.link.set(f"{self.host.get().strip()} · {VERSION_LABEL} {'在线' if alive else '实时节拍未更新'}")
                 self.show_live()
+                self.show_fan_config()
                 if module is not None and phase == PHASES.index(self.phase.get()):
                     self.show_modules(phase, module)
                 self.show_faults(live, history)
@@ -420,7 +427,7 @@ class App:
                            f"{'自动' if target & 4 else '手动'} · 手动合闸 {'允许' if target & 8 else '禁止'}")
         if state == 1:
             flags = self.value("PRECHARGE_READY")
-            labels = ("触点", "全部在线", "Udc 可用", "无超时", "701/403", "电压")
+            labels = ("触点", "全部在线", "Udc 可用", "无超时", "701/403", "电压", "风扇配置")
             elapsed = self.value("STATE_ELAPSED") * 0.01
             stable = self.value("PRECHARGE_STABLE") * 10
             settings = ""
@@ -495,6 +502,25 @@ class App:
                 details.append(f"{label} {bitmap_modules(value)}")
         self.module_masks.set("   |   ".join(details) if permitted else "")
 
+    def show_fan_config(self):
+        state = enum_name(self.value("FAN_CONFIG_STATE"), FAN_CONFIG_STATES)
+        off = self.value("FAN_CONFIG_OFF")
+        on = self.value("FAN_CONFIG_ON")
+        generation = self.value("FAN_CONFIG_GENERATION")
+        phases = self.value("PHASE_CAPABILITY")
+        details = []
+        for i, phase in enumerate(PHASES):
+            if not phases & (1 << i):
+                continue
+            required = self.value("PM_ACTIVE_" + phase)
+            confirmed = self.value("FAN_CONFIG_CONFIRMED_" + phase)
+            rejected = self.value("FAN_CONFIG_REJECTED_" + phase)
+            pending = required & ~(confirmed | rejected)
+            details.append(f"{phase} 相 已确认 {bitmap_modules(confirmed)} / "
+                           f"拒绝 {bitmap_modules(rejected)} / 未确认 {bitmap_modules(pending)}")
+        detail = "   ".join(details)
+        self.fan_config.set(f"风扇均压 {state} · 事务请求 OFF {off} / ON {on} count · 代号 {generation}\n{detail}")
+
     def show_parameters(self):
         if self.parameter_values is None:
             rows(self.param_tree, [])
@@ -535,7 +561,8 @@ class App:
             return "   ".join(f"{phase} 相 {bitmap_modules(self.value(prefix + phase, live))}" for phase in PHASES)
 
         link_trip = positions("UNIT_TRIP_LOSS_") if core == 8 else "未判定"
-        self.fault_head.set(f"核心 {core} · 总故障字 0x{self.value('fault_summary', live):04X} · "
+        core_name = "9 风扇阈值配置失败" if core == 9 else str(core)
+        self.fault_head.set(f"核心 {core_name} · 总故障字 0x{self.value('fault_summary', live):04X} · "
                             f"403 首锁存 0x{self.value('FB_FIRST', live):04X} · "
                             f"202 首锁存 0x{self.value('AD_FIRST', live):04X}\n"
                             f"701 首锁存：{positions('FO_FIRST_')}   |   501 跳闸失联：{link_trip}")
@@ -648,7 +675,7 @@ def main():
             try:
                 panel.wait_running()
                 values = panel.live()
-                print(f"V2.0 | CHB state={values[0x0510]} | fault={values[0x0702]}")
+                print(f"{VERSION_LABEL} | CHB state={values[0x0510]} | fault={values[0x0702]}")
             finally:
                 panel.close()
         except (OSError, ProtocolError) as exc:

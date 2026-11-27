@@ -716,6 +716,30 @@ void Port_UnitLinkLossClear(ushort plugin, ushort channels)
 {
     FPGA_Interface[plugin - 2U].UNIT_LINK_LOSS = channels;
 }
+
+ushort Port_UnitFanConfigSupported(ushort plugin)
+{
+    return FPGA_Interface[plugin - 2U].FAN_CONFIG_ID == 0x4641U;
+}
+
+void Port_UnitFanConfigure(ushort plugin, ushort off_count, ushort on_count, ushort generation)
+{
+    volatile FPGA_InterfaceBLOCK *board = &FPGA_Interface[plugin - 2U];
+
+    board->FAN_CONFIG_OFF = off_count;
+    board->FAN_CONFIG_ON = on_count;
+    board->FAN_CONFIG_COMMIT = 0x8000U | generation;
+}
+
+void Port_UnitFanConfigRead(ushort plugin, ushort generation, ushort *confirmed, ushort *rejected)
+{
+    volatile FPGA_InterfaceBLOCK *board = &FPGA_Interface[plugin - 2U];
+    ushort ack = board->FAN_CONFIG_ACK;
+    ushort reject = board->FAN_CONFIG_REJECT;
+
+    *confirmed = ((ack >> 8U) == generation) ? (ack & 0xFFU) : 0U;
+    *rejected = ((reject >> 8U) == generation) ? (reject & 0xFFU) : 0U;
+}
 #endif /* HVAC_online */
 
 /*==================================================================

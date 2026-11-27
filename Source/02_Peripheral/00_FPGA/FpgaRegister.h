@@ -243,7 +243,12 @@ extern "C"
         XXG_INV_CTL INV_CTL; /* INV_CTL：独立逆变桥周期/死区控制字，保持原 FPGA/DPRAM 字布局。 */ //逆变控制
         ushort BUCK_DUTY; /* BUCK_DUTY：BUCK 占空比计数，保持原 FPGA/DPRAM 字布局。 */ //BUCK桥占空比
         XXG_BUCK_CTL BUCK_CTL; /* BUCK_CTL：BUCK 使能及周期控制字，保持原 FPGA/DPRAM 字布局。 */ //BUCK桥控制
-        ushort Reserved_2[6]; /* Reserved_2：原硬件/协议保留字段，用于保持字偏移及位域布局，不作为新增控制量。 */ //预留
+        ushort FAN_CONFIG_OFF; /* 501 0x2A：待提交的停扇阈值。 */
+        ushort FAN_CONFIG_ON; /* 501 0x2B：待提交的开扇阈值。 */
+        ushort FAN_CONFIG_COMMIT; /* 501 0x2C：位15使能，低8位为事务号。 */
+        ushort FAN_CONFIG_ID; /* 501 0x2D：支持风扇配置的板返回 0x4641。 */
+        ushort FAN_CONFIG_ACK; /* 501 0x2E：高字节事务号，低字节已应用掩码。 */
+        ushort FAN_CONFIG_REJECT; /* 501 0x2F：高字节事务号，低字节拒绝掩码。 */
         ushort DA_DATA0; /* DA_DATA0：第 0 路 DA 调试输出原始计数寄存器。 */ //DA0
         ushort DA_DATA1; /* DA_DATA1：第 1 路 DA 调试输出原始计数寄存器。 */ //DA1
         ushort DA_DATA2; /* DA_DATA2：第 2 路 DA 调试输出原始计数寄存器。 */ //DA2

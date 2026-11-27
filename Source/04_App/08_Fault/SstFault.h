@@ -79,6 +79,8 @@
 #define SST_FAULT_COMMUNICATION 39103U
 /* SST_FAULT_SYNC：同步故障五位上报码。 */
 #define SST_FAULT_SYNC 39104U
+/* SST_FAULT_FAN_CONFIG：UNIT 未应用风扇均压阈值。 */
+#define SST_FAULT_FAN_CONFIG 39105U
 
 typedef struct
 {

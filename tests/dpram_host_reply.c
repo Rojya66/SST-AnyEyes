@@ -252,7 +252,7 @@ int main(void)
     assert(DPRAM_V2_Words[0x0500U] == 0U);
     SstDpramHost_Initialize();
     assert(left_reads == 1U && right_writes == 1U);
-    assert(DPRAM_V2_Words[0x0500U] == 0x5353U && DPRAM_V2_Words[0x0501U] == 0x0200U);
+    assert(DPRAM_V2_Words[0x0500U] == 0x5353U && DPRAM_V2_Words[0x0501U] == 0x0201U);
     assert(DPRAM_V2_Words[0x0100U] == 0U && DPRAM_V2_Words[0x0504U] == 0U);
     assert(SstDpramV2_ObservationMask(0U) == 0x0101U);
     assert(SstDpramV2_ObservationMask(1U) == (SST_PHASE_A_ONLY_TEST ? 0U : 2U));

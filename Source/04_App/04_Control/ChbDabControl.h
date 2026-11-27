@@ -38,6 +38,25 @@ unsigned short ChbDabControl_MaintenanceSwitch(unsigned short close_mask, unsign
 /* CHB_AC_MODE_CLOSED_LOOP：工频桥闭环模式编号 1。 */
 #define CHB_AC_MODE_CLOSED_LOOP 1U
 
+/* UNIT 均压风扇使用 SCI_UDC 换算码，上下限为同一对参数。 */
+#define CHB_FAN_OFF_COUNT_DEFAULT 170U
+#define CHB_FAN_ON_COUNT_DEFAULT 235U
+#define CHB_FAN_COUNT_MAX 1983U
+
+typedef enum
+{
+    CHB_FAN_CONFIG_IDLE = 0,
+    CHB_FAN_CONFIG_WAITING = 1,
+    CHB_FAN_CONFIG_CONFIRMED = 2,
+    CHB_FAN_CONFIG_FAILED = 3,
+    CHB_FAN_CONFIG_DEFAULTS = 4 /* 无配置协议的板继续使用原默认阈值。 */
+} CHB_FAN_CONFIG_STATE;
+
+static inline unsigned short ChbDabControl_FanThresholdsValid(unsigned short off_count, unsigned short on_count)
+{
+    return (off_count < on_count) && (on_count <= CHB_FAN_COUNT_MAX);
+}
+
 /* 闭环启动策略：0=兼容原版，1=固定Idref斜坡后再投入电压外环。 */
 /* CHB_STARTUP_SOURCE_COMPATIBLE：原闭环启动兼容策略编号 0。 */
 #define CHB_STARTUP_SOURCE_COMPATIBLE 0U
@@ -74,7 +93,8 @@ typedef enum
     /* 控制核心硬件故障编号。 */ CHB_FAULT_HARDWARE = 5,
     /* 配置非法；包括带启动命令切模式、非有限数值及运行低母线。 */ CHB_FAULT_BAD_CONFIGURATION = 6,
     /* 开关反馈超时或运行反馈丢失；仅开启开关反馈联锁时使用。 */ CHB_FAULT_SWITCH_FEEDBACK = 7,
-    /* 所需501通道在旁路或运行时发生收帧超时。 */ CHB_FAULT_UNIT_LINK = 8
+    /* 所需501通道在旁路或运行时发生收帧超时。 */ CHB_FAULT_UNIT_LINK = 8,
+    /* 预充时 UNIT 未应用风扇均压阈值。 */ CHB_FAULT_FAN_CONFIG = 9
 } CHB_DAB_FAULT;
 
 /* Direct debugger/upper-computer commands. All commands are level signals. */
@@ -92,6 +112,7 @@ typedef struct
     float open_loop_frequency_hz; /* open_loop_frequency_hz：开环正弦输出频率，单位 Hz。 */
     float dc_voltage_ref_v; /* dc_voltage_ref_v：单模块直流电压目标，单位 V。 */ /* Per-module DC voltage reference */
     float iq_reference_a; /* iq_reference_a：闭环 q 轴电流目标，单位 A。 */
+    unsigned short fan_config_apply; /* 停机时置 1 提交已填写的两个 UNIT 风扇阈值，受理后清零。 */
 } CHB_DAB_COMMAND;
 
 /* Runtime-tunable values; debugger writes take effect without rebuilding. */
@@ -156,6 +177,8 @@ typedef struct
 
     unsigned short switch_stable_10ms; /* 触点连续确认，以及运行反馈丢失的判定时间。 */
     unsigned short switch_timeout_10ms; /* QF1/KT1动作后等待目标触点的最长时间。 */
+    unsigned short fan_off_count; /* UNIT 风扇停扇下限。 */
+    unsigned short fan_on_count; /* UNIT 风扇开扇上限。 */
 } CHB_DAB_PARAMETERS;
 
 typedef struct
@@ -192,6 +215,12 @@ typedef struct
     unsigned short switch_mismatch_count; /* switch_mismatch_count：命令与反馈连续不一致10ms拍数。 */
     unsigned short qf1_open; /* S301 DI8：QF1分位辅助触点，1闭合；不能由合位取反得到。 */
     unsigned short unit_link_missing[3]; /* 各相501物理失联位图，发生故障后保留。 */
+    unsigned short fan_config_off_count; /* 本轮事务请求的停扇下限。 */
+    unsigned short fan_config_on_count; /* 本轮事务请求的开扇上限。 */
+    unsigned short fan_config_generation; /* 配置事务号，0 表示未发起事务。 */
+    unsigned short fan_config_confirmed[3]; /* 三相已应用阈值的物理模块位图。 */
+    unsigned short fan_config_rejected[3]; /* 三相明确拒绝当前事务的物理模块位图。 */
+    unsigned short fan_config_state; /* CHB_FAN_CONFIG_*。 */
 } CHB_DAB_STATUS;
 
 extern volatile CHB_DAB_COMMAND

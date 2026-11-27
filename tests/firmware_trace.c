@@ -88,6 +88,7 @@ STUB(TimerInit,"timer_init")
 STUB(Initial_Variable,"variable_init")
 STUB(Variable_RST,"variable_reset")
 STUB(SstParameters_LoadPersistent,"sst_load")
+STUB(SstParameterStore_LoadFanThresholds,"sst_fan_load")
 void ChbDabControl_Init(void) { event("core_init"); core_ready=1; }
 void SstFault_Init(void) { event("fault_init"); fault_ready=1; }
 STUB(SstDpramHost_Invalidate,"dpram_host_invalidate")
@@ -169,6 +170,8 @@ int main(void) {
     before("latch_boot_clear","dpram_host_init"); before("dpram_host_init","enable_tad");
 #if CHB_LOAD_EEPROM_PARAMETERS
     before("debug_init","sst_load"); before("sst_load","fo_enable");
+#elif !SST_BENCH_INPUT_SIM
+    before("debug_init","sst_fan_load"); before("sst_fan_load","fo_enable");
 #endif
     check(handlers[C674X_MASK_INT5]==FPGAIsr && handlers[C674X_MASK_INT4]==FAULTIsr,"TAD and fault handlers bound");
 #if SST_ENABLE_DPRAM

@@ -17,8 +17,8 @@ extern "C"
 #define ControlTAD 5000
 /* OV_Stop：原过压停机策略条件编译开关。 */
 #define OV_Stop
-/* EEPROM上电恢复只由CHB_LOAD_EEPROM_PARAMETERS控制，在SystemInit_Runtime
- * 中统一校验v1/v2/v3镜像；不再启用未校验的旧页0..3自动读/首次写。 */
+/* EEPROM上电恢复在SystemInit_Runtime统一处理。全量恢复支持v1..v5，
+ * 关闭全量恢复时仅应用有效v5镜像的风扇阈值。 */
 /* FaultOutTest：原故障输出测试编译标识。 */
 #define FaultOutTest
 

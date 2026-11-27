@@ -3,10 +3,11 @@
 #include "SstParamTypes.h"
 #include "SstHardwareParameters.h"
 
-/* 持久化载荷段索引。v4在v3的66字之后追加两项开关反馈时间。 */
+/* 持久化载荷段索引。v4追加开关反馈时间，v5追加风扇停止和启动阈值。 */
 #define SST_STORE_LEGACY_OFFSET 42U
 #define SST_STORE_HARDWARE_OFFSET 50U
 #define SST_STORE_SWITCH_OFFSET (SST_STORE_HARDWARE_OFFSET + SST_HARDWARE_PARAMETER_WORDS)
+#define SST_STORE_FAN_OFFSET (SST_STORE_SWITCH_OFFSET + 2U)
 
 #ifdef __cplusplus
 extern "C"
@@ -48,6 +49,8 @@ extern "C"
  * 执行说明: 后台参数与遥测服务；不从 10 kHz ISR 调用，也不任意访问上位机给出的 RAM 地址。
  *================================================================*/
     void SstParameterStore_LoadPersistent(void);
+    /* 上电仅恢复 v5 风扇阈值，不应用镜像中其他参数。 */
+    void SstParameterStore_LoadFanThresholds(void);
 
     /*==================================================================
  * 函数功能: 在停机且存储空闲时执行加载，或建立异步保存镜像

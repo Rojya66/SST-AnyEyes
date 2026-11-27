@@ -17,9 +17,6 @@ localparam integer PRODUCT_BITS = 33;
 localparam integer PRODUCT_COUNT = 16;
 localparam integer PRODUCT_BUS_BITS = PRODUCT_BITS * PRODUCT_COUNT;
 
-assign rfd = 1'b1;
-assign chan_in = chan;
-
 reg [1:0] chan = 2'd0;
 reg signed [15:0] delay0 [0:30];
 reg signed [15:0] delay1 [0:30];
@@ -31,6 +28,9 @@ reg [1:0] chan_pipe;
 reg product_valid;
 integer i;
 integer k;
+
+assign rfd = 1'b1;
+assign chan_in = chan;
 
 function signed [15:0] coefficient;
     input [4:0] tap;

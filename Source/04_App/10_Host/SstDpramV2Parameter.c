@@ -15,7 +15,9 @@ enum
     V2_SWITCH_STABLE = 0x39,
     V2_SWITCH_TIMEOUT = 0x3A,
     V2_CHB_MODE = 0x3B,
-    V2_SWITCH_MODE = 0x3C
+    V2_SWITCH_MODE = 0x3C,
+    V2_FAN_OFF = 0x3D,
+    V2_FAN_ON = 0x3E
 };
 
 /* EEPROM沿用原42字快照。V2把采样周期移到只读遥测，把CHB模式移到遥调末尾。 */
@@ -66,6 +68,8 @@ void SstDpramV2Parameter_Read(uint16_t *words)
 
     words[V2_SWITCH_STABLE] = g_chb_dab_params.switch_stable_10ms;
     words[V2_SWITCH_TIMEOUT] = g_chb_dab_params.switch_timeout_10ms;
+    words[V2_FAN_OFF] = g_chb_dab_params.fan_off_count;
+    words[V2_FAN_ON] = g_chb_dab_params.fan_on_count;
 }
 
 uint16_t SstDpramV2Parameter_Apply(const uint16_t *words, uint16_t *error_addr)
@@ -126,6 +130,11 @@ uint16_t SstDpramV2Parameter_Apply(const uint16_t *words, uint16_t *error_addr)
         *error_addr = WordAddress(V2_SWITCH_STABLE + error_index);
         return SST_PARAM_RANGE;
     }
+    if (!ChbDabControl_FanThresholdsValid(words[V2_FAN_OFF], words[V2_FAN_ON]))
+    {
+        *error_addr = WordAddress((words[V2_FAN_OFF] >= words[V2_FAN_ON]) ? V2_FAN_OFF : V2_FAN_ON);
+        return SST_PARAM_RANGE;
+    }
 
     /* 到这里整组已通过。只更新变化项，未调节的浮点PI保留原始精度。 */
     SstParameterTable_SnapshotApplyChanged(control);
@@ -142,6 +151,9 @@ uint16_t SstDpramV2Parameter_Apply(const uint16_t *words, uint16_t *error_addr)
     g_chb_dab_protection_enable = words[V2_SOFTWARE_PROTECTION];
     g_chb_dab_params.switch_stable_10ms = words[V2_SWITCH_STABLE];
     g_chb_dab_params.switch_timeout_10ms = words[V2_SWITCH_TIMEOUT];
+    g_chb_dab_params.fan_off_count = words[V2_FAN_OFF];
+    g_chb_dab_params.fan_on_count = words[V2_FAN_ON];
+    g_chb_dab_command.fan_config_apply = 1U;
     return SST_PARAM_OK;
 }
 
@@ -159,8 +171,10 @@ uint16_t SstDpramV2Parameter_Store(uint16_t load, uint16_t *error_addr)
             offset = V2_LEGACY_START + error_index - SST_STORE_LEGACY_OFFSET;
         else if (error_index < SST_STORE_SWITCH_OFFSET)
             offset = HardwareOffset(error_index - SST_STORE_HARDWARE_OFFSET);
-        else
+        else if (error_index < SST_STORE_FAN_OFFSET)
             offset = V2_SWITCH_STABLE + error_index - SST_STORE_SWITCH_OFFSET;
+        else
+            offset = V2_FAN_OFF + error_index - SST_STORE_FAN_OFFSET;
     }
     *error_addr = WordAddress(offset);
     return result;

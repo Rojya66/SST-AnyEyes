@@ -237,7 +237,7 @@ void SstDpramHost_Initialize(void)
     SstDpramV2Telemetry_Init();
     /* 先应答上次复位遗留的左邮箱，再发布本次启动签名。 */
     (void)HWREGH(DPRAM_Maibox_Left);
-    DPRAM_WORD(SST_DPRAM_V2_VERSION) = 0x0200U;
+    DPRAM_WORD(SST_DPRAM_V2_VERSION) = 0x0201U;
     DPRAM_WORD(SST_DPRAM_V2_SIGNATURE) = 0x5353U;
     HWREGH(DPRAM_Maibox_Right) = WriteBlock_remRegulate;
 #endif

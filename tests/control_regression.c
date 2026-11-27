@@ -75,6 +75,10 @@ static unsigned short fake_unit_link[16] = {
     [8] = 0xFFFFU, [11] = 0xFFFFU, [12] = 0xFFFFU
 };
 static unsigned short fake_unit_loss[16];
+static struct {
+    unsigned short supported, generation, off_count, on_count;
+    unsigned short reply_generation, confirmed, rejected;
+} fake_fan_config[16];
 static unsigned char fake_fo_phases = 7U;
 static unsigned short fake_fo_enable[3];
 static unsigned short fake_fo_input[3][2];
@@ -92,6 +96,25 @@ static unsigned short Port_UnitLinkLossRead(unsigned short plugin)
 static void Port_UnitLinkLossClear(unsigned short plugin, unsigned short channels)
 {
     fake_unit_loss[plugin - 2U] &= ~channels;
+}
+static unsigned short Port_UnitFanConfigSupported(unsigned short plugin)
+{
+    return fake_fan_config[plugin - 2U].supported;
+}
+static void Port_UnitFanConfigure(unsigned short plugin, unsigned short off_count, unsigned short on_count,
+                                  unsigned short generation)
+{
+    unsigned short index = plugin - 2U;
+    fake_fan_config[index].off_count = off_count;
+    fake_fan_config[index].on_count = on_count;
+    fake_fan_config[index].generation = generation;
+}
+static void Port_UnitFanConfigRead(unsigned short plugin, unsigned short generation,
+                                  unsigned short *confirmed, unsigned short *rejected)
+{
+    unsigned short index = plugin - 2U;
+    *confirmed = fake_fan_config[index].reply_generation == generation ? fake_fan_config[index].confirmed : 0U;
+    *rejected = fake_fan_config[index].reply_generation == generation ? fake_fan_config[index].rejected : 0U;
 }
 static unsigned char Port_SetModuleFOArmed(unsigned char phases)
 {

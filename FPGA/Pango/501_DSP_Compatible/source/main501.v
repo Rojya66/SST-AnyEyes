@@ -127,6 +127,14 @@ reg [15:0] reg_DAB_T = 16'd1250;
 reg [15:0] reg_PM_CTL = 16'h0000;
 reg [15:0] reg_TX_EN = 16'hFFFF;
 reg [15:0] reg_TX_CTL = 16'd0;
+reg [15:0] reg_DAB_T_MK_0 = 16'd0;
+reg [15:0] reg_DAB_T_MK_1 = 16'd0;
+reg [15:0] reg_DAB_T_MK_2 = 16'd0;
+reg [15:0] reg_DAB_T_MK_3 = 16'd0;
+reg [15:0] reg_DAB_T_MK_4 = 16'd0;
+reg [15:0] reg_DAB_T_MK_5 = 16'd0;
+reg [15:0] reg_DAB_T_MK_6 = 16'd0;
+reg [15:0] reg_DAB_T_MK_7 = 16'd0;
 
 wire [1:0] DAB_DIV;
 assign DAB_DIV		= reg_PM_CTL[6:5];
@@ -351,15 +359,6 @@ reg [15:0] reg_DC_index_5 = 16'd5;
 reg [15:0] reg_DC_index_6 = 16'd6;
 reg [15:0] reg_DC_index_7 = 16'd7;
 
-reg [15:0] reg_DAB_T_MK_0 = 16'd0;
-reg [15:0] reg_DAB_T_MK_1 = 16'd0;
-reg [15:0] reg_DAB_T_MK_2 = 16'd0;
-reg [15:0] reg_DAB_T_MK_3 = 16'd0;
-reg [15:0] reg_DAB_T_MK_4 = 16'd0;
-reg [15:0] reg_DAB_T_MK_5 = 16'd0;
-reg [15:0] reg_DAB_T_MK_6 = 16'd0;
-reg [15:0] reg_DAB_T_MK_7 = 16'd0;
-
 reg [15:0] reg_Z;
 reg [15:0] reg_REF_Right;
 
@@ -402,15 +401,6 @@ wire [15:0] tx_PWM_R_4;// = 16'b1000000000000000;
 wire [15:0] tx_PWM_R_5;// = 16'b1000000000000000;
 wire [15:0] tx_PWM_R_6;// = 16'b1000000000000000;
 wire [15:0] tx_PWM_R_7;// = 16'b1000000000000000;
-//DAB备用数据
-reg [15:0] tx_PWM_DAB_0 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_1 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_2 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_3 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_4 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_5 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_6 = 16'b1100000000000000;
-reg [15:0] tx_PWM_DAB_7 = 16'b1100000000000000;
 //DAB脉冲中间时刻
 wire [15:0] tx_PWM_DAB_T_0;// = 16'b1101000000000000;
 wire [15:0] tx_PWM_DAB_T_1;// = 16'b1101000000000000;
@@ -467,6 +457,85 @@ async_transmitter TX7(.clk(CLK_100M), .enabled(configured_modules[7]), .datain(T
 //assign TX = {FPGA_LED,FPGA_LED,FPGA_LED,FPGA_LED};
 
 reg [15:0] cnt = 16'h0000;
+
+localparam [15:0] FAN_FRAME_GAP_CYCLES = 16'd12500;
+reg [15:0] fan_staged_off = 16'd170;
+reg [15:0] fan_staged_on = 16'd235;
+reg [15:0] fan_active_off = 16'd170;
+reg [15:0] fan_active_on = 16'd235;
+reg [7:0] fan_generation = 8'd0;
+reg fan_config_enabled = 1'b0;
+wire fan_config_commit;
+wire fan_config_restart;
+wire fan_config_sending = fan_config_enabled && !fan_config_restart;
+wire [7:0] fan_ack_mask;
+wire [7:0] fan_reject_mask;
+
+function [7:0] fan_crc_byte;
+    input [7:0] crc;
+    input [7:0] data_byte;
+    integer bit_index;
+    reg [7:0] next_crc;
+    begin
+        next_crc = crc ^ data_byte;
+        for (bit_index = 0; bit_index < 8; bit_index = bit_index + 1)
+            next_crc = {next_crc[6:0], 1'b0} ^ (next_crc[7] ? 8'h07 : 8'h00);
+        fan_crc_byte = next_crc;
+    end
+endfunction
+
+function [7:0] fan_payload_byte;
+    input [3:0] part;
+    input [7:0] generation;
+    input [15:0] off_udc;
+    input [15:0] on_udc;
+    begin
+        case (part)
+            4'd1: fan_payload_byte = generation;
+            4'd2: fan_payload_byte = off_udc[15:8];
+            4'd3: fan_payload_byte = off_udc[7:0];
+            4'd4: fan_payload_byte = on_udc[15:8];
+            4'd5: fan_payload_byte = on_udc[7:0];
+            default: fan_payload_byte = 8'd0;
+        endcase
+    end
+endfunction
+
+// Use only the existing C000 slot. Each enabled lane resumes the original
+// idle frame once its complete applied-value reply has been checked.
+reg [3:0] fan_tx_part = 4'd1;
+reg [7:0] fan_tx_crc = 8'd0;
+reg [7:0] fan_active_crc = 8'd0;
+reg fan_slot_cancelled = 1'b0;
+wire fan_tx_slot = (cnt == 16'd3705) && !fan_slot_cancelled && !fan_config_restart;
+wire [7:0] fan_tx_payload = fan_payload_byte(fan_tx_part, fan_generation,
+                                            fan_active_off, fan_active_on);
+wire [15:0] fan_tx_word = {4'hC, fan_tx_part,
+                           (fan_tx_part == 4'd6) ? fan_tx_crc : fan_tx_payload};
+
+always @(posedge CLK_100M) begin
+    // A commit between data preload and the transmit strobe invalidates that slot.
+    if (fan_config_restart)
+        fan_slot_cancelled <= 1'b1;
+    else if (cnt == 16'd3701)
+        fan_slot_cancelled <= 1'b0;
+
+    if (!fan_config_sending) begin
+        fan_tx_part <= 4'd1;
+        fan_tx_crc <= 8'd0;
+        fan_active_crc <= 8'd0;
+    end else if (fan_tx_slot) begin
+        if (fan_tx_part == 4'd6) begin
+            fan_active_crc <= fan_tx_crc;
+            fan_tx_crc <= 8'd0;
+            fan_tx_part <= 4'd1;
+        end else begin
+            fan_tx_crc <= fan_crc_byte(fan_tx_crc, fan_tx_payload);
+            fan_tx_part <= fan_tx_part + 1'b1;
+        end
+    end
+end
+
 always @ (posedge CLK_100M)
 begin
 	if((cnt >= 16'd4999) || pos_sync)	cnt <= 16'd0;
@@ -556,18 +625,18 @@ begin
 		end
 		if(cnt == 16'd3105)		TxD_start <= periodic_tx_mask;
 		
-		if(cnt == 16'd3701)		//备用数据
+		if(cnt == 16'd3701)	//备用数据 / UNIT 风扇阈值
 		begin
-			TX0_buf <= tx_PWM_DAB_0;
-			TX1_buf <= tx_PWM_DAB_1;
-			TX2_buf <= tx_PWM_DAB_2;
-			TX3_buf <= tx_PWM_DAB_3;
-			TX4_buf <= tx_PWM_DAB_4;
-			TX5_buf <= tx_PWM_DAB_5;
-			TX6_buf <= tx_PWM_DAB_6;
-			TX7_buf <= tx_PWM_DAB_7;
+			TX0_buf <= (fan_config_sending && !fan_ack_mask[0]) ? fan_tx_word : 16'hC000;
+			TX1_buf <= (fan_config_sending && !fan_ack_mask[1]) ? fan_tx_word : 16'hC000;
+			TX2_buf <= (fan_config_sending && !fan_ack_mask[2]) ? fan_tx_word : 16'hC000;
+			TX3_buf <= (fan_config_sending && !fan_ack_mask[3]) ? fan_tx_word : 16'hC000;
+			TX4_buf <= (fan_config_sending && !fan_ack_mask[4]) ? fan_tx_word : 16'hC000;
+			TX5_buf <= (fan_config_sending && !fan_ack_mask[5]) ? fan_tx_word : 16'hC000;
+			TX6_buf <= (fan_config_sending && !fan_ack_mask[6]) ? fan_tx_word : 16'hC000;
+			TX7_buf <= (fan_config_sending && !fan_ack_mask[7]) ? fan_tx_word : 16'hC000;
 		end
-		if(cnt == 16'd3705)		TxD_start <= periodic_tx_mask;
+		if(fan_tx_slot)		TxD_start <= periodic_tx_mask;
 		
 		if(cnt == 16'd4301)		
 		begin
@@ -644,10 +713,25 @@ generate
 		reg fresh_udc_pending = 1'b0;
 		reg udc_sample_ready = 1'b0;
 		reg timeout_latched = 1'b0;
+		wire [3:0] fan_reply_tag = rx_word[11:8];
+		wire [7:0] fan_reply_byte = rx_word[7:0];
+		wire fan_reply_frame = rx_ready && (rx_word[15:12] == 4'hF) &&
+		                       (fan_reply_tag >= 4'd1) && (fan_reply_tag <= 4'd7);
+		reg fan_ack_open = 1'b0;
+		reg fan_acknowledged = 1'b0;
+		reg fan_rejected = 1'b0;
+		reg [3:0] fan_ack_part = 4'd1;
+		reg [15:0] fan_ack_gap = 16'd0;
+		wire [7:0] fan_ack_expected = fan_payload_byte(fan_ack_part, fan_generation,
+		                                               fan_active_off, fan_active_on);
+		wire fan_ack_crc_ok = (fan_reply_tag == 4'd6) && (fan_reply_byte == fan_active_crc);
+		wire fan_reject_crc_ok = (fan_reply_tag == 4'd7) && (fan_reply_byte == ~fan_active_crc);
 
 		assign unit_online[channel] = (udc_timer != 0);
 		assign unit_udc_usable[channel] = udc_sample_ready && unit_online[channel] && !latch_BK;
 		assign unit_timeout_latched[channel] = timeout_latched;
+		assign fan_ack_mask[channel] = fan_acknowledged;
+		assign fan_reject_mask[channel] = fan_rejected;
 
 		async_receiver receiver(
 			.clk(CLK_100M),
@@ -656,6 +740,45 @@ generate
 			.RxD_data_ready(rx_ready),
 			.RxD_data(rx_word)
 		);
+
+		// Read replies directly from the receiver, independently of BK.
+		// Start listening only after a complete C1..C6 send for this lane.
+		// An in-flight old reply's F1 has expired before that send completes.
+		always @(posedge CLK_100M) begin
+			if (!fan_config_sending || !periodic_tx_mask[channel] ||
+			    !unit_online[channel] || udc_expired || clear_module_data) begin
+				fan_ack_open <= 1'b0;
+				fan_acknowledged <= 1'b0;
+				fan_rejected <= 1'b0;
+				fan_ack_part <= 4'd1;
+				fan_ack_gap <= 16'd0;
+			end else begin
+				if (fan_tx_slot && (fan_tx_part == 4'd6))
+					fan_ack_open <= 1'b1;
+				if (fan_ack_gap != 0)
+					fan_ack_gap <= fan_ack_gap - 1'b1;
+
+				if (fan_ack_open && !fan_acknowledged && fan_reply_frame) begin
+					if ((fan_reply_tag == 4'd1) && (fan_reply_byte == fan_generation)) begin
+						fan_ack_part <= 4'd2;
+						fan_ack_gap <= FAN_FRAME_GAP_CYCLES;
+					end else if ((fan_ack_part == 4'd6) && (fan_ack_gap != 0) &&
+					             (fan_ack_crc_ok || fan_reject_crc_ok)) begin
+						fan_acknowledged <= fan_ack_crc_ok;
+						fan_rejected <= fan_reject_crc_ok;
+						fan_ack_part <= 4'd1;
+						fan_ack_gap <= 16'd0;
+					end else if ((fan_reply_tag == fan_ack_part) && (fan_ack_gap != 0) &&
+					             (fan_ack_part < 4'd6) && (fan_reply_byte == fan_ack_expected)) begin
+						fan_ack_part <= fan_ack_part + 1'b1;
+						fan_ack_gap <= FAN_FRAME_GAP_CYCLES;
+					end else begin
+						fan_ack_part <= 4'd1;
+						fan_ack_gap <= 16'd0;
+					end
+				end
+			end
+		end
 
 		always @ (posedge CLK_100M) begin
 			if(!configured_modules[channel] || clear_module_data) begin
@@ -710,7 +833,10 @@ generate
 						4'h8, 4'h9, 4'hA, 4'hB: reg_STATUS[channel] <= {2'b00, reg_RX[channel][13:0]};
 						4'hC: reg_SIN_L[channel] <= {4'b0000, reg_RX[channel][11:0]};
 						4'hD: reg_SIN_R[channel] <= {4'b0000, reg_RX[channel][11:0]};
-						4'hE, 4'hF: reg_DRIVER[channel] <= {4'b0000, reg_RX[channel][11:0]};
+						4'hE: reg_DRIVER[channel] <= {4'b0000, reg_RX[channel][11:0]};
+						// F1..F7 are reserved replies, including any in flight after disable.
+						4'hF: if ((reg_RX[channel][11:8] == 4'd0) || (reg_RX[channel][11:8] > 4'd7))
+							reg_DRIVER[channel] <= {4'b0000, reg_RX[channel][11:0]};
 					endcase
 				end
 			end
@@ -741,6 +867,10 @@ reg WE_clk = 1'b0;
 
 // F2 写 1 清对应位，使用与其余 EMIFA 写寄存器相同的选通和读优先级。
 assign clear_unit_timeout = !CS && !RD_clk && WE_clk && (XA == 8'hF2);
+assign fan_config_commit = !CS && !RD_clk && WE_clk && (XA == 8'h2C);
+assign fan_config_restart = fan_config_commit ||
+                            (!CS && !RD_clk && WE_clk && (XA == 8'h03) &&
+                             (reg_PM[7:0] != XD[7:0]));
 
 always @ (posedge CLK_100M)
 begin	
@@ -817,12 +947,12 @@ begin
 //			8'h27: data <= reg27;
 //			8'h28: data <= reg_AD_PROT_EN;
 //			8'h29: data <= reg29;
-//			8'h2A: data <= reg2A;
-//			8'h2B: data <= reg2B;
-//			8'h2C: data <= reg2C;
-//			8'h2D: data <= reg2D;
-//			8'h2E: data <= reg2E;
-//			8'h2F: data <= reg2F;
+			8'h2A: data <= fan_staged_off;
+			8'h2B: data <= fan_staged_on;
+			8'h2C: data <= {fan_config_enabled, 7'd0, fan_generation};
+			8'h2D: data <= 16'h4641;
+			8'h2E: data <= {fan_generation, fan_ack_mask};
+			8'h2F: data <= {fan_generation, fan_reject_mask};
 
 			8'h30, 8'h31, 8'h32, 8'h33, 8'h34,
 			8'h35, 8'h36, 8'h37, 8'h38, 8'h39: data <= 16'd0;
@@ -1033,6 +1163,14 @@ begin
 			8'h16: reg_TX_6 <= XD;
 			8'h17: reg_TX_7 <= XD;
 
+			8'h2A: fan_staged_off <= XD;
+			8'h2B: fan_staged_on <= XD;
+			8'h2C: begin
+				fan_config_enabled <= XD[15];
+				fan_generation <= XD[7:0];
+				fan_active_off <= fan_staged_off;
+				fan_active_on <= fan_staged_on;
+			end
 
 			8'h3B: reg_TEST3B <= XD;
 			

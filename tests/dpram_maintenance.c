@@ -309,10 +309,10 @@ int main(void)
     g_chb_dab_command.run_enable = g_chb_dab_command.dab_enable = 1U;
     Frame(data, 21U, 2U, 0U, 0U); data[7] = 1U;
     CHECK(SendFrame(data, 1U) == SST_PARAM_OK && !g_chb_dab_command.run_enable && !g_chb_dab_command.dab_enable);
-    FinishSave(); CHECK(eeprom_writes == 145U);
+    FinishSave(); CHECK(eeprom_writes == 149U);
     OC_level_SET = 77U;
     {
-        uint8_t saved_image[144];
+        uint8_t saved_image[148];
         memcpy(saved_image, &eeprom[6U * 64U], sizeof(saved_image));
         g_chb_dab_params.voltage_kp = 0.0F;
         for(i = 1U; i <= 5U; i += 2U)
@@ -321,9 +321,9 @@ int main(void)
             uint16_t crc;
             memcpy(&eeprom[6U * 64U], saved_image, sizeof(saved_image));
             eeprom[6U * 64U + offset] = eeprom[6U * 64U + offset + 1U] = 0xFFU;
-            crc = ImageCrcReference(&eeprom[6U * 64U], 142U);
-            eeprom[6U * 64U + 142U] = (uint8_t)crc;
-            eeprom[6U * 64U + 143U] = (uint8_t)(crc >> 8);
+            crc = ImageCrcReference(&eeprom[6U * 64U], 146U);
+            eeprom[6U * 64U + 146U] = (uint8_t)crc;
+            eeprom[6U * 64U + 147U] = (uint8_t)(crc >> 8);
             Frame(data, (uint16_t)(400U + i), 4U, 0U, SST_DPRAM_COMMIT);
             CHECK(SendFrame(data, 1U) == SST_PARAM_RANGE);
             CHECK(OC_level_SET == 77U && g_chb_dab_params.voltage_kp == 0.0F); /* No partial mirror apply. */

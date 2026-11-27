@@ -219,6 +219,9 @@ extern "C"
     extern ushort Port_UnitLinkRead(ushort plugin);
     extern ushort Port_UnitLinkLossRead(ushort plugin);
     extern void Port_UnitLinkLossClear(ushort plugin, ushort channels);
+    extern ushort Port_UnitFanConfigSupported(ushort plugin);
+    extern void Port_UnitFanConfigure(ushort plugin, ushort off_count, ushort on_count, ushort generation);
+    extern void Port_UnitFanConfigRead(ushort plugin, ushort generation, ushort *confirmed, ushort *rejected);
 
     /* 根据各相PM位图，闭锁601未接入的光纤输出。 */
     extern void Port_ApplyModuleShutdownMask(void);

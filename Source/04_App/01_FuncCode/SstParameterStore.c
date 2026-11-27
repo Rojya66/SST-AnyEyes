@@ -1,6 +1,6 @@
 //###########################################################################
 // FILE: SstParameterStore.c
-// FUNCTION: BL24C512A的v4参数镜像；追加开关反馈时间，兼容v1/v2/v3加载。
+// FUNCTION: BL24C512A的v5参数镜像；追加风扇阈值，兼容v1..v4加载。
 //           参数表归SstParameterTable；停机判断归SstCommand。
 //###########################################################################
 #include <string.h>
@@ -20,8 +20,9 @@ static uint32_t storageTick; /* storageTick：上次推进参数存储任务的 
 #define SST_STORE_V1_LENGTH 92U
 #define SST_STORE_V2_LENGTH 108U
 #define SST_STORE_V3_LENGTH 140U
-#define SST_STORE_SNAPSHOT_WORDS (SST_STORE_SWITCH_OFFSET + 2U)
-/* v4共144字节，地址0180h..020Fh，仍按64字节逻辑页换算。 */
+#define SST_STORE_V4_LENGTH 144U
+#define SST_STORE_SNAPSHOT_WORDS (SST_STORE_FAN_OFFSET + 2U)
+/* v5共148字节，地址0180h..0213h，仍按64字节逻辑页换算。 */
 #define SST_STORE_LENGTH (8U + 2U * SST_STORE_SNAPSHOT_WORDS)
 static uint8_t storageImage[SST_STORE_LENGTH]; /* 不保存启停、开关输出或临时软件保护旁路。 */
 
@@ -121,7 +122,7 @@ static uint16_t StoreValidate(const uint16_t *snapshot, uint16_t words, uint16_t
             return result;
         }
     }
-    if (words == SST_STORE_SNAPSHOT_WORDS)
+    if (words >= SST_STORE_FAN_OFFSET)
     {
         uint16_t switch_error = SstParameterTable_SwitchTimingError(snapshot[SST_STORE_SWITCH_OFFSET],
                                                                    snapshot[SST_STORE_SWITCH_OFFSET + 1U]);
@@ -131,22 +132,32 @@ static uint16_t StoreValidate(const uint16_t *snapshot, uint16_t words, uint16_t
             return SST_PARAM_RANGE;
         }
     }
+    if (words == SST_STORE_SNAPSHOT_WORDS)
+    {
+        uint16_t off = snapshot[SST_STORE_FAN_OFFSET];
+        uint16_t on = snapshot[SST_STORE_FAN_OFFSET + 1U];
+        if (!ChbDabControl_FanThresholdsValid(off, on))
+        {
+            *error_index = SST_STORE_FAN_OFFSET + ((off >= on) ? 0U : 1U);
+            return SST_PARAM_RANGE;
+        }
+    }
     return SST_PARAM_OK;
 }
 
 /*==================================================================
- * 函数功能: 停机时读取v1..v4镜像，整幅校验通过后才恢复活动参数
+ * 函数功能: 停机时读取v1..v5镜像，整幅校验通过后才恢复活动参数
  * 输入参数: error_index：输出镜像校验失败的载荷下标。
- * 输出参数: 控制参数、v2保护、v3硬件配置及v4开关反馈时间。
+ *           fan_only：上电仅读取并应用v5风扇阈值。
  * 返回值: SST_PARAM_* 操作结果
  * 执行说明: 参数镜像服务在初始化或主循环中调用。
  *================================================================*/
-static uint16_t StoreLoad(uint16_t *error_index)
+static uint16_t StoreLoad(uint16_t *error_index, uint16_t fan_only)
 {
     uint16_t i, /* i：镜像读取及快照解码的索引。 */
         result, /* result：现代及原保护/预充快照的整体校验结果。 */
         length, /* length：由已识别版本决定的合法镜像字节数。 */
-        words; /* 本次合法版本的载荷字数：42、50、66或68。 */
+        words; /* 本次合法版本的载荷字数：42、50、66、68或70。 */
     uint16_t snapshot[SST_STORE_SNAPSHOT_WORDS]; /* 全幅解码缓存；校验前不写活动参数。 */
     if (SstCommand_IsStopped() == 0U)
         return SST_PARAM_BUSY;
@@ -159,25 +170,32 @@ static uint16_t StoreLoad(uint16_t *error_index)
     if (storageImage[2] == 1U && storageImage[3] == SST_STORE_V1_LENGTH)
     {
         length = SST_STORE_V1_LENGTH;
-        words = 42U;
+        words = SST_STORE_LEGACY_OFFSET;
     }
     else if (storageImage[2] == 2U && storageImage[3] == SST_STORE_V2_LENGTH)
     {
         length = SST_STORE_V2_LENGTH;
-        words = 50U;
+        words = SST_STORE_HARDWARE_OFFSET;
     }
     else if (storageImage[2] == 3U && storageImage[3] == SST_STORE_V3_LENGTH)
     {
         length = SST_STORE_V3_LENGTH;
         words = SST_STORE_SWITCH_OFFSET;
     }
-    else if (storageImage[2] == 4U && storageImage[3] == SST_STORE_LENGTH)
+    else if (storageImage[2] == 4U && storageImage[3] == SST_STORE_V4_LENGTH)
+    {
+        length = SST_STORE_V4_LENGTH;
+        words = SST_STORE_FAN_OFFSET;
+    }
+    else if (storageImage[2] == 5U && storageImage[3] == SST_STORE_LENGTH)
     {
         length = SST_STORE_LENGTH;
         words = SST_STORE_SNAPSHOT_WORDS;
     }
     else
         return SST_PARAM_STORAGE;
+    if (fan_only && words < SST_STORE_SNAPSHOT_WORDS)
+        return SST_PARAM_OK; /* 旧镜像无风扇阈值，沿用上电默认值。 */
     if (r_eeprom_section_read(6U, 6U, (uint8_t)(length - 6U), &storageImage[6]) != VALIDFLAG)
         return SST_PARAM_STORAGE;
     if (StoreGet((uint16_t)(length - 2U)) != StoreCrc(storageImage, (uint16_t)(length - 2U)))
@@ -189,22 +207,24 @@ static uint16_t StoreLoad(uint16_t *error_index)
     if (result != SST_PARAM_OK)
         return result;
 
-    /* v1/v2没有硬件字段，保留活动硬件配置。旧镜像的开关时间取源码默认。 */
-    SstParameterTable_SnapshotApply(snapshot);
-    if (words >= SST_STORE_HARDWARE_OFFSET)
-        SstLegacyParameters_ApplySnapshot(&snapshot[SST_STORE_LEGACY_OFFSET]);
-    if (words >= SST_STORE_SWITCH_OFFSET)
-        SstHardwareParameters_Apply(&snapshot[SST_STORE_HARDWARE_OFFSET]);
-    if (words == SST_STORE_SNAPSHOT_WORDS)
+    if (!fan_only)
     {
-        g_chb_dab_params.switch_stable_10ms = snapshot[SST_STORE_SWITCH_OFFSET];
-        g_chb_dab_params.switch_timeout_10ms = snapshot[SST_STORE_SWITCH_OFFSET + 1U];
+        SstParameterTable_SnapshotApply(snapshot);
+        if (words >= SST_STORE_HARDWARE_OFFSET)
+            SstLegacyParameters_ApplySnapshot(&snapshot[SST_STORE_LEGACY_OFFSET]);
+        if (words >= SST_STORE_SWITCH_OFFSET)
+            SstHardwareParameters_Apply(&snapshot[SST_STORE_HARDWARE_OFFSET]);
+        g_chb_dab_params.switch_stable_10ms = (words >= SST_STORE_FAN_OFFSET) ?
+            snapshot[SST_STORE_SWITCH_OFFSET] : SST_SWITCH_FEEDBACK_STABLE_10MS;
+        g_chb_dab_params.switch_timeout_10ms = (words >= SST_STORE_FAN_OFFSET) ?
+            snapshot[SST_STORE_SWITCH_OFFSET + 1U] : SST_SWITCH_ACTION_TIMEOUT_10MS;
     }
-    else
-    {
-        g_chb_dab_params.switch_stable_10ms = SST_SWITCH_FEEDBACK_STABLE_10MS;
-        g_chb_dab_params.switch_timeout_10ms = SST_SWITCH_ACTION_TIMEOUT_10MS;
-    }
+
+    g_chb_dab_params.fan_off_count = (words == SST_STORE_SNAPSHOT_WORDS) ?
+        snapshot[SST_STORE_FAN_OFFSET] : CHB_FAN_OFF_COUNT_DEFAULT;
+    g_chb_dab_params.fan_on_count = (words == SST_STORE_SNAPSHOT_WORDS) ?
+        snapshot[SST_STORE_FAN_OFFSET + 1U] : CHB_FAN_ON_COUNT_DEFAULT;
+    g_chb_dab_command.fan_config_apply = 1U;
     return SST_PARAM_OK;
 }
 
@@ -231,7 +251,7 @@ uint16_t SstParameterStore_RequestWithError(uint16_t load, uint16_t *error_index
         return SST_PARAM_BUSY;
     if (load != 0U)
     {
-        storageResult = StoreLoad(error_index);
+        storageResult = StoreLoad(error_index, 0U);
         return storageResult;
     }
     for (i = 0U; i < SST_STORE_LEGACY_OFFSET; ++i)
@@ -241,13 +261,15 @@ uint16_t SstParameterStore_RequestWithError(uint16_t load, uint16_t *error_index
     SstHardwareParameters_Read(&snapshot[SST_STORE_HARDWARE_OFFSET]);
     snapshot[SST_STORE_SWITCH_OFFSET] = g_chb_dab_params.switch_stable_10ms;
     snapshot[SST_STORE_SWITCH_OFFSET + 1U] = g_chb_dab_params.switch_timeout_10ms;
+    snapshot[SST_STORE_FAN_OFFSET] = g_chb_dab_params.fan_off_count;
+    snapshot[SST_STORE_FAN_OFFSET + 1U] = g_chb_dab_params.fan_on_count;
     result = StoreValidate(snapshot, SST_STORE_SNAPSHOT_WORDS, error_index);
     if (result != SST_PARAM_OK)
         return result;
     memset(storageImage, 0, sizeof(storageImage));
     storageImage[0] = 0x53;
     storageImage[1] = 0x54;
-    storageImage[2] = 4U;
+    storageImage[2] = 5U;
     storageImage[3] = SST_STORE_LENGTH;
     for (i = 0; i < SST_STORE_SNAPSHOT_WORDS; ++i)
         StorePut((uint16_t)(6 + 2 * i), snapshot[i]);
@@ -349,5 +371,11 @@ uint16_t SstParameterStore_GetResult(void)
 void SstParameterStore_LoadPersistent(void)
 {
     uint16_t error_index = SST_PARAM_NO_FIELD;
-    storageResult = StoreLoad(&error_index);
+    storageResult = StoreLoad(&error_index, 0U);
+}
+
+void SstParameterStore_LoadFanThresholds(void)
+{
+    uint16_t error_index = SST_PARAM_NO_FIELD;
+    storageResult = StoreLoad(&error_index, 1U);
 }

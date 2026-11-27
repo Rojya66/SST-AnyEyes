@@ -63,6 +63,7 @@ static void reset_test_io(void)
 static void setup_single_phase(unsigned short ac_mode)
 {
     reset_test_io();
+    memset(fake_fan_config, 0, sizeof(fake_fan_config));
     HA_PM_A1 = 1U;
     HA_PM_A2 = 0U;
     HA_PM_B1 = 0U;
@@ -931,6 +932,72 @@ static void unit_link_service_tick(void)
     ChbDabControl_Service();
 }
 
+static void test_precharge_fan_config(void)
+{
+    const unsigned short a1 = Com_A1_PluginUnit_5 - 2U;
+    const unsigned short a2 = Com_A2_PluginUnit_6 - 2U;
+    unsigned short generation;
+    unsigned short tick;
+
+    setup_single_phase(CHB_AC_MODE_OPEN_LOOP);
+    fake_fan_config[a1].supported = 1U;
+    g_chb_dab_params.fan_off_count = 180U;
+    g_chb_dab_params.fan_on_count = 245U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_STOPPED && !fake_ac_pwm);
+    assert(g_chb_dab_command.fan_config_apply == 0U && fake_fan_config[a1].generation != 0U);
+    assert(fake_fan_config[a1].off_count == 180U && fake_fan_config[a1].on_count == 245U);
+
+    g_chb_dab_command.ac_mode = CHB_AC_MODE_CLOSED_LOOP;
+    HA_PM_A2 = 0x20U;
+    NHA_module_A = 2U;
+    fake_unit_link[a2] = 0x2020U;
+    fake_fan_config[a2].supported = 1U;
+    fake_fan_config[a1].reply_generation = fake_fan_config[a1].generation;
+    fake_fan_config[a1].confirmed = 1U;
+    g_chb_dab_status.dc_voltage_min_v = 600.0F;
+    g_chb_dab_params.precharge_stable_10ms = 1U;
+    g_chb_dab_command.run_enable = 1U;
+    unit_link_service_tick();
+    generation = g_chb_dab_status.fan_config_generation;
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE);
+    assert(generation != fake_fan_config[a1].reply_generation && generation == fake_fan_config[a2].generation);
+    unit_link_service_tick();
+    unit_link_service_tick();
+    assert(fake_fo_phases == 1U && s_precharge_stable_count == 0U);
+    assert(g_chb_dab_status.fan_config_confirmed[0] == 0U);
+    fake_fan_config[a1].reply_generation = generation;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.fan_config_confirmed[0] == 1U && !g_chb_dab_status.kt1_close_command);
+    fake_fan_config[a2].reply_generation = generation;
+    fake_fan_config[a2].confirmed = 0x20U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.fan_config_confirmed[0] == 0x2001U);
+    assert(g_chb_dab_status.state == CHB_STATE_KT1_SETTLE);
+
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    g_chb_dab_params.fan_off_count = 180U; /* 旧 501 可用默认值，自定义值必须确认。 */
+    g_chb_dab_command.run_enable = 1U;
+    unit_link_service_tick();
+    for (tick = 0U; tick < CHB_FAN_CONFIG_TIMEOUT_10MS; ++tick)
+        unit_link_service_tick();
+    assert(g_chb_dab_status.state == CHB_STATE_PRECHARGE && !fake_ac_pwm);
+    unit_link_service_tick();
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_FAN_CONFIG);
+    assert(g_chb_dab_status.fan_config_state == CHB_FAN_CONFIG_FAILED && !fake_ac_pwm);
+
+    setup_single_phase(CHB_AC_MODE_CLOSED_LOOP);
+    fake_fan_config[a1].supported = 1U;
+    g_chb_dab_command.run_enable = 1U;
+    unit_link_service_tick();
+    fake_fan_config[a1].reply_generation = g_chb_dab_status.fan_config_generation;
+    fake_fan_config[a1].rejected = 1U;
+    unit_link_service_tick();
+    assert(g_chb_dab_status.fault_code == CHB_FAULT_FAN_CONFIG);
+    assert(g_chb_dab_status.fan_config_rejected[0] == 1U);
+    puts("PASS fan settings sent while stopped and confirmed before bypass; stale, missing and rejected replies");
+}
+
 static void test_precharge_link_and_fo(void)
 {
     const unsigned short a1 = Com_A1_PluginUnit_5 - 2U;
@@ -1083,6 +1150,7 @@ int main(void)
     test_command_defaults = g_chb_dab_command;
     assert(test_defaults.sample_period_s == 0.0001F);
     test_precharge_link_and_fo();
+    test_precharge_fan_config();
     test_zero_link_confirmation_and_normal_stop();
     test_open_loop_fo_gate_without_link();
 #if SST_TEST_UNIT_LINK_ONLY

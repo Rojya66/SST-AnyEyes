@@ -183,8 +183,8 @@ static void Params(void)
   unsigned old=eepromWrites;++g_chb_dab_status.tick_10ms;SstParams_Service();
   assert(eepromWrites-old<=1);
  }
- assert(SstParams_GetStorageResult()==0&&eepromWrites==145);
- assert(eeprom[6*64+2]==4&&eeprom[6*64+3]==144);
+ assert(SstParams_GetStorageResult()==0&&eepromWrites==149);
+ assert(eeprom[6*64+2]==5&&eeprom[6*64+3]==148);
  const uint16_t differentCommands[5]={0,1000,5000,6800,100};
  for(int i=0;i<5;++i) assert(SstParams_Write(0,commandIndices[i],differentCommands[i])==0);
  assert(SstParams_Write(1,24,0)==0);

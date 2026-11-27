@@ -1022,6 +1022,128 @@ reg [15:0]	sci_out;
 reg			TxD_start;
 wire			TxD_busy;
 
+wire svg_running;
+wire dab_running;
+localparam [15:0] FAN_MAX_UDC = 16'd1983;
+localparam [15:0] FAN_FRAME_GAP_CYCLES = 16'd12500;
+reg [15:0] fan_off_udc = 16'd170;
+reg [15:0] fan_on_udc = 16'd235;
+
+function [7:0] fan_crc_byte;
+    input [7:0] crc;
+    input [7:0] data_byte;
+    integer bit_index;
+    reg [7:0] next_crc;
+    begin
+        next_crc = crc ^ data_byte;
+        for (bit_index = 0; bit_index < 8; bit_index = bit_index + 1)
+            next_crc = {next_crc[6:0], 1'b0} ^ (next_crc[7] ? 8'h07 : 8'h00);
+        fan_crc_byte = next_crc;
+    end
+endfunction
+
+// C1..C6 contain generation, OFF high/low, ON high/low, and CRC.
+// Stage the values until the complete command passes CRC and range checks.
+reg fan_rx_ready_prev = 1'b0;
+reg [3:0] fan_rx_part = 4'd1;
+reg [15:0] fan_rx_gap = 16'd0;
+reg [7:0] fan_rx_gen = 8'd0;
+reg [15:0] fan_rx_off = 16'd0;
+reg [15:0] fan_rx_on = 16'd0;
+reg [7:0] fan_rx_crc = 8'd0;
+wire fan_rx_frame = RxD_data_ready && !fan_rx_ready_prev && (RxD_data[15:12] == 4'hC);
+wire [3:0] fan_rx_tag = RxD_data[11:8];
+wire [7:0] fan_rx_byte = RxD_data[7:0];
+wire fan_command_complete = fan_rx_frame && (fan_rx_tag == 4'd6) &&
+                            (fan_rx_part == 4'd6) && (fan_rx_gap != 0) &&
+                            (fan_rx_byte == fan_rx_crc);
+wire fan_command_allowed = !(svg_running || dab_running) &&
+                           (fan_rx_off < fan_rx_on) && (fan_rx_on <= FAN_MAX_UDC);
+
+always @(posedge CLK_100M) begin
+    fan_rx_ready_prev <= RxD_data_ready;
+    if (fan_rx_gap != 0)
+        fan_rx_gap <= fan_rx_gap - 1'b1;
+
+    if (fan_rx_frame) begin
+        if (fan_rx_tag == 4'd1) begin
+            fan_rx_gen <= fan_rx_byte;
+            fan_rx_crc <= fan_crc_byte(8'd0, fan_rx_byte);
+            fan_rx_part <= 4'd2;
+            fan_rx_gap <= FAN_FRAME_GAP_CYCLES;
+        end else if ((fan_rx_tag == fan_rx_part) && (fan_rx_gap != 0) &&
+                     (fan_rx_part < 4'd6)) begin
+            case (fan_rx_part)
+                4'd2: fan_rx_off[15:8] <= fan_rx_byte;
+                4'd3: fan_rx_off[7:0] <= fan_rx_byte;
+                4'd4: fan_rx_on[15:8] <= fan_rx_byte;
+                4'd5: fan_rx_on[7:0] <= fan_rx_byte;
+                default: ;
+            endcase
+            fan_rx_crc <= fan_crc_byte(fan_rx_crc, fan_rx_byte);
+            fan_rx_part <= fan_rx_part + 1'b1;
+            fan_rx_gap <= FAN_FRAME_GAP_CYCLES;
+        end else begin
+            fan_rx_part <= 4'd1;
+            fan_rx_gap <= 16'd0;
+        end
+    end
+
+    if (fan_command_complete && fan_command_allowed) begin
+        fan_off_udc <= fan_rx_off;
+        fan_on_udc <= fan_rx_on;
+    end
+end
+
+// Echo the generation and values in F1..F5. F6 acknowledges applied values.
+// F7 carries the complemented CRC and reports a complete but rejected command.
+// Only these reply frames replace the SIN_R slot.
+reg [3:0] fan_reply_part = 4'd0;
+reg [15:0] fan_reply_gap = 16'd0;
+reg [7:0] fan_reply_gen = 8'd0;
+reg [15:0] fan_reply_off = 16'd0;
+reg [15:0] fan_reply_on = 16'd0;
+reg [7:0] fan_reply_crc = 8'd0;
+reg fan_reply_ok = 1'b0;
+reg [15:0] fan_reply_word;
+wire fan_reply_slot = (sci_cnt == 16'd4201) && !pos_sync;
+
+always @* begin
+    case (fan_reply_part)
+        4'd1: fan_reply_word = {8'hF1, fan_reply_gen};
+        4'd2: fan_reply_word = {8'hF2, fan_reply_off[15:8]};
+        4'd3: fan_reply_word = {8'hF3, fan_reply_off[7:0]};
+        4'd4: fan_reply_word = {8'hF4, fan_reply_on[15:8]};
+        4'd5: fan_reply_word = {8'hF5, fan_reply_on[7:0]};
+        4'd6: fan_reply_word = fan_reply_ok ? {8'hF6, fan_reply_crc}
+                                            : {8'hF7, ~fan_reply_crc};
+        default: fan_reply_word = {4'hD, SIN_R[12:1]};
+    endcase
+end
+
+always @(posedge CLK_100M) begin
+    if (fan_reply_gap != 0)
+        fan_reply_gap <= fan_reply_gap - 1'b1;
+    if (fan_reply_gap == 16'd1)
+        fan_reply_part <= 4'd0;
+
+    if (fan_reply_slot && (fan_reply_part != 0)) begin
+        fan_reply_part <= (fan_reply_part == 4'd6) ? 4'd0 : fan_reply_part + 1'b1;
+        fan_reply_gap <= FAN_FRAME_GAP_CYCLES;
+    end
+
+    if (fan_command_complete &&
+        ((fan_reply_part == 0) || ((fan_reply_part == 4'd6) && fan_reply_slot))) begin
+        fan_reply_part <= 4'd1;
+        fan_reply_gap <= FAN_FRAME_GAP_CYCLES;
+        fan_reply_gen <= fan_rx_gen;
+        fan_reply_off <= fan_rx_off;
+        fan_reply_on <= fan_rx_on;
+        fan_reply_crc <= fan_rx_crc;
+        fan_reply_ok <= fan_command_allowed;
+    end
+end
+
 assign clk_equ = (sci_cnt == 16'd1000);
 
 always @ (posedge CLK_100M)
@@ -1064,7 +1186,7 @@ begin
 		if(sci_cnt == 16'd3601)	sci_out <= {4'b1100, SIN_L[12:1]};
 		if(sci_cnt == 16'd3605)	TxD_start <= 1'b1;
 
-		if(sci_cnt == 16'd4201)	sci_out <= {4'b1101, SIN_R[12:1]};
+		if(sci_cnt == 16'd4201)	sci_out <= fan_reply_word;
 		if(sci_cnt == 16'd4205)	TxD_start <= 1'b1;
 		
 		if(sci_cnt == 16'd4800) SCI_UDC  <= (mult_Udc>>16);
@@ -1108,9 +1230,6 @@ assign TEST[3] = 1'b0;//AD_CS;			//TEST IO10 F15
 
 assign LED = reg_fault;
 // Bridge-running status is also the source for the active-low status LEDs.
-wire svg_running;
-wire dab_running;
-
 assign svg_running = SVG_EN & (TEST_BYPASS_SVG_EXTERNAL_INTERLOCKS ? 1'b1 : (~fault_svg & ~shutdown_svg));
 assign dab_running = DAB_EN & (TEST_BYPASS_EXTERNAL_INTERLOCKS ? 1'b1 : (~fault_dab & ~shutdown_dab));
 
@@ -1123,6 +1242,7 @@ assign LED_DAB = ~dab_running;
 // FP_OUT0 and FP_OUT1 are high-active and drive the two fan loads together.
 reg FAN_STM = 1'b0;
 reg fan_out = 1'b0;
+wire [15:0] fan_udc = SCI_UDC[15] ? 16'd0 : SCI_UDC;
 
 always @ (posedge CLK_100M)
 begin
@@ -1130,14 +1250,17 @@ begin
 	begin
 		fan_out <= ~FAN_OFF;
 	end
+	else if(reg_fault[0])
+	begin
+		FAN_STM <= 1'b1;
+		fan_out <= 1'b1;
+	end
 	else
 	begin
 		fan_out <= FAN_STM;
 		case(FAN_STM)
-//		1'b0: if(((SCI_UDC > 16'd280) && (reg_fault[6] == 1'b0)) || (reg_fault[0] == 1'b1)) FAN_STM <= 1'b1;
-//		1'b1: if((SCI_UDC < 16'd130) || (reg_fault[6] == 1'b1)) FAN_STM <= 1'b0;
-        1'b0: if((SCI_UDC > 16'd235) || (reg_fault[0] == 1'b1)) FAN_STM <= 1'b1;
-		1'b1: if((SCI_UDC < 16'd170)) FAN_STM <= 1'b0;
+		1'b0: if(fan_udc > fan_on_udc) FAN_STM <= 1'b1;
+		1'b1: if(fan_udc < fan_off_udc) FAN_STM <= 1'b0;
 		endcase
 	end
 end

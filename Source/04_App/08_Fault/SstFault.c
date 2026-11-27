@@ -237,6 +237,10 @@ void SstFault_Service(void)
             code = SST_FAULT_COMMUNICATION;
             level = SST_FAULT_LEVEL_3;
             break;
+        case CHB_FAULT_FAN_CONFIG:
+            code = SST_FAULT_FAN_CONFIG;
+            level = SST_FAULT_LEVEL_3;
+            break;
         default:
             break;
     }

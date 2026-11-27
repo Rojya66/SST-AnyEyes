@@ -25,8 +25,10 @@ static void ImagePut(uint8_t *image,unsigned offset,uint16_t value)
 {image[offset]=(uint8_t)value;image[offset+1]=(uint8_t)(value>>8);}
 static void BuildImage(unsigned version,const uint16_t *snapshot)
 {
- uint8_t *image=eeprom+6*64;unsigned words=version==1?42:(version==2?50:(version==3?66:68)),length=8+2*words;
- memset(image,0,144);image[0]=0x53;image[1]=0x54;image[2]=(uint8_t)version;image[3]=(uint8_t)length;
+ static const unsigned version_words[]={0,42,50,66,68,70};
+ uint8_t *image=eeprom+6*64;
+ unsigned words=version_words[version],length=8+2*words;
+ memset(image,0,148);image[0]=0x53;image[1]=0x54;image[2]=(uint8_t)version;image[3]=(uint8_t)length;
  for(unsigned i=0;i<words;++i)ImagePut(image,6+2*i,snapshot[i]);
  ImagePut(image,length-2,ImageCrc(image,length-2));
 }
@@ -47,12 +49,13 @@ static void FinishSave(void)
 }
 int main(void)
 {
- uint16_t saved[68],liveLegacy[8],liveHardware[16];
+ uint16_t saved[70],liveLegacy[8],liveHardware[16];
  Stopped();memset(eeprom,0xFF,sizeof(eeprom));
  for(unsigned i=0;i<42;++i)saved[i]=SstParameterTable_SnapshotRead((uint16_t)i);
  for(unsigned i=0;i<8;++i)saved[42+i]=SstLegacyParameters_Read((uint16_t)i);
  SstHardwareParameters_Read(saved+50);
  saved[66]=7U;saved[67]=140U;
+ saved[68]=181U;saved[69]=247U;
  assert(SstParameterTable_SnapshotValidate(saved)==SST_PARAM_OK);
  assert(SstLegacyParameters_ValidateSnapshot(saved+42)==SST_PARAM_OK);
  assert(SstHardwareParameters_Validate(saved+50)==SST_PARAM_OK);
@@ -81,7 +84,7 @@ int main(void)
  assert(hardwareLayoutWrites==0&&protectionWrites==0); /* v1/v2 have no hardware segment. */
 
  /* Valid CRC cannot excuse cross-field-invalid legacy thresholds or modern hardware period. */
- uint16_t malformed[68];memcpy(malformed,saved,sizeof(saved));
+ uint16_t malformed[70];memcpy(malformed,saved,sizeof(saved));
  malformed[48]=8000;malformed[49]=7000;BuildImage(2,malformed);
  g_chb_dab_params.current_kp=0.0F;OC_level_SET=610;
  assert(SstParameterStore_Request(1)==SST_PARAM_RANGE);
@@ -134,24 +137,69 @@ int main(void)
  BuildImage(4,malformed);
  assert(SstDpramV2Parameter_Store(1,&error_addr)==SST_PARAM_RANGE&&error_addr==0x0239U);
  BuildImage(4,saved);
+ g_chb_dab_params.fan_off_count=181U;g_chb_dab_params.fan_on_count=247U;
+ SstParameterStore_LoadFanThresholds();
+ assert(SstParameterStore_GetResult()==SST_PARAM_OK);
+ assert(g_chb_dab_params.fan_off_count==181U&&g_chb_dab_params.fan_on_count==247U);
  assert(SstDpramV2Parameter_Store(1,&error_addr)==SST_PARAM_OK&&error_addr==SST_PARAM_NO_FIELD);
  assert(g_chb_dab_params.switch_stable_10ms==7U&&g_chb_dab_params.switch_timeout_10ms==140U);
+ assert(g_chb_dab_params.fan_off_count==CHB_FAN_OFF_COUNT_DEFAULT&&
+        g_chb_dab_params.fan_on_count==CHB_FAN_ON_COUNT_DEFAULT);
+
+ /* A v5 boot with full restore disabled applies only its validated fan pair. */
+ BuildImage(5,saved);
+ g_chb_dab_params.current_kp=0.0F;OC_level_SET=610;
+ g_chb_dab_params.switch_stable_10ms=8U;g_chb_dab_params.switch_timeout_10ms=170U;
+ g_chb_dab_command.fan_config_apply=0U;
+ unsigned layout_before=hardwareLayoutWrites;
+ unsigned protection_before=protectionWrites;
+ SstParameterStore_LoadFanThresholds();
+ assert(SstParameterStore_GetResult()==SST_PARAM_OK);
+ assert(g_chb_dab_params.fan_off_count==181U&&g_chb_dab_params.fan_on_count==247U);
+ assert(g_chb_dab_command.fan_config_apply);
+ assert(g_chb_dab_params.current_kp==0.0F&&OC_level_SET==610);
+ assert(g_chb_dab_params.switch_stable_10ms==8U&&g_chb_dab_params.switch_timeout_10ms==170U);
+ assert(hardwareLayoutWrites==layout_before&&protectionWrites==protection_before);
+
+ /* Corrupted or invalid v5 values must never reach the controller. */
+ g_chb_dab_params.fan_off_count=170U;g_chb_dab_params.fan_on_count=235U;
+ g_chb_dab_command.fan_config_apply=0U;
+ eeprom[6*64+142]^=1U;
+ SstParameterStore_LoadFanThresholds();
+ assert(SstParameterStore_GetResult()==SST_PARAM_STORAGE&&!g_chb_dab_command.fan_config_apply);
+ memcpy(malformed,saved,sizeof(saved));malformed[68]=malformed[69];
+ BuildImage(5,malformed);
+ assert(SstDpramV2Parameter_Store(1,&error_addr)==SST_PARAM_RANGE&&error_addr==0x023DU);
+ memcpy(malformed,saved,sizeof(saved));malformed[69]=65535U;
+ BuildImage(5,malformed);
+ SstParameterStore_LoadFanThresholds();
+ assert(SstParameterStore_GetResult()==SST_PARAM_RANGE&&!g_chb_dab_command.fan_config_apply);
+ assert(g_chb_dab_params.fan_off_count==170U&&g_chb_dab_params.fan_on_count==235U);
+ assert(SstDpramV2Parameter_Store(1,&error_addr)==SST_PARAM_RANGE&&error_addr==0x023EU);
+ assert(g_chb_dab_params.current_kp==0.0F&&OC_level_SET==610);
+ BuildImage(5,saved);
+ assert(SstParameterStore_Request(1)==SST_PARAM_OK);
+ assert(g_chb_dab_params.switch_stable_10ms==7U&&g_chb_dab_params.switch_timeout_10ms==140U);
+ assert(g_chb_dab_params.fan_off_count==181U&&g_chb_dab_params.fan_on_count==247U);
+
  /* Saving remains asynchronous, at most one EEPROM byte per 10 ms. */
  unsigned before=eepromWrites;g_chb_dab_protection_enable=0;
  assert(SstParameterStore_Request(0)==SST_PARAM_OK);
  assert(SstParameterStore_IsBusy());
  assert(SstParameterStore_Request(0)==SST_PARAM_BUSY&&SstParameterStore_Request(1)==SST_PARAM_BUSY);
- FinishSave();assert(eepromWrites-before==145);
- assert(eeprom[6*64+2]==4&&eeprom[6*64+3]==144);
+ FinishSave();assert(eepromWrites-before==149);
+ assert(eeprom[6*64+2]==5&&eeprom[6*64+3]==148);
  g_chb_dab_protection_enable=1;HA_H_Voltage=790.0F;
  g_chb_dab_params.switch_stable_10ms=3U;g_chb_dab_params.switch_timeout_10ms=100U;
+ g_chb_dab_params.fan_off_count=170U;g_chb_dab_params.fan_on_count=235U;
  assert(SstParameterStore_Request(1)==SST_PARAM_OK);
  assert(g_chb_dab_protection_enable==1&&SstLegacyParameters_Read(7)==saved[49]);
  assert(g_chb_dab_params.switch_stable_10ms==7U&&g_chb_dab_params.switch_timeout_10ms==140U);
+ assert(g_chb_dab_params.fan_off_count==181U&&g_chb_dab_params.fan_on_count==247U);
 
  /* No ACK during readback fails the save, even if the buffer happened to match. */
  assert(SstParameterStore_Request(0)==SST_PARAM_OK);
- for(unsigned i=0;i<145;++i){++g_chb_dab_status.tick_10ms;SstParameterStore_Service();}
+ for(unsigned i=0;i<149;++i){++g_chb_dab_status.tick_10ms;SstParameterStore_Service();}
  eepromReadFailure=1;++g_chb_dab_status.tick_10ms;SstParameterStore_Service();
  assert(!SstParameterStore_IsBusy()&&SstParameterStore_GetResult()==SST_PARAM_STORAGE);
  eepromReadFailure=0;
@@ -196,7 +244,7 @@ int main(void)
  assert(g_chb_dab_params.switch_stable_10ms==25U&&g_chb_dab_params.switch_timeout_10ms==200U);
  g_chb_dab_status.state=CHB_STATE_RUNNING;
  assert(SstDpramV2Parameter_Apply(actual,&error_addr)==SST_PARAM_BUSY);
- puts("PASS: v1-v3 migration; v4 persistence; whole-image range and CRC checks; V2 offsets, scaling, error address and stopped apply");
+ puts("PASS: v1-v4 migration; v5 persistence and fan-only boot; whole-image range and CRC checks; V2 offsets, scaling, error address and stopped apply");
 }
 '''
 

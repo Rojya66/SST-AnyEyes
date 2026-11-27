@@ -8,7 +8,7 @@ import threading
 import unittest
 
 from panel import HistoryJournal
-from protocol import ModbusTcp, Panel, ProtocolError, SIGNATURE, load_points
+from protocol import PARAMETER_COUNT, PARAMETER_START, ModbusTcp, Panel, ProtocolError, SIGNATURE, load_points
 
 
 class FakeArm(socketserver.StreamRequestHandler):
@@ -59,9 +59,10 @@ class FakeArm(socketserver.StreamRequestHandler):
         memory = self.server.memory
         operation = memory[0x01FF]
         result = self.server.parameter_result
+        addresses = slice(PARAMETER_START, PARAMETER_START + PARAMETER_COUNT)
         if operation == 1 and result == 0:
-            self.server.active = memory[0x0200:0x023D]
-        memory[0x0200:0x023D] = self.server.active
+            self.server.active = memory[addresses]
+        memory[addresses] = self.server.active
         memory[0x0508:0x050C] = (operation, result, 0x0201 if result else 0xFFFF, 0)
         memory[0x0507] = (memory[0x0507] + 1) & 0xFFFF
 
@@ -71,7 +72,7 @@ class PanelTest(unittest.TestCase):
         self.server = socketserver.TCPServer(("127.0.0.1", 0), FakeArm)
         self.server.memory = [0] * 0x2000
         self.server.memory[0x0500:0x0502] = SIGNATURE
-        self.server.active = list(range(61))
+        self.server.active = list(range(PARAMETER_COUNT))
         self.server.writes = []
         self.server.storage_wait = 0
         self.server.advance_live = False
@@ -110,22 +111,25 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.server.writes, [(0x10, 0x0100, (5, 0, 0, 0)), (6, 0x1FFE, 1)])
 
     def test_version_mismatch_writes_nothing(self):
-        self.server.memory[0x0501] = 0x0102
+        self.server.memory[0x0501] = 0x0200
         with self.assertRaisesRegex(ProtocolError, "接口签名或版本"):
             self.panel.control(1)
+        with self.assertRaisesRegex(ProtocolError, "接口签名或版本"):
+            self.panel.parameter(1, (0,) * PARAMETER_COUNT)
         self.assertEqual([], self.server.writes)
 
     def test_parameters_apply_reject_and_save_wait_for_complete(self):
         receipt, active = self.panel.parameter(4)
         self.assertEqual(receipt.result, 0)
-        self.assertEqual(tuple(active.values()), tuple(range(61)))
-        new_values = tuple(range(60, -1, -1))
+        self.assertEqual(tuple(active.values()), tuple(range(PARAMETER_COUNT)))
+        new_values = (*range(PARAMETER_COUNT - 2), 180, 260)
         receipt, active = self.panel.parameter(1, new_values)
         self.assertEqual(receipt.result, 0)
         self.assertEqual(tuple(active.values()), new_values)
+        self.assertEqual((active[0x023D], active[0x023E]), (180, 260))
         self.assertEqual(self.server.writes[-2:], [(0x10, 0x01FF, (1, *new_values)), (6, 0x1FFE, 2)])
         self.server.parameter_result = 3
-        receipt, actual = self.panel.parameter(1, (0,) * 61)
+        receipt, actual = self.panel.parameter(1, (0,) * PARAMETER_COUNT)
         self.assertEqual((receipt.result, receipt.error_address), (3, 0x0201))
         self.assertEqual(actual, active)
         self.server.parameter_result = 0
@@ -133,6 +137,21 @@ class PanelTest(unittest.TestCase):
         self.assertEqual((receipt.operation, receipt.result, self.server.storage_wait), (2, 0, 0))
         self.assertEqual(actual, active)
         self.assertEqual(self.server.writes[-2:], [(6, 0x01FF, 2), (6, 0x1FFE, 2)])
+
+    def test_fan_configuration_exposed_in_live_snapshot(self):
+        memory = self.server.memory
+        memory[0x0524] = 0x0040
+        memory[0x05AA:0x05B4] = (180, 260, 12, 0x0101, 0, 0, 0x0002, 0, 0, 1)
+        points = load_points()
+        live = self.panel.live()
+        self.assertEqual(points["PRECHARGE_READY"].decode(live), 0x0040)
+        self.assertEqual(points["FAN_CONFIG_OFF"].decode(live), 180)
+        self.assertEqual(points["FAN_CONFIG_ON"].decode(live), 260)
+        self.assertEqual(points["FAN_CONFIG_GENERATION"].decode(live), 12)
+        self.assertEqual(points["FAN_CONFIG_CONFIRMED_A"].decode(live), 0x0101)
+        self.assertEqual(points["FAN_CONFIG_REJECTED_A"].decode(live), 0x0002)
+        self.assertEqual(points["FAN_CONFIG_STATE"].decode(live), 1)
+        self.assertEqual([], self.server.writes)
 
     def test_live_modules_and_history_use_actual_points(self):
         points = load_points()

@@ -37,6 +37,7 @@
 #define CHB_UNIT_LINK_MISSING 1U
 #define CHB_UNIT_LINK_DROPPED 2U
 #define CHB_UNIT_LINK_UDC_STALE 4U
+#define CHB_FAN_CONFIG_TIMEOUT_10MS 20U
 
 /* 预充状态机当拍确认的项目，遥测按物理检查顺序显示。 */
 #define PRECHARGE_READY_SWITCH 0x01U
@@ -45,7 +46,8 @@
 #define PRECHARGE_READY_NO_TIMEOUT 0x08U
 #define PRECHARGE_READY_FO 0x10U
 #define PRECHARGE_READY_VOLTAGE 0x20U
-#define PRECHARGE_READY_ALL 0x3FU
+#define PRECHARGE_READY_FAN_CONFIG 0x40U
+#define PRECHARGE_READY_ALL 0x7FU
 
 #define CHB_MODULE_FO_ALL_PHASES 7U
 #if SST_PHASE_A_ONLY_TEST
@@ -81,13 +83,14 @@ volatile CHB_DAB_COMMAND g_chb_dab_command = {
     0.20F, /* open_loop_modulation */
     50.0F, /* open_loop_frequency_hz */
     680.0F, /* dc_voltage_ref_v */
-    0.0F /* iq_reference_a */
+    0.0F, /* iq_reference_a */
+    0U /* fan_config_apply */
 }; /* g_chb_dab_command：调试器/通信提交的控制命令与给定，控制核心读取执行。 */
 
 /*
  * 控制参数默认值。结构体顺序必须与 ChbDabControl.h 完全一致：
  * 采样/调制 -> 预充/旁路 -> PLL -> 电压外环 -> 启动策略 -> 电流内环
- * -> 保护 -> DAB 占空比 -> 开关反馈时间。
+ * -> 保护 -> DAB 占空比 -> 开关反馈时间 -> UNIT 均压风扇阈值。
  */
 volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     0.0001F, /* sample_period_s: 10 kHz */
@@ -136,7 +139,9 @@ volatile CHB_DAB_PARAMETERS g_chb_dab_params = {
     1250U, /* DAB phase start count */
 
     SST_SWITCH_FEEDBACK_STABLE_10MS,
-    SST_SWITCH_ACTION_TIMEOUT_10MS
+    SST_SWITCH_ACTION_TIMEOUT_10MS,
+    CHB_FAN_OFF_COUNT_DEFAULT,
+    CHB_FAN_ON_COUNT_DEFAULT
 }; /* g_chb_dab_params：CHB/DAB 控制参数；调试器可观察，通信写入需停机校验。 */
 
 /* 运行状态只由控制程序更新，上位机/调试器只读观察。 */
@@ -168,6 +173,11 @@ static unsigned long s_last_service_tick; /* s_last_service_tick：主循环上�
 static unsigned short s_open_loop_fo_pending; /* 初次开环布防后等下一拍再检查FO。 */
 static unsigned short s_precharge_stable_count; /* s_precharge_stable_count：预充连续达标的 10 ms 拍数。 */
 static unsigned short s_precharge_ready; /* 最近一拍 PRECHARGE 实际完成的判断。 */
+static unsigned short s_fan_config_wait_ticks; /* 全部所需 UNIT 首次在线后开始计时。 */
+#if !SST_BENCH_INPUT_SIM
+static unsigned short s_fan_config_groups; /* 本次事务中已提交的 501 板位图。 */
+static unsigned short s_fan_config_custom; /* 自定义值需要每组 501 都支持配置。 */
+#endif
 static unsigned short s_pll_lock_fast_count; /* s_pll_lock_fast_count：PLL 连续锁定的 TAD 样本计数。 */
 static unsigned short s_pll_lock_10ms_count; /* s_pll_lock_10ms_count：PLL 连续锁定的 10 ms 确认计数。 */
 static unsigned short s_ac_overcurrent_count; /* s_ac_overcurrent_count：新增交流过流连续超限样本数。 */
@@ -871,6 +881,15 @@ static unsigned short Chb_GateBlocked(void)
                : 0U;
 }
 
+#if !SST_BENCH_INPUT_SIM
+/* 相位图统一为两块 501 拼接：A1/A2、B1/B2、C1/C2。 */
+static const unsigned short s_unit_plugins[] = {Com_A1_PluginUnit_5, Com_A2_PluginUnit_6,
+                                                Com_B1_PluginUnit_9, Com_B2_PluginUnit_10,
+                                                Com_C1_PluginUnit_13, Com_C2_PluginUnit_14};
+static const unsigned short *const s_unit_masks[] = {&HA_PM_A1, &HA_PM_A2, &HA_PM_B1,
+                                                     &HA_PM_B2, &HA_PM_C1, &HA_PM_C2};
+#endif
+
 /* F1低8位为收帧在线、高8位为可用Udc，F2保留两次轮询之间的失联。 */
 static unsigned short Chb_ReadUnitLinks(unsigned short consume_events)
 {
@@ -878,29 +897,25 @@ static unsigned short Chb_ReadUnitLinks(unsigned short consume_events)
     (void)consume_events;
     return 0U;
 #else
-    const unsigned short plugins[6] = {Com_A1_PluginUnit_5, Com_A2_PluginUnit_6,
-                                       Com_B1_PluginUnit_9, Com_B2_PluginUnit_10,
-                                       Com_C1_PluginUnit_13, Com_C2_PluginUnit_14};
-    const unsigned short masks[6] = {HA_PM_A1, HA_PM_A2, HA_PM_B1, HA_PM_B2, HA_PM_C1, HA_PM_C2};
     unsigned short missing[3] = {0U, 0U, 0U};
     unsigned short flags = 0U;
     unsigned short index;
 
     for (index = 0U; index < CHB_REQUIRED_MODULE_GROUPS; ++index)
     {
-        unsigned short required = masks[index];
+        unsigned short required = *s_unit_masks[index];
         if (required != 0U)
         {
-            unsigned short link = Port_UnitLinkRead(plugins[index]);
+            unsigned short link = Port_UnitLinkRead(s_unit_plugins[index]);
             unsigned short offline = required & ~link;
-            unsigned short dropped = required & Port_UnitLinkLossRead(plugins[index]);
+            unsigned short dropped = required & Port_UnitLinkLossRead(s_unit_plugins[index]);
             if (offline != 0U)
                 flags |= CHB_UNIT_LINK_MISSING;
             if (dropped != 0U)
             {
                 flags |= CHB_UNIT_LINK_DROPPED;
                 if (consume_events != 0U)
-                    Port_UnitLinkLossClear(plugins[index], dropped);
+                    Port_UnitLinkLossClear(s_unit_plugins[index], dropped);
             }
             if ((required & (link >> 8U)) != required)
                 flags |= CHB_UNIT_LINK_UDC_STALE;
@@ -919,6 +934,115 @@ static unsigned short Chb_ReadUnitLinks(unsigned short consume_events)
     }
     return flags;
 #endif
+}
+
+static void Chb_BeginFanConfig(void)
+{
+    unsigned short off_count = g_chb_dab_params.fan_off_count;
+    unsigned short on_count = g_chb_dab_params.fan_on_count;
+    unsigned short group;
+
+    g_chb_dab_command.fan_config_apply = 0U;
+    s_fan_config_wait_ticks = 0U;
+    for (group = 0U; group < 3U; ++group)
+    {
+        g_chb_dab_status.fan_config_confirmed[group] = 0U;
+        g_chb_dab_status.fan_config_rejected[group] = 0U;
+    }
+    if (ChbDabControl_FanThresholdsValid(off_count, on_count) == 0U)
+    {
+        g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_FAILED;
+        return;
+    }
+    g_chb_dab_status.fan_config_off_count = off_count;
+    g_chb_dab_status.fan_config_on_count = on_count;
+#if SST_BENCH_INPUT_SIM
+    g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_DEFAULTS;
+#else
+    {
+        unsigned short generation = (g_chb_dab_status.fan_config_generation % 255U) + 1U;
+
+        s_fan_config_groups = 0U;
+        s_fan_config_custom = (off_count != CHB_FAN_OFF_COUNT_DEFAULT || on_count != CHB_FAN_ON_COUNT_DEFAULT);
+        g_chb_dab_status.fan_config_generation = generation;
+        g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_WAITING;
+        for (group = 0U; group < CHB_REQUIRED_MODULE_GROUPS; ++group)
+        {
+            if ((*s_unit_masks[group] != 0U) && Port_UnitFanConfigSupported(s_unit_plugins[group]))
+            {
+                Port_UnitFanConfigure(s_unit_plugins[group], off_count, on_count, generation);
+                s_fan_config_groups |= 1U << group;
+            }
+        }
+    }
+#endif
+}
+
+static void Chb_ReadFanConfig(void)
+{
+#if !SST_BENCH_INPUT_SIM
+    unsigned short confirmed[3] = {0U, 0U, 0U};
+    unsigned short rejected[3] = {0U, 0U, 0U};
+    unsigned short waiting = 0U;
+    unsigned short legacy = 0U;
+    unsigned short group;
+
+    if ((g_chb_dab_status.fan_config_state == CHB_FAN_CONFIG_IDLE) ||
+        (g_chb_dab_status.fan_config_state == CHB_FAN_CONFIG_FAILED))
+        return;
+
+    for (group = 0U; group < CHB_REQUIRED_MODULE_GROUPS; ++group)
+    {
+        unsigned short required = *s_unit_masks[group];
+        unsigned short ack;
+        unsigned short reject;
+
+        if (required == 0U)
+            continue;
+        if ((s_fan_config_groups & (1U << group)) == 0U)
+        {
+            legacy = 1U;
+            waiting |= s_fan_config_custom;
+            continue;
+        }
+        Port_UnitFanConfigRead(s_unit_plugins[group], g_chb_dab_status.fan_config_generation, &ack, &reject);
+        confirmed[group / 2U] |= (ack & required) << ((group % 2U) * 8U);
+        rejected[group / 2U] |= (reject & required) << ((group % 2U) * 8U);
+        waiting |= ((ack & required) != required);
+    }
+    for (group = 0U; group < 3U; ++group)
+    {
+        g_chb_dab_status.fan_config_confirmed[group] = confirmed[group];
+        g_chb_dab_status.fan_config_rejected[group] = rejected[group];
+    }
+    if ((rejected[0] | rejected[1] | rejected[2]) != 0U)
+        g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_FAILED;
+    else if (waiting != 0U)
+        g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_WAITING;
+    else
+        g_chb_dab_status.fan_config_state = legacy ? CHB_FAN_CONFIG_DEFAULTS : CHB_FAN_CONFIG_CONFIRMED;
+#endif
+}
+
+static unsigned short Chb_FanConfigReady(void)
+{
+    unsigned short state = g_chb_dab_status.fan_config_state;
+
+    return (state == CHB_FAN_CONFIG_CONFIRMED) || (state == CHB_FAN_CONFIG_DEFAULTS);
+}
+
+/* 从全部 UNIT 首次在线起留 200 ms，继续受原预充总计时限制。 */
+static unsigned short Chb_FanConfigTimedOut(unsigned short unit_link_flags)
+{
+    if (Chb_FanConfigReady())
+    {
+        s_fan_config_wait_ticks = 0U;
+        return 0U;
+    }
+    if ((s_fan_config_wait_ticks == 0U) && ((unit_link_flags & CHB_UNIT_LINK_MISSING) != 0U))
+        return 0U;
+    s_fan_config_wait_ticks++;
+    return s_fan_config_wait_ticks > CHB_FAN_CONFIG_TIMEOUT_10MS;
 }
 
 /* 旁路和发波前核对701实时FO、首锁存及403汇总反馈。 */
@@ -1217,6 +1341,12 @@ static void Chb_EnterState(unsigned short state)
             s_precharge_ready = 0U;
             Chb_DisableAllPwm();
             (void)Chb_ReadUnitLinks(1U); /* 合QF1前丢弃上一次有意停机产生的事件。 */
+            Chb_BeginFanConfig();
+            if (g_chb_dab_status.fan_config_state == CHB_FAN_CONFIG_FAILED)
+            {
+                ChbDabControl_ForceFault(CHB_FAULT_FAN_CONFIG);
+                return;
+            }
             /*
              * 预充阶段 SVG_EN 和 DAB_EN 均为 0，UNIT 按自身母线电压判据
              * 控制 FP_OUT0/FP_OUT1，利用风扇负载均压。FAN_OFF=0 保留
@@ -1419,6 +1549,8 @@ void ChbDabControl_ReadStartupStatus(CHB_STARTUP_STATUS *status)
  *================================================================*/
 void ChbDabControl_Init(void)
 {
+    unsigned short phase;
+
 #if SST_PHASE_A_ONLY_TEST
     SstSinglePhase_Init(); /* 仅上电清零；预充、锁相及停机期间持续构造正交量。 */
 #endif
@@ -1430,6 +1562,16 @@ void ChbDabControl_Init(void)
     g_chb_dab_status.unit_link_missing[0] = 0U;
     g_chb_dab_status.unit_link_missing[1] = 0U;
     g_chb_dab_status.unit_link_missing[2] = 0U;
+    g_chb_dab_status.fan_config_off_count = CHB_FAN_OFF_COUNT_DEFAULT;
+    g_chb_dab_status.fan_config_on_count = CHB_FAN_ON_COUNT_DEFAULT;
+    g_chb_dab_status.fan_config_generation = 0U;
+    g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_IDLE;
+    for (phase = 0U; phase < 3U; ++phase)
+    {
+        g_chb_dab_status.fan_config_confirmed[phase] = 0U;
+        g_chb_dab_status.fan_config_rejected[phase] = 0U;
+    }
+    g_chb_dab_command.fan_config_apply = 1U; /* 参数加载完成后由后台开始分发。 */
     s_open_loop_fo_pending = 0U;
     g_chb_dab_status.qf1_close_command = 0U;
     g_chb_dab_status.kt1_close_command = 0U;
@@ -1737,6 +1879,14 @@ void ChbDabControl_Service(void)
         return;
     }
 
+    if ((state == CHB_STATE_STOPPED) && (new_10ms_tick != 0U) &&
+        (g_chb_dab_command.run_enable == 0U) && (g_chb_dab_command.dab_enable == 0U))
+    {
+        if (g_chb_dab_command.fan_config_apply != 0U)
+            Chb_BeginFanConfig();
+        Chb_ReadFanConfig();
+    }
+
     if (mode == CHB_AC_MODE_OPEN_LOOP)
     {
         Chb_ServiceOpenLoop(new_10ms_tick);
@@ -1767,6 +1917,16 @@ void ChbDabControl_Service(void)
         {
             ChbDabControl_ForceFault(CHB_FAULT_UNIT_LINK);
             return;
+        }
+        if (state == CHB_STATE_PRECHARGE || state == CHB_STATE_KT1_SETTLE || state == CHB_STATE_WAIT_PLL)
+        {
+            Chb_ReadFanConfig();
+            if ((g_chb_dab_status.fan_config_state == CHB_FAN_CONFIG_FAILED) || Chb_FanConfigTimedOut(unit_link_flags))
+            {
+                g_chb_dab_status.fan_config_state = CHB_FAN_CONFIG_FAILED;
+                ChbDabControl_ForceFault(CHB_FAULT_FAN_CONFIG);
+                return;
+            }
         }
     }
 
@@ -1837,6 +1997,8 @@ void ChbDabControl_Service(void)
                 ready |= PRECHARGE_READY_UDC;
             if ((unit_link_flags & CHB_UNIT_LINK_DROPPED) == 0U)
                 ready |= PRECHARGE_READY_NO_TIMEOUT;
+            if (Chb_FanConfigReady())
+                ready |= PRECHARGE_READY_FAN_CONFIG;
             if ((unit_link_flags == 0U) &&
                 (Chb_SetModuleFOArmed(CHB_MODULE_FO_PHASES, CHB_STATE_PRECHARGE) == 0U) &&
                 (Chb_ModuleFOClear() != 0U))
@@ -1872,7 +2034,7 @@ void ChbDabControl_Service(void)
         case CHB_STATE_KT1_SETTLE: // KT1实际合位已由上面的反馈检查确认
         {
             /* 闭环才经过本步骤；开环已在Chb_ServiceOpenLoop单独处理。 */
-            if (elapsed >= g_chb_dab_params.kt1_settle_10ms)
+            if ((elapsed >= g_chb_dab_params.kt1_settle_10ms) && Chb_FanConfigReady())
             {
                 Chb_EnterState(CHB_STATE_WAIT_PLL);
             }
@@ -1883,7 +2045,7 @@ void ChbDabControl_Service(void)
         {
             /* PLL 必须连续保持锁定，短暂丢锁会清零计数而不是立即发波。 */
             /* PLL锁定必须连续保持指定的10 ms周期数。 */
-            if ((unit_link_flags == 0U) && (Chb_ModuleFOClear() != 0U) &&
+            if ((unit_link_flags == 0U) && Chb_FanConfigReady() && (Chb_ModuleFOClear() != 0U) &&
                 (g_chb_dab_status.pll_locked != 0U) && (Chb_DcBusReady() != 0U) &&
                 (g_chb_dab_command.run_enable != 0U))
             {

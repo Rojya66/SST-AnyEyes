@@ -77,7 +77,7 @@
 #endif
 #endif
 #ifndef CHB_LOAD_EEPROM_PARAMETERS
-/* CHB_LOAD_EEPROM_PARAMETERS：上电加载持久化参数使能，0 使用源码默认、1 尝试 EEPROM 恢复。 */
+/* CHB_LOAD_EEPROM_PARAMETERS：1 尝试恢复全部持久化参数，0仅恢复风扇阈值。模拟输入模式不读镜像。 */
 #define CHB_LOAD_EEPROM_PARAMETERS 0U
 #endif
 #ifndef CHB_OPEN_LOOP_PULSE_TEST

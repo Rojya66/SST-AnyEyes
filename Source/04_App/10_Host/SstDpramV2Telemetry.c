@@ -68,12 +68,13 @@ static uint16_t s_status[0x16];       /* 0510–0525 */
 static uint16_t s_electrical[0x2E];   /* 0540–056D */
 static uint16_t s_links[0x18];        /* 0580–0597 */
 static uint16_t s_protection[0x0C];   /* 059E–05A9 */
+static uint16_t s_fan_config[0x0A];   /* 05AA–05B3 */
 static uint16_t s_fault[0x0A];        /* 0700–0709 */
 static uint16_t s_fault_codes[SST_FAULT_CURRENT_CAPACITY]; /* 0720–073F */
 static const DPRAM_SPAN s_live_spans[] = {
     SPAN(0x050CU, s_uptime), SPAN(0x0510U, s_status), SPAN(0x0540U, s_electrical),
-    SPAN(0x0580U, s_links), SPAN(0x059EU, s_protection), SPAN(0x0700U, s_fault),
-    SPAN(0x0720U, s_fault_codes)
+    SPAN(0x0580U, s_links), SPAN(0x059EU, s_protection), SPAN(0x05AAU, s_fan_config),
+    SPAN(0x0700U, s_fault), SPAN(0x0720U, s_fault_codes)
 };
 static DPRAM_PUBLICATION s_live = PUBLICATION(SST_DPRAM_V2_LIVE_EPOCH, s_live_spans);
 
@@ -249,6 +250,20 @@ static void CaptureFaults(uint16_t core_fault)
         s_fault_codes[i] = SstFault_GetCode(i);
 }
 
+static void CaptureFanConfig(void)
+{
+    uint16_t phase;
+    s_fan_config[0] = g_chb_dab_status.fan_config_off_count;
+    s_fan_config[1] = g_chb_dab_status.fan_config_on_count;
+    s_fan_config[2] = g_chb_dab_status.fan_config_generation;
+    for (phase = 0U; phase < ACTIVE_PHASES; ++phase)
+    {
+        s_fan_config[3U + phase] = g_chb_dab_status.fan_config_confirmed[phase] & SST_DPRAM_V2_PHASE_MASK;
+        s_fan_config[6U + phase] = g_chb_dab_status.fan_config_rejected[phase] & SST_DPRAM_V2_PHASE_MASK;
+    }
+    s_fan_config[9] = g_chb_dab_status.fan_config_state;
+}
+
 static void CaptureLive(uint32_t now)
 {
     uint16_t core_fault = g_chb_dab_status.fault_code;
@@ -256,6 +271,7 @@ static void CaptureLive(uint32_t now)
     CaptureElectrical();
     CaptureProtection(core_fault);
     CaptureFaults(core_fault);
+    CaptureFanConfig();
 }
 
 /* 保留总线原始有符号采样，避免转换为浮点后再量化。仅访问选中且有新鲜Udc的模块。 */

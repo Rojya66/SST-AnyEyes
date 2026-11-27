@@ -65,8 +65,10 @@
 遥调,0x023A,开关动作反馈超时,SWITCH_TIMEOUT_10MS,W 请求 / R 实际,U16,1,10 ms,1,1..65535,100,SST_SWITCH_ACTION_TIMEOUT_10MS → 拟增运行参数,现为编译常量。提议停机整定并存储；默认 1 s。反馈使能编译配置下使用。,570,40571,0x60000474,0x66000474
 遥调,0x023B,CHB 控制方式,CHB_MODE,W 请求 / R 实际,U16,1,枚举,1,0..1,0,g_chb_dab_command.ac_mode,0 开环，1 闭环。停机改模式，参数生效后再发 CHB/DAB 独立启停请求。沿用既有 EEPROM 模式字段。,571,40572,0x60000476,0x66000476
 遥调,0x023C,手动开关操作方式,SWITCH_MODE,W 请求 / R 实际,U16,1,枚举,1,0..1,0,PortRunFLAG.Bbits.Port_AutoOrManual,0 手动允许停机下维护，1 自动禁止屏幕直接分合。闭环启停一直由核心顺控。复用 EEPROM 系统方式中的位，不覆盖运行/测试管理位。,572,40573,0x60000478,0x66000478
+遥调,0x023D,风扇均压停扇阈值,FAN_OFF_COUNT,W 请求 / R 实际,U16,1,count,1,0..1982,170,g_chb_dab_params.fan_off_count,停机成组校验并应用。UNIT 的 SCI_UDC 小于该值时停扇。须小于开扇阈值。约 1 V/count 依实装标定，可保存到 EEPROM。,573,40574,0x6000047A,0x6600047A
+遥调,0x023E,风扇均压开扇阈值,FAN_ON_COUNT,W 请求 / R 实际,U16,1,count,1,1..1983,235,g_chb_dab_params.fan_on_count,停机成组校验并应用。UNIT 的 SCI_UDC 大于该值或本板硬件过压时开扇。须大于停扇阈值。约 1 V/count 依实装标定，可保存到 EEPROM。,574,40575,0x6000047C,0x6600047C
 遥测,0x0500,接口标识,SIGNATURE,R,U16,1,—,1,0x5353,,DSP 后台／V2 通讯服务,DSP 初始化成功后发布；与下一字共同辨认版本。,1280,41281,0x60000A00,0x66000A00
-遥测,0x0501,协议版本,VERSION,R,U16,1,—,1,0x0200,,DSP 后台／V2 通讯服务,高字节主版本，低字节次版本；V2.0 才启用本点表的写操作。,1281,41282,0x60000A02,0x66000A02
+遥测,0x0501,协议版本,VERSION,R,U16,1,—,1,0x0201,,DSP 后台／V2 通讯服务,高字节主版本，低字节次版本。V2.1 才启用本点表的写操作。,1281,41282,0x60000A02,0x66000A02
 遥测,0x0502,综合遥测发布版本,LIVE_EPOCH,R,U16,1,—,1,偶数稳定；16 位回绕,,DSP 后台／V2 通讯服务,保护 0510..05A9（模块观察专属字段除外）和 0700..073F 已分配点。读前后同一偶数才用同批快照。,1282,41283,0x60000A04,0x66000A04
 遥测,0x0503,模块快照发布版本,MODULE_EPOCH,R,U16,1,—,1,偶数稳定；16 位回绕,,DSP 后台／V2 通讯服务,覆盖 056E..0570、0598..059D、0600..06A7。读前后同偶数才组合屏显。,1283,41284,0x60000A06,0x66000A06
 遥测,0x0504,控制完成计数,CTRL_COUNT,R,U16,1,—,1,0..65535,,DSP 后台／V2 通讯服务,基于发送前值比较变化。结果、操作号先写，本计数最后更新。,1284,41285,0x60000A08,0x66000A08
@@ -98,7 +100,7 @@
 遥测,0x0520,软起已执行 TAD 数,STARTUP_TAD_COUNT,R,U32,2,TAD,1,0…4294967295,,g_chb_dab_status.startup_tad_count,固定 Id 启动斜坡已执行的拍数。,1312,41313,0x60000A40,0x66000A40
 遥测,0x0522,交流采样相配置,PHASE_CAPABILITY,R,BITS,1,—,1,0x0001、0x0007,,SST_PHASE_A_ONLY_TEST,bit0 A，bit1 B，bit2 C。默认 A 单相为 1，三相版为 7。实际 PM 及在线情况另有分相位图。,1314,41315,0x60000A44,0x66000A44
 遥测,0x0523,硬件调试功能配置,BUILD_IO_CAPABILITY,R,BITS,1,—,1,bit0…3,,SST_ENABLE_SWITCH_OUTPUT / FEEDBACK；SST_BENCH_INPUT_SIM；SST_ALLOW_REMOTE_COMMANDS,bit0 开关输出，bit1 真实反馈，bit2 模拟输入，bit3 允许远控。关闭输出或反馈时显示未启用。,1315,41316,0x60000A46,0x66000A46
-遥测,0x0524,预充条件逐项显示,PRECHARGE_READY,R,BITS,1,—,1,bit0…5,,ChbDabControl.c 已有本拍预充判断,拟镜像已有判断。bit0 开关反馈满足或按构建免检，bit1 所需 501 全在线，bit2 所需 Udc 全可用，bit3 本拍无 501 超时事件，bit4 701/403 检查允许，bit5 相均压达门限。仅 PRECHARGE 有效；HMI 不消费 F2。 仅显示核心当拍已评估的条件；开关反馈未到时后续项显示待判。,1316,41317,0x60000A48,0x66000A48
+遥测,0x0524,预充条件逐项显示,PRECHARGE_READY,R,BITS,1,—,1,bit0…6,,ChbDabControl.c 本拍预充判断,bit0 开关反馈满足或按构建免检，bit1 所需 501 全在线，bit2 所需 Udc 全可用，bit3 本拍无 501 超时事件，bit4 701/403 检查允许，bit5 相均压达门限，bit6 风扇均压配置就绪。仅 PRECHARGE 有效。HMI 不消费 F2。未评估的条件显示待判。,1316,41317,0x60000A48,0x66000A48
 遥测,0x0525,当前相制和模式的 PM 拓扑检查,PM_TOPOLOGY_OK,R,U16,1,—,1,0/1,,Chb_ConfigurationValid 当前拓扑判据,拟发布原拓扑判定结果。单相仅 A 非空、B/C 空；三相闭环各相非空。开环现版对此判定失败的跳闸分支已注释。,1317,41318,0x60000A4A,0x66000A4A
 遥测,0x0540,端口电压有效值 AB / AN,U_RMS_A,R,F32,2,V RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_V_A,三相为 UAB 有效值。单相为实测 AN 有效值。,1344,41345,0x60000A80,0x66000A80
 遥测,0x0542,端口电压有效值 BC,U_RMS_B,R,F32,2,V RMS,1,IEEE 754 单精度,,PORT_RealTime_DATA.PORT_V_B,三相为 UBC 有效值。单相版无此量。,1346,41347,0x60000A84,0x66000A84
@@ -164,10 +166,20 @@
 遥测,0x05A3,A 相 601 光口关闭配置,SHUT601_A,R,BITS,1,—,1,16 位,,601 U7 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1443,41444,0x60000B46,0x66000B46
 遥测,0x05A4,B 相 601 光口关闭配置,SHUT601_B,R,BITS,1,—,1,16 位,,601 U11 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1444,41445,0x60000B48,0x66000B48
 遥测,0x05A5,C 相 601 光口关闭配置,SHUT601_C,R,BITS,1,—,1,16 位,,601 U15 XA 22 SHUTDOWN,bit0…13 对应 UNIT1…14，1 表示配置关闭。总关断可关闭所有输出，该字不测光功率。 发布低 14 位，bit14..15 不作模块作用位。,1445,41446,0x60000B4A,0x66000B4A
-遥测,0x05A6,上电自动恢复参数配置,BOOT_LOAD_CONFIG,R,U16,1,—,1,0/1,,CHB_LOAD_EEPROM_PARAMETERS,当前默认 0；手动保存成功与下次上电是否自动恢复，分别显示。,1446,41447,0x60000B4C,0x66000B4C
+遥测,0x05A6,上电整组参数恢复配置,BOOT_LOAD_CONFIG,R,U16,1,—,1,0/1,,CHB_LOAD_EEPROM_PARAMETERS,1 上电恢复整组参数。默认 0 只恢复有效 v5 的风扇阈值。台架输入仿真跳过镜像恢复。,1446,41447,0x60000B4C,0x66000B4C
 遥测,0x05A7,202 实时硬件保护通道,AD_LIVE,R,BITS,1,—,1,有效高位 0xF000,,202 XA=E2；Port_AD_ProtectStatusRead(0),bit12/13/14 为 IA/IB/IC，bit15 为备用输入；与有效使能一起解释。,1447,41448,0x60000B4E,0x66000B4E
 遥测,0x05A8,202 首次硬件保护通道,AD_FIRST,R,BITS,1,—,1,有效高位 0xF000,,202 XA=E3；Port_AD_ProtectStatusRead(1),实际 E3 首锁存，手动复位前可定位通道；历史中的 403 来源 bit0 仅定位到板。,1448,41449,0x60000B50,0x66000B50
 遥测,0x05A9,DSP 下发的 UNIT 桥及风扇命令,UNIT_CMD,R,BITS,1,—,1,取有效位 0x0211,,Module_PM_CTL：501 下行命令镜像,bit0 SVG_EN、bit4 DAB_EN、bit9 FAN_OFF。预充时 UNIT 风扇按本地电压滞回；无逐台风扇转速或启停反馈。,1449,41450,0x60000B52,0x66000B52
+遥测,0x05AA,本次事务请求的停扇阈值,FAN_CONFIG_OFF,R,U16,1,count,1,0..1982,,g_chb_dab_status.fan_config_off_count,分发事务启动时捕获。与配置代号及各相确认位属于同一事务。,1450,41451,0x60000B54,0x66000B54
+遥测,0x05AB,本次事务请求的开扇阈值,FAN_CONFIG_ON,R,U16,1,count,1,1..1983,,g_chb_dab_status.fan_config_on_count,分发事务启动时捕获。与配置代号及各相确认位属于同一事务。,1451,41452,0x60000B56,0x66000B56
+遥测,0x05AC,风扇均压配置代号,FAN_CONFIG_GENERATION,R,U16,1,—,1,0..255,,g_chb_dab_status.fan_config_generation,0 表示尚无分发代号。配置判定使用本次代号且与请求阈值对应的 UNIT 回报。,1452,41453,0x60000B58,0x66000B58
+遥测,0x05AD,A 相 UNIT 风扇配置已确认,FAN_CONFIG_CONFIRMED_A,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_confirmed[0],低 14 位对应物理 UNIT1–14。1 表示本次配置获得匹配的 UNIT 确认。,1453,41454,0x60000B5A,0x66000B5A
+遥测,0x05AE,B 相 UNIT 风扇配置已确认,FAN_CONFIG_CONFIRMED_B,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_confirmed[1],低 14 位对应物理 UNIT1–14。1 表示本次配置获得匹配的 UNIT 确认。,1454,41455,0x60000B5C,0x66000B5C
+遥测,0x05AF,C 相 UNIT 风扇配置已确认,FAN_CONFIG_CONFIRMED_C,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_confirmed[2],低 14 位对应物理 UNIT1–14。1 表示本次配置获得匹配的 UNIT 确认。,1455,41456,0x60000B5E,0x66000B5E
+遥测,0x05B0,A 相 UNIT 风扇配置拒绝,FAN_CONFIG_REJECTED_A,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_rejected[0],低 14 位对应物理 UNIT1–14。1 表示 DSP 收到该 UNIT 对本次配置的明确拒绝。无回报时仍可超时。,1456,41457,0x60000B60,0x66000B60
+遥测,0x05B1,B 相 UNIT 风扇配置拒绝,FAN_CONFIG_REJECTED_B,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_rejected[1],低 14 位对应物理 UNIT1–14。1 表示 DSP 收到该 UNIT 对本次配置的明确拒绝。无回报时仍可超时。,1457,41458,0x60000B62,0x66000B62
+遥测,0x05B2,C 相 UNIT 风扇配置拒绝,FAN_CONFIG_REJECTED_C,R,BITS,1,—,1,0x0000..0x3FFF,,g_chb_dab_status.fan_config_rejected[2],低 14 位对应物理 UNIT1–14。1 表示 DSP 收到该 UNIT 对本次配置的明确拒绝。无回报时仍可超时。,1458,41459,0x60000B64,0x66000B64
+遥测,0x05B3,风扇均压下发与确认状态,FAN_CONFIG_STATE,R,U16,1,枚举,1,0..4,,g_chb_dab_status.fan_config_state,0 未开始，1 等待确认，2 已确认，3 配置失败，4 使用原固件默认阈值或不启用分发的台架构建。,1459,41460,0x60000B66,0x66000B66
 模块采样,0x0600,A 相 UNIT1 母线电压,A01_UDC,R,I16,1,V,1,13 位有符号采样扩展至 16 位,,501 U5 XA 80 / DC[0],滤波后的直流电压。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1536,41537,0x60000C00,0x66000C00
 模块采样,0x0601,A 相 UNIT1 Ir 电流,A01_IR,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA 90 / IR[0],DSP 命名为 DCbus_Current，UNIT ADC 通道3；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1537,41538,0x60000C02,0x66000C02
 模块采样,0x0602,A 相 UNIT1 Ig 端口电流,A01_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U5 XA A0 / IG[0],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_A 的 bit0 为 1 时显示，否则显示“—”。,1538,41539,0x60000C04,0x66000C04
@@ -337,7 +349,7 @@
 模块采样,0x06A6,C 相 UNIT14 Ig 端口电流,C14_IG,R,I16,1,A,10,13 位有符号采样扩展至 16 位,,501 U14 XA A5 / IG[5],UNIT ADC 通道2；最近滤波瞬时值。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1702,41703,0x60000D4C,0x66000D4C
 模块采样,0x06A7,C 相 UNIT14 PT100 温度,C14_TEMP,R,I16,1,°C,10,13 位有符号采样扩展至 16 位,,501 U14 XA B5 / TEMP[5],约 0.41 s 更新一次平均温度，刚上电首个平均窗内尚未形成。 仅当 OBS_VALID_C 的 bit13 为 1 时显示，否则显示“—”。,1703,41704,0x60000D4E,0x66000D4E
 故障,0x0700,综合故障字,fault_summary,R,BITS,1,—,1,0x0000..FFFF,,SstDpramTelemetry_GetFaultWord；V2增加 CHB_FAULT_UNIT_LINK → bit13,bit0接触器、1断路器、2风扇、3控制器、4辅电、5急停、6模块、7逆变器、8相序、9频率、10过流、11欠压、12过压、13通信、14同步、15总故障。 V2 将 core=8 一并计入 bit13；保留 bit15 总故障。,1792,41793,0x60000E00,0x66000E00
-故障,0x0701,核心锁存原因,fault_control_reason,R,U16,1,—,1,0..8,,g_chb_dab_status.fault_code,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信,1793,41794,0x60000E02,0x66000E02
+故障,0x0701,核心锁存原因,fault_control_reason,R,U16,1,—,1,0..9,,g_chb_dab_status.fault_code,0无、1预充超时、2 PLL超时、3交流过流、4直流过压、5硬件、6配置、7开关反馈、8 UNIT通信、9 UNIT 风扇均压配置失败,1793,41794,0x60000E02,0x66000E02
 故障,0x0702,当前列表首个报告码,fault_first_code,R,U16,1,—,1,0或五位十进制码,,SstFault_GetFirstCode(),本次故障期间按DSP后台发现顺序去重、追加；不保证物理首触发顺序。,1794,41795,0x60000E04,0x66000E04
 故障,0x0703,当前最高严重等级,fault_max_severity,R,U16,1,—,1,0..4,,SstFault_GetLevel(),0一级、1二级、2三级、3四级、4无故障,1795,41796,0x60000E06,0x66000E06
 故障,0x0704,当前有效码数,fault_active_count,R,U16,1,—,1,0..32,,SstFault_GetActiveCount(),读取0x0720起前N项。,1796,41797,0x60000E08,0x66000E08
