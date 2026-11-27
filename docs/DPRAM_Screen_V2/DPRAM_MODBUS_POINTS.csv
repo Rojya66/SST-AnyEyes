@@ -388,9 +388,9 @@
 故障历史,0x0814,历史00·故障分类原始字,hist_00_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2068,42069,0x60001028,0x66001028
 故障历史,0x0815,历史00·采样保护来源,hist_00_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2069,42070,0x6000102A,0x6600102A
 故障历史,0x0816,历史00·403故障来源锁存,hist_00_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2070,42071,0x6000102C,0x6600102C
-故障历史,0x0817,历史00·701 A相故障位置,hist_00_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2071,42072,0x6000102E,0x6600102E
-故障历史,0x0818,历史00·701 B相故障位置,hist_00_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2072,42073,0x60001030,0x66001030
-故障历史,0x0819,历史00·701 C相故障位置,hist_00_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2073,42074,0x60001032,0x66001032
+故障历史,0x0817,历史00·701 A相故障位置,hist_00_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2071,42072,0x6000102E,0x6600102E
+故障历史,0x0818,历史00·701 B相故障位置,hist_00_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2072,42073,0x60001030,0x66001030
+故障历史,0x0819,历史00·701 C相故障位置,hist_00_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2073,42074,0x60001032,0x66001032
 故障历史,0x081A,历史00·模块故障处理计数,hist_00_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2074,42075,0x60001034,0x66001034
 故障历史,0x081B,历史00·DSP上电后台观察节拍,hist_00_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2075,42076,0x60001036,0x66001036
 故障历史,0x081D,历史00·事件序号,hist_00_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2077,42078,0x6000103A,0x6600103A
@@ -404,9 +404,9 @@
 故障历史,0x0826,历史01·故障分类原始字,hist_01_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2086,42087,0x6000104C,0x6600104C
 故障历史,0x0827,历史01·采样保护来源,hist_01_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2087,42088,0x6000104E,0x6600104E
 故障历史,0x0828,历史01·403故障来源锁存,hist_01_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2088,42089,0x60001050,0x66001050
-故障历史,0x0829,历史01·701 A相故障位置,hist_01_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2089,42090,0x60001052,0x66001052
-故障历史,0x082A,历史01·701 B相故障位置,hist_01_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2090,42091,0x60001054,0x66001054
-故障历史,0x082B,历史01·701 C相故障位置,hist_01_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2091,42092,0x60001056,0x66001056
+故障历史,0x0829,历史01·701 A相故障位置,hist_01_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2089,42090,0x60001052,0x66001052
+故障历史,0x082A,历史01·701 B相故障位置,hist_01_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2090,42091,0x60001054,0x66001054
+故障历史,0x082B,历史01·701 C相故障位置,hist_01_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2091,42092,0x60001056,0x66001056
 故障历史,0x082C,历史01·模块故障处理计数,hist_01_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2092,42093,0x60001058,0x66001058
 故障历史,0x082D,历史01·DSP上电后台观察节拍,hist_01_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2093,42094,0x6000105A,0x6600105A
 故障历史,0x082F,历史01·事件序号,hist_01_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2095,42096,0x6000105E,0x6600105E
@@ -420,9 +420,9 @@
 故障历史,0x0838,历史02·故障分类原始字,hist_02_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2104,42105,0x60001070,0x66001070
 故障历史,0x0839,历史02·采样保护来源,hist_02_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2105,42106,0x60001072,0x66001072
 故障历史,0x083A,历史02·403故障来源锁存,hist_02_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2106,42107,0x60001074,0x66001074
-故障历史,0x083B,历史02·701 A相故障位置,hist_02_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2107,42108,0x60001076,0x66001076
-故障历史,0x083C,历史02·701 B相故障位置,hist_02_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2108,42109,0x60001078,0x66001078
-故障历史,0x083D,历史02·701 C相故障位置,hist_02_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2109,42110,0x6000107A,0x6600107A
+故障历史,0x083B,历史02·701 A相故障位置,hist_02_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2107,42108,0x60001076,0x66001076
+故障历史,0x083C,历史02·701 B相故障位置,hist_02_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2108,42109,0x60001078,0x66001078
+故障历史,0x083D,历史02·701 C相故障位置,hist_02_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2109,42110,0x6000107A,0x6600107A
 故障历史,0x083E,历史02·模块故障处理计数,hist_02_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2110,42111,0x6000107C,0x6600107C
 故障历史,0x083F,历史02·DSP上电后台观察节拍,hist_02_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2111,42112,0x6000107E,0x6600107E
 故障历史,0x0841,历史02·事件序号,hist_02_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2113,42114,0x60001082,0x66001082
@@ -436,9 +436,9 @@
 故障历史,0x084A,历史03·故障分类原始字,hist_03_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2122,42123,0x60001094,0x66001094
 故障历史,0x084B,历史03·采样保护来源,hist_03_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2123,42124,0x60001096,0x66001096
 故障历史,0x084C,历史03·403故障来源锁存,hist_03_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2124,42125,0x60001098,0x66001098
-故障历史,0x084D,历史03·701 A相故障位置,hist_03_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2125,42126,0x6000109A,0x6600109A
-故障历史,0x084E,历史03·701 B相故障位置,hist_03_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2126,42127,0x6000109C,0x6600109C
-故障历史,0x084F,历史03·701 C相故障位置,hist_03_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2127,42128,0x6000109E,0x6600109E
+故障历史,0x084D,历史03·701 A相故障位置,hist_03_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2125,42126,0x6000109A,0x6600109A
+故障历史,0x084E,历史03·701 B相故障位置,hist_03_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2126,42127,0x6000109C,0x6600109C
+故障历史,0x084F,历史03·701 C相故障位置,hist_03_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2127,42128,0x6000109E,0x6600109E
 故障历史,0x0850,历史03·模块故障处理计数,hist_03_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2128,42129,0x600010A0,0x660010A0
 故障历史,0x0851,历史03·DSP上电后台观察节拍,hist_03_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2129,42130,0x600010A2,0x660010A2
 故障历史,0x0853,历史03·事件序号,hist_03_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2131,42132,0x600010A6,0x660010A6
@@ -452,9 +452,9 @@
 故障历史,0x085C,历史04·故障分类原始字,hist_04_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2140,42141,0x600010B8,0x660010B8
 故障历史,0x085D,历史04·采样保护来源,hist_04_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2141,42142,0x600010BA,0x660010BA
 故障历史,0x085E,历史04·403故障来源锁存,hist_04_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2142,42143,0x600010BC,0x660010BC
-故障历史,0x085F,历史04·701 A相故障位置,hist_04_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2143,42144,0x600010BE,0x660010BE
-故障历史,0x0860,历史04·701 B相故障位置,hist_04_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2144,42145,0x600010C0,0x660010C0
-故障历史,0x0861,历史04·701 C相故障位置,hist_04_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2145,42146,0x600010C2,0x660010C2
+故障历史,0x085F,历史04·701 A相故障位置,hist_04_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2143,42144,0x600010BE,0x660010BE
+故障历史,0x0860,历史04·701 B相故障位置,hist_04_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2144,42145,0x600010C0,0x660010C0
+故障历史,0x0861,历史04·701 C相故障位置,hist_04_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2145,42146,0x600010C2,0x660010C2
 故障历史,0x0862,历史04·模块故障处理计数,hist_04_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2146,42147,0x600010C4,0x660010C4
 故障历史,0x0863,历史04·DSP上电后台观察节拍,hist_04_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2147,42148,0x600010C6,0x660010C6
 故障历史,0x0865,历史04·事件序号,hist_04_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2149,42150,0x600010CA,0x660010CA
@@ -468,9 +468,9 @@
 故障历史,0x086E,历史05·故障分类原始字,hist_05_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2158,42159,0x600010DC,0x660010DC
 故障历史,0x086F,历史05·采样保护来源,hist_05_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2159,42160,0x600010DE,0x660010DE
 故障历史,0x0870,历史05·403故障来源锁存,hist_05_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2160,42161,0x600010E0,0x660010E0
-故障历史,0x0871,历史05·701 A相故障位置,hist_05_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2161,42162,0x600010E2,0x660010E2
-故障历史,0x0872,历史05·701 B相故障位置,hist_05_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2162,42163,0x600010E4,0x660010E4
-故障历史,0x0873,历史05·701 C相故障位置,hist_05_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2163,42164,0x600010E6,0x660010E6
+故障历史,0x0871,历史05·701 A相故障位置,hist_05_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2161,42162,0x600010E2,0x660010E2
+故障历史,0x0872,历史05·701 B相故障位置,hist_05_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2162,42163,0x600010E4,0x660010E4
+故障历史,0x0873,历史05·701 C相故障位置,hist_05_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2163,42164,0x600010E6,0x660010E6
 故障历史,0x0874,历史05·模块故障处理计数,hist_05_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2164,42165,0x600010E8,0x660010E8
 故障历史,0x0875,历史05·DSP上电后台观察节拍,hist_05_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2165,42166,0x600010EA,0x660010EA
 故障历史,0x0877,历史05·事件序号,hist_05_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2167,42168,0x600010EE,0x660010EE
@@ -484,9 +484,9 @@
 故障历史,0x0880,历史06·故障分类原始字,hist_06_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2176,42177,0x60001100,0x66001100
 故障历史,0x0881,历史06·采样保护来源,hist_06_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2177,42178,0x60001102,0x66001102
 故障历史,0x0882,历史06·403故障来源锁存,hist_06_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2178,42179,0x60001104,0x66001104
-故障历史,0x0883,历史06·701 A相故障位置,hist_06_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2179,42180,0x60001106,0x66001106
-故障历史,0x0884,历史06·701 B相故障位置,hist_06_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2180,42181,0x60001108,0x66001108
-故障历史,0x0885,历史06·701 C相故障位置,hist_06_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2181,42182,0x6000110A,0x6600110A
+故障历史,0x0883,历史06·701 A相故障位置,hist_06_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2179,42180,0x60001106,0x66001106
+故障历史,0x0884,历史06·701 B相故障位置,hist_06_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2180,42181,0x60001108,0x66001108
+故障历史,0x0885,历史06·701 C相故障位置,hist_06_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2181,42182,0x6000110A,0x6600110A
 故障历史,0x0886,历史06·模块故障处理计数,hist_06_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2182,42183,0x6000110C,0x6600110C
 故障历史,0x0887,历史06·DSP上电后台观察节拍,hist_06_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2183,42184,0x6000110E,0x6600110E
 故障历史,0x0889,历史06·事件序号,hist_06_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2185,42186,0x60001112,0x66001112
@@ -500,9 +500,9 @@
 故障历史,0x0892,历史07·故障分类原始字,hist_07_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2194,42195,0x60001124,0x66001124
 故障历史,0x0893,历史07·采样保护来源,hist_07_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2195,42196,0x60001126,0x66001126
 故障历史,0x0894,历史07·403故障来源锁存,hist_07_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2196,42197,0x60001128,0x66001128
-故障历史,0x0895,历史07·701 A相故障位置,hist_07_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2197,42198,0x6000112A,0x6600112A
-故障历史,0x0896,历史07·701 B相故障位置,hist_07_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2198,42199,0x6000112C,0x6600112C
-故障历史,0x0897,历史07·701 C相故障位置,hist_07_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2199,42200,0x6000112E,0x6600112E
+故障历史,0x0895,历史07·701 A相故障位置,hist_07_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2197,42198,0x6000112A,0x6600112A
+故障历史,0x0896,历史07·701 B相故障位置,hist_07_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2198,42199,0x6000112C,0x6600112C
+故障历史,0x0897,历史07·701 C相故障位置,hist_07_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2199,42200,0x6000112E,0x6600112E
 故障历史,0x0898,历史07·模块故障处理计数,hist_07_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2200,42201,0x60001130,0x66001130
 故障历史,0x0899,历史07·DSP上电后台观察节拍,hist_07_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2201,42202,0x60001132,0x66001132
 故障历史,0x089B,历史07·事件序号,hist_07_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2203,42204,0x60001136,0x66001136
@@ -516,9 +516,9 @@
 故障历史,0x08A4,历史08·故障分类原始字,hist_08_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2212,42213,0x60001148,0x66001148
 故障历史,0x08A5,历史08·采样保护来源,hist_08_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2213,42214,0x6000114A,0x6600114A
 故障历史,0x08A6,历史08·403故障来源锁存,hist_08_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2214,42215,0x6000114C,0x6600114C
-故障历史,0x08A7,历史08·701 A相故障位置,hist_08_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2215,42216,0x6000114E,0x6600114E
-故障历史,0x08A8,历史08·701 B相故障位置,hist_08_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2216,42217,0x60001150,0x66001150
-故障历史,0x08A9,历史08·701 C相故障位置,hist_08_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2217,42218,0x60001152,0x66001152
+故障历史,0x08A7,历史08·701 A相故障位置,hist_08_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2215,42216,0x6000114E,0x6600114E
+故障历史,0x08A8,历史08·701 B相故障位置,hist_08_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2216,42217,0x60001150,0x66001150
+故障历史,0x08A9,历史08·701 C相故障位置,hist_08_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2217,42218,0x60001152,0x66001152
 故障历史,0x08AA,历史08·模块故障处理计数,hist_08_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2218,42219,0x60001154,0x66001154
 故障历史,0x08AB,历史08·DSP上电后台观察节拍,hist_08_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2219,42220,0x60001156,0x66001156
 故障历史,0x08AD,历史08·事件序号,hist_08_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2221,42222,0x6000115A,0x6600115A
@@ -532,9 +532,9 @@
 故障历史,0x08B6,历史09·故障分类原始字,hist_09_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2230,42231,0x6000116C,0x6600116C
 故障历史,0x08B7,历史09·采样保护来源,hist_09_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2231,42232,0x6000116E,0x6600116E
 故障历史,0x08B8,历史09·403故障来源锁存,hist_09_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2232,42233,0x60001170,0x66001170
-故障历史,0x08B9,历史09·701 A相故障位置,hist_09_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2233,42234,0x60001172,0x66001172
-故障历史,0x08BA,历史09·701 B相故障位置,hist_09_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2234,42235,0x60001174,0x66001174
-故障历史,0x08BB,历史09·701 C相故障位置,hist_09_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2235,42236,0x60001176,0x66001176
+故障历史,0x08B9,历史09·701 A相故障位置,hist_09_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2233,42234,0x60001172,0x66001172
+故障历史,0x08BA,历史09·701 B相故障位置,hist_09_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2234,42235,0x60001174,0x66001174
+故障历史,0x08BB,历史09·701 C相故障位置,hist_09_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2235,42236,0x60001176,0x66001176
 故障历史,0x08BC,历史09·模块故障处理计数,hist_09_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2236,42237,0x60001178,0x66001178
 故障历史,0x08BD,历史09·DSP上电后台观察节拍,hist_09_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2237,42238,0x6000117A,0x6600117A
 故障历史,0x08BF,历史09·事件序号,hist_09_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2239,42240,0x6000117E,0x6600117E
@@ -548,9 +548,9 @@
 故障历史,0x08C8,历史10·故障分类原始字,hist_10_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2248,42249,0x60001190,0x66001190
 故障历史,0x08C9,历史10·采样保护来源,hist_10_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2249,42250,0x60001192,0x66001192
 故障历史,0x08CA,历史10·403故障来源锁存,hist_10_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2250,42251,0x60001194,0x66001194
-故障历史,0x08CB,历史10·701 A相故障位置,hist_10_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2251,42252,0x60001196,0x66001196
-故障历史,0x08CC,历史10·701 B相故障位置,hist_10_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2252,42253,0x60001198,0x66001198
-故障历史,0x08CD,历史10·701 C相故障位置,hist_10_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2253,42254,0x6000119A,0x6600119A
+故障历史,0x08CB,历史10·701 A相故障位置,hist_10_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2251,42252,0x60001196,0x66001196
+故障历史,0x08CC,历史10·701 B相故障位置,hist_10_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2252,42253,0x60001198,0x66001198
+故障历史,0x08CD,历史10·701 C相故障位置,hist_10_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2253,42254,0x6000119A,0x6600119A
 故障历史,0x08CE,历史10·模块故障处理计数,hist_10_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2254,42255,0x6000119C,0x6600119C
 故障历史,0x08CF,历史10·DSP上电后台观察节拍,hist_10_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2255,42256,0x6000119E,0x6600119E
 故障历史,0x08D1,历史10·事件序号,hist_10_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2257,42258,0x600011A2,0x660011A2
@@ -564,9 +564,9 @@
 故障历史,0x08DA,历史11·故障分类原始字,hist_11_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2266,42267,0x600011B4,0x660011B4
 故障历史,0x08DB,历史11·采样保护来源,hist_11_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2267,42268,0x600011B6,0x660011B6
 故障历史,0x08DC,历史11·403故障来源锁存,hist_11_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2268,42269,0x600011B8,0x660011B8
-故障历史,0x08DD,历史11·701 A相故障位置,hist_11_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2269,42270,0x600011BA,0x660011BA
-故障历史,0x08DE,历史11·701 B相故障位置,hist_11_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2270,42271,0x600011BC,0x660011BC
-故障历史,0x08DF,历史11·701 C相故障位置,hist_11_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2271,42272,0x600011BE,0x660011BE
+故障历史,0x08DD,历史11·701 A相故障位置,hist_11_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2269,42270,0x600011BA,0x660011BA
+故障历史,0x08DE,历史11·701 B相故障位置,hist_11_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2270,42271,0x600011BC,0x660011BC
+故障历史,0x08DF,历史11·701 C相故障位置,hist_11_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2271,42272,0x600011BE,0x660011BE
 故障历史,0x08E0,历史11·模块故障处理计数,hist_11_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2272,42273,0x600011C0,0x660011C0
 故障历史,0x08E1,历史11·DSP上电后台观察节拍,hist_11_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2273,42274,0x600011C2,0x660011C2
 故障历史,0x08E3,历史11·事件序号,hist_11_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2275,42276,0x600011C6,0x660011C6
@@ -580,9 +580,9 @@
 故障历史,0x08EC,历史12·故障分类原始字,hist_12_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2284,42285,0x600011D8,0x660011D8
 故障历史,0x08ED,历史12·采样保护来源,hist_12_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2285,42286,0x600011DA,0x660011DA
 故障历史,0x08EE,历史12·403故障来源锁存,hist_12_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2286,42287,0x600011DC,0x660011DC
-故障历史,0x08EF,历史12·701 A相故障位置,hist_12_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2287,42288,0x600011DE,0x660011DE
-故障历史,0x08F0,历史12·701 B相故障位置,hist_12_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2288,42289,0x600011E0,0x660011E0
-故障历史,0x08F1,历史12·701 C相故障位置,hist_12_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2289,42290,0x600011E2,0x660011E2
+故障历史,0x08EF,历史12·701 A相故障位置,hist_12_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2287,42288,0x600011DE,0x660011DE
+故障历史,0x08F0,历史12·701 B相故障位置,hist_12_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2288,42289,0x600011E0,0x660011E0
+故障历史,0x08F1,历史12·701 C相故障位置,hist_12_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2289,42290,0x600011E2,0x660011E2
 故障历史,0x08F2,历史12·模块故障处理计数,hist_12_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2290,42291,0x600011E4,0x660011E4
 故障历史,0x08F3,历史12·DSP上电后台观察节拍,hist_12_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2291,42292,0x600011E6,0x660011E6
 故障历史,0x08F5,历史12·事件序号,hist_12_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2293,42294,0x600011EA,0x660011EA
@@ -596,9 +596,9 @@
 故障历史,0x08FE,历史13·故障分类原始字,hist_13_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2302,42303,0x600011FC,0x660011FC
 故障历史,0x08FF,历史13·采样保护来源,hist_13_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2303,42304,0x600011FE,0x660011FE
 故障历史,0x0900,历史13·403故障来源锁存,hist_13_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2304,42305,0x60001200,0x66001200
-故障历史,0x0901,历史13·701 A相故障位置,hist_13_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2305,42306,0x60001202,0x66001202
-故障历史,0x0902,历史13·701 B相故障位置,hist_13_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2306,42307,0x60001204,0x66001204
-故障历史,0x0903,历史13·701 C相故障位置,hist_13_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2307,42308,0x60001206,0x66001206
+故障历史,0x0901,历史13·701 A相故障位置,hist_13_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2305,42306,0x60001202,0x66001202
+故障历史,0x0902,历史13·701 B相故障位置,hist_13_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2306,42307,0x60001204,0x66001204
+故障历史,0x0903,历史13·701 C相故障位置,hist_13_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2307,42308,0x60001206,0x66001206
 故障历史,0x0904,历史13·模块故障处理计数,hist_13_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2308,42309,0x60001208,0x66001208
 故障历史,0x0905,历史13·DSP上电后台观察节拍,hist_13_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2309,42310,0x6000120A,0x6600120A
 故障历史,0x0907,历史13·事件序号,hist_13_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2311,42312,0x6000120E,0x6600120E
@@ -612,9 +612,9 @@
 故障历史,0x0910,历史14·故障分类原始字,hist_14_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2320,42321,0x60001220,0x66001220
 故障历史,0x0911,历史14·采样保护来源,hist_14_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2321,42322,0x60001222,0x66001222
 故障历史,0x0912,历史14·403故障来源锁存,hist_14_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2322,42323,0x60001224,0x66001224
-故障历史,0x0913,历史14·701 A相故障位置,hist_14_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2323,42324,0x60001226,0x66001226
-故障历史,0x0914,历史14·701 B相故障位置,hist_14_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2324,42325,0x60001228,0x66001228
-故障历史,0x0915,历史14·701 C相故障位置,hist_14_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2325,42326,0x6000122A,0x6600122A
+故障历史,0x0913,历史14·701 A相故障位置,hist_14_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2323,42324,0x60001226,0x66001226
+故障历史,0x0914,历史14·701 B相故障位置,hist_14_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2324,42325,0x60001228,0x66001228
+故障历史,0x0915,历史14·701 C相故障位置,hist_14_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2325,42326,0x6000122A,0x6600122A
 故障历史,0x0916,历史14·模块故障处理计数,hist_14_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2326,42327,0x6000122C,0x6600122C
 故障历史,0x0917,历史14·DSP上电后台观察节拍,hist_14_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2327,42328,0x6000122E,0x6600122E
 故障历史,0x0919,历史14·事件序号,hist_14_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2329,42330,0x60001232,0x66001232
@@ -628,9 +628,9 @@
 故障历史,0x0922,历史15·故障分类原始字,hist_15_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2338,42339,0x60001244,0x66001244
 故障历史,0x0923,历史15·采样保护来源,hist_15_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2339,42340,0x60001246,0x66001246
 故障历史,0x0924,历史15·403故障来源锁存,hist_15_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2340,42341,0x60001248,0x66001248
-故障历史,0x0925,历史15·701 A相故障位置,hist_15_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2341,42342,0x6000124A,0x6600124A
-故障历史,0x0926,历史15·701 B相故障位置,hist_15_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2342,42343,0x6000124C,0x6600124C
-故障历史,0x0927,历史15·701 C相故障位置,hist_15_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2343,42344,0x6000124E,0x6600124E
+故障历史,0x0925,历史15·701 A相故障位置,hist_15_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2341,42342,0x6000124A,0x6600124A
+故障历史,0x0926,历史15·701 B相故障位置,hist_15_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2342,42343,0x6000124C,0x6600124C
+故障历史,0x0927,历史15·701 C相故障位置,hist_15_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2343,42344,0x6000124E,0x6600124E
 故障历史,0x0928,历史15·模块故障处理计数,hist_15_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2344,42345,0x60001250,0x66001250
 故障历史,0x0929,历史15·DSP上电后台观察节拍,hist_15_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2345,42346,0x60001252,0x66001252
 故障历史,0x092B,历史15·事件序号,hist_15_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2347,42348,0x60001256,0x66001256
@@ -644,9 +644,9 @@
 故障历史,0x0934,历史16·故障分类原始字,hist_16_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2356,42357,0x60001268,0x66001268
 故障历史,0x0935,历史16·采样保护来源,hist_16_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2357,42358,0x6000126A,0x6600126A
 故障历史,0x0936,历史16·403故障来源锁存,hist_16_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2358,42359,0x6000126C,0x6600126C
-故障历史,0x0937,历史16·701 A相故障位置,hist_16_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2359,42360,0x6000126E,0x6600126E
-故障历史,0x0938,历史16·701 B相故障位置,hist_16_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2360,42361,0x60001270,0x66001270
-故障历史,0x0939,历史16·701 C相故障位置,hist_16_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2361,42362,0x60001272,0x66001272
+故障历史,0x0937,历史16·701 A相故障位置,hist_16_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2359,42360,0x6000126E,0x6600126E
+故障历史,0x0938,历史16·701 B相故障位置,hist_16_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2360,42361,0x60001270,0x66001270
+故障历史,0x0939,历史16·701 C相故障位置,hist_16_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2361,42362,0x60001272,0x66001272
 故障历史,0x093A,历史16·模块故障处理计数,hist_16_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2362,42363,0x60001274,0x66001274
 故障历史,0x093B,历史16·DSP上电后台观察节拍,hist_16_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2363,42364,0x60001276,0x66001276
 故障历史,0x093D,历史16·事件序号,hist_16_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2365,42366,0x6000127A,0x6600127A
@@ -660,9 +660,9 @@
 故障历史,0x0946,历史17·故障分类原始字,hist_17_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2374,42375,0x6000128C,0x6600128C
 故障历史,0x0947,历史17·采样保护来源,hist_17_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2375,42376,0x6000128E,0x6600128E
 故障历史,0x0948,历史17·403故障来源锁存,hist_17_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2376,42377,0x60001290,0x66001290
-故障历史,0x0949,历史17·701 A相故障位置,hist_17_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2377,42378,0x60001292,0x66001292
-故障历史,0x094A,历史17·701 B相故障位置,hist_17_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2378,42379,0x60001294,0x66001294
-故障历史,0x094B,历史17·701 C相故障位置,hist_17_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2379,42380,0x60001296,0x66001296
+故障历史,0x0949,历史17·701 A相故障位置,hist_17_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2377,42378,0x60001292,0x66001292
+故障历史,0x094A,历史17·701 B相故障位置,hist_17_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2378,42379,0x60001294,0x66001294
+故障历史,0x094B,历史17·701 C相故障位置,hist_17_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2379,42380,0x60001296,0x66001296
 故障历史,0x094C,历史17·模块故障处理计数,hist_17_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2380,42381,0x60001298,0x66001298
 故障历史,0x094D,历史17·DSP上电后台观察节拍,hist_17_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2381,42382,0x6000129A,0x6600129A
 故障历史,0x094F,历史17·事件序号,hist_17_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2383,42384,0x6000129E,0x6600129E
@@ -676,9 +676,9 @@
 故障历史,0x0958,历史18·故障分类原始字,hist_18_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2392,42393,0x600012B0,0x660012B0
 故障历史,0x0959,历史18·采样保护来源,hist_18_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2393,42394,0x600012B2,0x660012B2
 故障历史,0x095A,历史18·403故障来源锁存,hist_18_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2394,42395,0x600012B4,0x660012B4
-故障历史,0x095B,历史18·701 A相故障位置,hist_18_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2395,42396,0x600012B6,0x660012B6
-故障历史,0x095C,历史18·701 B相故障位置,hist_18_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2396,42397,0x600012B8,0x660012B8
-故障历史,0x095D,历史18·701 C相故障位置,hist_18_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2397,42398,0x600012BA,0x660012BA
+故障历史,0x095B,历史18·701 A相故障位置,hist_18_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2395,42396,0x600012B6,0x660012B6
+故障历史,0x095C,历史18·701 B相故障位置,hist_18_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2396,42397,0x600012B8,0x660012B8
+故障历史,0x095D,历史18·701 C相故障位置,hist_18_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2397,42398,0x600012BA,0x660012BA
 故障历史,0x095E,历史18·模块故障处理计数,hist_18_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2398,42399,0x600012BC,0x660012BC
 故障历史,0x095F,历史18·DSP上电后台观察节拍,hist_18_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2399,42400,0x600012BE,0x660012BE
 故障历史,0x0961,历史18·事件序号,hist_18_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2401,42402,0x600012C2,0x660012C2
@@ -692,9 +692,9 @@
 故障历史,0x096A,历史19·故障分类原始字,hist_19_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2410,42411,0x600012D4,0x660012D4
 故障历史,0x096B,历史19·采样保护来源,hist_19_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2411,42412,0x600012D6,0x660012D6
 故障历史,0x096C,历史19·403故障来源锁存,hist_19_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2412,42413,0x600012D8,0x660012D8
-故障历史,0x096D,历史19·701 A相故障位置,hist_19_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2413,42414,0x600012DA,0x660012DA
-故障历史,0x096E,历史19·701 B相故障位置,hist_19_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2414,42415,0x600012DC,0x660012DC
-故障历史,0x096F,历史19·701 C相故障位置,hist_19_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2415,42416,0x600012DE,0x660012DE
+故障历史,0x096D,历史19·701 A相故障位置,hist_19_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2413,42414,0x600012DA,0x660012DA
+故障历史,0x096E,历史19·701 B相故障位置,hist_19_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2414,42415,0x600012DC,0x660012DC
+故障历史,0x096F,历史19·701 C相故障位置,hist_19_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2415,42416,0x600012DE,0x660012DE
 故障历史,0x0970,历史19·模块故障处理计数,hist_19_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2416,42417,0x600012E0,0x660012E0
 故障历史,0x0971,历史19·DSP上电后台观察节拍,hist_19_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2417,42418,0x600012E2,0x660012E2
 故障历史,0x0973,历史19·事件序号,hist_19_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2419,42420,0x600012E6,0x660012E6
@@ -708,9 +708,9 @@
 故障历史,0x097C,历史20·故障分类原始字,hist_20_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2428,42429,0x600012F8,0x660012F8
 故障历史,0x097D,历史20·采样保护来源,hist_20_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2429,42430,0x600012FA,0x660012FA
 故障历史,0x097E,历史20·403故障来源锁存,hist_20_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2430,42431,0x600012FC,0x660012FC
-故障历史,0x097F,历史20·701 A相故障位置,hist_20_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2431,42432,0x600012FE,0x660012FE
-故障历史,0x0980,历史20·701 B相故障位置,hist_20_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2432,42433,0x60001300,0x66001300
-故障历史,0x0981,历史20·701 C相故障位置,hist_20_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2433,42434,0x60001302,0x66001302
+故障历史,0x097F,历史20·701 A相故障位置,hist_20_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2431,42432,0x600012FE,0x660012FE
+故障历史,0x0980,历史20·701 B相故障位置,hist_20_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2432,42433,0x60001300,0x66001300
+故障历史,0x0981,历史20·701 C相故障位置,hist_20_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2433,42434,0x60001302,0x66001302
 故障历史,0x0982,历史20·模块故障处理计数,hist_20_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2434,42435,0x60001304,0x66001304
 故障历史,0x0983,历史20·DSP上电后台观察节拍,hist_20_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2435,42436,0x60001306,0x66001306
 故障历史,0x0985,历史20·事件序号,hist_20_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2437,42438,0x6000130A,0x6600130A
@@ -724,9 +724,9 @@
 故障历史,0x098E,历史21·故障分类原始字,hist_21_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2446,42447,0x6000131C,0x6600131C
 故障历史,0x098F,历史21·采样保护来源,hist_21_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2447,42448,0x6000131E,0x6600131E
 故障历史,0x0990,历史21·403故障来源锁存,hist_21_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2448,42449,0x60001320,0x66001320
-故障历史,0x0991,历史21·701 A相故障位置,hist_21_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2449,42450,0x60001322,0x66001322
-故障历史,0x0992,历史21·701 B相故障位置,hist_21_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2450,42451,0x60001324,0x66001324
-故障历史,0x0993,历史21·701 C相故障位置,hist_21_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2451,42452,0x60001326,0x66001326
+故障历史,0x0991,历史21·701 A相故障位置,hist_21_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2449,42450,0x60001322,0x66001322
+故障历史,0x0992,历史21·701 B相故障位置,hist_21_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2450,42451,0x60001324,0x66001324
+故障历史,0x0993,历史21·701 C相故障位置,hist_21_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2451,42452,0x60001326,0x66001326
 故障历史,0x0994,历史21·模块故障处理计数,hist_21_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2452,42453,0x60001328,0x66001328
 故障历史,0x0995,历史21·DSP上电后台观察节拍,hist_21_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2453,42454,0x6000132A,0x6600132A
 故障历史,0x0997,历史21·事件序号,hist_21_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2455,42456,0x6000132E,0x6600132E
@@ -740,9 +740,9 @@
 故障历史,0x09A0,历史22·故障分类原始字,hist_22_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2464,42465,0x60001340,0x66001340
 故障历史,0x09A1,历史22·采样保护来源,hist_22_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2465,42466,0x60001342,0x66001342
 故障历史,0x09A2,历史22·403故障来源锁存,hist_22_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2466,42467,0x60001344,0x66001344
-故障历史,0x09A3,历史22·701 A相故障位置,hist_22_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2467,42468,0x60001346,0x66001346
-故障历史,0x09A4,历史22·701 B相故障位置,hist_22_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2468,42469,0x60001348,0x66001348
-故障历史,0x09A5,历史22·701 C相故障位置,hist_22_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2469,42470,0x6000134A,0x6600134A
+故障历史,0x09A3,历史22·701 A相故障位置,hist_22_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2467,42468,0x60001346,0x66001346
+故障历史,0x09A4,历史22·701 B相故障位置,hist_22_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2468,42469,0x60001348,0x66001348
+故障历史,0x09A5,历史22·701 C相故障位置,hist_22_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2469,42470,0x6000134A,0x6600134A
 故障历史,0x09A6,历史22·模块故障处理计数,hist_22_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2470,42471,0x6000134C,0x6600134C
 故障历史,0x09A7,历史22·DSP上电后台观察节拍,hist_22_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2471,42472,0x6000134E,0x6600134E
 故障历史,0x09A9,历史22·事件序号,hist_22_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2473,42474,0x60001352,0x66001352
@@ -756,9 +756,9 @@
 故障历史,0x09B2,历史23·故障分类原始字,hist_23_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2482,42483,0x60001364,0x66001364
 故障历史,0x09B3,历史23·采样保护来源,hist_23_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2483,42484,0x60001366,0x66001366
 故障历史,0x09B4,历史23·403故障来源锁存,hist_23_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2484,42485,0x60001368,0x66001368
-故障历史,0x09B5,历史23·701 A相故障位置,hist_23_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2485,42486,0x6000136A,0x6600136A
-故障历史,0x09B6,历史23·701 B相故障位置,hist_23_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2486,42487,0x6000136C,0x6600136C
-故障历史,0x09B7,历史23·701 C相故障位置,hist_23_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2487,42488,0x6000136E,0x6600136E
+故障历史,0x09B5,历史23·701 A相故障位置,hist_23_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2485,42486,0x6000136A,0x6600136A
+故障历史,0x09B6,历史23·701 B相故障位置,hist_23_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2486,42487,0x6000136C,0x6600136C
+故障历史,0x09B7,历史23·701 C相故障位置,hist_23_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2487,42488,0x6000136E,0x6600136E
 故障历史,0x09B8,历史23·模块故障处理计数,hist_23_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2488,42489,0x60001370,0x66001370
 故障历史,0x09B9,历史23·DSP上电后台观察节拍,hist_23_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2489,42490,0x60001372,0x66001372
 故障历史,0x09BB,历史23·事件序号,hist_23_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2491,42492,0x60001376,0x66001376
@@ -772,9 +772,9 @@
 故障历史,0x09C4,历史24·故障分类原始字,hist_24_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2500,42501,0x60001388,0x66001388
 故障历史,0x09C5,历史24·采样保护来源,hist_24_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2501,42502,0x6000138A,0x6600138A
 故障历史,0x09C6,历史24·403故障来源锁存,hist_24_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2502,42503,0x6000138C,0x6600138C
-故障历史,0x09C7,历史24·701 A相故障位置,hist_24_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2503,42504,0x6000138E,0x6600138E
-故障历史,0x09C8,历史24·701 B相故障位置,hist_24_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2504,42505,0x60001390,0x66001390
-故障历史,0x09C9,历史24·701 C相故障位置,hist_24_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2505,42506,0x60001392,0x66001392
+故障历史,0x09C7,历史24·701 A相故障位置,hist_24_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2503,42504,0x6000138E,0x6600138E
+故障历史,0x09C8,历史24·701 B相故障位置,hist_24_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2504,42505,0x60001390,0x66001390
+故障历史,0x09C9,历史24·701 C相故障位置,hist_24_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2505,42506,0x60001392,0x66001392
 故障历史,0x09CA,历史24·模块故障处理计数,hist_24_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2506,42507,0x60001394,0x66001394
 故障历史,0x09CB,历史24·DSP上电后台观察节拍,hist_24_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2507,42508,0x60001396,0x66001396
 故障历史,0x09CD,历史24·事件序号,hist_24_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2509,42510,0x6000139A,0x6600139A
@@ -788,9 +788,9 @@
 故障历史,0x09D6,历史25·故障分类原始字,hist_25_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2518,42519,0x600013AC,0x660013AC
 故障历史,0x09D7,历史25·采样保护来源,hist_25_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2519,42520,0x600013AE,0x660013AE
 故障历史,0x09D8,历史25·403故障来源锁存,hist_25_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2520,42521,0x600013B0,0x660013B0
-故障历史,0x09D9,历史25·701 A相故障位置,hist_25_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2521,42522,0x600013B2,0x660013B2
-故障历史,0x09DA,历史25·701 B相故障位置,hist_25_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2522,42523,0x600013B4,0x660013B4
-故障历史,0x09DB,历史25·701 C相故障位置,hist_25_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2523,42524,0x600013B6,0x660013B6
+故障历史,0x09D9,历史25·701 A相故障位置,hist_25_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2521,42522,0x600013B2,0x660013B2
+故障历史,0x09DA,历史25·701 B相故障位置,hist_25_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2522,42523,0x600013B4,0x660013B4
+故障历史,0x09DB,历史25·701 C相故障位置,hist_25_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2523,42524,0x600013B6,0x660013B6
 故障历史,0x09DC,历史25·模块故障处理计数,hist_25_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2524,42525,0x600013B8,0x660013B8
 故障历史,0x09DD,历史25·DSP上电后台观察节拍,hist_25_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2525,42526,0x600013BA,0x660013BA
 故障历史,0x09DF,历史25·事件序号,hist_25_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2527,42528,0x600013BE,0x660013BE
@@ -804,9 +804,9 @@
 故障历史,0x09E8,历史26·故障分类原始字,hist_26_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2536,42537,0x600013D0,0x660013D0
 故障历史,0x09E9,历史26·采样保护来源,hist_26_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2537,42538,0x600013D2,0x660013D2
 故障历史,0x09EA,历史26·403故障来源锁存,hist_26_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2538,42539,0x600013D4,0x660013D4
-故障历史,0x09EB,历史26·701 A相故障位置,hist_26_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2539,42540,0x600013D6,0x660013D6
-故障历史,0x09EC,历史26·701 B相故障位置,hist_26_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2540,42541,0x600013D8,0x660013D8
-故障历史,0x09ED,历史26·701 C相故障位置,hist_26_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2541,42542,0x600013DA,0x660013DA
+故障历史,0x09EB,历史26·701 A相故障位置,hist_26_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2539,42540,0x600013D6,0x660013D6
+故障历史,0x09EC,历史26·701 B相故障位置,hist_26_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2540,42541,0x600013D8,0x660013D8
+故障历史,0x09ED,历史26·701 C相故障位置,hist_26_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2541,42542,0x600013DA,0x660013DA
 故障历史,0x09EE,历史26·模块故障处理计数,hist_26_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2542,42543,0x600013DC,0x660013DC
 故障历史,0x09EF,历史26·DSP上电后台观察节拍,hist_26_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2543,42544,0x600013DE,0x660013DE
 故障历史,0x09F1,历史26·事件序号,hist_26_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2545,42546,0x600013E2,0x660013E2
@@ -820,9 +820,9 @@
 故障历史,0x09FA,历史27·故障分类原始字,hist_27_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2554,42555,0x600013F4,0x660013F4
 故障历史,0x09FB,历史27·采样保护来源,hist_27_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2555,42556,0x600013F6,0x660013F6
 故障历史,0x09FC,历史27·403故障来源锁存,hist_27_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2556,42557,0x600013F8,0x660013F8
-故障历史,0x09FD,历史27·701 A相故障位置,hist_27_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2557,42558,0x600013FA,0x660013FA
-故障历史,0x09FE,历史27·701 B相故障位置,hist_27_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2558,42559,0x600013FC,0x660013FC
-故障历史,0x09FF,历史27·701 C相故障位置,hist_27_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2559,42560,0x600013FE,0x660013FE
+故障历史,0x09FD,历史27·701 A相故障位置,hist_27_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2557,42558,0x600013FA,0x660013FA
+故障历史,0x09FE,历史27·701 B相故障位置,hist_27_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2558,42559,0x600013FC,0x660013FC
+故障历史,0x09FF,历史27·701 C相故障位置,hist_27_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2559,42560,0x600013FE,0x660013FE
 故障历史,0x0A00,历史27·模块故障处理计数,hist_27_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2560,42561,0x60001400,0x66001400
 故障历史,0x0A01,历史27·DSP上电后台观察节拍,hist_27_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2561,42562,0x60001402,0x66001402
 故障历史,0x0A03,历史27·事件序号,hist_27_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2563,42564,0x60001406,0x66001406
@@ -836,9 +836,9 @@
 故障历史,0x0A0C,历史28·故障分类原始字,hist_28_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2572,42573,0x60001418,0x66001418
 故障历史,0x0A0D,历史28·采样保护来源,hist_28_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2573,42574,0x6000141A,0x6600141A
 故障历史,0x0A0E,历史28·403故障来源锁存,hist_28_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2574,42575,0x6000141C,0x6600141C
-故障历史,0x0A0F,历史28·701 A相故障位置,hist_28_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2575,42576,0x6000141E,0x6600141E
-故障历史,0x0A10,历史28·701 B相故障位置,hist_28_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2576,42577,0x60001420,0x66001420
-故障历史,0x0A11,历史28·701 C相故障位置,hist_28_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2577,42578,0x60001422,0x66001422
+故障历史,0x0A0F,历史28·701 A相故障位置,hist_28_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2575,42576,0x6000141E,0x6600141E
+故障历史,0x0A10,历史28·701 B相故障位置,hist_28_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2576,42577,0x60001420,0x66001420
+故障历史,0x0A11,历史28·701 C相故障位置,hist_28_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2577,42578,0x60001422,0x66001422
 故障历史,0x0A12,历史28·模块故障处理计数,hist_28_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2578,42579,0x60001424,0x66001424
 故障历史,0x0A13,历史28·DSP上电后台观察节拍,hist_28_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2579,42580,0x60001426,0x66001426
 故障历史,0x0A15,历史28·事件序号,hist_28_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2581,42582,0x6000142A,0x6600142A
@@ -852,9 +852,9 @@
 故障历史,0x0A1E,历史29·故障分类原始字,hist_29_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2590,42591,0x6000143C,0x6600143C
 故障历史,0x0A1F,历史29·采样保护来源,hist_29_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2591,42592,0x6000143E,0x6600143E
 故障历史,0x0A20,历史29·403故障来源锁存,hist_29_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2592,42593,0x60001440,0x66001440
-故障历史,0x0A21,历史29·701 A相故障位置,hist_29_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2593,42594,0x60001442,0x66001442
-故障历史,0x0A22,历史29·701 B相故障位置,hist_29_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2594,42595,0x60001444,0x66001444
-故障历史,0x0A23,历史29·701 C相故障位置,hist_29_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2595,42596,0x60001446,0x66001446
+故障历史,0x0A21,历史29·701 A相故障位置,hist_29_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2593,42594,0x60001442,0x66001442
+故障历史,0x0A22,历史29·701 B相故障位置,hist_29_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2594,42595,0x60001444,0x66001444
+故障历史,0x0A23,历史29·701 C相故障位置,hist_29_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2595,42596,0x60001446,0x66001446
 故障历史,0x0A24,历史29·模块故障处理计数,hist_29_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2596,42597,0x60001448,0x66001448
 故障历史,0x0A25,历史29·DSP上电后台观察节拍,hist_29_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2597,42598,0x6000144A,0x6600144A
 故障历史,0x0A27,历史29·事件序号,hist_29_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2599,42600,0x6000144E,0x6600144E
@@ -868,9 +868,9 @@
 故障历史,0x0A30,历史30·故障分类原始字,hist_30_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2608,42609,0x60001460,0x66001460
 故障历史,0x0A31,历史30·采样保护来源,hist_30_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2609,42610,0x60001462,0x66001462
 故障历史,0x0A32,历史30·403故障来源锁存,hist_30_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2610,42611,0x60001464,0x66001464
-故障历史,0x0A33,历史30·701 A相故障位置,hist_30_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2611,42612,0x60001466,0x66001466
-故障历史,0x0A34,历史30·701 B相故障位置,hist_30_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2612,42613,0x60001468,0x66001468
-故障历史,0x0A35,历史30·701 C相故障位置,hist_30_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2613,42614,0x6000146A,0x6600146A
+故障历史,0x0A33,历史30·701 A相故障位置,hist_30_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2611,42612,0x60001466,0x66001466
+故障历史,0x0A34,历史30·701 B相故障位置,hist_30_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2612,42613,0x60001468,0x66001468
+故障历史,0x0A35,历史30·701 C相故障位置,hist_30_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2613,42614,0x6000146A,0x6600146A
 故障历史,0x0A36,历史30·模块故障处理计数,hist_30_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2614,42615,0x6000146C,0x6600146C
 故障历史,0x0A37,历史30·DSP上电后台观察节拍,hist_30_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2615,42616,0x6000146E,0x6600146E
 故障历史,0x0A39,历史30·事件序号,hist_30_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2617,42618,0x60001472,0x66001472
@@ -884,9 +884,9 @@
 故障历史,0x0A42,历史31·故障分类原始字,hist_31_raw_type,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fault_type,bit0端口过压、1端口过流、2 DAB桥、3 CHB桥、4单模块、5模块过压、6模块过流、7模块过温、8接触器、9断路器、10控制器、11同步、12通信、13模块汇总、14模块欠压、15模块二级过压。,2626,42627,0x60001484,0x66001484
 故障历史,0x0A43,历史31·采样保护来源,hist_31_analog_board_source,R,BITS,1,—,1,0或1,,SST_FAULT_RECORD.port_latch,PortLatch_TAD=403有效FB中的U2采样板来源(bit0)；不含逐个AD通道详情。,2627,42628,0x60001486,0x66001486
 故障历史,0x0A44,历史31·403故障来源锁存,hist_31_fb_source,R,BITS,1,—,1,0x0000..FFFF,,SST_FAULT_RECORD.fb_latch,403 E7经实际FB_EN过滤的IRQ副本；bit0 U2采样板、bit6/10/14 A/B/C相701，bitN对应U(N+2)。,2628,42629,0x60001488,0x66001488
-故障历史,0x0A45,历史31·701 A相故障位置,hist_31_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2629,42630,0x6000148A,0x6600148A
-故障历史,0x0A46,历史31·701 B相故障位置,hist_31_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2630,42631,0x6000148C,0x6600148C
-故障历史,0x0A47,历史31·701 C相故障位置,hist_31_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,IRQ识别该相403 FB来源并执行模块分类时，以701 E5&有效FO采集。bit0..13为UNIT 1..14；未采到的位置不代表健康。,2631,42632,0x6000148E,0x6600148E
+故障历史,0x0A45,历史31·701 A相故障位置,hist_31_fo_a,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_a,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2629,42630,0x6000148A,0x6600148A
+故障历史,0x0A46,历史31·701 B相故障位置,hist_31_fo_b,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_b,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2630,42631,0x6000148C,0x6600148C
+故障历史,0x0A47,历史31·701 C相故障位置,hist_31_fo_c,R,BITS,1,—,1,0x0000..3FFF,,SST_FAULT_RECORD.fo_c,bit0..13对应UNIT 1..14。DSP按已定位UNIT的501 STATUS锁存细分时保存该报码确认的槽位。19104可保存只有701 FO位置的槽位。旧路径记录IRQ采集的701 E5及有效FO交集。0表示本行无该相位置证据。,2631,42632,0x6000148E,0x6600148E
 故障历史,0x0A48,历史31·模块故障处理计数,hist_31_dispose_step,R,U16,1,—,1,0..65535,,SST_FAULT_RECORD.module_dispose,ModuleFault_DisposeTimes原始值，供区分已捕获位置和后续分类进度。,2632,42633,0x60001490,0x66001490
 故障历史,0x0A49,历史31·DSP上电后台观察节拍,hist_31_observation_tick,R,U32,2,10 ms/拍,1,0..4294967295,,SST_FAULT_RECORD.tick_10ms,低16位在前；每计数10ms，是DSP后台采集时间。,2633,42634,0x60001492,0x66001492
 故障历史,0x0A4B,历史31·事件序号,hist_31_sequence,R,U32,2,—,1,0..4294967295,,SST_FAULT_RECORD.sequence,低16位在前；同一次跳闸可生成多条不同代码记录。,2635,42636,0x60001496,0x66001496

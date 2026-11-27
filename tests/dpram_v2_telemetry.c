@@ -72,13 +72,26 @@ ushort Port_FBStatusRead(uchar latch)
 {
     return latch ? SLOT(MainControl_PluginUnit_4).FB_LATCH : SLOT(MainControl_PluginUnit_4).FB;
 }
+ushort Port_EffectiveFOEnable(ushort plugin)
+{
+    return SLOT(plugin).FO_EN;
+}
+ushort Port_EffectiveFBEnable(void)
+{
+    return SLOT(MainControl_PluginUnit_4).FB_EN;
+}
+ushort Module_StatusRead(uchar plugin, uchar channel, uchar latch)
+{
+    assert(latch == 0U && channel < 8U);
+    return SLOT(plugin).STATUS[channel].STATUS16;
+}
 ushort Port_AD_ProtectStatusRead(uchar latch)
 {
     return latch ? SLOT(Analog_PluginUnit_3).AD_PROT_LATCH : SLOT(Analog_PluginUnit_3).AD_PROT;
 }
 void ChbDabControl_ReadStartupStatus(CHB_STARTUP_STATUS *status)
 {
-    status->active_mode = CHB_AC_MODE_CLOSED_LOOP;
+    status->active_mode = g_chb_dab_command.ac_mode;
     status->state_elapsed_10ms = 0x12345678U;
     status->precharge_stable_10ms = 2U;
     status->pll_stable_10ms = 3U;
@@ -102,6 +115,7 @@ static void ServiceUntilPublished(void)
 
 int main(void)
 {
+    g_chb_dab_command.ac_mode = CHB_AC_MODE_CLOSED_LOOP;
     HA_PM_A1 = 1U;
     HA_PM_A2 = 3U;
     HA_PM_B2 = 0x20U;
@@ -193,7 +207,37 @@ int main(void)
     assert(dpram[0x0801U] == 2U && dpram[0x0802U] == 2U);
     assert(dpram[0x0810U] == 19101U && dpram[0x081FU] == 0U);
     assert(dpram[0x0822U] == 39103U && dpram[0x0831U] == 0x0100U);
-    printf("PASS V2 telemetry phase=%u: snapshot bounds, A9 and B14, F1 validity and fault history\n",
+    /* At open-loop arming, the startup check has entered FAULT before PWM
+     * was enabled, and the legacy ISR has captured FB without setting FO_A. */
+    g_chb_dab_status.fault_code = CHB_FAULT_NONE;
+    g_chb_dab_status.state = CHB_STATE_STOPPED;
+    SstFault_Service();
+    SLOT(MainControl_PluginUnit_4).FB_EN = 0x0040U;
+    SLOT(Input_A_PluginUnit_8).FO_EN = 0x0101U;
+    SLOT(Input_A_PluginUnit_8).FO_LATCH = 0x0101U;
+    SLOT(Com_A1_PluginUnit_5).STATUS[0].STATUS16 = 0x0202U; /* A1 Ig fault. */
+    SLOT(Com_A2_PluginUnit_6).STATUS[0].STATUS16 = 0x0404U; /* A9 Ir fault. */
+    g_chb_dab_command.ac_mode = CHB_AC_MODE_OPEN_LOOP;
+    g_chb_dab_status.state = CHB_STATE_FAULT;
+    g_chb_dab_status.fault_code = CHB_FAULT_HARDWARE;
+    FBLatch_TAD = 0x0040U;
+    FOLatch_A_TAD = 0U;
+    SstFault_Service();
+    g_chb_dab_status.tick_10ms += 3U;
+    ServiceUntilPublished();
+    assert(dpram[0x0510U] == CHB_STATE_FAULT && dpram[0x0511U] == CHB_AC_MODE_OPEN_LOOP);
+    assert((dpram[0x0513U] & 3U) == 0U && dpram[0x0595U] == 0x0101U);
+    assert(dpram[0x0701U] == CHB_FAULT_HARDWARE && dpram[0x0702U] == 19105U);
+    assert(dpram[0x0704U] == 2U && dpram[0x0720U] == 19105U && dpram[0x0721U] == 19117U);
+    assert(dpram[0x0801U] == 4U && dpram[0x0802U] == 4U);
+    assert(dpram[0x0810U] == 19117U && dpram[0x0812U] == CHB_FAULT_HARDWARE);
+    assert(dpram[0x0814U] == 0U && dpram[0x0816U] == 0x0040U);
+    assert(dpram[0x0817U] == 0x0100U && dpram[0x0818U] == 0U && dpram[0x0819U] == 0U);
+    assert(dpram[0x0822U] == 19105U && dpram[0x0824U] == CHB_FAULT_HARDWARE);
+    assert(dpram[0x0826U] == 0U && dpram[0x0828U] == 0x0040U);
+    assert(dpram[0x0829U] == 1U && dpram[0x082AU] == 0U && dpram[0x082BU] == 0U);
+    assert(dpram[0x0834U] == 19101U && dpram[0x0846U] == 39103U);
+    printf("PASS V2 telemetry phase=%u: snapshot bounds, F1 validity and separate Ig/Ir history\n",
            SST_PHASE_A_ONLY_TEST);
     return 0;
 }

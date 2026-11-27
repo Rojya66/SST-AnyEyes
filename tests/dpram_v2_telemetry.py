@@ -19,7 +19,7 @@ def main():
         binary = Path(folder) / "v2_telemetry.exe"
         for single_phase in (1, 0):
             subprocess.run([compiler, "-std=c99", "-O2", "-Wall", "-Wextra", "-Werror",
-                            "-Dc6748", f"-DSST_PHASE_A_ONLY_TEST={single_phase}",
+                            "-Dc6748", "-DSST_ENABLE_DPRAM=1", f"-DSST_PHASE_A_ONLY_TEST={single_phase}",
                             *[item for p in includes for item in ("-I", str(p))],
                             *map(str, units), "-o", str(binary)], check=True)
             subprocess.run([str(binary)], check=True, timeout=10)

@@ -2,8 +2,11 @@
 #include "ProtectionData.h"
 #include "SstFault.h"
 #include "ChbDabControl.h"
+#include "FaultCheck.H"
+#include "FpgaIo.h"
+#include "SstBoardConfig.h"
 
-/* All state is owned by the main loop. No allocation, MMIO or interrupt mask. */
+/* Report state is owned by the main loop. The hardware reads below are diagnostic only. */
 typedef struct
 {
     SST_FAULT_RECORD raw; /* raw：后台采集的原控制故障、硬件锁存及观察时刻的完整副本。 */
@@ -68,6 +71,139 @@ static unsigned long s_sequence; /* s_sequence：后台报告事件的累计递�
 static unsigned short s_legacy_history
     [SST_FAULT_LEGACY_HISTORY_WORDS]; /* s_legacy_history：参考组 19 的 34 字 RAM 历史环，字 0 保存下一写位置。 */
 static unsigned short s_legacy_first; /* s_legacy_first：本次会话首次故障前需要插入零分隔符的标志。 */
+
+#ifdef HVAC_online
+/* 701 can trip before 403 records its source or 501 decodes the UNIT frame.
+ * Allow one retry at least 10 ms later in the background. */
+#define SST_FAULT_MODULE_STATUS_SETTLE_TICKS 2UL
+
+/* FanBalance sends these six protection latches in the 501 STATUS word.
+ * Live undervoltage and external SHUTDOWN do not drive UNIT FO. */
+static const SST_FAULT_MAP s_module_status_map[] = {
+    {Module_OC2_L_Mask, SST_FAULT_HW_MODULE_OC, SST_FAULT_LEVEL_1},
+    {Module_OC1_L_Mask, SST_FAULT_HW_MODULE_IR_OC, SST_FAULT_LEVEL_1},
+    {Module_OV_L_Mask, SST_FAULT_HW_MODULE_OV, SST_FAULT_LEVEL_1},
+    {Module_OT_Mask, SST_FAULT_HW_MODULE_OT, SST_FAULT_LEVEL_1},
+    {Module_SVG_H_Mask, SST_FAULT_HW_CHB_BRIDGE, SST_FAULT_LEVEL_1},
+    {Module_DAB_H_Mask, SST_FAULT_HW_DAB_BRIDGE, SST_FAULT_LEVEL_1}};
+
+#define SST_MODULE_CAUSE_COUNT (sizeof(s_module_status_map) / sizeof(s_module_status_map[0]))
+
+static struct
+{
+    unsigned short fb;
+    unsigned short fo[3];
+    unsigned short causes[SST_MODULE_CAUSE_COUNT][3];
+    unsigned short unclassified[3];
+    unsigned short waiting_for_status;
+    unsigned long observed_tick;
+} s_module_evidence;
+
+static void SstFault_ClearModuleEvidence(void)
+{
+    unsigned short cause;
+    unsigned short phase;
+    s_module_evidence.fb = 0U;
+    s_module_evidence.waiting_for_status = 0U;
+    for (phase = 0U; phase < 3U; ++phase)
+    {
+        s_module_evidence.fo[phase] = 0U;
+        s_module_evidence.unclassified[phase] = 0U;
+        for (cause = 0U; cause < SST_MODULE_CAUSE_COUNT; ++cause)
+            s_module_evidence.causes[cause][phase] = 0U;
+    }
+}
+
+static unsigned short SstFault_CaptureModuleLocations(void)
+{
+    static const unsigned short input_plugins[3] = {
+        Input_A_PluginUnit_8, Input_B_PluginUnit_12, Input_C_PluginUnit_16};
+    const unsigned short fb = Port_FBStatusRead(1U) & Port_EffectiveFBEnable();
+    unsigned short observed_fo = 0U;
+    unsigned short phase;
+    for (phase = 0U; phase < 3U; ++phase)
+    {
+        const unsigned short plugin = input_plugins[phase];
+        const unsigned short source = (unsigned short)(1U << (plugin - 2U));
+        if ((fb == 0U) || ((fb & source) != 0U))
+        {
+            const unsigned short enabled = Port_EffectiveFOEnable(plugin);
+            const unsigned short fo = enabled ? (Port_FOStatusRead((unsigned char)plugin, 1U) & enabled) : 0U;
+            observed_fo |= fo;
+            if ((fb & source) != 0U)
+            {
+                s_module_evidence.fb |= source;
+                s_module_evidence.fo[phase] = fo;
+            }
+        }
+    }
+    return observed_fo;
+}
+
+static unsigned short SstFault_CaptureModuleCauses(void)
+{
+    static const unsigned char communication_plugins[3][2] = {
+        {Com_A1_PluginUnit_5, Com_A2_PluginUnit_6},
+        {Com_B1_PluginUnit_9, Com_B2_PluginUnit_10},
+        {Com_C1_PluginUnit_13, Com_C2_PluginUnit_14}};
+    unsigned short phase;
+    for (phase = 0U; phase < 3U; ++phase)
+    {
+        unsigned short classified = 0U;
+        unsigned short cause;
+        unsigned short channel;
+        for (channel = 0U; channel < 14U; ++channel)
+        {
+            const unsigned short mask = (unsigned short)(1U << channel);
+            if ((s_module_evidence.fo[phase] & mask) != 0U)
+            {
+                const unsigned char plugin = communication_plugins[phase][channel / 8U];
+                const unsigned short status = Module_StatusRead(plugin, (unsigned char)(channel % 8U), 0U);
+                /* 501 zero-extends the 14-bit payload in STATUS. */
+                if ((status & 0xC000U) == 0U)
+                {
+                    for (cause = 0U; cause < SST_MODULE_CAUSE_COUNT; ++cause)
+                    {
+                        if ((status & s_module_status_map[cause].mask) != 0U)
+                            s_module_evidence.causes[cause][phase] |= mask;
+                    }
+                }
+            }
+        }
+        for (cause = 0U; cause < SST_MODULE_CAUSE_COUNT; ++cause)
+            classified |= s_module_evidence.causes[cause][phase];
+        s_module_evidence.unclassified[phase] = s_module_evidence.fo[phase] & (unsigned short)~classified;
+    }
+    return s_module_evidence.unclassified[0] | s_module_evidence.unclassified[1] | s_module_evidence.unclassified[2];
+}
+
+/* This signal path also covers a fault during open-loop arming, when the
+ * legacy ISR records FB but skips the FO scan. */
+static unsigned short SstFault_ModuleEvidenceReady(const SST_FAULT_INPUT *input)
+{
+    if ((input->state != CHB_STATE_FAULT) || (input->raw.control_fault != CHB_FAULT_HARDWARE) ||
+        (input->reset_pending != 0U) || (s_current_count != 0U))
+        return 1U;
+
+    if (s_module_evidence.waiting_for_status != 0U)
+    {
+        if ((input->raw.tick_10ms - s_module_evidence.observed_tick) < SST_FAULT_MODULE_STATUS_SETTLE_TICKS)
+            return 0U;
+        if (s_module_evidence.fb == 0U)
+            (void)SstFault_CaptureModuleLocations();
+        (void)SstFault_CaptureModuleCauses();
+        s_module_evidence.waiting_for_status = 0U;
+    }
+    else if ((SstFault_CaptureModuleLocations() != 0U) &&
+             ((s_module_evidence.fb == 0U) || (SstFault_CaptureModuleCauses() != 0U)))
+    {
+        s_module_evidence.observed_tick = input->raw.tick_10ms;
+        s_module_evidence.waiting_for_status = 1U;
+        return 0U;
+    }
+    return 1U;
+}
+#endif
 
 /* Legacy globals are not volatile. Read via qualified lvalues without changing
  * their declarations or the original real-time code. Individual scalar reads
@@ -163,6 +299,42 @@ static void SstFault_Add(unsigned short code, unsigned short level, const SST_FA
         s_legacy_history[0] = 1U;
 }
 
+static void SstFault_AddMappedCode(const SST_FAULT_MAP *mapping, const SST_FAULT_INPUT *input,
+                                  unsigned short unlocated)
+{
+    if (unlocated != 0U)
+    {
+        SST_FAULT_INPUT entry = *input;
+        entry.raw.fo_a = 0U;
+        entry.raw.fo_b = 0U;
+        entry.raw.fo_c = 0U;
+        SstFault_Add(mapping->code, mapping->level, &entry);
+        return;
+    }
+    SstFault_Add(mapping->code, mapping->level, input);
+}
+
+#ifdef HVAC_online
+static void SstFault_AddModuleCodes(const SST_FAULT_INPUT *input)
+{
+    SST_FAULT_INPUT entry = *input;
+    unsigned short cause;
+    for (cause = 0U; cause < SST_MODULE_CAUSE_COUNT; ++cause)
+    {
+        entry.raw.fo_a = s_module_evidence.causes[cause][0];
+        entry.raw.fo_b = s_module_evidence.causes[cause][1];
+        entry.raw.fo_c = s_module_evidence.causes[cause][2];
+        if ((entry.raw.fo_a | entry.raw.fo_b | entry.raw.fo_c) != 0U)
+            SstFault_Add(s_module_status_map[cause].code, s_module_status_map[cause].level, &entry);
+    }
+    entry.raw.fo_a = s_module_evidence.unclassified[0];
+    entry.raw.fo_b = s_module_evidence.unclassified[1];
+    entry.raw.fo_c = s_module_evidence.unclassified[2];
+    if ((entry.raw.fo_a | entry.raw.fo_b | entry.raw.fo_c) != 0U)
+        SstFault_Add(SST_FAULT_HW_MODULE, SST_FAULT_LEVEL_1, &entry);
+}
+#endif
+
 /*==================================================================
  * 函数功能: 清空当前故障与 RAM 历史，初始化参考历史环写位置
  * 输入参数: 无
@@ -180,6 +352,9 @@ void SstFault_Init(void)
     s_history_count = 0U;
     s_history_next = 0U;
     s_sequence = 0UL;
+#ifdef HVAC_online
+    SstFault_ClearModuleEvidence();
+#endif
     for (i = 0U; i < SST_FAULT_LEGACY_HISTORY_WORDS; ++i)
         s_legacy_history[i] = 0U;
     s_legacy_history[0] = 1U;
@@ -191,13 +366,14 @@ void SstFault_Init(void)
  * 输入参数: 无
  * 输出参数: 当前故障表、详细 RAM 历史及参考组 19 历史环。
  * 返回值: 无
- * 执行说明: 纯后台报告服务；不重新读取 FPGA，不关中断，不改变原保护或 PWM 决策。
+ * 执行说明: 在后台读取模块首锁存和保护原因；只读，不关中断，不改变原保护或 PWM 决策。
  *================================================================*/
 void SstFault_Service(void)
 {
     SST_FAULT_INPUT input; /* input：后台采集的原故障输入及控制状态。 */
     unsigned short code = SST_FAULT_NONE; /* code：参考五位 SST_FAULT_* 上报故障码，0 表示无故障。 */
     unsigned short level = SST_FAULT_LEVEL_2;
+    unsigned short module_location = 0U;
     unsigned short has_detail = 0U; /* has_detail：本轮是否已获得可分类的故障明细。 */
     unsigned short i; /* i：当前故障表、位映射表或历史表的遍历索引。 */
     if (!SstFault_ReadInput(&input))
@@ -211,8 +387,23 @@ void SstFault_Service(void)
     {
         s_current_count = 0U;
         s_current_level = SST_FAULT_LEVEL_NONE;
+#ifdef HVAC_online
+        SstFault_ClearModuleEvidence();
+#endif
         return;
     }
+#ifdef HVAC_online
+    if (!SstFault_ModuleEvidenceReady(&input))
+        return;
+    /* Read-only bus access must not publish an episode that changed meanwhile. */
+    if ((input.state != g_chb_dab_status.state) || (input.raw.control_fault != g_chb_dab_status.fault_code))
+        return;
+    module_location = s_module_evidence.fo[0] | s_module_evidence.fo[1] | s_module_evidence.fo[2];
+    input.raw.fb_latch |= s_module_evidence.fb;
+    input.raw.fo_a |= s_module_evidence.fo[0];
+    input.raw.fo_b |= s_module_evidence.fo[1];
+    input.raw.fo_c |= s_module_evidence.fo[2];
+#endif
     switch (input.raw.control_fault)
     {
         case CHB_FAULT_PRECHARGE_TIMEOUT:
@@ -256,11 +447,20 @@ void SstFault_Service(void)
         SstFault_Add(SST_FAULT_SW_DC_OV, SST_FAULT_LEVEL_2, &input);
         has_detail = 1U;
     }
+#ifdef HVAC_online
+    if (module_location != 0U)
+    {
+        SstFault_AddModuleCodes(&input);
+        has_detail = 1U;
+    }
+#endif
     for (i = 0U; i < sizeof(s_type_map) / sizeof(s_type_map[0]); ++i)
     {
         if (input.raw.fault_type & s_type_map[i].mask)
         {
-            SstFault_Add(s_type_map[i].code, s_type_map[i].level, &input);
+            /* A legacy module summary without its own STATUS match cannot
+             * attribute the cause to every UNIT in the FO snapshot. */
+            SstFault_AddMappedCode(&s_type_map[i], &input, module_location && (s_type_map[i].mask & 0xC0FCU));
             has_detail = 1U;
         }
     }
@@ -268,13 +468,13 @@ void SstFault_Service(void)
     {
         if (input.raw.port_fault & s_port_map[i].mask)
         {
-            SstFault_Add(s_port_map[i].code, s_port_map[i].level, &input);
+            SstFault_AddMappedCode(&s_port_map[i], &input, module_location && (s_port_map[i].mask & 0x0880U));
             has_detail = 1U;
         }
     }
-    /* Keep an aggregate only when no module category has been decoded. */
-    if (((input.raw.fault_type & 0x2000U) || (input.raw.port_fault & 0x0040U)) && !(input.raw.fault_type & 0xC0FCU) &&
-        !(input.raw.port_fault & 0x0880U))
+    /* Use the legacy aggregate when there is no per-UNIT snapshot. */
+    if ((module_location == 0U) && ((input.raw.fault_type & 0x2000U) || (input.raw.port_fault & 0x0040U)) &&
+        !(input.raw.fault_type & 0xC0FCU) && !(input.raw.port_fault & 0x0880U))
     {
         SstFault_Add(SST_FAULT_HW_MODULE, SST_FAULT_LEVEL_1, &input);
         has_detail = 1U;

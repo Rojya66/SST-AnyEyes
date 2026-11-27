@@ -31,14 +31,15 @@
 | 19101 | 一级 | `CHB_FAULT_HARDWARE` 或端口总故障，但无可辨识分类 | 未分类汇总；不能解释为某个具体器件损坏 |
 | 19102 | 一级 | `FaultTypeFLAG.Port_OverCurrent` 或端口 bit10 | 模拟插件/端口硬件过流；具体通道仍需原寄存器证据 |
 | 19103 | 一级 | `FaultTypeFLAG.Port_OverVolt` 或端口 bit12 | 端口硬件过压兼容报告；当前 HVAC 的 AD 保护分支主要归类为过流 |
-| 19104 | 一级 | `FaultTypeFLAG.Module_Fault` 或端口 bit6，尚无模块细分 | UNIT/模块故障汇总 |
-| 19105 | 一级 | `FaultTypeFLAG.Module_OverCurrent` | 模块过流，来自原 FO/模块锁存解析 |
-| 19106 | 一级 | `FaultTypeFLAG.Module_OverVolt` | 模块过压，来自原 FO/模块锁存解析 |
-| 19107 | 一级 | `FaultTypeFLAG.Module_OverTemp` | 模块过温，来自原 FO/模块锁存解析 |
-| 19108 | 一级 | `FaultTypeFLAG.Module_50Hz_H` 或端口 bit7 | CHB/50 Hz 桥故障，不能据此定位具体 IGBT |
-| 19109 | 一级 | `FaultTypeFLAG.Module_DAB_H` | DAB 桥硬件故障，不能据此定位具体 IGBT |
+| 19104 | 一级 | 701 有位置但 501 无法细分，或旧模块汇总标志 | UNIT/模块故障汇总 |
+| 19105 | 一级 | UNIT 的 Ig 锁存 `0x0200`，兼容旧 `Module_OverCurrent` | Ig 过流，旧记录为通用模块过流 |
+| 19106 | 一级 | UNIT 的 Udc 过压锁存 `0x0100`，兼容旧 `Module_OverVolt` | 模块直流母线过压 |
+| 19107 | 一级 | UNIT 的过温锁存 `0x0800`，兼容旧 `Module_OverTemp` | 模块过温 |
+| 19108 | 一级 | UNIT 的 CHB 驱动锁存 `0x1000`，兼容旧 `Module_50Hz_H` 或端口 bit7 | CHB 驱动故障 |
+| 19109 | 一级 | UNIT 的 DAB 驱动锁存 `0x2000`，兼容旧 `Module_DAB_H` | DAB 驱动故障 |
+| 19117 | 一级 | UNIT 的 Ir 锁存 `0x0400` | Ir 过流 |
 
-上述细分只依赖原程序已产生的分类。如果原程序仅锁存 `CHB_FAULT_HARDWARE`，新模块不会额外遍历 FPGA/UNIT 来猜测具体原因。后台读取的 FO_A/B/C 位图、FB、PortLatch、模块处置计数作为历史证据保留；因原复位不一定清这些 RAM 影子变量，它们不单独触发新故障。
+进入 `CHB_FAULT_HARDWARE` 后，DSP 后台用 403 和 701 首锁存定位，再由同槽 501 的 STATUS 锁存确认原因。逐模块确认的报码和槽号写入同一行。有位置但缺少原因的 UNIT 记录为 `19104`。未获得逐模块匹配的旧汇总报码使用原有兼容路径。
 
 快速软件 OC/OV 原有 `g_chb_dab_protection_enable` 开关和开环绕过条件保持不变。原 `OC_OV_LV_faultcheck()` 的运行状态条件、计时和门槛保持不变。FPGA FAULT/FO/FB 独立硬件故障不受上述软件开关屏蔽。新报告层不重新比较电流/电压，也不把关闭的软件保护变相恢复。
 

@@ -256,7 +256,7 @@ class App:
         history = ttk.LabelFrame(self.fault_page, text="DSP 历史（最近 32 条）", padding=6)
         history.pack(fill="both", expand=True, pady=(10, 0))
         self.history_tree = tree(history, (("事件", 55), ("DSP 时间 s", 80), ("代码", 65), ("故障含义", 220),
-                                          ("核心", 50), ("403 锁存", 90), ("701 A/B/C", 165), ("501 A/B/C", 165)), 12)
+                                          ("核心", 50), ("403 锁存", 90), ("故障 UNIT", 165), ("501 A/B/C", 165)), 12)
 
     def schedule(self, call, callback, action=False):
         if self.future is not None:
@@ -553,7 +553,8 @@ class App:
             for r in records:
                 seq = r[13] | (r[14] << 16)
                 seconds = (r[11] | (r[12] << 16)) / 100
-                fo = "/".join(f"{v:04X}" for v in r[7:10])
+                fo = " / ".join(f"{phase} 相 UNIT {bitmap_modules(mask)}"
+                                for phase, mask in zip(PHASES, r[7:10]) if mask & 0x3FFF) or "未记录"
                 lost = "/".join(f"{v:04X}" for v in r[15:18]) if r[2] in (1, 8) else "未判定"
                 data.append((seq, f"{seconds:.2f}", r[0], self.faults.get(r[0], "设备报码"),
                              r[2], f"{r[6]:04X}", fo, lost))

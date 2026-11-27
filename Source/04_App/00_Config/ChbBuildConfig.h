@@ -12,11 +12,11 @@
 #endif
 #ifndef SST_ENABLE_DPRAM
 /* SST_ENABLE_DPRAM：DPRAM硬件及并口维护使能；本兼容工程默认1；0时不访问并口。 */
-#define SST_ENABLE_DPRAM 1U
+#define SST_ENABLE_DPRAM 0U
 #endif
 #ifndef SST_SIMULATOR_MODE
 /* SST_SIMULATOR_MODE：本兼容工程默认0允许DPRAM远控；1由仿真器控制，急停仍有效。 */
-#define SST_SIMULATOR_MODE 0U
+#define SST_SIMULATOR_MODE 1U
 #endif
 #ifndef SST_BENCH_INPUT_SIM
 /* SST_BENCH_INPUT_SIM：临时无主回路输入注入；0 使用真实采样，1 生成测试采样。
@@ -30,11 +30,11 @@
 /* 实柜S301：QF1脉冲式断路器，KT1电平保持式预充旁路接触器。 */
 #ifndef SST_ENABLE_SWITCH_OUTPUT
 /* 1执行QF1/KT1及AC指示输出；0用于不接开关板的单板调试。 */
-#define SST_ENABLE_SWITCH_OUTPUT 1U
+#define SST_ENABLE_SWITCH_OUTPUT 0U
 #endif
 #ifndef SST_ENABLE_SWITCH_FEEDBACK
 /* 1以DI6/DI7/DI8实际反馈推进预充；0仅供无开关反馈的台架测试。 */
-#define SST_ENABLE_SWITCH_FEEDBACK 1U
+#define SST_ENABLE_SWITCH_FEEDBACK 0U
 #endif
 /* SST_SWITCH_FEEDBACK_STABLE_10MS：反馈连续确认默认拍数，3拍=30ms。 */
 #define SST_SWITCH_FEEDBACK_STABLE_10MS 3U

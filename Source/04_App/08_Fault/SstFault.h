@@ -55,6 +55,8 @@
 #define SST_FAULT_HW_AUX_SUPPLY 19115U
 /* SST_FAULT_HW_EPO：紧急关断输入故障五位上报码。 */
 #define SST_FAULT_HW_EPO 19116U
+/* SST_FAULT_HW_MODULE_IR_OC：UNIT 的 Ir 硬件过流锁存报码。 */
+#define SST_FAULT_HW_MODULE_IR_OC 19117U
 /* SST_FAULT_PRECHARGE_TIMEOUT：预充超时五位上报码，沿用参考 20103。 */
 #define SST_FAULT_PRECHARGE_TIMEOUT 20103U
 /* SST_FAULT_PLL_TIMEOUT：PLL 锁定超时五位上报码。 */
@@ -118,7 +120,7 @@ extern "C"
  * 输入参数: 无
  * 输出参数: 当前故障表、详细 RAM 历史及参考组 19 历史环。
  * 返回值: 无
- * 执行说明: 纯后台报告服务；不重新读取 FPGA，不关中断，不改变原保护或 PWM 决策。
+ * 执行说明: 在后台读取模块首锁存和保护原因；只读，不关中断，不改变原保护或 PWM 决策。
  *================================================================*/
     void SstFault_Service(void);
     /*==================================================================

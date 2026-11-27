@@ -1,32 +1,23 @@
-"""Build the real background fault manager with scalar host substitutes."""
+"""Build the background fault manager with host substitutes for hardware reads."""
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import tempfile
 
 
 def main():
-    project = Path(__file__).resolve().parents[1]
+    source = Path(__file__).resolve().parents[1] / "Source"
     compiler = shutil.which("gcc")
     if compiler is None:
         raise SystemExit("GCC not found")
-    source = project / "Source/04_App/08_Fault/SstFault.c"
-    implementation = source.read_text(encoding="utf-8")
-    implementation = re.sub(r'^\s*#\s*include\s*"[^"\n]+"\s*$', "",
-                            implementation, flags=re.MULTILINE)
-    template = Path(__file__).with_suffix(".c").read_text(encoding="utf-8")
+    includes = sorted(p for p in source.rglob("*") if p.is_dir())
+    units = [Path(__file__).with_suffix(".c"), source / "04_App/08_Fault/SstFault.c"]
     with tempfile.TemporaryDirectory(prefix="sst_fault_reporting_") as folder:
-        work = Path(folder)
-        for header in (source.with_suffix(".h"),
-                       project / "Source/04_App/04_Control/ChbDabControl.h"):
-            shutil.copy2(header, work / header.name)
-        unit = work / "fault_test.c"
-        unit.write_text(template.replace("/* INSERT_FAULT_IMPLEMENTATION */",
-                                         implementation), encoding="utf-8")
-        binary = work / "fault_test.exe"
+        binary = Path(folder) / "fault_test.exe"
         subprocess.run([compiler, "-std=c99", "-O2", "-Wall", "-Wextra", "-Werror",
-                        str(unit), "-o", str(binary)], check=True)
+                        "-Dc6748", "-DSST_PHASE_A_ONLY_TEST=0",
+                        *[item for p in includes for item in ("-I", str(p))],
+                        *map(str, units), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True, timeout=10)
 
 
